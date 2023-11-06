@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Nov  5 07:56:28 2023
+
+@author: marik
+"""
+
+import pandas as pd
+
+def read_data(file, index_col="Time", usecols=None):
+    """
+    Reads csv file, returns dataframe.
+    The index_col is the index of the column with index for the dataframe. 
+    If index is string, then the position of the index is guessed from the first line
+    of the csv file.
+    """
+    # If the index_col if string, find the position of index_col in the first line
+    # and set index_col to this position. This allows to specify index_col for 
+    # data with multiindex.
+    if isinstance(index_col,str):
+        with open(file) as f:
+            first_line = f.readline().strip('\n')
+            index_col = first_line.split(",").index("Time")
+    df = pd.read_csv(file,header=[0,1], index_col=index_col)  # read the file
+    if ("source","data") in df.columns: # drop unenecessary column
+        df.drop([("source","data")],axis=1,inplace=True)  
+    df["Time"] = df.index  # pro pohodlí, aby se k času dalo přistupovat i jako data.Time
+    return df
+
+def directory2date(d):
+    """
+    Coneverts directory from the form '01_Mereni_Babice_22032021_optika_zpracovani'
+    to date like 2021-03-22
+    """
+    return f"{d[21:25]}-{d[19:21]}-{d[17:19]}"  
+
+def filename2tree_and_measurement_numbers(f):
+    tree,tree_measurement,*_ = f.split("_")
+    tree = tree.replace("BK","")
+    tree_measurement = tree_measurement.replace("M0","").replace(".csv","")
+    return tree,tree_measurement
