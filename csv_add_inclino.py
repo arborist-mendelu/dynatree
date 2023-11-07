@@ -4,7 +4,7 @@
 Created on Tue Nov  7 12:52:38 2023
 
 Načte inklinoměry, sílu a elastometr, přeškáluje čas na stejné časy jako 
-v optice, synchronizuje omakžiky vypuštění podle síly.
+v optice, synchronizuje okamžiky vypuštění podle maxima síly a maxima Pt3.
 Odečte od Pt3,4 pozice Pt11,12,13
 Odečte od Pt1,2 pozice Pt8,9,10
 
@@ -14,6 +14,7 @@ Odečte od Pt1,2 pozice Pt8,9,10
 import os
 import glob
 import pandas as pd
+import numpy as np
 import warnings
 from scipy import interpolate
 from lib_dynatree import read_data
@@ -112,7 +113,12 @@ def resample_data_from_inclinometers(df_pulling_tests, df):
         df_resampled[col] = f(df.index)
     return df_resampled
 
-def extend_one_csv(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", tree="01", tree_measurement="2", path="../"):
+def extend_one_csv(
+        measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", 
+        tree="01", 
+        tree_measurement="2", 
+        path="../", 
+        write_csv=True):
     """
     Reads csv file in a csv directory, adds data from inclinometers 
     and saves to csv_extended directory
@@ -124,7 +130,6 @@ def extend_one_csv(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani"
 
     """
     # Read data file
-    # In spyder run cell with Ctrl+Enter
         
     # načte data z csv souboru
     df = read_data(f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")   
@@ -138,11 +143,12 @@ def extend_one_csv(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani"
         )
     df_pulling_tests = resample_data_from_inclinometers(df_pulling_tests_, df)
     df_fixed_and_inclino = pd.concat([df_fixed,df_pulling_tests], axis=1)
-    df_fixed_and_inclino.to_csv(f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
+    if write_csv:
+        df_fixed_and_inclino.to_csv(f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
 
 def extend_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../"):
     try:
-       os.makedirs(f"{path}{measurement_day}/csv_extended")
+        os.makedirs(f"{path}{measurement_day}/csv_extended")
     except FileExistsError:
        # directory already exists
        pass    

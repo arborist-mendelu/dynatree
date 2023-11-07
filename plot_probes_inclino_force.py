@@ -38,7 +38,7 @@ from lib_dynatree import filename2tree_and_measurement_numbers
 df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 
 
-def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", tree="01", tree_measurement="2", df_remarks=df_remarks):
+def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", tree="01", tree_measurement="2", df_remarks=df_remarks, keep_fig=False):
     df = read_data(f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")   
     df_extra = read_data(f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")   
     bounds_for_fft = df_remarks[(df_remarks["tree"]==f"BK{tree}") & (df_remarks["measurement"]==f"M0{tree_measurement}") & (df_remarks["date"]==directory2date(measurement_day))]
@@ -46,8 +46,10 @@ def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zprac
     plot_coordiante = "Y"
     fixes = [i for i in df_extra.columns if f"{fix_target}_fixed_by" in i[0] and plot_coordiante in i[1]]
     
-    fig, axes = plt.subplots(3,1,figsize=(11.3,8),sharex=True)
+    fig, axes = plt.subplots(3,1,figsize=(14.1,10),sharex=True)
     plt.suptitle(f"{measurement_day.replace('_optika_zpracovani','')} - BK{tree} M0{tree_measurement}")
+    
+    release_time_optics = find_release_time_optics(df)
     
     # Plot probes, region of interest for oscillation
     ax = axes[0]
@@ -73,8 +75,7 @@ def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zprac
     ax.axvspan(lower_bound, upper_bound, alpha=0.5, color="gray")
         
     # plot inclinometers
-    release_time_optics = find_release_time_optics(df)
-    start = release_time_optics-5
+    # start = release_time_optics-5
     start = 0
     ax = axes[1]    
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
@@ -85,17 +86,34 @@ def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zprac
         
     # plot force and strain
     ax = axes[2]
+
+    f = df[(f'Pt{fix_target}', f'{plot_coordiante}0')].copy()
+    f = f-f[0]
+    fmax = np.max(f.values)
+    fmin = np.min(f.values)
+    if np.abs(fmax) > np.abs(fmin):
+        f = f / fmax
+    else:
+        f = f / fmin
+    f = f * df_extra.loc[start:,"Force(100)"].values.max()
+    f.plot(ax = ax)
+    
     df_extra.loc[start:,"Force(100)"].plot(ax=ax)
     ax.grid()
-    lines, labels = ax.get_legend_handles_labels()
+    ax.set(ylim=(0,None))
+    lines1, labels1 = ax.get_legend_handles_labels()
     ax.legend().remove()
     ax = ax.twinx()
-    df_extra.loc[start:,"Elasto(90)"].plot(ax=ax,color="C1")
-    ax.set(title="Force and Elasto")
+    df_extra.loc[start:,"Elasto(90)"].plot(ax=ax,color="C2")
+    ax.set(title=f"Force, Elasto, scaled (Pt{fix_target}, {plot_coordiante}0)")
     lines2, labels2 = ax.get_legend_handles_labels()
-    ax.legend(lines + lines2, ["Force","Elasto"], loc=3)
-    ax.grid(color="C1")
-    ax.tick_params(axis='y', labelcolor="C1")     
+    ax.legend(lines1 + lines2, [f"scaled (Pt{fix_target}, {plot_coordiante}0)","Force","Elasto"], loc=3)
+    ax.grid(color="C2")
+    ax.tick_params(axis='y', labelcolor="C2")     
+
+    for ax in axes:
+        ax.axvline(x = release_time_optics, color='k', linestyle="dashed", zorder=0)
+
     
     fig.tight_layout()
     
@@ -120,7 +138,8 @@ def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zprac
         ax.axvspan(tmin,tmax, alpha=.5, color="yellow")
         # pre_release_data[file.replace(".csv","")] = delta_df.mean()
     fig.savefig(f"{path}{measurement_day}/png_with_inclino/BK{tree}_M0{tree_measurement}.png")
-    plt.close('all')
+    if not keep_fig:
+        plt.close()
 
 def plot_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", df_remarks=df_remarks):
     
@@ -146,3 +165,6 @@ def main():
         plot_one_day(measurement_day=i)
 
 main()
+
+
+# plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", tree="08", tree_measurement="3", df_remarks=df_remarks, keep_fig=True)
