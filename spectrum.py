@@ -34,6 +34,7 @@ def do_fft_for_file(
         column_fft=("Pt3","Y0"),
         create_image=True,
         color="C1",
+        return_image=False,
         ):
     if np.isnan(start) or np.isnan(end) or (start==end):
         print("Nejsou zadany meze pro signal")
@@ -69,6 +70,7 @@ def do_fft_for_file(
     peak_index = np.argmax(yf_r[2:])+2  # find the peak, exclude the start
     peak_position = xf_r[peak_index]
     delta_f = np.diff(xf_r).mean()
+    output = {'peak position': peak_position, 'delta f': delta_f}
 
     if create_image:
         ax = axs[1]
@@ -83,11 +85,16 @@ def do_fft_for_file(
         plt.suptitle(directory2date(measurement_day)+f", BK{tree}_M0{tree_measurement}")
         plt.tight_layout()
         fig.savefig(f"{path}{measurement_day}/png_fft/BK{tree}_M0{tree_measurement}.png")
-        plt.close()
-    return {'peak position': peak_position, 'delta f': delta_f}
+        if return_image:
+            output['figure']=fig
+        else:
+            plt.close()
+    return output
 
 
-# do_fft_for_file(measurement_day="01_Mereni_Babice_16082022_optika_zpracovani", tree=11, tree_measurement="3", start=100)
+# a = do_fft_for_file(measurement_day="01_Mereni_Babice_29062021_optika_zpracovani", 
+                    # tree=24, tree_measurement="4", start=128.5, end=165.46, column_fft=("Pt3","Y0"),return_image=True)
+# plt.show(a['figure'])
     
 def do_fft_for_day(
         measurement_day="01_Mereni_Babice_22032021_optika_zpracovani",
@@ -136,6 +143,8 @@ def do_fft_for_day(
         
             print (np.round(peak_position,3), "±",np.round(delta_f,3))
             fft_data[file.replace(".csv","")] = [peak_position, delta_f]
+        else:
+            print("output is None")
 
     df_output = pd.DataFrame(fft_data).T
     df_output.columns = ["Freq","Delta freq"]

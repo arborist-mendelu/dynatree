@@ -211,7 +211,7 @@ for d in ["csv_extended", "png_points_on_ground", "png_with_inclino"]:
 # %% Extend csv files in csv directory to csv_rextended with inclino data
 # Extend csv files in csv directory to csv_extended with inclino data 
 
-extend_csv(MEASUREMENT_DAY)
+# extend_csv(MEASUREMENT_DAY)
 
 
 # %% Pre-release data, also plot fixed pt3 and plot data from inlinometers, 
@@ -221,7 +221,7 @@ measurement_day = MEASUREMENT_DAY
 files = os.listdir(f"{PATH}{measurement_day}/csv_extended/")
 files.sort()
 pre_release_data = {}
-files = [""]
+# files = ["BK11_M03.csv"]
 
 for file in files[:]:
     print(file)    
@@ -235,7 +235,7 @@ for file in files[:]:
     
     fixes = [i for i in df.columns if f"{fix_target}_fixed_by" in i[0] and plot_coordiante in i[1]]
     
-    fig, axes = plt.subplots(3,1,figsize=(12,8),sharex=True)
+    fig, axes = plt.subplots(3,1,figsize=(11.3,8),sharex=True)
     plt.suptitle(f"{measurement_day.replace('_optika_zpracovani','')} - BK{tree} M0{tree_measurement}")
 
     ax = axes[0]
@@ -296,8 +296,8 @@ for file in files[:]:
     delta_df = delta_df.loc[tmin:tmax,:]    
     # ensure that Force info is not
     if not pd.isna(tmin):
-        time_middle = (tmin+tmax)/2
-        time_middle = df.loc[time_middle:,"Time"].iloc[0].values[0]
+        # time_middle = (tmin+tmax)/2
+        # time_middle = df.loc[time_middle:,"Time"].iloc[0].values[0]
         for ax in axes:
             ax.axvspan(tmin,tmax, alpha=.5, color="yellow")
             pre_release_data[file.replace(".csv","")] = delta_df.mean()
