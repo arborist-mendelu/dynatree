@@ -15,6 +15,7 @@ import numpy as np
 from scipy import interpolate
 from scipy.fft import fft, fftfreq
 import os
+import subprocess
 
 df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 
@@ -61,7 +62,7 @@ def do_fft_for_file(
     if create_image:
         fig,axs = plt.subplots(2,1)  
         ax = axs[0]  # plot the signal
-        ax.plot(time_fft,signal_fft, color=color)
+        ax.plot(time,signal-signal[0], ".", color=color, ms=2)
         ax.set(xlabel="Time/s", ylabel=column_fft[0]+", "+column_fft[1])
     
     yf = fft(signal_fft)  # preform FFT analysis
@@ -92,8 +93,7 @@ def do_fft_for_file(
     return output
 
 
-# a = do_fft_for_file(measurement_day="01_Mereni_Babice_29062021_optika_zpracovani", 
-                    # tree=24, tree_measurement="4", start=128.5, end=165.46, column_fft=("Pt3","Y0"),return_image=True)
+# a = do_fft_for_file(start=51.7, end=np.inf, column_fft=("Pt3","Y0"), measurement_day="01_Mereni_Babice_29062021_optika_zpracovani", tree="01", tree_measurement="3", return_image=True)
 # plt.show(a['figure'])
     
 def do_fft_for_day(
@@ -159,3 +159,5 @@ for MEASUREMENT_DAY, COLOR in [
         ]:
     print(MEASUREMENT_DAY)
     do_fft_for_day(measurement_day=MEASUREMENT_DAY, color=COLOR, path="../")
+
+subprocess.run(["python", "plot_fft.py"])

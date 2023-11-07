@@ -41,7 +41,7 @@ date,tree,measurement,start,end,remark,probe
 2021-03-22,BK24,M03,93.97,inf,Pěkné kmity,
 2021-03-22,BK24,M04,91.82,143.28,Pěkné kmity,
 2021-06-29,BK01,M02,49.28,64.48,"Použitelné jenom tři periody, třetí je navíc divná",
-2021-06-29,BK01,M03,49.8,70.74,"Mezery v datech při oscilaci, jina pěkné ale málo period",
+2021-06-29,BK01,M03,51.7,inf,"Mezery v datech při oscilaci, jinak pěkné ale málo period",
 2021-06-29,BK01,M04,55.04,80.7,"Hrbatý náběh, oscilace mají zvláštní tvar, kousek chybí",
 2021-06-29,BK01,M05,57.92,80.7,Konec roztřepený,
 2021-06-29,BK04,M02,46.63,77.12,Nekmitá okolo rovnovážné polohy,
