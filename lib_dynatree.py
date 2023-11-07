@@ -7,6 +7,7 @@ Created on Sun Nov  5 07:56:28 2023
 """
 
 import pandas as pd
+import numpy as np
 
 def read_data(file, index_col="Time", usecols=None):
     """
@@ -40,3 +41,26 @@ def filename2tree_and_measurement_numbers(f):
     tree = tree.replace("BK","")
     tree_measurement = tree_measurement.replace("M0","").replace(".csv","")
     return tree,tree_measurement
+
+
+def find_release_time_optics(df,probe="Pt3",coordinate="Y0"):
+    """
+    Finds release time lokinng for maximal displacement from the 
+    initial position. Probe and coordiante defined in the parameters are 
+    used.
+    Parameters
+    ----------
+    df : dataframe 
+    probe : TYPE, optional
+        DESCRIPTION. The default is "Pt3".
+    coordinate : TYPE, optional
+        DESCRIPTION. The default is "Y0".
+
+    Returns
+    -------
+    Index of the release. If index is Time, returns time.
+    """
+    movement_data = df[(probe,coordinate)]
+    movement_data = movement_data - movement_data[0]
+    movement_data = np.abs(movement_data)
+    return movement_data.idxmax(axis=0)

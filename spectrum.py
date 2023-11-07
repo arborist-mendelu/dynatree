@@ -3,6 +3,8 @@
 """
 Created on Sun Nov  5 07:52:51 2023
 
+Analyzuje pomoci FFT bud jedno mereni nebo 
+
 @author: marik
 """
 
@@ -37,6 +39,40 @@ def do_fft_for_file(
         color="C1",
         return_image=False,
         ):
+    """
+    FFT analyza zvoleneho probu v csv souboru    
+
+    Parameters
+    ----------
+    path : TYPE, optional
+        Cesta k datům. The default is "../".
+    measurement_day : TYPE, optional
+        Adresář s daty. The default is "01_Mereni_Babice_22032021_optika_zpracovani".
+    csvdir : TYPE, optional
+        Adresář s csv soubory. The default is "csv".
+    tree : TYPE, optional
+        Dvouciferné číslo stromu. The default is "01".
+    tree_measurement : TYPE, optional
+        Jendociferné číslo měření. The default is "2".
+    start : TYPE, optional
+        Začátek časového intervalu. The default is 0.
+    end : TYPE, optional
+        Konec časového intervalu. The default is np.inf.
+    column_fft : TYPE, optional
+        Sloupec pro FFT. The default is ("Pt3","Y0").
+    create_image : TYPE, optional
+        The default is True.
+    color : TYPE, optional
+        Barva pro odlišení s listy a bez listů. The default is "C1".
+    return_image : TYPE, optional
+        DESCRIPTION. The default is False.
+
+    Returns
+    -------
+    output : TYPE
+        DESCRIPTION.
+
+    """
     if np.isnan(start) or np.isnan(end) or (start==end):
         print("Nejsou zadany meze pro signal")
         return None
@@ -160,4 +196,5 @@ for MEASUREMENT_DAY, COLOR in [
     print(MEASUREMENT_DAY)
     do_fft_for_day(measurement_day=MEASUREMENT_DAY, color=COLOR, path="../")
 
+# Na konci vykreslit přehled
 subprocess.run(["python", "plot_fft.py"])
