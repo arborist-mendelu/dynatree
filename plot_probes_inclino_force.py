@@ -98,7 +98,8 @@ def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zprac
     f = f * df_extra.loc[start:,"Force(100)"].values.max()
     f.plot(ax = ax)
     
-    df_extra.loc[start:,"Force(100)"].plot(ax=ax)
+    # df_extra.loc[start:,"Force(100)"].plot(ax=ax)
+    ax.plot(df.index[start:],df_extra.loc[start:,"Force(100)"],"o", ms=2, label='Force')
     ax.grid()
     ax.set(ylim=(0,None))
     lines1, labels1 = ax.get_legend_handles_labels()
