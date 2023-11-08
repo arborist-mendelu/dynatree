@@ -6,29 +6,15 @@ Created on Tue Nov  7 15:07:36 2023
 @author: marik
 """
 
-import os
 import glob
-# PATH = "/mnt/ERC/ERC/"
-# PATH = "../"
-
-# MEASUREMENT_DAY =  "01_Mereni_Babice_22032021_optika_zpracovani"   
-# MEASUREMENT_DAY =  "01_Mereni_Babice_29062021_optika_zpracovani"   
-# MEASUREMENT_DAY =  "01_Mereni_Babice_05042022_optika_zpracovani"   
-# MEASUREMENT_DAY =  "01_Mereni_Babice_16082022_optika_zpracovani"   
-
-
 import numpy as np
-import os
 import pandas as pd
 import matplotlib.pyplot as plt
-import warnings
-from scipy import interpolate
-import re
+from matplotlib import ticker
 
 from lib_dynatree import read_data
 from lib_dynatree import directory2date
 from lib_dynatree import find_release_time_optics
-from lib_dynatree import filename2tree_and_measurement_numbers
 
 # measurement_day="01_Mereni_Babice_22032021_optika_zpracovani"
 # path="../"
@@ -37,18 +23,33 @@ from lib_dynatree import filename2tree_and_measurement_numbers
 
 df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 
-
-def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", tree="01", tree_measurement="2", df_remarks=df_remarks, keep_fig=False):
-    df = read_data(f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")   
-    df_extra = read_data(f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")   
-    bounds_for_fft = df_remarks[(df_remarks["tree"]==f"BK{tree}") & (df_remarks["measurement"]==f"M0{tree_measurement}") & (df_remarks["date"]==directory2date(measurement_day))]
+def plot_one_measurement(
+        measurement_day="01_Mereni_Babice_22032021_optika_zpracovani",
+        path="../", 
+        tree="01", 
+        tree_measurement="2", 
+        df_remarks=df_remarks, 
+        return_figure=True, 
+        save_figure=False):
+    df = read_data(
+        f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")
+    df_extra = read_data(
+        f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
+    bounds_for_fft = df_remarks[
+        (df_remarks["tree"] == f"BK{tree}") & 
+        (df_remarks["measurement"] == f"M0{tree_measurement}") & 
+        (df_remarks["date"] == directory2date(measurement_day))
+            ]
     fix_target = 3
     plot_coordiante = "Y"
-    fixes = [i for i in df_extra.columns if f"{fix_target}_fixed_by" in i[0] and plot_coordiante in i[1]]
-    
+    fixes = [
+        i for i in df_extra.columns if f"{fix_target}_fixed_by" 
+        in i[0] and plot_coordiante in i[1]]
+
     fig, axes = plt.subplots(3,1,figsize=(14.1,10),sharex=True)
-    plt.suptitle(f"{measurement_day.replace('_optika_zpracovani','')} - BK{tree} M0{tree_measurement}")
-    
+    plt.suptitle(
+        f"{measurement_day.replace('_optika_zpracovani','')} - BK{tree} M0{tree_measurement}")
+
     release_time_optics = find_release_time_optics(df)
     
     # Plot probes, region of interest for oscillation
@@ -89,21 +90,26 @@ def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zprac
 
     f = df[(f'Pt{fix_target}', f'{plot_coordiante}0')].copy()
     f = f-f[0]
-    fmax = np.max(f.values)
-    fmin = np.min(f.values)
+    fmax = np.nanmax(f.values)
+    fmin = np.nanmin(f.values)
     if np.abs(fmax) > np.abs(fmin):
         f = f / fmax
     else:
         f = f / fmin
-    f = f * df_extra.loc[start:,"Force(100)"].values.max()
+    f = f * df_extra.loc[start:,"Force(100)"].max().values[0]
     f.plot(ax = ax)
     
     # df_extra.loc[start:,"Force(100)"].plot(ax=ax)
     ax.plot(df.index[start:],df_extra.loc[start:,"Force(100)"],"o", ms=2, label='Force')
-    ax.grid()
+    maj_pos = ticker.MultipleLocator(10)   # major ticks for every 20 units
+    min_pos = ticker.MultipleLocator(1)    # minor ticks for every 5 units 
+    ax.xaxis.set(major_locator=maj_pos, minor_locator=min_pos)
+    ax.grid(which='major')
+    ax.grid(which='minor', lw=1)
+    ax.xaxis.set(major_locator=maj_pos, minor_locator=min_pos)
     ax.set(ylim=(0,None))
     lines1, labels1 = ax.get_legend_handles_labels()
-    ax.legend().remove()
+    ax.legend().remove()    
     ax = ax.twinx()
     df_extra.loc[start:,"Elasto(90)"].plot(ax=ax,color="C2")
     ax.set(title=f"Force, Elasto, scaled (Pt{fix_target}, {plot_coordiante}0)")
@@ -138,9 +144,13 @@ def plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zprac
     for ax in axes:
         ax.axvspan(tmin,tmax, alpha=.5, color="yellow")
         # pre_release_data[file.replace(".csv","")] = delta_df.mean()
-    fig.savefig(f"{path}{measurement_day}/png_with_inclino/BK{tree}_M0{tree_measurement}.png")
-    if not keep_fig:
-        plt.close()
+    if save_figure:
+        fig.savefig(
+            f"{path}{measurement_day}/png_with_inclino/BK{tree}_M0{tree_measurement}.png")
+    if return_figure:
+        return fig
+    else:
+        plt.close(fig)
 
 def plot_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", df_remarks=df_remarks):
     
@@ -151,7 +161,14 @@ def plot_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", 
         print(filename,", ",end="")
         tree = filename[2:4]
         tree_measurement = filename[7]
-        plot_one_measurement(measurement_day=measurement_day, path=path, tree=tree, tree_measurement=tree_measurement, df_remarks=df_remarks)
+        plot_one_measurement(
+            measurement_day=measurement_day, 
+            path=path, 
+            tree=tree, 
+            tree_measurement=tree_measurement, 
+            df_remarks=df_remarks,
+            save_figure=True, 
+            return_figure=False)
     print(f"Konec zpracování pro {measurement_day}")
     
 def main():
@@ -167,5 +184,12 @@ def main():
 
 main()
 
+# plot_one_measurement(measurement_day="01_Mereni_Babice_16082022_optika_zpracovani", tree="10", tree_measurement="2", path="../", df_remarks=df_remarks, save_figure=True, return_figure=True)
 
-# plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", tree="08", tree_measurement="3", df_remarks=df_remarks, keep_fig=True)
+
+# plot_one_measurement(measurement_day="01_Mereni_Babice_16082022_optika_zpracovani", path="../", tree="09", tree_measurement="4", df_remarks=df_remarks, save_figure=False, return_figure=True)
+
+
+# plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", tree="01", tree_measurement="2", df_remarks=df_remarks, save_figure=False, return_figure=True)
+
+# plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", tree="08", tree_measurement="5", df_remarks=df_remarks)

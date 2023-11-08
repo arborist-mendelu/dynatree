@@ -3,10 +3,30 @@
 """
 Created on Tue Nov  7 12:52:38 2023
 
-Načte inklinoměry, sílu a elastometr, přeškáluje čas na stejné časy jako 
-v optice, synchronizuje okamžiky vypuštění podle maxima síly a maxima Pt3.
-Odečte od Pt3,4 pozice Pt11,12,13
-Odečte od Pt1,2 pozice Pt8,9,10
+Načte inklinoměry, sílu a elastometr, přeškáluje čas na stejné časy
+jako v optice, synchronizuje okamžiky vypuštění podle maxima síly a
+maxima Pt3.
+
+Čte následující data:
+* data z optiky v {measurement_day}/csv/
+* data z adresáře {measurement_day}/pulling_tests/
+
+Zapisuje následující data:
+* data z inklinoměrů sesynchronizovaná na optiku do
+  {measurement_day}/csv_extended/*csv
+
+Provádí následující činnost:
+* Odečte od Pt3,4 pozice Pt11,12,13
+* Odečte od Pt1,2 pozice Pt8,9,10
+* Snaží se sesynchronizovat obě datové sady.
+* Přepočítá sílu, strain a inklinoměry pro stejné časy, jako jsou v
+  tabulce s optikou.
+* Nové informace zapíše do csv souboru v adresáři
+  {measurement_day}/csv_extended/. Z důvodu šetření místem a výkonem
+  se tabulky nespojují do jedné.
+  
+Pokud není naměřená síla, je výstup prázdný (neberou se v úvahu ani 
+inklinometry).  
 
 @author: marik
 """
@@ -19,6 +39,9 @@ import warnings
 from scipy import interpolate
 from lib_dynatree import read_data
 from lib_dynatree import find_release_time_optics
+
+# read data for synchronization
+df_finetune_synchro = pd.read_csv("csv/synchronization_finetune_inclinometers_fix.csv",header=[0,1])
 
 def fix_data_by_points_on_ground(df):
     """
@@ -73,8 +96,7 @@ def fix_data_by_points_on_ground(df):
 # plt.plot(df_fixed[("Pt3_fixed_by_13","Y0")])
 # find_release_time_optics(df,probe="Pt3",coordinate="Y0")
 
-
-def read_data_inclinometers(file, release=None):
+def read_data_inclinometers(file, release=None, delta_time=0):
     """
     Read data from pulling tests, restart Time from 0 and turn Time to index.
     If release is given, shift the Time and index columns so that the release 
@@ -90,7 +112,7 @@ def read_data_inclinometers(file, release=None):
         )
     df_pulling_tests["Time"] = df_pulling_tests["Time"] - df_pulling_tests["Time"][0]
     df_pulling_tests.set_index("Time", inplace=True)
-    df_pulling_tests.interpolate(inplace=True)
+    # df_pulling_tests.interpolate(inplace=True, axis=1)
     if release is None:
         return df_pulling_tests
     
@@ -98,7 +120,7 @@ def read_data_inclinometers(file, release=None):
         
     # Sync the dataframe from inclino to optics    
     df_pulling_tests["Time_inclino"] = df_pulling_tests.index
-    df_pulling_tests["Time"] = df_pulling_tests["Time_inclino"] - release_time_force + release
+    df_pulling_tests["Time"] = df_pulling_tests["Time_inclino"] - release_time_force + release + delta_time
     df_pulling_tests.set_index("Time", inplace=True)
     df_pulling_tests["Time"] = df_pulling_tests.index
         
@@ -118,7 +140,7 @@ def extend_one_csv(
         tree="01", 
         tree_measurement="2", 
         path="../", 
-        write_csv=True):
+        write_csv=False):
     """
     Reads csv file in a csv directory, adds data from inclinometers 
     and saves to csv_extended directory
@@ -137,14 +159,27 @@ def extend_one_csv(
     df_fixed = df.copy().pipe(fix_data_by_points_on_ground) 
     # df s daty z inklinoměrů, synchronizuje a interpoluje na stejné časové okamžiky
     release_time_optics = find_release_time_optics(df)
+    
+    # najde případnou opravu synchronizace
+    df_finetune_synchro = pd.read_csv("csv/synchronization_finetune_inclinometers_fix.csv",header=[0,1])    
+    condition = (df_finetune_synchro[("tree","-")]==f"BK{tree}") & (df_finetune_synchro[("measurement","-")]==f"M0{tree_measurement}") & (df_finetune_synchro[("date","-")]==f"{measurement_day[21:25]}-{measurement_day[19:21]}-{measurement_day[17:19]}")
+    df_finetune_tree = df_finetune_synchro[condition]
+    delta_time = 0
+    if df_finetune_tree.shape[0]>0:
+        delta_time = df_finetune_tree["delta time"].iat[0,0]
+    if np.isnan(delta_time):
+        delta_time = 0
     df_pulling_tests_ = read_data_inclinometers(
         f"{path}{measurement_day}/pulling_tests/BK_{tree}_M{tree_measurement}.TXT", 
-        release=release_time_optics
+        release=release_time_optics, 
+        delta_time=delta_time
         )
     df_pulling_tests = resample_data_from_inclinometers(df_pulling_tests_, df)
     df_fixed_and_inclino = pd.concat([df_fixed,df_pulling_tests], axis=1)
     if write_csv:
         df_fixed_and_inclino.to_csv(f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
+    else:
+        return df_fixed_and_inclino
 
 def extend_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../"):
     try:
@@ -159,7 +194,12 @@ def extend_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani"
         print(filename,", ",end="")
         tree = filename[2:4]
         tree_measurement = filename[7]
-        extend_one_csv(measurement_day=measurement_day, path=path, tree=tree, tree_measurement=tree_measurement)
+        extend_one_csv(
+            measurement_day=measurement_day, 
+            path=path, 
+            tree=tree, 
+            tree_measurement=tree_measurement,
+            write_csv=True)
     print(f"Konec zpracování pro {measurement_day}")
 
 def main():
@@ -174,3 +214,7 @@ def main():
         extend_one_day(measurement_day=i)
 
 main()
+
+# temp_df = extend_one_csv(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", tree="08", tree_measurement="5", path="../")
+
+# extend_one_csv(measurement_day="01_Mereni_Babice_16082022_optika_zpracovani", tree="10", tree_measurement="2", path="../", write_csv=True)
