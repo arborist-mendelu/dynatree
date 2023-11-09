@@ -23,7 +23,7 @@ def read_data(file, index_col="Time", usecols=None):
         with open(file) as f:
             first_line = f.readline().strip('\n')
             index_col = first_line.split(",").index("Time")
-    df = pd.read_csv(file,header=[0,1], index_col=index_col)  # read the file
+    df = pd.read_csv(file,header=[0,1], index_col=index_col, dtype = np.float64)  # read the file
     if ("source","data") in df.columns: # drop unenecessary column
         df.drop([("source","data")],axis=1,inplace=True)  
     df["Time"] = df.index  # pro pohodlí, aby se k času dalo přistupovat i jako data.Time

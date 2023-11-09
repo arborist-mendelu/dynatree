@@ -152,7 +152,6 @@ def extend_one_csv(
 
     """
     # Read data file
-        
     # načte data z csv souboru
     df = read_data(f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")   
     # df se sploupci s odectenim pohybu bodu na zemi
@@ -160,7 +159,7 @@ def extend_one_csv(
     # df s daty z inklinoměrů, synchronizuje a interpoluje na stejné časové okamžiky
     release_time_optics = find_release_time_optics(df)
     
-    # najde případnou opravu synchronizace
+    # najde případnou opravu synchronizace z tabulky s rucne zadanyma hodnotama
     df_finetune_synchro = pd.read_csv("csv/synchronization_finetune_inclinometers_fix.csv",header=[0,1])    
     condition = (df_finetune_synchro[("tree","-")]==f"BK{tree}") & (df_finetune_synchro[("measurement","-")]==f"M0{tree_measurement}") & (df_finetune_synchro[("date","-")]==f"{measurement_day[21:25]}-{measurement_day[19:21]}-{measurement_day[17:19]}")
     df_finetune_tree = df_finetune_synchro[condition]
@@ -169,12 +168,27 @@ def extend_one_csv(
         delta_time = df_finetune_tree["delta time"].iat[0,0]
     if np.isnan(delta_time):
         delta_time = 0
+    
+    # načte synchronizvaná data a přesampluje na stejné časy jako v optice
     df_pulling_tests_ = read_data_inclinometers(
         f"{path}{measurement_day}/pulling_tests/BK_{tree}_M{tree_measurement}.TXT", 
         release=release_time_optics, 
         delta_time=delta_time
         )
     df_pulling_tests = resample_data_from_inclinometers(df_pulling_tests_, df)
+
+    # If there is a record related to the Inclinometers, shift values such that 
+    # the mean value on the interval given between start and end is zero.    
+    list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
+    if df_finetune_tree.shape[0]>0:
+        for inclino in list_inclino:
+            df_finetune_inclino = df_finetune_tree[inclino]
+            if not df_finetune_inclino.isnull().values.any():
+                inclino_start = df_finetune_inclino["start"].values[0]
+                inclino_end = df_finetune_inclino["end"].values[0]
+                inclino_mean = df_pulling_tests.loc[inclino_start:inclino_end,inclino].mean()
+                df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean
+
     df_fixed_and_inclino = pd.concat([df_fixed,df_pulling_tests], axis=1)
     if write_csv:
         df_fixed_and_inclino.to_csv(f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
@@ -213,8 +227,6 @@ def main():
         print("=====================================================")
         extend_one_day(measurement_day=i)
 
-main()
+if __name__ == "__main__":
+    main()
 
-# temp_df = extend_one_csv(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", tree="08", tree_measurement="5", path="../")
-
-# extend_one_csv(measurement_day="01_Mereni_Babice_16082022_optika_zpracovani", tree="10", tree_measurement="2", path="../", write_csv=True)

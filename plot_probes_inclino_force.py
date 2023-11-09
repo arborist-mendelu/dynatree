@@ -182,14 +182,6 @@ def main():
         print("=====================================================")
         plot_one_day(measurement_day=i)
 
-main()
+if __name__ == "__main__":
+    main()
 
-# plot_one_measurement(measurement_day="01_Mereni_Babice_16082022_optika_zpracovani", tree="10", tree_measurement="2", path="../", df_remarks=df_remarks, save_figure=True, return_figure=True)
-
-
-# plot_one_measurement(measurement_day="01_Mereni_Babice_16082022_optika_zpracovani", path="../", tree="09", tree_measurement="4", df_remarks=df_remarks, save_figure=False, return_figure=True)
-
-
-# plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", tree="01", tree_measurement="2", df_remarks=df_remarks, save_figure=False, return_figure=True)
-
-# plot_one_measurement(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", tree="08", tree_measurement="5", df_remarks=df_remarks)

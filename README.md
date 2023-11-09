@@ -1,3 +1,23 @@
+Skripty jsou pro zpracování dat z optiky.
+
+Krok 1.: Načtou se tsv soubory všechny soubory z jednoho měření se
+převedou na jeden csv soubor. Skript xsight_tsv2csv.py by se měl
+spusti vždy po přidání dat z optiky. Skript prochází adresáře s
+domluvenými jmény a pr každé měření kontroluje existenci csv
+soubor. Pokud csv soubor existuje, skript nic nedělá. Pokud
+neexistuje, csv soubor je vytvořen.
+
+Krok 2.: Doplnění dat z optiky je přes soubory v adresáři
+pulling_tests. Najde se maximální síla, maximální výchylka Pt3, tato
+maxima se sesynchronizují, data se přepočítají tak, aby byla hodnota
+ve stejných časových okamžicích jako jsou data z optiky a vše se uloží
+do csv souboru do adresáře csv_extended. Kvůli úspoře místa a výkonu
+se nespojuje s původním csv souborem z optiky. Synchronizaci je možno
+vytunit zadáním explicitní opravy v souboru
+csv/synchronization_finetune_inclinometers_fix.csv. Pokud nějaký
+inklinometr poskočil, je možné zadat přes csv soubor interval, na
+kterém má být střední hodnota inklinoměru nulová.
+
 Skripty s optikou. Prilezitostne zazipovat aktualni verzi a vlozit do Teams.
 
 ```

@@ -186,15 +186,18 @@ def do_fft_for_day(
     df_output.columns = ["Freq","Delta freq"]
     df_output.to_excel(f"fft_data_{measurement_day}.xlsx")
 
+def main():
+    for MEASUREMENT_DAY, COLOR in [
+            ["01_Mereni_Babice_22032021_optika_zpracovani", "C0"],
+            ["01_Mereni_Babice_29062021_optika_zpracovani", "C1"],
+            ["01_Mereni_Babice_05042022_optika_zpracovani", "C0"],
+            ["01_Mereni_Babice_16082022_optika_zpracovani", "C1"],
+            ]:
+        print(MEASUREMENT_DAY)
+        do_fft_for_day(measurement_day=MEASUREMENT_DAY, color=COLOR, path="../")
+    
+    # Na konci vykreslit přehled
+    subprocess.run(["python", "plot_fft.py"])
 
-for MEASUREMENT_DAY, COLOR in [
-        ["01_Mereni_Babice_22032021_optika_zpracovani", "C0"],
-        ["01_Mereni_Babice_29062021_optika_zpracovani", "C1"],
-        ["01_Mereni_Babice_05042022_optika_zpracovani", "C0"],
-        ["01_Mereni_Babice_16082022_optika_zpracovani", "C1"],
-        ]:
-    print(MEASUREMENT_DAY)
-    do_fft_for_day(measurement_day=MEASUREMENT_DAY, color=COLOR, path="../")
-
-# Na konci vykreslit přehled
-subprocess.run(["python", "plot_fft.py"])
+if __name__ == "__main__":
+    main()
