@@ -3,22 +3,18 @@
 """
 Skript pomaha rucne nalezt zacatek a konec casoveho intervalu pro FFT.
 
-Skript čte csv/oscillation_times_remarks.csv a zapisuje 
-csv/oscillation_times_remarks_new.csv
+Skript čte csv/oscillation_times_remarks.csv
 
 Skript postupně čte csv soubory a hledá v záznamech csv/oscillation_times_remarks.csv 
-nebo v poli new_data informace o začátku a konci intervalu pro FFT. Pokud 
+informace o začátku a konci intervalu pro FFT. Pokud 
 takovou informaci najde, pokračuje s dalším souborem. Pokud informace chybí, 
 vykreslí (Pt3,Y0). Je dobré otevřít v okně aby bylo možno zvětšít a odměřovat 
-pozice. Takto člověk najde začátek a konec intervalu, který nás zajímá. Tato 
-informace se zapíše do proměnné new_data. Poté spust skript znovu a pracuj
-s dalším souborem. Takto probereš všechny dosud nezpracované soubory. Pokud 
-měření nechceš zpracovávat, dej začátek i konec nuly. Po skončení práce
-přejmenuj csv/oscillation_times_remarks_new.csv na 
-csv/oscillation_times_remarks.csv a smaž ruční nastavení proměnné new_data.
+pozice. Takto člověk najde začátek a konec intervalu, který nás zajímá. 
+Tuto informaci připiš do csv/oscillation_times_remarks.csv a 
+spusť znovu.
 
-Na konci zapoznamkuj new_data a prejmenuj csv/oscillation_times_remarks_new.csv 
-na csv/oscillation_times_remarks.csv
+Pozor, edituj csv soubory v něčem, co je nezprasí, například textový editor 
+neboLibre Office. Ne Gnumeric.´
 
 @author: marik
 """
@@ -34,17 +30,13 @@ csvfiles.sort()
 data = pd.read_csv("csv/oscillation_times_remarks.csv", header=0)
 data['id'] = data['date'] + " " + data['tree'] + "_" + data["measurement"]
 
-new_data = {}
-
-# new_data['2022-08-16 BK01_M02'] = [start,end,probe if not Pt3,remark]
-
 for datafile in csvfiles:
     datum = datafile.split("_")[3]
     datum = f"{datum[-4:]}-{datum[2:4]}-{datum[:2]}"
     mereni = datafile.split("/")[-1].replace(".csv", "")
     nadpis = f"{datum} {mereni}"
     #print (nadpis)
-    if data['id'].str.contains(nadpis).any() or nadpis in new_data.keys():
+    if data['id'].str.contains(nadpis).any():
         continue
     df = pd.read_csv(datafile, header=[0, 1], index_col=0, dtype='float64')
     t = df["Time"].values
@@ -73,26 +65,4 @@ for datafile in csvfiles:
     print(f"new_data[\"{nadpis}\"]=[,np.inf,None,None]")
 
     break
-
-# %%
-
-new_df = pd.DataFrame.from_dict(new_data, orient='index', columns=[
-                                "start", "end", "probe", "remark"])
-
-new_df.reset_index(inplace=True)
-
-def getdata(x):
-    a, b = x.split(" ")
-    c, d = b.split("_")
-    return [a, c, d]
-
-new_df[['date', 'tree', 'measurement']] = new_df["index"].apply(
-    lambda x: pd.Series(getdata(x)))
-new_df.drop(columns=["index"], inplace=True)
-data.drop(columns='id', inplace=True)
-
-final_df = pd.concat([data, new_df])
-
-final_df.to_csv("csv/oscillation_times_remarks_new.csv", index=False)
-
 
