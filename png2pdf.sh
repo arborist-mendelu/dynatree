@@ -1,11 +1,5 @@
-convert 01_Mereni_Babice_29062021_optika_zpracovani/png_points_on_ground/*png Babice_29062021_ground.pdf
-convert 01_Mereni_Babice_29062021_optika_zpracovani/png_with_inclino/*png Babice_29062021_inclino.pdf
-convert 01_Mereni_Babice_29062021_optika_zpracovani/png_fft/*png Babice_29062021_fft.pdf
+montage 04/png_with_inclino/BK*png -tile 2x4 -geometry +0+0  04.pdf
+montage 01/png_with_inclino/BK*png -tile 2x4 -geometry +0+0  01.pdf
+montage 02/png_with_inclino/BK*png -tile 2x4 -geometry +0+0  02.pdf
+montage 03/png_with_inclino/BK*png -tile 2x4 -geometry +0+0  03.pdf
 
-convert 01_Mereni_Babice_22032021_optika_zpracovani/png_points_on_ground/*png Babice_22032021_ground.pdf
-convert 01_Mereni_Babice_22032021_optika_zpracovani/png_with_inclino/*png Babice_22032021_inclino.pdf
-convert 01_Mereni_Babice_22032021_optika_zpracovani/png_fft/*png Babice_22032021_fft.pdf
-
-convert 01_Mereni_Babice_05042022_optika_zpracovani/png_points_on_ground/*png Babice_05042022_ground.pdf
-convert 01_Mereni_Babice_05042022_optika_zpracovani/png_with_inclino/*png Babice_05042022_inclino.pdf
-convert 01_Mereni_Babice_05042022_optika_zpracovani/png_fft/*png Babice_05042022_fft.pdf

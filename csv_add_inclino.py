@@ -116,7 +116,10 @@ def read_data_inclinometers(file, release=None, delta_time=0):
     if release is None:
         return df_pulling_tests
     
-    release_time_force = df_pulling_tests["Force(100)"].idxmax()
+    if df_pulling_tests["Force(100)"].isna().all():
+        release_time_force = release
+    else:
+        release_time_force = df_pulling_tests["Force(100)"].idxmax()
         
     # Sync the dataframe from inclino to optics    
     df_pulling_tests["Time_inclino"] = df_pulling_tests.index
@@ -205,7 +208,7 @@ def extend_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani"
     csvfiles.sort()
     for file in csvfiles:
         filename = file.split("/")[-1]
-        print(filename,", ",end="")
+        print(f"{filename}, ",end="")
         tree = filename[2:4]
         tree_measurement = filename[7]
         extend_one_csv(

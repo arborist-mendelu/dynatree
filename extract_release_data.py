@@ -49,12 +49,16 @@ def find_release_data_one_measurement(
     df = df - df.iloc[0,:]
 
     # print("/hledam casovy interval/")    
-    maxforceidx = df["Force(100)"].idxmax().values[0]
-    maxforce  = df["Force(100)"].max().values[0]
-    percent1 = 0.95
-    tmax = np.abs(df.loc[:maxforceidx,["Force(100)"]]-maxforce*percent1).idxmin().values[0]
-    percent2 = 0.85
-    tmin = np.abs(df.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
+    if df["Force(100)"].isna().values.all():
+        tmin = 0
+        tmax = 0
+    else:
+        maxforceidx = df["Force(100)"].idxmax().values[0]
+        maxforce  = df["Force(100)"].max().values[0]
+        percent1 = 0.95
+        tmax = np.abs(df.loc[:maxforceidx,["Force(100)"]]-maxforce*percent1).idxmin().values[0]
+        percent2 = 0.85
+        tmin = np.abs(df.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
     # Výběr časového intervalu
     df = df.loc[tmin:tmax,:]
     # Výpočet průměrů
@@ -95,6 +99,6 @@ def main():
 
 
 if __name__ == "__main__":
-    a = main()
+    output = main()
     
 

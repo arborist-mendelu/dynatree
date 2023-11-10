@@ -127,12 +127,18 @@ def plot_one_measurement(
     # Replace negative force by 0
     # df_extra.loc[df_extra["Force(100)"]<0,"Force(100)"] = 0
     # Find time for 95% and 85% force
-    maxforceidx = df_extra["Force(100)"].idxmax().iat[0]
-    maxforce  = df_extra["Force(100)"].max().iat[0]
-    percent1 = 0.95
-    tmax = np.abs(df_extra.loc[:maxforceidx,["Force(100)"]]-maxforce*percent1).idxmin().values[0]
-    percent2 = 0.85
-    tmin = np.abs(df_extra.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
+    
+    if df_extra["Force(100)"].isna().values.all():
+         maxforceidx = 0
+         tmin = 0
+         tmax = 0         
+    else:
+        maxforceidx = df_extra["Force(100)"].idxmax().iat[0]
+        maxforce  = df_extra["Force(100)"].max().iat[0]
+        percent1 = 0.95
+        tmax = np.abs(df_extra.loc[:maxforceidx,["Force(100)"]]-maxforce*percent1).idxmin().values[0]
+        percent2 = 0.85
+        tmin = np.abs(df_extra.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
     
     sloupce = ["Time"]+list_inclino+["Force(100)","Elasto(90)"]
     delta_df_extra = df_extra[sloupce].copy()

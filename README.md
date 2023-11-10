@@ -1,13 +1,17 @@
 Skripty jsou pro zpracování dat z optiky.
 
-Krok 1.: Načtou se tsv soubory všechny soubory z jednoho měření se
+## Krok 1.: `xsight_tsv2csv.py`
+
+Načtou se tsv soubory všechny soubory z jednoho měření se
 převedou na jeden csv soubor. Skript xsight_tsv2csv.py by se měl
 spusti vždy po přidání dat z optiky. Skript prochází adresáře s
 domluvenými jmény a pr každé měření kontroluje existenci csv
 soubor. Pokud csv soubor existuje, skript nic nedělá. Pokud
 neexistuje, csv soubor je vytvořen.
 
-Krok 2.: Doplnění dat z optiky je přes soubory v adresáři
+## Krok 2.: `csv_add_inclino.py`
+
+Doplnění dat z optiky se provádí přes soubory v adresáři
 pulling_tests. Najde se maximální síla, maximální výchylka Pt3, tato
 maxima se sesynchronizují, data se přepočítají tak, aby byla hodnota
 ve stejných časových okamžicích jako jsou data z optiky a vše se uloží
@@ -18,7 +22,21 @@ csv/synchronization_finetune_inclinometers_fix.csv. Pokud nějaký
 inklinometr poskočil, je možné zadat přes csv soubor interval, na
 kterém má být střední hodnota inklinoměru nulová.
 
-Skripty s optikou. Prilezitostne zazipovat aktualni verzi a vlozit do Teams.
+Pokud síla není naměřena, berou se pro synchronizaci začátky měření.
+
+## Krok 3.: `spectrum.py`
+
+Obsahuje proceduru pro FFT analýzu jednoho měření, proceduru pro
+analýzu jednoho dne a zápis dat do souboru. Pokud je spuštěno jako
+skript, dělá FFT analýzu pro všechna data a na konci spustí skript
+`plot_fft.py` pro vytvoření celkového přehledu. V tomto přehledu se
+nezohledňují základní frekvence, které jsou moc malé, nebo kde je moc
+velký skok mezi sousedními frekvencemi (je krátký signál).
+
+
+## ...
+
+
 
 ```
 stromy=`ls */*fft/BK*png | grep "BK.*_" -o | sort | uniq`; for i in $stromy; do montage */*fft/$i*png -tile 3x4 -geometry +0+0 ${i}fft_all.png; done

@@ -84,7 +84,6 @@ df2 = df.copy()[(df["Freq"]>f_min) & (df["Delta freq"]<delta_f_min)]
 
 fig, ax = plt.subplots(figsize=(10,6))
 
-
 sns.boxplot(
     data=df2, 
     x="tree", 
