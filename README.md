@@ -24,7 +24,7 @@ kterém má být střední hodnota inklinoměru nulová.
 
 Pokud síla není naměřena, berou se pro synchronizaci začátky měření.
 
-## Krok 3.: `spectrum.py`
+## Krok 3.: `FFT_spectrum.py`
 
 Obsahuje proceduru pro FFT analýzu jednoho měření, proceduru pro
 analýzu jednoho dne a zápis dat do souboru. Pokud je spuštěno jako
