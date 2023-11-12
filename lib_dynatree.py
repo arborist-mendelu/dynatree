@@ -64,3 +64,41 @@ def find_release_time_optics(df,probe="Pt3",coordinate="Y0"):
     movement_data = movement_data - movement_data[0]
     movement_data = np.abs(movement_data)
     return movement_data.idxmax(axis=0)
+
+## Makra pro nalezeni Probu na BL shora dolu.
+def probes(b, axis="Y"):
+    """
+    Ouptuts the chain of probes on bendlines. BL 44, 52 and 60 are shorter (end
+    points plus five points inside), the other are longer (10 points inside).
+   
+
+    Parameters
+    ----------
+    b : TYPE
+        DESCRIPTION.
+    axis : TYPE, optional
+        DESCRIPTION. The default is "Y".
+
+    Returns
+    -------
+    out : List of 7 or 12 tuples with names of probes on bendline from top
+    to the bottom.
+    
+    """
+    coord = axis
+    if b in [44,52,60]:
+        num = 5
+    else:
+        num = 10
+    out = [(f"BL{b}",j) for j in [f"Pt0A{coord}", *[f"{coord}{i}" for i in range(num)], f"Pt0B{coord}"]]
+    return out
+
+def get_chains_of_bendlines(axis="Y", start=44):
+    # Find probes on all bendlines
+    A = [ probes(i,axis=axis) for i in range(start,start+24)]
+    # Convert into one long list
+    all = sum(A, start = [])
+    # Split list into three parallel bendlines
+    l = len(all)
+    output = [all[i*l//3:(i+1)*l//3] for i in range(3)]
+    return output

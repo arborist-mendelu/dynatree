@@ -16,11 +16,6 @@ from lib_dynatree import read_data
 from lib_dynatree import directory2date
 from lib_dynatree import find_release_time_optics
 
-# measurement_day="01_Mereni_Babice_22032021_optika_zpracovani"
-# path="../"
-# tree="01"
-# tree_measurement="2"
-
 df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 
 def plot_one_measurement(
@@ -31,6 +26,36 @@ def plot_one_measurement(
         df_remarks=df_remarks, 
         return_figure=True, 
         save_figure=False):
+    """
+    Vykreslí tři obrázky. 
+    V horním je pohyb Pt3 a pootm Pt3 s odečtením posunu bodů na zemi.
+    V prostředním obrázku jsou inklinoměry.
+    V dolním obrázku jsou síla, přeškálovaná výchylka z prvního obrázku tak, 
+    aby se dala porovnat se silou a v samostatné soustavě souřadnic 
+    data z eleastometru.
+    
+    ----------
+    measurement_day : TYPE, optional
+        DESCRIPTION. The default is "01_Mereni_Babice_22032021_optika_zpracovani".
+    path : TYPE, optional
+        DESCRIPTION. The default is "../".
+    tree : TYPE, optional
+        DESCRIPTION. The default is "01".
+    tree_measurement : TYPE, optional
+        DESCRIPTION. The default is "2".
+    df_remarks : TYPE, optional
+        DESCRIPTION. The default is df_remarks.
+    return_figure : TYPE, optional
+        DESCRIPTION. The default is True.
+    save_figure : TYPE, optional
+        DESCRIPTION. The default is False.
+
+    Returns
+    -------
+    fig : TYPE
+        DESCRIPTION.
+
+    """
     df = read_data(
         f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")
     df_extra = read_data(
