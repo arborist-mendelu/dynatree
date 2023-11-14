@@ -66,7 +66,7 @@ def find_release_time_optics(df,probe="Pt3",coordinate="Y0"):
     return movement_data.idxmax(axis=0)
 
 ## Makra pro nalezeni Probu na BL shora dolu.
-def probes(b, axis="Y"):
+def probes(b, axis="Y", cam = 1):
     """
     Ouptuts the chain of probes on bendlines. BL 44, 52 and 60 are shorter (end
     points plus five points inside), the other are longer (10 points inside).
@@ -78,6 +78,7 @@ def probes(b, axis="Y"):
         DESCRIPTION.
     axis : TYPE, optional
         DESCRIPTION. The default is "Y".
+    cam : 1 pro kameru z boku (default), 0 pro kameru ve směru tahu    
 
     Returns
     -------
@@ -86,16 +87,24 @@ def probes(b, axis="Y"):
     
     """
     coord = axis
-    if b in [44,52,60]:
+    if cam==1:
+        bls = [44,52,60]
+    else:
+        bls = [10,18,26]
+    if b in bls:
         num = 5
     else:
         num = 10
     out = [(f"BL{b}",j) for j in [f"Pt0A{coord}", *[f"{coord}{i}" for i in range(num)], f"Pt0B{coord}"]]
     return out
 
-def get_chains_of_bendlines(axis="Y", start=44):
+def get_chains_of_bendlines(axis="Y", cam=1):
+    if cam == 1:
+        start = 44 # side view
+    else:
+        start = 10 # back view
     # Find probes on all bendlines
-    A = [ probes(i,axis=axis) for i in range(start,start+24)]
+    A = [ probes(i,axis=axis,cam=cam) for i in range(start,start+24)]
     # Convert into one long list
     all = sum(A, start = [])
     # Split list into three parallel bendlines

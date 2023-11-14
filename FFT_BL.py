@@ -21,26 +21,36 @@ name =  "BK21_M03"
 
 df = read_data(f"{cesta}/csv/{name}.csv")
 
+cam = 1
+
 # Bendlines in the middle, on the left and on the right
-BL_chain_Y = get_chains_of_bendlines()
-BL_chain_X = get_chains_of_bendlines(axis="X")
+BL_chain_Y = get_chains_of_bendlines(cam=cam)
+BL_chain_X = get_chains_of_bendlines(axis="X", cam=cam)
 
 # Keep only the data on bendlines in memory
 df = df[sum(BL_chain_X, start=[])+sum(BL_chain_Y,start=[])]
+
+
+if cam == 0:
+    bottom_bls = [17, 25, 33]
+    top_middle_bl = 10
+else:
+    bottom_bls = [51, 59, 67]
+    top_middle_bl = 44
 
 # %%
 
 fig, ax = plt.subplots()
 
 df_delta = df - df.iloc[0,:]   # Pracuje se se změnou oproti nulovému času 
-df_delta.plot(y=[i for i in BL_chain_Y[0] if "BL44" in i[0]]) # Vykresli všechno na B44
+df_delta.plot(y=[i for i in BL_chain_Y[0] if f"BL{top_middle_bl}" in i[0]], ax=ax) # Vykresli všechno na B44 nebo B10, podle kamery
 
 # %%
 
 fig, ax = plt.subplots()
 
-idx = [(f"BL{i}","Pt0BX") for i in [51,59,67]]
-idy = [(f"BL{i}","Pt0BY") for i in [51,59,67]]
+idx = [(f"BL{i}","Pt0BX") for i in bottom_bls]
+idy = [(f"BL{i}","Pt0BY") for i in bottom_bls]
 x0 = df.loc[0,idx]
 y0 = df.loc[0,idy]
 for i in [0,1,2]:
@@ -52,9 +62,10 @@ for i in [0,1,2]:
 
 fig, ax = plt.subplots()
 
-release_time = df.loc[:,("BL44","Pt0AY")].idxmin()
+release_time = df.loc[:,(f"BL{top_middle_bl}","Pt0AY")].idxmin()
 time=release_time
-time = [i for i in df.index if i>release_time+2][0]
+# time = [i for i in df.index if i>release_time+2][0]
+# time = 0
 
 for i in range(3):
     y = 10*df_delta.loc[time,BL_chain_Y[i]] + y0.loc[BL_chain_Y[i][-1]] - y0.loc[BL_chain_Y[0][-1]]
