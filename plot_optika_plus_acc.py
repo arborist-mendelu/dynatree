@@ -3,6 +3,8 @@
 """
 Created on Mon Nov 13 22:01:15 2023
 
+Do jednoho grafu vykresli data z ACC od Patrika a data z optiky.
+
 @author: marik
 """
 
@@ -15,6 +17,12 @@ import matplotlib.pyplot as plt
 # file="patrik.xls"
 # wb = xlrd.open_workbook(file, formatting_info=True)
 # sheets = wb.sheet_names()
+
+## Docasne chyba v seaborn, https://github.com/mwaskom/seaborn/issues/3462
+import warnings
+warnings.filterwarnings("ignore", "is_categorical_dtype")
+warnings.filterwarnings("ignore", "use_inf_as_na")
+
 
 # import openpyxl
 from openpyxl import load_workbook
@@ -76,6 +84,5 @@ for sheet in sheets[:-1]:
     plt.tight_layout(pad=2)
     plt.savefig(f"optika_plus_acc/{sheet}.png")
 
-# %%
 
 

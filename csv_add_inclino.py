@@ -23,7 +23,10 @@ Provádí následující činnost:
   tabulce s optikou.
 * Nové informace zapíše do csv souboru v adresáři
   {measurement_day}/csv_extended/. Z důvodu šetření místem a výkonem
-  se tabulky nespojují do jedné.
+  se tabulky s daty z optiky a s daty získanými v tomto skriptu nespojují do 
+  jedné. Při načtení dat je potřeba načíst dva soubory a případně je spojit
+  pomocí pd.concat s volbou axis=1 (přidávají se sloupce).
+  
   
 Pokud není naměřená síla, je výstup prázdný (neberou se v úvahu ani 
 inklinometry).  

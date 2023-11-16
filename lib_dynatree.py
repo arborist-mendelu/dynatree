@@ -16,7 +16,7 @@ def read_data(file, index_col="Time", usecols=None):
     If index is string, then the position of the index is guessed from the first line
     of the csv file.
     """
-    # If the index_col if string, find the position of index_col in the first line
+    # If the index_col is string, find the position of index_col in the first line
     # and set index_col to this position. This allows to specify index_col for 
     # data with multiindex.
     if isinstance(index_col,str):
@@ -31,7 +31,7 @@ def read_data(file, index_col="Time", usecols=None):
 
 def directory2date(d):
     """
-    Coneverts directory from the form '01_Mereni_Babice_22032021_optika_zpracovani'
+    Converts directory from the form '01_Mereni_Babice_22032021_optika_zpracovani'
     to date like 2021-03-22
     """
     return f"{d[21:25]}-{d[19:21]}-{d[17:19]}"  
