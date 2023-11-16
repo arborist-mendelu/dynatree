@@ -1,6 +1,11 @@
 Skripty jsou pro zpracování dat z optiky.
 
-## Krok 1.: `xsight_tsv2csv.py`
+Soubory, které něco kreslí jsou soubory se jménem plot_*.py. Soubory,
+kde se něco testuje a zkouší jsou soubory temp_*.py nebo
+untitled*.py. Ostatní soubory jsou odladěné soubory nebo knihovny pro
+zpracování dat.
+
+## Krok 1.: Z Xsight do csv, `xsight_tsv2csv.py`
 
 Načtou se tsv soubory všechny soubory z jednoho měření se
 převedou na jeden csv soubor. Skript xsight_tsv2csv.py by se měl
@@ -9,7 +14,7 @@ domluvenými jmény a pr každé měření kontroluje existenci csv
 soubor. Pokud csv soubor existuje, skript nic nedělá. Pokud
 neexistuje, csv soubor je vytvořen.
 
-## Krok 2.: `csv_add_inclino.py`
+## Krok 2.: Přidání dat z inklinoměrů, `csv_add_inclino.py`
 
 Doplnění dat z optiky se provádí přes soubory v adresáři
 pulling_tests. Najde se maximální síla, maximální výchylka Pt3, tato
