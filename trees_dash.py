@@ -6,7 +6,7 @@ Created on Mon Nov 27 02:14:14 2023
 @author: marik
 """
 
-from dash import Dash, html, dcc, callback, Output, Input, State, ctx
+from dash import Dash, html, dcc, callback, Output, Input
 from dash.exceptions import PreventUpdate
 import plotly.express as px
 import plotly.io as pio
@@ -19,8 +19,8 @@ import os
 pio.templates.default = "plotly_white"
 
 # Initialize the app - incorporate a Dash Bootstrap theme
-external_stylesheets = [dbc.themes.BOOTSTRAP]
-app = Dash(__name__, external_stylesheets=external_stylesheets)
+# external_stylesheets = [dbc.themes.BOOTSTRAP]
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 days = ['2022-04-05','2022-08-16','2021-03-22','2021-06-29']
 days.sort()
@@ -32,38 +32,27 @@ measurements = ["M02", "M03", "M04", "M05", "M06"]
 
 probes = ["Pt3","Pt4"]
 
-app.layout = dbc.Container([
+app.layout =  dbc.Container(
+    [
+    html.H1('Měření Babice', className="text-primary text-center fs-3"),
     dbc.Row([
-    html.Div('Měření Babice', className="text-primary text-center fs-3")
-]),
-    dbc.Row([dbc.Col(i) for i in [   
-    dcc.RadioItems(days, value=days[0], id='radio-selection-1', labelStyle={'margin-right': '20px'}),
-    dcc.RadioItems(trees, value=trees[0], id='radio-selection-2', labelStyle={'margin-right': '20px'}),
-    dcc.RadioItems(measurements, value=measurements[0], id='radio-selection-3', labelStyle={'margin-right': '20px'}),
-    dcc.RadioItems(probes, value=probes[0], id='radio-selection-4', labelStyle={'margin-right': '20px'}),
-    ]]),    
-    dbc.Row(
-        [html.Span(id='result'),
-         ]),
-    dbc.Row([   
-                dcc.Loading(
+    *[dbc.Col(i) for i in [dcc.RadioItems(days, value=days[0], id='radio-selection-1', labelStyle={'margin-right': '20px'}, inline=True),
+    dcc.RadioItems(trees, value=trees[0], id='radio-selection-2', labelStyle={'margin-right': '20px'}, inline=True),
+    dcc.RadioItems(measurements, value=measurements[0], id='radio-selection-3', labelStyle={'margin-right': '20px'}, inline=True),
+    dcc.RadioItems(probes, value=probes[0], id='radio-selection-4', labelStyle={'margin-right': '20px'}, inline=True),
+    ]]]),
+    html.Span(id='result', style={'color': 'gray'}),
+    dcc.Loading(
                 id="ls-loading-1",
                 children=[dcc.Graph(id='graph-content')],
                 type="circle",
-            )
-    ]),
-    # html.Button('Save', id='button', n_clicks=0),
-    # html.P(id='placeholder'),
-    dbc.Row([dbc.Col(html.P(id='start')),
-    dbc.Col(html.P(id='end'))]),
-    dbc.Row([   
-                dcc.Loading(
+            ),
+    html.P(["Start: ", html.Span(id='start'), " End: ", html.Span(id='end')]),
+    dcc.Loading(
                 id="ls-loading-2",
                 children=[dcc.Graph(id='graph-content-2')],
                 type="circle",
-            )
-    ]),
-], fluid=True)
+            )])
 
 
 # Podle radioboxu se načtou data, vykreslí se časový vývoj a uloží se sutovaný sloupec 
@@ -71,7 +60,9 @@ app.layout = dbc.Container([
 @callback(
     Output('result', 'children'),
     Output('graph-content', 'figure'),
-    *[Input(f'radio-selection-{i}', 'value') for i in [1,2,3,4]]
+    Output('graph-content-2', 'figure', allow_duplicate=True),
+    *[Input(f'radio-selection-{i}', 'value') for i in [1,2,3,4]],
+    prevent_initial_call='initial_duplicate'
 )
 def update(date, tree, measurement, probe):
     _ = date.split("-")
@@ -82,7 +73,7 @@ def update(date, tree, measurement, probe):
         df = pd.read_csv(file,
                  header=[0,1], index_col=0, dtype = np.float64)    
     except:
-        return f"Soubor {file} neexistuje",{}
+        return f"Soubor {file} neexistuje",{},{}
     df.index=df["Time"].values.reshape(-1)
     data = df[(probe,"Y0")]
     data.columns = ["data"]
@@ -93,18 +84,18 @@ def update(date, tree, measurement, probe):
     
     labels = {'x': "Time", 'y': "Position"}
     fig = px.line(x=time, y=data, labels=labels, title=f"{probe} movement")
-    return f"file {file}",fig
+    return f"file {file} loaded",fig,{}
 
 # Pokud uživatel vybral část grafu, upraví se počáteční a koncová hodnota
 # času pro FFT
 @callback(
     Output('start', 'children'),
     Output('end', 'children'),
+    Output('result', 'children', allow_duplicate=True),
     Input('graph-content', 'relayoutData'),
+    prevent_initial_call=True
     )
 def update_fft_bounds(graph):
-    df = pd.read_csv("temp/data.csv",
-                  header=[0,1], index_col=0, dtype = np.float64)    
     if graph is not None and "xaxis.range[0]" in graph.keys():
         start = graph["xaxis.range[0]"]
     else:
@@ -113,17 +104,18 @@ def update_fft_bounds(graph):
         end = graph["xaxis.range[1]"]
     else:
         raise PreventUpdate
-    return start, end
+    return start, end, f"Limits updated to {start} and {end}."
 
 
 # FFT
 @callback(
-    Output('graph-content-2', 'figure'),
-    Input('graph-content', 'relayoutData'),
+    Output('graph-content-2', 'figure', allow_duplicate=True),
+    # Input('graph-content', 'relayoutData'),
     Input('start', 'children'),
     Input('end', 'children'),
+    prevent_initial_call=True    
     )
-def update_fft(graph, start, end):
+def update_fft(start, end):
     if start is None:
         return {}
     df = pd.read_csv("temp/data.csv",
