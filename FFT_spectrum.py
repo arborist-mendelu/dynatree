@@ -107,7 +107,7 @@ def do_fft_for_file(
     peak_index = np.argmax(yf_r[2:])+2  # find the peak, exclude the start
     peak_position = xf_r[peak_index]
     delta_f = np.diff(xf_r).mean()
-    output = {'peak position': peak_position, 'delta f': delta_f}
+    output = {'peak position': peak_position, 'delta f': delta_f, 'xf_r':xf_r, 'yf_r':yf_r,'peak_index':peak_index}
 
     if create_image:
         ax = axs[1]

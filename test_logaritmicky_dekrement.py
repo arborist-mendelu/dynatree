@@ -133,11 +133,17 @@ def main():
             except:
                 pass
 
-find_decrement_for_tree(year=2022, month="08", day="16", tree="BK04", measurement="M03", end=120)
-find_decrement_for_tree(year=2022, month="08", day="16", tree="BK04", measurement="M03", end=140)
+# find_decrement_for_tree(year=2022, month="08", day="16", tree="BK04", measurement="M03", end=120)
+# find_decrement_for_tree(year=2022, month="08", day="16", tree="BK04", measurement="M03", end=140)
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
+
+# Prikazy pro prevedeni na jedno PDFko
+# stromy=`ls decrement_png/*.png | grep "BK[0-9]*_" -o | sort | uniq`; for i in $stromy; do echo $i; montage decrement_png/$i*png -tile 4x4 -geometry +0+0 decrement_png/${i}decrement.pdf; done
+# rm decrement_png/*.png
+# convert decrement_png/*pdf decrement_png/decrements.pdf
+# rm decrement_png/BK*pdf
 
 # find_decrement_for_tree(year=2022, month="08", day="16", tree="BK01", measurement="M03")
 # find_decrement_for_tree(year=2022, month="08", day="16", tree="BK01", measurement="M04", end=148)

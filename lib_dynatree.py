@@ -8,6 +8,8 @@ Created on Sun Nov  5 07:56:28 2023
 
 import pandas as pd
 import numpy as np
+from scipy import interpolate
+from scipy.fft import fft, fftfreq
 
 def read_data(file, index_col="Time", usecols=None):
     """
@@ -111,3 +113,18 @@ def get_chains_of_bendlines(axis="Y", cam=1):
     l = len(all)
     output = [all[i*l//3:(i+1)*l//3] for i in range(3)]
     return output
+
+def do_fft(signal, time):
+    time = time - time[0] # restart time from zero
+    # signal = signal.values # grab values
+    fs = 100
+    time_fft = np.arange(time[0],time[-1],1/fs) # timeline for resampling
+    f = interpolate.interp1d(time, signal, fill_value="extrapolate")  
+    signal_fft = f(time_fft) # resample
+    signal_fft = signal_fft - np.nanmean(signal_fft) # mean value to zero
+    
+    N = time_fft.shape[0]  # get the number of points
+    yf = fft(signal_fft)  # preform FFT analysis
+    xf_r = fftfreq(N, 1/fs)[:N//2]
+    yf_r = 2.0/N * np.abs(yf[0:N//2])
+    return xf_r,yf_r
