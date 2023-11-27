@@ -6,7 +6,8 @@ Created on Mon Nov 27 02:14:14 2023
 @author: marik
 """
 
-from dash import Dash, html, dcc, callback, Output, Input
+from dash import Dash, html, dcc, callback, Output, Input, State, ctx
+from dash.exceptions import PreventUpdate
 import plotly.express as px
 import plotly.io as pio
 import pandas as pd
@@ -35,16 +36,12 @@ app.layout = dbc.Container([
     dbc.Row([
     html.Div('Měření Babice', className="text-primary text-center fs-3")
 ]),
-    dbc.Row([   
+    dbc.Row([dbc.Col(i) for i in [   
     dcc.RadioItems(days, value=days[0], id='radio-selection-1', labelStyle={'margin-right': '20px'}),
-    html.Hr(),
     dcc.RadioItems(trees, value=trees[0], id='radio-selection-2', labelStyle={'margin-right': '20px'}),
-    html.Hr(),
     dcc.RadioItems(measurements, value=measurements[0], id='radio-selection-3', labelStyle={'margin-right': '20px'}),
-    html.Hr(),
     dcc.RadioItems(probes, value=probes[0], id='radio-selection-4', labelStyle={'margin-right': '20px'}),
-    html.Hr(),
-    ]),    
+    ]]),    
     dbc.Row(
         [html.Span(id='result'),
          ]),
@@ -55,6 +52,10 @@ app.layout = dbc.Container([
                 type="circle",
             )
     ]),
+    # html.Button('Save', id='button', n_clicks=0),
+    # html.P(id='placeholder'),
+    dbc.Row([dbc.Col(html.P(id='start')),
+    dbc.Col(html.P(id='end'))]),
     dbc.Row([   
                 dcc.Loading(
                 id="ls-loading-2",
@@ -65,7 +66,8 @@ app.layout = dbc.Container([
 ], fluid=True)
 
 
-
+# Podle radioboxu se načtou data, vykreslí se časový vývoj a uloží se sutovaný sloupec 
+# do menší databáze.
 @callback(
     Output('result', 'children'),
     Output('graph-content', 'figure'),
@@ -93,33 +95,63 @@ def update(date, tree, measurement, probe):
     fig = px.line(x=time, y=data, labels=labels, title=f"{probe} movement")
     return f"file {file}",fig
 
+# Pokud uživatel vybral část grafu, upraví se počáteční a koncová hodnota
+# času pro FFT
 @callback(
-    Output('graph-content-2', 'figure'),
+    Output('start', 'children'),
+    Output('end', 'children'),
     Input('graph-content', 'relayoutData'),
     )
-def update_fft(graph):
+def update_fft_bounds(graph):
     df = pd.read_csv("temp/data.csv",
-                 header=[0,1], index_col=0, dtype = np.float64)    
-    # limits = json.dumps(graph)
-    # print(limits)
+                  header=[0,1], index_col=0, dtype = np.float64)    
     if graph is not None and "xaxis.range[0]" in graph.keys():
         start = graph["xaxis.range[0]"]
     else:
-        start = 0
+        raise PreventUpdate
     if graph is not None and "xaxis.range[1]" in graph.keys():
         end = graph["xaxis.range[1]"]
     else:
-        end = df.index[-1]
+        raise PreventUpdate
+    return start, end
+
+
+# FFT
+@callback(
+    Output('graph-content-2', 'figure'),
+    Input('graph-content', 'relayoutData'),
+    Input('start', 'children'),
+    Input('end', 'children'),
+    )
+def update_fft(graph, start, end):
+    if start is None:
+        return {}
+    df = pd.read_csv("temp/data.csv",
+                  header=[0,1], index_col=0, dtype = np.float64)    
     limits = f"FFT from {start:.2f} to {end:.2f}"
     df = df[start:end]
     data=df.iloc[:,0].values
     time=df.index
     xf,yf = do_fft(data,time)
     fig2 = px.line(x=xf, y=yf, 
-                   labels={'x': "Frekvence", 'y': 'Amplituda'}, 
-                   log_y=True, range_x=[0,5],
-                   title=limits)
+                    labels={'x': "Frekvence", 'y': 'Amplituda'}, 
+                    log_y=True, range_x=[0,5],
+                    title=limits)
     return fig2
+
+# @callback(
+#     Output('placeholder', 'children'),
+#     *[Input(f'radio-selection-{i}', 'value') for i in [1,2,3,4]],
+#     Input('start', 'children'),
+#     Input('end', 'children'),
+#     Input('button', 'n_clicks'),
+#     prevent_initial_call = True
+#     )
+# def update_output(date, tree, measurement, probe, start, end, btn):
+#     if "button" == ctx.triggered_id:
+#         return f'From {start} to {end}.'
+#     else:
+#         raise PreventUpdate
 
     
 if __name__ == '__main__':
