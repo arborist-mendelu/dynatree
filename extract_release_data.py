@@ -3,28 +3,24 @@
 """
 Created on Thu Nov  9 14:18:50 2023
 
-Cte csv soubory. Hledá časový interval, kdy je síla v zadaných mezích a na 
-tomto časovém intervalu vypočíta průměrnou hodnotu pro sílu, inklinometry, 
-elastometr, delta Pt3 a delta Pt4.
+Cte csv soubory. Hledá časový interval, kdy je síla mezi 85 a 95 procenty maxima
+(zhruba okamzik pred vypustenim) a na tomto časovém intervalu vypočíta průměrnou 
+hodnotu pro sílu, inklinometry, elastometr, delta Pt3 a delta Pt4.
+Prida hodnoty inklinomeru na zacatku mereni. Pokud jsou tyto hodnoty velke, asi 
+nebyl vynulovany inklinometr nebo behem pocatecni faze "poskocil".
 
 @author: marik
 """
 
-import os
 import glob
 
 import numpy as np
-import os
 
 import pandas as pd
-import matplotlib.pyplot as plt
-import warnings
-from scipy import interpolate
-import re
+
 
 from lib_dynatree import read_data
 from lib_dynatree import directory2date
-from lib_dynatree import find_release_time_optics
 from lib_dynatree import filename2tree_and_measurement_numbers
 
 
@@ -60,12 +56,15 @@ def find_release_data_one_measurement(
         percent2 = 0.85
         tmin = np.abs(df.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
     # Výběr časového intervalu
-    df = df.loc[tmin:tmax,:]
+    df_release = df.loc[tmin:tmax,:].copy()
     # Výpočet průměrů
-    df_means = df.mean(skipna=True)
+    df_means = df_release.mean(skipna=True)
     # Převod z hierarchického indexu na flat index, odstranění nepotřebných dat
     df_means.drop([("Pt3","X0"),("Pt4","X0"),("Time",'')], inplace=True)
     df_means.index = [i[0] for i in df_means.index.to_flat_index()]
+    for lb,ub in [[0,5],[5,10],[10,20]]:
+        for inclino in list_inclino:
+            df_means[f"{inclino}_{lb}_{ub}"]=np.mean(df.loc[lb:ub,inclino])
     return df_means
 
 def find_release_data_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../"):
