@@ -135,6 +135,7 @@ def main():
 
 # find_decrement_for_tree(year=2022, month="08", day="16", tree="BK04", measurement="M03", end=120)
 # find_decrement_for_tree(year=2022, month="08", day="16", tree="BK04", measurement="M03", end=140)
+# find_decrement_for_tree(year=2021, month="03", day="22", tree="BK04", measurement="M02", end=100)
 
 if __name__ == "__main__":
     main()

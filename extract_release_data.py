@@ -3,6 +3,8 @@
 """
 Created on Thu Nov  9 14:18:50 2023
 
+extract_release_data.py
+-----------------------
 Cte csv soubory. Hledá časový interval, kdy je síla mezi 85 a 95 procenty maxima
 (zhruba okamzik pred vypustenim) a na tomto časovém intervalu vypočíta průměrnou 
 hodnotu pro sílu, inklinometry, elastometr, delta Pt3 a delta Pt4.
@@ -62,9 +64,10 @@ def find_release_data_one_measurement(
     # Převod z hierarchického indexu na flat index, odstranění nepotřebných dat
     df_means.drop([("Pt3","X0"),("Pt4","X0"),("Time",'')], inplace=True)
     df_means.index = [i[0] for i in df_means.index.to_flat_index()]
+    df_notna = df[df.index.notna()]
     for lb,ub in [[0,5],[5,10],[10,20]]:
         for inclino in list_inclino:
-            df_means[f"{inclino}_{lb}_{ub}"]=np.mean(df.loc[lb:ub,inclino])
+            df_means[f"{inclino}_{lb}_{ub}"]=np.mean(df_notna.loc[lb:ub,inclino])
     return df_means
 
 def find_release_data_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../"):

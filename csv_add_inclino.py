@@ -26,6 +26,11 @@ Provádí následující činnost:
   se tabulky s daty z optiky a s daty získanými v tomto skriptu nespojují do 
   jedné. Při načtení dat je potřeba načíst dva soubory a případně je spojit
   pomocí pd.concat s volbou axis=1 (přidávají se sloupce).
+* Automatice je možno pomoci pomocí souboru 
+  csv/synchronization_finetune_inclinometers_fix.csv 
+  Tady je možno opravit synchronizaci a definovat intervaly pro inklinomery, podle
+  kterych se ma nastavit nulova hodnota inklinometru.
+
   
   
 Pokud není naměřená síla, je výstup prázdný (neberou se v úvahu ani 

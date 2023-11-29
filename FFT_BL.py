@@ -12,16 +12,26 @@ import pandas as pd
 import scipy 
 import sys
 import os
-from lib_dynatree import read_data, get_chains_of_bendlines
+from lib_dynatree import read_data, get_chains_of_bendlines, find_release_time_optics
 from scipy import interpolate
 from scipy.fft import fft, fftfreq
+import shutil
 
-cesta = "../01_Mereni_Babice_22032021_optika_zpracovani"
-name =  "BK21_M03"
 
-df = read_data(f"{cesta}/csv/{name}.csv")
+DATE = "2021-03-22"
+TREE = "BK21"
+MEASUREMENT = "M03"
+MEASUREMENT = "M02"
+
+name =  f"{TREE}_{MEASUREMENT}"
+_ = DATE.split("-")
+_.reverse()
+cesta = f"../01_Mereni_Babice_{''.join(_)}_optika_zpracovani"
+cesta
 
 cam = 1
+
+df = read_data(f"{cesta}/csv/{name}.csv")
 
 # Bendlines in the middle, on the left and on the right
 BL_chain_Y = get_chains_of_bendlines(cam=cam)
@@ -39,41 +49,120 @@ else:
     top_middle_bl = 44
 
 # %%
+# start = 68
+# end=1000
 
-fig, ax = plt.subplots()
+# fig, ax = plt.subplots()
 
-df_delta = df - df.iloc[0,:]   # Pracuje se se změnou oproti nulovému času 
-df_delta.plot(y=[i for i in BL_chain_Y[0] if f"BL{top_middle_bl}" in i[0]], ax=ax) # Vykresli všechno na B44 nebo B10, podle kamery
+# df_delta = df - df.iloc[0,:]   # Pracuje se se změnou oproti nulovému času 
+# df_delta.loc[start:end,[i for i in BL_chain_Y[0] if f"BL{top_middle_bl}" in i[0]]].plot(ax=ax) # Vykresli všechno na B44 nebo B10, podle kamery
 
 # %%
 
 fig, ax = plt.subplots()
 
-idx = [(f"BL{i}","Pt0BX") for i in bottom_bls]
-idy = [(f"BL{i}","Pt0BY") for i in bottom_bls]
-x0 = df.loc[0,idx]
-y0 = df.loc[0,idy]
+origin = {i: df.at[0,("BL51",f"Pt0B{i}")] for i in ["X","Y"]}
 for i in [0,1,2]:
-    y = df.loc[0,BL_chain_Y[i]]-y0.loc[idy[0]]
-    x = df.loc[0,BL_chain_X[i]]-x0.loc[idx[0]]
-    plt.plot(y,x,"o", color=f"C{i}")
+    y = df.loc[0,BL_chain_Y[i]]-origin["Y"]
+    x = df.loc[0,BL_chain_X[i]]-origin["X"]
+    plt.plot(y,x,".", color=f"C{i}")
 
 # %%
 
+TEMP_DIR = 'temp/movement'
+shutil.rmtree(TEMP_DIR, ignore_errors=True)
+os.makedirs(TEMP_DIR, exist_ok=True)  
+
+release_time = np.abs(df_delta.loc[:,(f"BL{top_middle_bl}","Pt0AY")]).idxmax()
+
+df_interpolated = pd.DataFrame(index=np.arange(release_time, df.index[-1],0.1), columns=df.columns)
+for col in df.columns:
+    f = interpolate.interp1d(df.index, df[col])
+    df_interpolated[col] = f(df_interpolated.index)
+
+df_interpolated_delta = df_interpolated - df.iloc[0,:]   # Pracuje se se změnou oproti nulovému času 
+
+fig,ax = plt.subplots()
+
+for n,t in enumerate(df_interpolated.index):
+    fig,ax = plt.subplots()
+    time = df_interpolated.index[n]
+    for i in range(3):
+        y = df_interpolated_delta.loc[time,BL_chain_Y[i]]
+        x = df_interpolated.loc[time,BL_chain_X[i]] - origin['X']
+        ax.plot(y,x,"-", color=f"C{i}")
+    ax.set(
+           xlim=(-40,40), 
+           ylim=(0,4000),
+           ylabel="vertical position / mm", 
+           xlabel="horizontal displacement / mm",
+           title=f"Time {time:.3f}"
+           )
+    plt.savefig(f"{TEMP_DIR}/{DATE}_{TREE}_{MEASUREMENT}_{n:08}.png")
+    plt.close(fig)
+
+command = f"ffmpeg -framerate 10 -i {TEMP_DIR}/{DATE}_{TREE}_{MEASUREMENT}_%08d.png -c:v libx264 -r 30 -pix_fmt yuv420p {DATE}_{TREE}_{MEASUREMENT}.mp4"
+os.system(command)
+
+# %%
+
+from scipy import signal
+sig = df_interpolated.loc[:,("BL44","Y0")]
+sos = signal.butter(4, 20, 'highpass', fs=100, output='sos')
+
+# %%
+# b, a = signal.butter(4, 1000, 'high', analog=True)
+b,a = signal.butter(3, 1, 'highpass', fs=100, output='ba')
+w, h = signal.freqs(b, a)
+
+plt.semilogx(w, 20 * np.log10(abs(h)))
+plt.title('Butterworth filter frequency response')
+plt.xlabel('Frequency [radians / second]')
+# plt.margins(0, 0.1)
+plt.grid(which='both', axis='both')
+
+# %%
+
+b, a = signal.butter(4, 100, 'high')
+
+w, h = signal.freqs(b, a)
+
+plt.semilogx(w, 20 * np.log10(abs(h)))
+
+plt.title('Butterworth filter frequency response')
+
+plt.xlabel('Frequency [radians / second]')
+
+plt.ylabel('Amplitude [dB]')
+
+plt.margins(0, 0.1)
+
+plt.grid(which='both', axis='both')
+
+plt.axvline(100, color='green') # cutoff frequency
+
+plt.show()
+# %%
+
+posun = sig.mean()
+sig = sig - posun
+
 fig, ax = plt.subplots()
+filtered = signal.sosfilt(sos, sig)
 
-release_time = df.loc[:,(f"BL{top_middle_bl}","Pt0AY")].idxmin()
-time=release_time
-# time = [i for i in df.index if i>release_time+2][0]
-# time = 0
+filtered = filtered + posun
 
-for i in range(3):
-    y = 10*df_delta.loc[time,BL_chain_Y[i]] + y0.loc[BL_chain_Y[i][-1]] - y0.loc[BL_chain_Y[0][-1]]
-    x = df.loc[time,BL_chain_X[i]]-x0.loc[BL_chain_X[i][-1]]
-    plt.plot(y,x,"-", color=f"C{i}")
+ax.plot(sig.values)
+ax.plot(filtered)
+ax.set_title('After filter')
+
+ax.set_xlabel('Time [seconds]')
+
+plt.tight_layout()
+
+plt.show()
 
 
-# # %%
 # df2.columns[0]
 # # %%
 
