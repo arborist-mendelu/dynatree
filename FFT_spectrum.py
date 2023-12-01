@@ -95,12 +95,6 @@ def do_fft_for_file(
     
     N = time_fft.shape[0]  # get the number of points
     
-    if create_image:
-        fig,axs = plt.subplots(2,1)  
-        ax = axs[0]  # plot the signal
-        ax.plot(time,signal-signal[0], ".", color=color, ms=2)
-        ax.set(xlabel="Time/s", ylabel=column_fft[0]+", "+column_fft[1])
-    
     yf = fft(signal_fft)  # preform FFT analysis
     xf_r = fftfreq(N, 1/fs)[:N//2]
     yf_r = 2.0/N * np.abs(yf[0:N//2])
@@ -110,6 +104,10 @@ def do_fft_for_file(
     output = {'peak position': peak_position, 'delta f': delta_f, 'xf_r':xf_r, 'yf_r':yf_r,'peak_index':peak_index}
 
     if create_image:
+        fig,axs = plt.subplots(2,1)  
+        ax = axs[0]  # plot the signal
+        ax.plot(time,signal-signal[0], ".", color=color, ms=2)
+        ax.set(xlabel="Time/s", ylabel=column_fft[0]+", "+column_fft[1])
         ax = axs[1]
         ax.plot(xf_r, yf_r,".", color=color)
         ax.plot(xf_r[peak_index],yf_r[peak_index],"o", color='red')
