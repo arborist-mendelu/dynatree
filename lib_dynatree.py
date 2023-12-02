@@ -8,7 +8,7 @@ Created on Sun Nov  5 07:56:28 2023
 
 import pandas as pd
 import numpy as np
-from scipy import interpolate
+from scipy import interpolate, signal
 from scipy.fft import fft, fftfreq
 
 def read_data(file, index_col="Time", usecols=None):
@@ -21,6 +21,7 @@ def read_data(file, index_col="Time", usecols=None):
     # If the index_col is string, find the position of index_col in the first line
     # and set index_col to this position. This allows to specify index_col for 
     # data with multiindex.
+    print (f"Reading file {file}.")
     if isinstance(index_col,str):
         with open(file) as f:
             first_line = f.readline().strip('\n')
@@ -128,3 +129,15 @@ def do_fft(signal, time):
     xf_r = fftfreq(N, 1/fs)[:N//2]
     yf_r = 2.0/N * np.abs(yf[0:N//2])
     return xf_r,yf_r
+
+def do_welch(s, time):
+    time = time - time[0] # restart time from zero
+    # signal = signal.values # grab values
+    fs = 100
+    time_welch = np.arange(time[0],time[-1],1/fs) # timeline for resampling
+    f = interpolate.interp1d(time, s)  
+    signal_welch = f(time_welch) # resample
+    signal_welch = signal_welch - np.nanmean(signal_welch) # mean value to zero
+    f, Pxx = signal.welch(x=signal_welch, fs=fs, nperseg=2**10)
+    Pxx
+    return f, Pxx

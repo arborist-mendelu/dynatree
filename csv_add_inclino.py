@@ -151,20 +151,36 @@ def extend_one_csv(
         tree="01", 
         tree_measurement="2", 
         path="../", 
-        write_csv=False):
+        write_csv=False, 
+        df=None):
     """
     Reads csv file in a csv directory, adds data from inclinometers 
-    and saves to csv_extended directory
+    and saves to csv_extended directory. If df is given, the reading of csv 
+    file is skipped and the given dataframe is used.
     
 
     Returns
     -------
-    None.
+    The dataframe with fixes, inclinometers, force , ...
 
     """
+    
+    # accept both M02 and 2 as a measurement number
+    tree_measurement = tree_measurement[-1]
+    # accept both BK04 and 04 as a tree number
+    tree = tree[-2:]
+    # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
+    if len(measurement_day)==10:
+        measurement_day = measurement_day.split("-")
+        measurement_day.reverse()
+        measurement_day = "".join(measurement_day)
+    if len(measurement_day)==8:
+        measurement_day = f"01_Mereni_Babice_{measurement_day}_optika_zpracovani"
+        
     # Read data file
     # načte data z csv souboru
-    df = read_data(f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")   
+    if df is None:
+        df = read_data(f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")   
     # df se sploupci s odectenim pohybu bodu na zemi
     df_fixed = df.copy().pipe(fix_data_by_points_on_ground) 
     # df s daty z inklinoměrů, synchronizuje a interpoluje na stejné časové okamžiky
@@ -180,7 +196,7 @@ def extend_one_csv(
     if np.isnan(delta_time):
         delta_time = 0
     
-    # načte synchronizvaná data a přesampluje na stejné časy jako v optice
+    # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     df_pulling_tests_ = read_data_inclinometers(
         f"{path}{measurement_day}/pulling_tests/BK_{tree}_M{tree_measurement}.TXT", 
         release=release_time_optics, 
@@ -203,8 +219,7 @@ def extend_one_csv(
     df_fixed_and_inclino = pd.concat([df_fixed,df_pulling_tests], axis=1)
     if write_csv:
         df_fixed_and_inclino.to_csv(f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
-    else:
-        return df_fixed_and_inclino
+    return df_fixed_and_inclino
 
 def extend_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../"):
     try:

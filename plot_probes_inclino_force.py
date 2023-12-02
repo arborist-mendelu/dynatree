@@ -25,7 +25,11 @@ def plot_one_measurement(
         tree_measurement="2", 
         df_remarks=df_remarks, 
         return_figure=True, 
-        save_figure=False):
+        save_figure=False, 
+        xlim=(None,None),
+        df_extra=None,
+        df=None,
+        figsize=(14.1,10)):
     """
     Vykreslí tři obrázky. 
     V horním je pohyb Pt3 a pootm Pt3 s odečtením posunu bodů na zemi.
@@ -49,17 +53,37 @@ def plot_one_measurement(
         DESCRIPTION. The default is True.
     save_figure : TYPE, optional
         DESCRIPTION. The default is False.
+    xlim: limits on horizontal axis
+    df: do not read csv but use this one DataFrame instead
 
     Returns
     -------
     fig : TYPE
-        DESCRIPTION.
+        DESCRIPTION
 
     """
-    df = read_data(
-        f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")
-    df_extra = read_data(
-        f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
+    
+    # accept both M02 and 2 as a measurement number
+    tree_measurement = tree_measurement[-1]
+    # accept both BK04 and 04 as a tree number
+    tree = tree[-2:]
+    # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
+    if len(measurement_day)==10:
+        measurement_day = measurement_day.split("-")
+        measurement_day.reverse()
+        measurement_day = "".join(measurement_day)
+    if len(measurement_day)==8:
+        measurement_day = f"01_Mereni_Babice_{measurement_day}_optika_zpracovani"    
+    
+    if df is None:
+        df = read_data(
+            f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")
+    else:
+        # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")
+        pass
+    if df_extra is None:
+        df_extra = read_data(
+            f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
     bounds_for_fft = df_remarks[
         (df_remarks["tree"] == f"BK{tree}") & 
         (df_remarks["measurement"] == f"M0{tree_measurement}") & 
@@ -71,7 +95,7 @@ def plot_one_measurement(
         i for i in df_extra.columns if f"{fix_target}_fixed_by" 
         in i[0] and plot_coordiante in i[1]]
 
-    fig, axes = plt.subplots(3,1,figsize=(14.1,10),sharex=True)
+    fig, axes = plt.subplots(3,1,figsize=figsize,sharex=True)
     plt.suptitle(
         f"{measurement_day.replace('_optika_zpracovani','')} - BK{tree} M0{tree_measurement}")
 
@@ -126,8 +150,11 @@ def plot_one_measurement(
     
     # df_extra.loc[start:,"Force(100)"].plot(ax=ax)
     ax.plot(df.index[start:],df_extra.loc[start:,"Force(100)"],"o", ms=2, label='Force')
-    maj_pos = ticker.MultipleLocator(10)   # major ticks for every 20 units
-    min_pos = ticker.MultipleLocator(1)    # minor ticks for every 5 units 
+    if xlim[0] is not None and xlim[1] is not None and xlim[1]-xlim[0]<15:
+        maj_pos = ticker.MultipleLocator(1)   # major ticks 
+    else:
+        maj_pos = ticker.MultipleLocator(10)   # major ticks 
+    min_pos = ticker.MultipleLocator(1)    # minor ticks 
     ax.xaxis.set(major_locator=maj_pos, minor_locator=min_pos)
     ax.grid(which='major')
     ax.grid(which='minor', lw=1)
@@ -146,8 +173,6 @@ def plot_one_measurement(
     for ax in axes:
         ax.axvline(x = release_time_optics, color='k', linestyle="dashed", zorder=0)
 
-    
-    fig.tight_layout()
     
     # Replace negative force by 0
     # df_extra.loc[df_extra["Force(100)"]<0,"Force(100)"] = 0
@@ -175,6 +200,8 @@ def plot_one_measurement(
     for ax in axes:
         ax.axvspan(tmin,tmax, alpha=.5, color="yellow")
         # pre_release_data[file.replace(".csv","")] = delta_df.mean()
+    ax.set(xlim=xlim)        
+    fig.tight_layout()
     if save_figure:
         fig.savefig(
             f"{path}{measurement_day}/png_with_inclino/BK{tree}_M0{tree_measurement}.png")

@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Dec  2 22:11:07 2023
+
+@author: marik
+"""
+from dash import Dash, html, callback, Output, Input, State
+from dash.exceptions import PreventUpdate
+import plotly.io as pio
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import pandas as pd
+import numpy as np
+import dash_bootstrap_components as dbc
+from lib_dynatree import do_fft, do_welch
+import lib_analyze_filenames as laf
+import os
+from lib_dash import csv_selection, make_graph
+from lib_dynatree import read_data
+from  csv_add_inclino import extend_one_csv
+from plot_probes_inclino_force import plot_one_measurement
+
+# %%
+measurement = "M02"
+tree = "BK04"
+day = "2021-03-22"
+DF = read_data("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
+# %%
+
+df_ext = extend_one_csv(measurement_day=day, 
+        tree=tree, 
+        tree_measurement=measurement, 
+        path="../", 
+        write_csv=False,
+        df=DF)  
+# %%
+df_ext["Time"] = df_ext.index
+plot_one_measurement(
+        measurement_day=day,
+        tree=tree, 
+        tree_measurement=measurement, 
+        xlim=(42,50),
+        df_extra=df_ext,
+        df=DF
+        ) 
+
