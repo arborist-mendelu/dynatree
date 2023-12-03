@@ -21,7 +21,7 @@ def read_data(file, index_col="Time", usecols=None):
     # If the index_col is string, find the position of index_col in the first line
     # and set index_col to this position. This allows to specify index_col for 
     # data with multiindex.
-    print (f"Reading file {file}.")
+    #print (f"Reading file {file}.")
     if isinstance(index_col,str):
         with open(file) as f:
             first_line = f.readline().strip('\n')
@@ -32,12 +32,50 @@ def read_data(file, index_col="Time", usecols=None):
     df["Time"] = df.index  # pro pohodlí, aby se k času dalo přistupovat i jako data.Time
     return df
 
+
+
+def read_data_selected(file,
+                        probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]]):
+    """
+
+    Parameters
+    ----------
+    file :  csv files with data
+    probes : probes which should be included in te output
+        DESCRIPTION. The default is ["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]].
+
+    Returns
+    -------
+    df :  dataframe from the file, but only columns with first index level specified in 
+    probe variable. 
+    """
+    # find column numbers to read
+    df_headers = pd.read_csv(file, 
+                     nrows=2, header=None,
+                     dtype=object
+                     )
+    first_row = df_headers.iloc[0,:].values
+    seznam = np.nonzero(np.isin(first_row,probes))[0]
+    sloupce = df_headers[seznam].values
+
+    # read csv file    
+    df = pd.read_csv(file, 
+                     skiprows=1,
+                     dtype=np.float64, 
+                     usecols=seznam
+                     )
+    # adjust index and column names
+    df.columns = pd.MultiIndex.from_arrays(sloupce)
+    df.index = df["Time"].values.reshape(-1)
+    return df
+
 def directory2date(d):
     """
     Converts directory from the form '01_Mereni_Babice_22032021_optika_zpracovani'
     to date like 2021-03-22
     """
     return f"{d[21:25]}-{d[19:21]}-{d[17:19]}"  
+
 
 def filename2tree_and_measurement_numbers(f):
     tree,tree_measurement,*_ = f.split("_")
@@ -115,6 +153,7 @@ def get_chains_of_bendlines(axis="Y", cam=1):
     output = [all[i*l//3:(i+1)*l//3] for i in range(3)]
     return output
 
+# Makra pro FFT a Welch
 def do_fft(signal, time):
     time = time - time[0] # restart time from zero
     # signal = signal.values # grab values

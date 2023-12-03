@@ -15,7 +15,7 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import dash_bootstrap_components as dbc
 import matplotlib.pyplot as plt
-from lib_dynatree import read_data
+from lib_dynatree import read_data_selected
 
 import io
 import base64
@@ -28,7 +28,21 @@ app.layout =  dbc.Container(
     *csv_selection(),
     dbc.Button('Replot', id='plot-button'),
     dcc.RangeSlider(0, 1, value=[0,1], id='slider',tooltip={"placement": "bottom", "always_visible": True}),    
-    html.Img(id='example'), # img element
+    dcc.Loading(
+    id="loading-1",
+    type="default",
+    children=html.Img(id='image'), # img element
+    ),
+    dcc.Markdown("""
+* vyberte si den, strom a měření, vykreslí se kmity Pt3 nahoře, síla, elastometr, inklinometry
+* zkontroluj, jestli je správně zarovnán okamžik vypuštění, kontroluj v posledním obrázku sílu a výchylku.
+* pokud síla a výchylka nejsou zarovnány okamžikem vypuštění, můžeš doladit v souboru 
+  `csv/synchronization_finetune_inclinometers_fix.csv`
+* po ukončení ne potřeba spustit  skript `csv_add_inclino.py` pro pro začlenění informací do `csv_extra`,
+  dále `extract_release_data.py` pro opravená data před vypuštěním a případně `plot_probes_inclino_force.py`
+  pro obrázky jaké jsou zde.
+                 """
+                 ),
     ])
 DF = pd.DataFrame()
 
@@ -75,6 +89,7 @@ FILENAME = ""  # the last csv file which has been loaded and drawn
     Output('csv', 'children', allow_duplicate=True),
     Output('slider', 'max', allow_duplicate=True),
     Output('slider', 'value', allow_duplicate=True),
+    Output('image', 'src', allow_duplicate=True),
     Input('radio-selection-3', 'value'),
     *[State(f'radio-selection-{i}', 'value') for i in [1,2]],
     prevent_initial_call=True
@@ -83,17 +98,17 @@ def sestav_csv(measurement, date, tree):
     global DF
     global FILENAME
     if measurement is None or date is None or tree is None:
-        return None,0,[0,1]
+        return None,1,[0,1],None
     _ = date.split("-")
     _ .reverse()
     _ = "".join(_)
     file = f"../01_Mereni_Babice_{_}_optika_zpracovani/csv/{tree}_{measurement}.csv"
-    DF = read_data(file)
+    DF = read_data_selected(file)
     FILENAME = file
-    return file,DF.index.max(),[0,DF.index.max()]
+    return file,DF.index.max(),[0,DF.index.max()],None
 
 @callback(
-    Output('example', 'src'),
+    Output('image', 'src', allow_duplicate=True),
     Input('csv', 'children'),
     Input('plot-button', 'n_clicks'),
     *[State(f'radio-selection-{i}', 'value') for i in [1,2,3]],
@@ -103,7 +118,7 @@ def sestav_csv(measurement, date, tree):
 def plot_graph(file, button, day, tree, measurement,slider):
     global DF
     if day is None or tree is None or measurement is None:
-        raise PreventUpdate()
+        return None
         
     buf = io.BytesIO() # in-memory files
     
