@@ -15,7 +15,7 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import dash_bootstrap_components as dbc
 import matplotlib.pyplot as plt
-from lib_dynatree import read_data_selected
+from lib_dynatree import read_data_selected, read_data
 
 import io
 import base64
@@ -27,31 +27,39 @@ app.layout =  dbc.Container(
     html.H1('Měření Babice, synchronizace a pre-release data', className="text-primary text-center fs-3"),
     *csv_selection(),
     dbc.Alert([
-    html.Span("Nastavit meze"),
-    html.Span([dcc.RangeSlider(0, 1, value=[0,1], id='slider',
-                    tooltip={"placement": "bottom", "always_visible": True})],
-                    style={'flex-grow': '1'}),    
-    dbc.Button('Replot', id='plot-button'),
-    ], style={'display': 'flex'}),
-    dbc.Alert([
-    html.Span("Nastavit DPI"),
     html.Div([
-    dcc.Slider(50, 300, value=100, id='slider-dpi',tooltip={"placement": "bottom", "always_visible": True}),    
-    ],style={'flex-grow': '1'})
-    ], style = {'display': 'flex', 'margin': 'solid'}, color="success"),
+        html.Span("Nastavit meze"),
+        html.Span([dcc.RangeSlider(0, 1, value=[0,1], id='slider',
+                        tooltip={"placement": "bottom", "always_visible": True})],
+                        style={'flex-grow': '1'}),    
+        dbc.Button('Replot', id='plot-button')
+    ], style={'display': 'flex'}),
+    html.Div([
+    html.Span("Nastavit DPI"),
+    html.Span([
+        dcc.Slider(50, 300, value=100, 
+                   id='slider-dpi',tooltip={"placement": "bottom", "always_visible": True})    
+        ], style={'flex-grow':'1'})
+    ],style={'display': 'flex'})
+    ], color="success"),
     dcc.Loading(
     id="loading-1",
     type="default",
     children=html.Img(id='image'), # img element
     ),
     dcc.Markdown("""
-* vyberte si den, strom a měření, vykreslí se kmity Pt3 nahoře, síla, elastometr, inklinometry
-* zkontroluj, jestli je správně zarovnán okamžik vypuštění, kontroluj v posledním obrázku sílu a výchylku.
-* pokud síla a výchylka nejsou zarovnány okamžikem vypuštění, můžeš doladit v souboru 
+## Návod
+* Vyberte si den, strom a měření, vykreslí se kmity Pt3 nahoře, inklinometry uprostřed a 
+  síla a elastometr dole
+* Zkontroluj, jestli je správně zarovnán okamžik vypuštění, 
+  kontroluj v posledním obrázku sílu (oranžové tečky) a výchylku (modrá čára).
+* Pokud síla a výchylka nejsou zarovnány okamžikem vypuštění, můžeš doladit v souboru 
   `csv/synchronization_finetune_inclinometers_fix.csv`
-* po ukončení ne potřeba spustit  skript `csv_add_inclino.py` pro pro začlenění informací do `csv_extra`,
+* Po ukončení je potřeba zohlednit změny v csv souboru. Je proto potřeba spustit  skript `csv_add_inclino.py` pro pro začlenění informací do `csv_extra`,
   dále `extract_release_data.py` pro opravená data před vypuštěním a případně `plot_probes_inclino_force.py`
   pro obrázky jaké jsou zde.
+* Posuvníkem si můžeš změnit rozsa na ose x, aby šla dobře vidět kvalita nebo nekvalita
+  synchronizace a aby se dalo posoudit, jestli je rozsah před vypuštěním (žlutý pás) umístěn rozumně.  
                  """
                  ),
     ])
@@ -139,7 +147,8 @@ def plot_graph(file, button, day, tree, measurement,slider,dpi):
             tree_measurement=measurement, 
             path="../", 
             write_csv=False,
-            df=DF)    
+            df=DF
+            )    
     df_ext["Time"] = df_ext.index
     xlim = (None, None)
     if "plot-button" == ctx.triggered_id:

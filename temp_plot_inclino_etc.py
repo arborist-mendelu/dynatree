@@ -12,7 +12,7 @@ from plot_probes_inclino_force import plot_one_measurement
 
 # %%
 measurement = "M03"
-tree = "BK04"
+tree = "BK08"
 day = "2021-03-22"
 # DF = read_data("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
 # %%

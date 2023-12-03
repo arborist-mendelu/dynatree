@@ -8,15 +8,16 @@ Created on Sun Dec  3 09:07:25 2023
 
 import pandas as pd
 import numpy as np
-from lib_dynatree import read_data_selected
+from lib_dynatree import read_data_selected, read_data
 
 # %%time
-# df = pd.read_csv("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv", header=[0,1], dtype=np.float64)
+df = read_data("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
+df["Time"].max()
 
 # %%
 
 %%time
 
-df = read_data_selected("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
+df2= read_data_selected("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
 
-df[("Pt3","Y0")].plot()
+df2["Time"].max()

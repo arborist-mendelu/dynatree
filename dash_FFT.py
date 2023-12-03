@@ -6,7 +6,7 @@ Created on Mon Nov 27 02:14:14 2023
 @author: marik
 """
 
-from dash import Dash, html, callback, Output, Input, State
+from dash import Dash, html, callback, Output, Input, State, dcc
 from dash.exceptions import PreventUpdate
 import plotly.io as pio
 import plotly.graph_objects as go
@@ -29,13 +29,34 @@ probes = ["Pt3","Pt4"]
 
 DF = pd.DataFrame()
 
+text = """
+## Návod
+
+* Vyber den, strom a měření, případně probe.
+* V grafu se závislostí výchylky na čase vyber časový úsek. Na tomto úseku se vypočítá FFT analýza a PSD.
+* FFT a PSD mají synchroniozvané vodorovné osy. Defaultně se zobrazují pro malé frekvence, celý rozsah
+  je možné zobrazit kliknutím na domeček a poté vybrat rozsah, který mne zajímá.
+
+"""
+
 app.layout =  dbc.Container(
     [
     html.H1('Měření Babice, FFT analýza', className="text-primary text-center fs-3"),
     *csv_selection(probes),
     make_graph(1),
-    html.P(["Start time: ", html.Span(id='start'), " End time: ", html.Span(id='end')]),
+    html.P(["Start time: ", html.Span(id='start'), " End time: ", html.Span(id='end')], 
+           style={'display': 'none'}),
+    dbc.Alert([
+    html.Div([
+    html.Span("Nastavení pro Welch:  nperseg = 2**n, kde n = ..."),
+    html.Span([
+        dcc.Slider(4, 20, 1, value=10, 
+                   id='slider',tooltip={"placement": "bottom", "always_visible": True})    
+        ], style={'flex-grow':'1'})
+    ],style={'display': 'flex'}),
+    ], color="success"),    
     make_graph(2),
+    dcc.Markdown(text)
     ])
 
 def vymaz_docasny_csv():
@@ -115,6 +136,12 @@ def plot_graph(file,probe, date, tree, measurement):
     fig.add_trace(go.Scatter(x=DF.index.values, y=DF[probe].values.reshape(-1), mode='lines', name=probe))
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Delta position")
+    fig.update_layout(
+    {
+        "paper_bgcolor": "rgba(0, 0, 0, 0)",
+        "plot_bgcolor": "rgba(0, 0, 0, 0)",
+    }
+    )
     return fig,{}    
 
 
@@ -145,9 +172,10 @@ def update_fft_bounds(graph):
     Input('start', 'children'),
     Input('end', 'children'),
     State('radio-selection-4', 'value'),
+    Input('slider', 'value'),
     prevent_initial_call=True    
     )
-def update_fft(start, end,probe):
+def update_fft(start, end, probe, nperseg):
     global DF
     if probe is None:
         raise PreventUpdate()
@@ -158,7 +186,7 @@ def update_fft(start, end,probe):
     time=df.index
  
     xf,yf = do_fft(data,time)
-    f,Pxx = do_welch(data, time)
+    f,Pxx = do_welch(data, time, nperseg=2**nperseg)
 
     fig = make_subplots(rows=2, cols=1,
                     shared_xaxes=True,
@@ -171,6 +199,12 @@ def update_fft(start, end,probe):
                     ),row=2, col=1)
     fig.update_yaxes(type="log")
     fig.update_layout(xaxis_range=[0,5])
+    fig.update_layout(
+    {
+        "paper_bgcolor": "rgba(0, 0, 0, 0)",
+        "plot_bgcolor": "rgba(0, 0, 0, 0)",
+    }
+    )
 
     return fig
 

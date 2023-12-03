@@ -53,7 +53,7 @@ def read_data_selected(file,
     df_headers = pd.read_csv(file, 
                      nrows=2, header=None,
                      dtype=object
-                     )
+                     ).fillna('')
     first_row = df_headers.iloc[0,:].values
     seznam = np.nonzero(np.isin(first_row,probes))[0]
     sloupce = df_headers[seznam].values
@@ -169,14 +169,13 @@ def do_fft(signal, time):
     yf_r = 2.0/N * np.abs(yf[0:N//2])
     return xf_r,yf_r
 
-def do_welch(s, time):
+def do_welch(s, time, nperseg=2**10, fs = 100):
     time = time - time[0] # restart time from zero
     # signal = signal.values # grab values
-    fs = 100
     time_welch = np.arange(time[0],time[-1],1/fs) # timeline for resampling
     f = interpolate.interp1d(time, s)  
     signal_welch = f(time_welch) # resample
     signal_welch = signal_welch - np.nanmean(signal_welch) # mean value to zero
-    f, Pxx = signal.welch(x=signal_welch, fs=fs, nperseg=2**10)
+    f, Pxx = signal.welch(x=signal_welch, fs=fs, nperseg=nperseg)
     Pxx
     return f, Pxx
