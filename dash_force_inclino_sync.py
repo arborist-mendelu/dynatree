@@ -26,8 +26,19 @@ app.layout =  dbc.Container(
     [
     html.H1('Měření Babice, synchronizace a pre-release data', className="text-primary text-center fs-3"),
     *csv_selection(),
+    dbc.Alert([
+    html.Span("Nastavit meze"),
+    html.Span([dcc.RangeSlider(0, 1, value=[0,1], id='slider',
+                    tooltip={"placement": "bottom", "always_visible": True})],
+                    style={'flex-grow': '1'}),    
     dbc.Button('Replot', id='plot-button'),
-    dcc.RangeSlider(0, 1, value=[0,1], id='slider',tooltip={"placement": "bottom", "always_visible": True}),    
+    ], style={'display': 'flex'}),
+    dbc.Alert([
+    html.Span("Nastavit DPI"),
+    html.Div([
+    dcc.Slider(50, 300, value=100, id='slider-dpi',tooltip={"placement": "bottom", "always_visible": True}),    
+    ],style={'flex-grow': '1'})
+    ], style = {'display': 'flex', 'margin': 'solid'}, color="success"),
     dcc.Loading(
     id="loading-1",
     type="default",
@@ -113,9 +124,10 @@ def sestav_csv(measurement, date, tree):
     Input('plot-button', 'n_clicks'),
     *[State(f'radio-selection-{i}', 'value') for i in [1,2,3]],
     State('slider','value'),
+    State('slider-dpi','value'),
     prevent_initial_call=True
     )    
-def plot_graph(file, button, day, tree, measurement,slider):
+def plot_graph(file, button, day, tree, measurement,slider,dpi):
     global DF
     if day is None or tree is None or measurement is None:
         return None
@@ -139,10 +151,10 @@ def plot_graph(file, button, day, tree, measurement,slider):
             xlim=xlim,
             df_extra=df_ext,
             df=DF, 
-            figsize=(16,12))    
-    plt.savefig(buf, format = "png")
+            figsize=(10,8))    
+    plt.savefig(buf, format = "png", dpi=dpi)
     plt.close()
-    data = base64.b64encode(buf.getbuffer()).decode("utf8") # encode to html elements
+    data = base64.b64encode(buf.getbuffer()).decode('utf-8') # encode to html elements
     buf.close()
     return "data:image/png;base64,{}".format(data)    
 

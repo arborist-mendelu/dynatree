@@ -14,7 +14,7 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 import dash_bootstrap_components as dbc
-from lib_dynatree import do_fft, do_welch
+from lib_dynatree import do_fft, do_welch, read_data_selected
 import lib_analyze_filenames as laf
 import os
 from lib_dash import csv_selection, make_graph
@@ -106,7 +106,8 @@ def plot_graph(file,probe, date, tree, measurement):
         DF = pd.DataFrame()
         return {},{}
     if file != FILENAME:
-        DF = pd.read_csv(file, header=[0,1], index_col=1, dtype = np.float64)
+        # DF = pd.read_csv(file, header=[0,1], index_col=1, dtype = np.float64)
+        DF = read_data_selected(file, probes=["Time","Pt3","Pt4"])
         DF = DF[[(i,"Y0") for i in probes]]
         DF = DF - DF.iloc[0,:]
         FILENAME = file
