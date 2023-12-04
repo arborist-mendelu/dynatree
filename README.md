@@ -29,6 +29,27 @@ kterém má být střední hodnota inklinoměru nulová.
 
 Pokud síla není naměřena, berou se pro synchronizaci začátky měření.
 
+Kromě toho je možno dělat pohodlněji (zobrazit si graf ve vybrané velikosti, 
+s vybraným rozsahem pro čas a s aktuálním zohledněním nastavení v souboru csv/synchronization_finetune_inclinometers_fix.csv)
+pomocí programu dash_force_inclino_sync.py buď spuštěním v konzoli nebo ve Spyderu a následně na 
+http://127.0.0.1:8050/ .
+
+Jedno měření je možno zpracovat příkazy jako napříkald následující sada.
+```
+from plot_probes_inclino_force import plot_one_measurement
+
+measurement = "M03"
+tree = "BK08"
+day = "2021-03-22"
+
+plot_one_measurement(
+        measurement_day=day,
+        tree=tree, 
+        tree_measurement=measurement, 
+        # xlim=(42,50),
+        ) 
+```
+
 ## Krok 3.: `FFT_spectrum.py`
 
 Obsahuje proceduru pro FFT analýzu jednoho měření, proceduru pro
@@ -38,9 +59,14 @@ skript, dělá FFT analýzu pro všechna data a na konci spustí skript
 nezohledňují základní frekvence, které jsou moc malé, nebo kde je moc
 velký skok mezi sousedními frekvencemi (je krátký signál).
 
+Kromě toho je možno dělat pohodlněji (zobrazit si graf ve vybrané velikosti, 
+s vybraným rozsahem pro čas a s aktuálním zohledněním nastavení v souboru csv/synchronization_finetune_inclinometers_fix.csv)
+pomocí programu dash_force_inclino_sync.py buď spuštěním v konzoli nebo ve Spyderu a následně na 
+http://127.0.0.1:8050/ .
 
-## ...
 
+
+## Příkazy pro spojení obrázků do jednoho
 
 
 ```

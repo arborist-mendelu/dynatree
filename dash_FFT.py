@@ -136,12 +136,12 @@ def plot_graph(file,probe, date, tree, measurement):
     fig.add_trace(go.Scatter(x=DF.index.values, y=DF[probe].values.reshape(-1), mode='lines', name=probe))
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text="Delta position")
-    fig.update_layout(
-    {
-        "paper_bgcolor": "rgba(0, 0, 0, 0)",
-        "plot_bgcolor": "rgba(0, 0, 0, 0)",
-    }
-    )
+    # fig.update_layout(
+    # {
+    #     "paper_bgcolor": "rgba(0, 0, 0, 0)",
+    #     "plot_bgcolor": "rgba(0, 0, 0, 0)",
+    # }
+    # )
     return fig,{}    
 
 
@@ -198,13 +198,14 @@ def update_fft(start, end, probe, nperseg):
                              mode='lines+markers', name='Welch'
                     ),row=2, col=1)
     fig.update_yaxes(type="log")
-    fig.update_layout(xaxis_range=[0,5])
-    fig.update_layout(
-    {
-        "paper_bgcolor": "rgba(0, 0, 0, 0)",
-        "plot_bgcolor": "rgba(0, 0, 0, 0)",
-    }
-    )
+    # fig.update_layout(xaxis_range=[0,5])
+    fig.update_xaxes(range=[0,5])
+    # fig.update_layout(
+    # {
+    #     "paper_bgcolor": "rgba(0, 0, 0, 0)",
+    #     "plot_bgcolor": "rgba(0, 0, 0, 0)",
+    # }
+    # )
 
     return fig
 

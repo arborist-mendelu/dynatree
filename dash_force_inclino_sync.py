@@ -28,19 +28,20 @@ app.layout =  dbc.Container(
     *csv_selection(),
     dbc.Alert([
     html.Div([
-        html.Span("Nastavit meze"),
-        html.Span([dcc.RangeSlider(0, 1, value=[0,1], id='slider',
-                        tooltip={"placement": "bottom", "always_visible": True})],
+        "Nastavit meze",
+        html.Span(dcc.RangeSlider(0, 1, value=[0,1], id='slider',
+                        tooltip={"placement": "bottom", "always_visible": True}),
                         style={'flex-grow': '1'}),    
         dbc.Button('Replot', id='plot-button')
     ], style={'display': 'flex'}),
     html.Div([
-    html.Span("Nastavit DPI"),
-    html.Span([
-        dcc.Slider(50, 300, value=100, 
-                   id='slider-dpi',tooltip={"placement": "bottom", "always_visible": True})    
-        ], style={'flex-grow':'1'})
-    ],style={'display': 'flex'})
+        "Nastavit DPI",
+        html.Span([
+            dcc.Slider(50, 300, value=100, 
+                       id='slider-dpi',
+                       tooltip={"placement": "bottom", "always_visible": True})    
+            ], style={'flex-grow':'1'})
+    ], style={'display': 'flex'})
     ], color="success"),
     dcc.Loading(
     id="loading-1",
