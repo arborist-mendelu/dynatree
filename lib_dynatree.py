@@ -258,8 +258,8 @@ def find_finetune_synchro(date, tree, measurement, cols="delta time"):
 
 # find_finetune_synchro("2021-03-22", "BK01", "M02")
 # find_finetune_synchro("2022-04-05", "BK01", 3)
-start,end = find_finetune_synchro("2021-03-22", "BK01", "M02", "Inclino(80)X")
-start,end = find_finetune_synchro("2021-03-22", "BK01", "M02", "Inclino(80)Y")
+# start,end = find_finetune_synchro("2021-03-22", "BK01", "M02", "Inclino(80)X")
+# start,end = find_finetune_synchro("2021-03-22", "BK01", "M02", "Inclino(80)Y")
 
 
 def date2dirname(date):
@@ -297,7 +297,4 @@ def find_release_time_interval(df_extra, date, tree, measurement):
         percent2 = 0.85
         tmin = np.abs(df_extra.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
         return tmin,tmax
-
-
-
 

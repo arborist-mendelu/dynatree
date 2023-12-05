@@ -124,6 +124,7 @@ def plot_one_measurement(
     ax.axvspan(lower_bound, upper_bound, alpha=0.5, color="gray")
         
     # plot inclinometers
+
     ax = axes[1]    
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     delta_time = find_finetune_synchro(date, tree,measurement) 
