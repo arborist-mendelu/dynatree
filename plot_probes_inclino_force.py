@@ -19,14 +19,14 @@ from matplotlib import ticker
 
 from lib_dynatree import read_data, directory2date, find_release_time_optics, find_release_time_interval
 from lib_dynatree import find_finetune_synchro, read_data_inclinometers, date2dirname
-df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
+# df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 
 def plot_one_measurement(
         date="2021-03-22",
         path="../", 
         tree="01", 
         measurement="2", 
-        df_remarks=df_remarks, 
+        df_remarks=None, 
         return_figure=True, 
         save_figure=False, 
         xlim=(None,None),
@@ -65,6 +65,9 @@ def plot_one_measurement(
         DESCRIPTION
 
     """
+      
+    if df_remarks is None:
+        df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
     
     # accept both M02 and 2 as a measurement number
     measurement = measurement[-1]
@@ -85,6 +88,14 @@ def plot_one_measurement(
     if df_extra is None:
         df_extra = read_data(
             f"{path}{date}/csv_extended/BK{tree}_M0{measurement}.csv")
+
+    draw_from,draw_to = xlim
+    if draw_from == None:
+        draw_from = 0
+    if draw_to == None:
+        draw_to = df.index.max()
+
+
     bounds_for_fft = df_remarks[
         (df_remarks["tree"] == f"BK{tree}") & 
         (df_remarks["measurement"] == f"M0{measurement}") & 
@@ -102,8 +113,8 @@ def plot_one_measurement(
 
     # Plot probes, region of interest for oscillation
     ax = axes[0]
-    df_extra[fixes].plot(ax=ax)
-    df[(f'Pt{fix_target}', f'{plot_coordiante}0')].plot(ax=ax)
+    df_extra.loc[draw_from:draw_to,fixes].plot(ax=ax)
+    df.loc[draw_from:draw_to,(f'Pt{fix_target}', f'{plot_coordiante}0')].plot(ax=ax)
     ax.legend(title="",loc=2)
     ax.set(title=f"Pt{fix_target} and fixes based on points on ground")    
     ax.grid()
@@ -143,7 +154,7 @@ def plot_one_measurement(
         start,end = bounds
         inclino_mean = df_pulling_tests.loc[start:end,inclino].mean()
         df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean
-    df_pulling_tests[list_inclino].plot(ax=ax, style=".")
+    df_pulling_tests.loc[draw_from:draw_to,list_inclino].plot(ax=ax, style=".")
     ax.grid()
     ax.legend(list_inclino, title="", loc=3)
     ax.set(title="Inclinometers")
@@ -172,7 +183,6 @@ def plot_one_measurement(
     ax.grid(which='major')
     ax.grid(which='minor', lw=1)
     ax.xaxis.set(major_locator=maj_pos, minor_locator=min_pos)
-    ax.set(ylim=(0,None))
     lines1, labels1 = ax.get_legend_handles_labels()
     ax.legend().remove()    
     ax = ax.twinx()
@@ -191,7 +201,8 @@ def plot_one_measurement(
     for ax in axes:
         ax.axvspan(tmin,tmax, alpha=.5, color="yellow")
         # pre_release_data[file.replace(".csv","")] = delta_df.mean()
-    ax.set(xlim=xlim)        
+        ax.set(xlim=xlim, ylim=(None, None))        
+    axes[2].set(ylim=(0,None))
     fig.tight_layout()
     if save_figure:
         fig.savefig(
@@ -201,7 +212,7 @@ def plot_one_measurement(
     else:
         plt.close(fig)
 
-def plot_one_day(date="2021-03-22", path="../", df_remarks=df_remarks):
+def plot_one_day(date="2021-03-22", path="../"):
     
     # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
     date = date2dirname(date)
@@ -218,9 +229,9 @@ def plot_one_day(date="2021-03-22", path="../", df_remarks=df_remarks):
             path=path, 
             tree=tree, 
             measurement=measurement, 
-            df_remarks=df_remarks,
             save_figure=True, 
             return_figure=False)
+    print()    
     print(f"Konec zpracování pro {date}")
     
 def main():
