@@ -282,8 +282,9 @@ def find_release_time_interval(df_extra, date, tree, measurement):
     of maxima.
     """
 
-    
-    check_manual_data = find_finetune_synchro("2021-03-22", "BK01", "M02", cols="pre_release")
+    if "Mereni_Babice" in date:
+        date = directory2date(date)
+    check_manual_data = find_finetune_synchro(date, tree, measurement, cols="pre_release")
     if check_manual_data is not None and ~(np.isnan(check_manual_data).any()):
         return check_manual_data
     

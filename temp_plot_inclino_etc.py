@@ -31,7 +31,7 @@ plot_one_measurement(
         date=date,
         tree=tree, 
         measurement=measurement, 
-        xlim=(0,10),
+        # xlim=(0,10),
         # df_extra=df_ext,
         # df=DF
         ) 

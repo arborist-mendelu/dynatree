@@ -15,14 +15,12 @@ nebyl vynulovany inklinometr nebo behem pocatecni faze "poskocil".
 """
 
 import glob
-
 import numpy as np
-
 import pandas as pd
+import time
 
-
-from lib_dynatree import read_data
-from lib_dynatree import directory2date
+from lib_dynatree import read_data, read_data_selected
+from lib_dynatree import directory2date, find_release_time_interval
 from lib_dynatree import filename2tree_and_measurement_numbers
 
 
@@ -33,7 +31,7 @@ def find_release_data_one_measurement(
         measurement="2", 
         ):
     # print("/nacitam soubory/", flush=True)
-    df_main = read_data(
+    df_main = read_data_selected(
         f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")
     df_extra = read_data(
         f"{path}{date}/csv_extended/BK{tree}_M0{measurement}.csv")
@@ -47,16 +45,8 @@ def find_release_data_one_measurement(
     df = df - df.iloc[0,:]
 
     # print("/hledam casovy interval/")    
-    if df["Force(100)"].isna().values.all():
-        tmin = 0
-        tmax = 0
-    else:
-        maxforceidx = df["Force(100)"].idxmax().values[0]
-        maxforce  = df["Force(100)"].max().values[0]
-        percent1 = 0.95
-        tmax = np.abs(df.loc[:maxforceidx,["Force(100)"]]-maxforce*percent1).idxmin().values[0]
-        percent2 = 0.85
-        tmin = np.abs(df.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
+    tmin, tmax = find_release_time_interval(df_extra, date, tree, measurement)
+
     # Výběr časového intervalu
     df_release = df.loc[tmin:tmax,:].copy()
     # Výpočet průměrů
@@ -95,8 +85,8 @@ def main():
         print()
         print(i)
         print("=====================================================")
-        dfs[directory2date(i)] = find_release_data_one_day(measurement_day=i).T
-        pd.DataFrame(dfs[directory2date(i)]).to_csv(f"release_data_{directory2date(i)}.csv")
+        dfs[directory2date(i)] = find_release_data_one_day(date=i).T
+        pd.DataFrame(dfs[directory2date(i)]).to_csv(f"outputs/release_data_{directory2date(i)}.csv")
     return dfs
 
 

@@ -47,9 +47,6 @@ from scipy import interpolate
 from lib_dynatree import read_data, find_release_time_optics, date2dirname
 from lib_dynatree import read_data_inclinometers, find_finetune_synchro, directory2date
 
-# read data for synchronization
-df_finetune_synchro = pd.read_csv("csv/synchronization_finetune_inclinometers_fix.csv",header=[0,1])
-
 def fix_data_by_points_on_ground(df):
     """
     Parameters
@@ -120,10 +117,10 @@ def extend_one_csv(
         write_csv=False, 
         df=None):
     """
-    Reads csv file in a csv directory, adds data from inclinometers 
-    and saves to csv_extended directory. If df is given, the reading of csv 
+    Reads csv file in a 01_Mereni_Babice_22032021_optika_zpracovani/csv like directory, 
+    adds data from inclinometers (reads from pulling_test subdirectory) and saves to 
+    csv_extended subdirectory if write_csv is True. If df is given, the reading of csv 
     file is skipped and the given dataframe is used.
-    
 
     Returns
     -------
@@ -173,7 +170,7 @@ def extend_one_csv(
         df_fixed_and_inclino.to_csv(f"{path}{date}/csv_extended/BK{tree}_M0{measurement}.csv")
     return df_fixed_and_inclino
 
-def extend_one_day(date="2021-03-22", path="../"):
+def extend_one_day(date="2021-03-22", path="../", write_csv=False):
     
     date = date2dirname(date)
     
@@ -194,10 +191,16 @@ def extend_one_day(date="2021-03-22", path="../"):
             path=path, 
             tree=tree, 
             measurement=measurement,
-            write_csv=True)
+            write_csv=write_csv)
     print(f"Konec zpracování pro {date}")
 
 def main():
+    answer = input("The file will create csv files with data from inclinometers.\nOlder data (if any) will be replaced.\nConfirm y or yes to continue.")
+    if answer.upper() in ["Y", "YES"]:
+        pass
+    else:
+        print("File processing skipped.")
+        return None
     for i in [
             "2021-03-22", 
             "2021-06-29", 
@@ -206,7 +209,7 @@ def main():
             ]:
         print(i)
         print("=====================================================")
-        extend_one_day(date=i)
+        extend_one_day(date=i, write_csv=True)
 
 if __name__ == "__main__":
     main()

@@ -19,7 +19,6 @@ from matplotlib import ticker
 
 from lib_dynatree import read_data, directory2date, find_release_time_optics, find_release_time_interval
 from lib_dynatree import find_finetune_synchro, read_data_inclinometers, date2dirname
-# df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 
 def plot_one_measurement(
         date="2021-03-22",
@@ -235,6 +234,12 @@ def plot_one_day(date="2021-03-22", path="../"):
     print(f"Konec zpracování pro {date}")
     
 def main():
+    answer = input("The file will create png files with Pt3 movement, inclinometers, force and elastometer.\nOlder data (if any) will be replaced.\nConfirm y or yes to continue.")
+    if answer.upper() in ["Y", "YES"]:
+        pass
+    else:
+        print("File processing skipped.")
+        return None    
     for i in [
             "2021-03-22", 
             "2021-06-29", 
