@@ -3,6 +3,11 @@
 """
 Created on Tue Nov  7 15:07:36 2023
 
+Vykreslí v jednom grafu optiku, inklinometry, ...
+Umožní posoudit, jestli došlo k bezproblémové synchronizaci a jestli je 
+dobře vybrán interval pro release.
+
+
 @author: marik
 """
 
@@ -12,24 +17,22 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-from lib_dynatree import read_data
-from lib_dynatree import directory2date
-from lib_dynatree import find_release_time_optics
-
+from lib_dynatree import read_data, directory2date, find_release_time_optics, find_release_time_interval
+from lib_dynatree import find_finetune_synchro, read_data_inclinometers, date2dirname
 df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 
 def plot_one_measurement(
-        measurement_day="01_Mereni_Babice_22032021_optika_zpracovani",
+        date="2021-03-22",
         path="../", 
         tree="01", 
-        tree_measurement="2", 
+        measurement="2", 
         df_remarks=df_remarks, 
         return_figure=True, 
         save_figure=False, 
         xlim=(None,None),
         df_extra=None,
         df=None,
-        figsize=(14.1,10)):
+        figsize=(10,7)):
     """
     Vykreslí tři obrázky. 
     V horním je pohyb Pt3 a pootm Pt3 s odečtením posunu bodů na zemi.
@@ -39,13 +42,13 @@ def plot_one_measurement(
     data z eleastometru.
     
     ----------
-    measurement_day : TYPE, optional
+    date : TYPE, optional
         DESCRIPTION. The default is "01_Mereni_Babice_22032021_optika_zpracovani".
     path : TYPE, optional
         DESCRIPTION. The default is "../".
     tree : TYPE, optional
         DESCRIPTION. The default is "01".
-    tree_measurement : TYPE, optional
+    measurement : TYPE, optional
         DESCRIPTION. The default is "2".
     df_remarks : TYPE, optional
         DESCRIPTION. The default is df_remarks.
@@ -64,30 +67,28 @@ def plot_one_measurement(
     """
     
     # accept both M02 and 2 as a measurement number
-    tree_measurement = tree_measurement[-1]
+    measurement = measurement[-1]
     # accept both BK04 and 04 as a tree number
     tree = tree[-2:]
     # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
-    if len(measurement_day)==10:
-        measurement_day = measurement_day.split("-")
-        measurement_day.reverse()
-        measurement_day = "".join(measurement_day)
-    if len(measurement_day)==8:
-        measurement_day = f"01_Mereni_Babice_{measurement_day}_optika_zpracovani"    
+    if len(date)==10:
+        date = "".join(reversed(date.split("-")))
+    if len(date)==8:
+        date = f"01_Mereni_Babice_{date}_optika_zpracovani"    
     
     if df is None:
         df = read_data(
-            f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")
+            f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")
     else:
-        # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")
+        # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{measurement}.csv")
         pass
     if df_extra is None:
         df_extra = read_data(
-            f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
+            f"{path}{date}/csv_extended/BK{tree}_M0{measurement}.csv")
     bounds_for_fft = df_remarks[
         (df_remarks["tree"] == f"BK{tree}") & 
-        (df_remarks["measurement"] == f"M0{tree_measurement}") & 
-        (df_remarks["date"] == directory2date(measurement_day))
+        (df_remarks["measurement"] == f"M0{measurement}") & 
+        (df_remarks["date"] == directory2date(date))
             ]
     fix_target = 3
     plot_coordiante = "Y"
@@ -97,10 +98,8 @@ def plot_one_measurement(
 
     fig, axes = plt.subplots(3,1,figsize=figsize,sharex=True)
     plt.suptitle(
-        f"{measurement_day.replace('_optika_zpracovani','')} - BK{tree} M0{tree_measurement}")
+        f"{date.replace('_optika_zpracovani','')} - BK{tree} M0{measurement}")
 
-    release_time_optics = find_release_time_optics(df)
-    
     # Plot probes, region of interest for oscillation
     ax = axes[0]
     df_extra[fixes].plot(ax=ax)
@@ -125,11 +124,25 @@ def plot_one_measurement(
     ax.axvspan(lower_bound, upper_bound, alpha=0.5, color="gray")
         
     # plot inclinometers
-    # start = release_time_optics-5
-    start = 0
     ax = axes[1]    
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
-    df_extra.loc[start:,list_inclino].plot(ax=ax)
+    delta_time = find_finetune_synchro(date, tree,measurement) 
+
+    # načte synchronizovaná data a přesampluje na stejné časy jako v optice
+    release_time_optics = find_release_time_optics(df)
+    df_pulling_tests = read_data_inclinometers(
+        f"{path}{date}/pulling_tests/BK_{tree}_M{measurement}.TXT", 
+        release=release_time_optics, 
+        delta_time=delta_time
+        )    
+    for inclino in list_inclino:
+        bounds = find_finetune_synchro(date, tree,measurement, inclino) 
+        if bounds is None or np.isnan(bounds).any():
+            continue
+        start,end = bounds
+        inclino_mean = df_pulling_tests.loc[start:end,inclino].mean()
+        df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean
+    df_pulling_tests[list_inclino].plot(ax=ax, style=".")
     ax.grid()
     ax.legend(list_inclino, title="", loc=3)
     ax.set(title="Inclinometers")
@@ -145,11 +158,10 @@ def plot_one_measurement(
         f = f / fmax
     else:
         f = f / fmin
-    f = f * df_extra.loc[start:,"Force(100)"].max().values[0]
+    f = f * df_pulling_tests.loc[:,"Force(100)"].max()
     f.plot(ax = ax)
     
-    # df_extra.loc[start:,"Force(100)"].plot(ax=ax)
-    ax.plot(df.index[start:],df_extra.loc[start:,"Force(100)"],"o", ms=2, label='Force')
+    ax.plot(df_pulling_tests.index,df_pulling_tests.loc[:,"Force(100)"],".", label='Force')
     if xlim[0] is not None and xlim[1] is not None and xlim[1]-xlim[0]<15:
         maj_pos = ticker.MultipleLocator(1)   # major ticks 
     else:
@@ -163,7 +175,7 @@ def plot_one_measurement(
     lines1, labels1 = ax.get_legend_handles_labels()
     ax.legend().remove()    
     ax = ax.twinx()
-    df_extra.loc[start:,"Elasto(90)"].plot(ax=ax,color="C2")
+    df_pulling_tests.loc[:,"Elasto(90)"].plot(ax=ax,color="C2", style=".")
     ax.set(title=f"Force, Elasto, scaled (Pt{fix_target}, {plot_coordiante}0)")
     lines2, labels2 = ax.get_legend_handles_labels()
     ax.legend(lines1 + lines2, [f"scaled (Pt{fix_target}, {plot_coordiante}0)","Force","Elasto"], loc=3)
@@ -173,30 +185,8 @@ def plot_one_measurement(
     for ax in axes:
         ax.axvline(x = release_time_optics, color='k', linestyle="dashed", zorder=0)
 
+    tmin, tmax = find_release_time_interval(df_extra, date, tree, measurement)
     
-    # Replace negative force by 0
-    # df_extra.loc[df_extra["Force(100)"]<0,"Force(100)"] = 0
-    # Find time for 95% and 85% force
-    
-    if df_extra["Force(100)"].isna().values.all():
-         maxforceidx = 0
-         tmin = 0
-         tmax = 0         
-    else:
-        maxforceidx = df_extra["Force(100)"].idxmax().iat[0]
-        maxforce  = df_extra["Force(100)"].max().iat[0]
-        percent1 = 0.95
-        tmax = np.abs(df_extra.loc[:maxforceidx,["Force(100)"]]-maxforce*percent1).idxmin().values[0]
-        percent2 = 0.85
-        tmin = np.abs(df_extra.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
-    
-    sloupce = ["Time"]+list_inclino+["Force(100)","Elasto(90)"]
-    delta_df_extra = df_extra[sloupce].copy()
-    delta_df = df[["Pt3","Pt4"]].copy()
-    for i in ["Pt3", "Pt4"]:
-        delta_df[i] = delta_df[i] - delta_df[i].iloc[0]
-    delta_df = delta_df.loc[tmin:tmax,:]    
-    delta_df_extra = delta_df_extra.loc[tmin:tmax,:]    
     for ax in axes:
         ax.axvspan(tmin,tmax, alpha=.5, color="yellow")
         # pre_release_data[file.replace(".csv","")] = delta_df.mean()
@@ -204,41 +194,44 @@ def plot_one_measurement(
     fig.tight_layout()
     if save_figure:
         fig.savefig(
-            f"{path}{measurement_day}/png_with_inclino/BK{tree}_M0{tree_measurement}.png")
+            f"{path}{date}/png_with_inclino/BK{tree}_M0{measurement}.png", dpi=100)
     if return_figure:
         return fig
     else:
         plt.close(fig)
 
-def plot_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../", df_remarks=df_remarks):
+def plot_one_day(date="2021-03-22", path="../", df_remarks=df_remarks):
     
-    csvfiles =  glob.glob(f"../{measurement_day}/csv/*.csv")
+    # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
+    date = date2dirname(date)
+    
+    csvfiles =  glob.glob(f"../{date}/csv/*.csv")
     csvfiles.sort()
     for file in csvfiles:
         filename = file.split("/")[-1]
         print(filename,", ",end="")
         tree = filename[2:4]
-        tree_measurement = filename[7]
+        measurement = filename[7]
         plot_one_measurement(
-            measurement_day=measurement_day, 
+            date=date, 
             path=path, 
             tree=tree, 
-            tree_measurement=tree_measurement, 
+            measurement=measurement, 
             df_remarks=df_remarks,
             save_figure=True, 
             return_figure=False)
-    print(f"Konec zpracování pro {measurement_day}")
+    print(f"Konec zpracování pro {date}")
     
 def main():
     for i in [
-                    "01_Mereni_Babice_22032021_optika_zpracovani",   
-                    "01_Mereni_Babice_29062021_optika_zpracovani", 
-                    "01_Mereni_Babice_05042022_optika_zpracovani",
-                    "01_Mereni_Babice_16082022_optika_zpracovani",
+            "2021-03-22", 
+            "2021-06-29", 
+            "2022-04-05", 
+            "2022-08-16"
                     ]:
         print(i)
         print("=====================================================")
-        plot_one_day(measurement_day=i)
+        plot_one_day(date=i)
 
 if __name__ == "__main__":
     main()

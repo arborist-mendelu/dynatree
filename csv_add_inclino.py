@@ -45,8 +45,8 @@ import pandas as pd
 import numpy as np
 import warnings
 from scipy import interpolate
-from lib_dynatree import read_data
-from lib_dynatree import find_release_time_optics
+from lib_dynatree import read_data, find_release_time_optics, date2dirname
+from lib_dynatree import read_data_inclinometers, find_finetune_synchro, directory2date
 
 # read data for synchronization
 df_finetune_synchro = pd.read_csv("csv/synchronization_finetune_inclinometers_fix.csv",header=[0,1])
@@ -104,39 +104,6 @@ def fix_data_by_points_on_ground(df):
 # plt.plot(df_fixed[("Pt3_fixed_by_13","Y0")])
 # find_release_time_optics(df,probe="Pt3",coordinate="Y0")
 
-def read_data_inclinometers(file, release=None, delta_time=0):
-    """
-    Read data from pulling tests, restart Time from 0 and turn Time to index.
-    If release is given, shift the Time and index columns so that the release 
-    is at the given time. In this case the original time in in the column Time_inclino
-    """
-    df_pulling_tests = pd.read_csv(
-        file,
-        skiprows=55, 
-        decimal=",",
-        delim_whitespace=True,    
-        skipinitialspace=True,
-        na_values="-"
-        )
-    df_pulling_tests["Time"] = df_pulling_tests["Time"] - df_pulling_tests["Time"][0]
-    df_pulling_tests.set_index("Time", inplace=True)
-    # df_pulling_tests.interpolate(inplace=True, axis=1)
-    if release is None:
-        return df_pulling_tests
-    
-    if df_pulling_tests["Force(100)"].isna().all():
-        release_time_force = release
-    else:
-        release_time_force = df_pulling_tests["Force(100)"].idxmax()
-        
-    # Sync the dataframe from inclino to optics    
-    df_pulling_tests["Time_inclino"] = df_pulling_tests.index
-    df_pulling_tests["Time"] = df_pulling_tests["Time_inclino"] - release_time_force + release + delta_time
-    df_pulling_tests.set_index("Time", inplace=True)
-    df_pulling_tests["Time"] = df_pulling_tests.index
-        
-    return df_pulling_tests
-
 def resample_data_from_inclinometers(df_pulling_tests, df):
     cols = [i for i in df_pulling_tests.columns if "Inclino" in i or "Force" in i or "Elasto" in i or "Rope" in i]
     cols = pd.MultiIndex.from_product([cols,[None]], names=["Time", None])
@@ -147,9 +114,9 @@ def resample_data_from_inclinometers(df_pulling_tests, df):
     return df_resampled
 
 def extend_one_csv(
-        measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", 
+        date="2021-03-22", 
         tree="01", 
-        tree_measurement="2", 
+        measurement="2", 
         path="../", 
         write_csv=False, 
         df=None):
@@ -166,39 +133,26 @@ def extend_one_csv(
     """
     
     # accept both M02 and 2 as a measurement number
-    tree_measurement = tree_measurement[-1]
+    measurement = measurement[-1]
     # accept both BK04 and 04 as a tree number
     tree = tree[-2:]
     # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
-    if len(measurement_day)==10:
-        measurement_day = measurement_day.split("-")
-        measurement_day.reverse()
-        measurement_day = "".join(measurement_day)
-    if len(measurement_day)==8:
-        measurement_day = f"01_Mereni_Babice_{measurement_day}_optika_zpracovani"
+    date = date2dirname(date)
         
     # Read data file
     # načte data z csv souboru
     if df is None:
-        df = read_data(f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")   
+        df = read_data(f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")   
     # df se sploupci s odectenim pohybu bodu na zemi
     df_fixed = df.copy().pipe(fix_data_by_points_on_ground) 
     # df s daty z inklinoměrů, synchronizuje a interpoluje na stejné časové okamžiky
     release_time_optics = find_release_time_optics(df)
     
-    # najde případnou opravu synchronizace z tabulky s rucne zadanyma hodnotama
-    df_finetune_synchro = pd.read_csv("csv/synchronization_finetune_inclinometers_fix.csv",header=[0,1])    
-    condition = (df_finetune_synchro[("tree","-")]==f"BK{tree}") & (df_finetune_synchro[("measurement","-")]==f"M0{tree_measurement}") & (df_finetune_synchro[("date","-")]==f"{measurement_day[21:25]}-{measurement_day[19:21]}-{measurement_day[17:19]}")
-    df_finetune_tree = df_finetune_synchro[condition]
-    delta_time = 0
-    if df_finetune_tree.shape[0]>0:
-        delta_time = df_finetune_tree["delta time"].iat[0,0]
-    if np.isnan(delta_time):
-        delta_time = 0
+    delta_time = find_finetune_synchro(directory2date(date), tree,measurement)
     
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     df_pulling_tests_ = read_data_inclinometers(
-        f"{path}{measurement_day}/pulling_tests/BK_{tree}_M{tree_measurement}.TXT", 
+        f"{path}{date}/pulling_tests/BK_{tree}_M{measurement}.TXT", 
         release=release_time_optics, 
         delta_time=delta_time
         )
@@ -207,51 +161,53 @@ def extend_one_csv(
     # If there is a record related to the Inclinometers, shift values such that 
     # the mean value on the interval given between start and end is zero.    
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
-    if df_finetune_tree.shape[0]>0:
-        for inclino in list_inclino:
-            df_finetune_inclino = df_finetune_tree[inclino]
-            if not df_finetune_inclino.isnull().values.any():
-                inclino_start = df_finetune_inclino["start"].values[0]
-                inclino_end = df_finetune_inclino["end"].values[0]
-                inclino_mean = df_pulling_tests.loc[inclino_start:inclino_end,inclino].mean()
-                df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean
+    for inclino in list_inclino:
+        bounds = find_finetune_synchro(date, tree,measurement, inclino) 
+        if bounds is None or np.isnan(bounds).any():
+            continue
+        start,end = bounds
+        inclino_mean = df_pulling_tests.loc[start:end,inclino].mean()
+        df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean                
 
     df_fixed_and_inclino = pd.concat([df_fixed,df_pulling_tests], axis=1)
     if write_csv:
-        df_fixed_and_inclino.to_csv(f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
+        df_fixed_and_inclino.to_csv(f"{path}{date}/csv_extended/BK{tree}_M0{measurement}.csv")
     return df_fixed_and_inclino
 
-def extend_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../"):
+def extend_one_day(date="2021-03-22", path="../"):
+    
+    date = date2dirname(date)
+    
     try:
-        os.makedirs(f"{path}{measurement_day}/csv_extended")
+        os.makedirs(f"{path}{date}/csv_extended")
     except FileExistsError:
        # directory already exists
        pass    
-    csvfiles =  glob.glob(f"../{measurement_day}/csv/*.csv")
+    csvfiles =  glob.glob(f"../{date}/csv/*.csv")
     csvfiles.sort()
     for file in csvfiles:
         filename = file.split("/")[-1]
         print(f"{filename}, ",end="")
         tree = filename[2:4]
-        tree_measurement = filename[7]
+        measurement = filename[7]
         extend_one_csv(
-            measurement_day=measurement_day, 
+            date=date, 
             path=path, 
             tree=tree, 
-            tree_measurement=tree_measurement,
+            measurement=measurement,
             write_csv=True)
-    print(f"Konec zpracování pro {measurement_day}")
+    print(f"Konec zpracování pro {date}")
 
 def main():
     for i in [
-                    "01_Mereni_Babice_22032021_optika_zpracovani",   
-                    "01_Mereni_Babice_29062021_optika_zpracovani", 
-                    "01_Mereni_Babice_05042022_optika_zpracovani",
-                    "01_Mereni_Babice_16082022_optika_zpracovani",
-                    ]:
+            "2021-03-22", 
+            "2021-06-29", 
+            "2022-04-05", 
+            "2022-08-16"
+            ]:
         print(i)
         print("=====================================================")
-        extend_one_day(measurement_day=i)
+        extend_one_day(date=i)
 
 if __name__ == "__main__":
     main()

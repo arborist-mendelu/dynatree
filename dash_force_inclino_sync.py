@@ -143,9 +143,9 @@ def plot_graph(file, button, day, tree, measurement,slider,dpi):
         
     buf = io.BytesIO() # in-memory files
     
-    df_ext = extend_one_csv(measurement_day=day, 
+    df_ext = extend_one_csv(date=day, 
             tree=tree, 
-            tree_measurement=measurement, 
+            measurement=measurement, 
             path="../", 
             write_csv=False,
             df=DF
@@ -155,9 +155,9 @@ def plot_graph(file, button, day, tree, measurement,slider,dpi):
     if "plot-button" == ctx.triggered_id:
         xlim = slider
     fig = plot_one_measurement(
-            measurement_day=day,
+            date=day,
             tree=tree, 
-            tree_measurement=measurement, 
+            measurement=measurement, 
             xlim=xlim,
             df_extra=df_ext,
             df=DF, 

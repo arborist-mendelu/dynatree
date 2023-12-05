@@ -27,16 +27,16 @@ from lib_dynatree import filename2tree_and_measurement_numbers
 
 
 def find_release_data_one_measurement(
-        measurement_day="01_Mereni_Babice_22032021_optika_zpracovani",
+        date="01_Mereni_Babice_22032021_optika_zpracovani",
         path="../", 
         tree="01", 
-        tree_measurement="2", 
+        measurement="2", 
         ):
     # print("/nacitam soubory/", flush=True)
     df_main = read_data(
-        f"{path}{measurement_day}/csv/BK{tree}_M0{tree_measurement}.csv")
+        f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")
     df_extra = read_data(
-        f"{path}{measurement_day}/csv_extended/BK{tree}_M0{tree_measurement}.csv")
+        f"{path}{date}/csv_extended/BK{tree}_M0{measurement}.csv")
 
     # print("/extrahuji data/", flush=True)
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
@@ -70,17 +70,17 @@ def find_release_data_one_measurement(
             df_means[f"{inclino}_{lb}_{ub}"]=np.mean(df_notna.loc[lb:ub,inclino])
     return df_means
 
-def find_release_data_one_day(measurement_day="01_Mereni_Babice_22032021_optika_zpracovani", path="../"):
+def find_release_data_one_day(date="01_Mereni_Babice_22032021_optika_zpracovani", path="../"):
     output = {}
     # Find csv files
-    csvfiles =  glob.glob(f"../{measurement_day}/csv/*.csv")
+    csvfiles =  glob.glob(f"../{date}/csv/*.csv")
     csvfiles.sort()
     # Drop directory name
     csvfiles = [i.split("/")[-1] for i in csvfiles]
     for file in csvfiles:
-        tree, tree_measurement = filename2tree_and_measurement_numbers(file)
-        print (f"BK{tree} M0{tree_measurement}, ",end="")
-        output[f"BK{tree} M0{tree_measurement}"] = find_release_data_one_measurement(measurement_day=measurement_day, tree=tree, tree_measurement=tree_measurement, path=path)
+        tree, measurement = filename2tree_and_measurement_numbers(file)
+        print (f"BK{tree} M0{measurement}, ",end="")
+        output[f"BK{tree} M0{measurement}"] = find_release_data_one_measurement(date=date, tree=tree, measurement=measurement, path=path)
     df = pd.DataFrame(output)
     return df    
 
