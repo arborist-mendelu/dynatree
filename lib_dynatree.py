@@ -179,3 +179,77 @@ def do_welch(s, time, nperseg=2**10, fs = 100):
     f, Pxx = signal.welch(x=signal_welch, fs=fs, nperseg=nperseg)
     Pxx
     return f, Pxx
+
+def read_data_inclinometers(file, release=None, delta_time=0):
+    """
+    Read data from pulling tests, restart Time from 0 and turn Time to index.
+    If release is given, shift the Time and index columns so that the release 
+    is at the given time. In this case the original time in in the column Time_inclino
+    """
+    df_pulling_tests = pd.read_csv(
+        file,
+        skiprows=55, 
+        decimal=",",
+        delim_whitespace=True,    
+        skipinitialspace=True,
+        na_values="-"
+        )
+    df_pulling_tests["Time"] = df_pulling_tests["Time"] - df_pulling_tests["Time"][0]
+    df_pulling_tests.set_index("Time", inplace=True)
+    # df_pulling_tests.interpolate(inplace=True, axis=1)
+    if release is None:
+        return df_pulling_tests
+    
+    if df_pulling_tests["Force(100)"].isna().all():
+        release_time_force = release
+    else:
+        release_time_force = df_pulling_tests["Force(100)"].idxmax()
+        
+    # Sync the dataframe from inclino to optics    
+    df_pulling_tests["Time_inclino"] = df_pulling_tests.index
+    df_pulling_tests["Time"] = df_pulling_tests["Time_inclino"] - release_time_force + release + delta_time
+    df_pulling_tests.set_index("Time", inplace=True)
+    df_pulling_tests["Time"] = df_pulling_tests.index
+        
+    return df_pulling_tests
+
+def find_finetune_synchro(date, tree, measurement, cols="delta time"):
+    """
+    Returns line from csv/synchronization_finetune_inclinometers_fix.csv
+    corresponding to the date, tree and measurement numbers. Accepts both 
+    24122021 and 2021-12-24 for date, both BK02 and 02 for tree, both 3 and M03 
+    for measurement. 
+    
+    Raises error, is there are mothan two rows in the file.
+    Returns the value or the array corresponding to the col variable.
+    """
+    if not "-" in date:
+        date = f"{date[-4:]}-{date[2:4]}-{date[:2]}"
+    if not "BK" in str(tree):
+        tree = f"BK{tree}"
+    if not "M" in str(measurement):
+        measurement = f"M0{measurement}"
+    df = pd.read_csv("csv/synchronization_finetune_inclinometers_fix.csv",header=[0,1], index_col=[0,1,2])     
+    if not (date,tree,measurement) in df.index:
+        return None
+    df = df.loc[(date,tree,measurement),cols]
+    # if df.shape[0]>1:
+    #     raise Exception (f"Row {date} {tree} {measurement} is more than once in the file csv/synchronization_finetune_inclinometers_fix.csv.\nMerge the date into a single row." )
+    output = df.values
+    if len(output)==1:
+        output = output[0]
+    return output
+
+# find_finetune_synchro("2022-08-16", "BK08", 3)
+# find_finetune_synchro("2022-04-05", "BK01", 3)
+# start,end = find_finetune_synchro("2021-03-22", "BK01", "M02", "Inclino(80)X")
+# start,end = find_finetune_synchro("2021-03-22", "BK01", "M02", "Inclino(80)Y")
+
+
+def date2dirname(date):
+    # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
+    if len(date)==10:
+        date = "".join(reversed(date.split("-")))
+    if len(date)==8:
+        date = f"01_Mereni_Babice_{date}_optika_zpracovani"
+    return date
