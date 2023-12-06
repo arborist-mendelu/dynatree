@@ -73,7 +73,7 @@ sns.swarmplot(
 ax.legend(loc=2)
 ax.grid(alpha=0.4)
 ax.set(title="Základní frekvence")
-plt.savefig("swarmplot.pdf")
+plt.savefig("outputs/swarmplot.pdf")
 
 # %% s listim/bez listi
 
@@ -95,4 +95,4 @@ sns.boxplot(
 ax.legend(loc=2, title="Olistění")
 ax.grid(alpha=0.4)
 ax.set(title="Základní frekvence (dvě měření s listy a dvě bez listů)")
-plt.savefig("boxplot.pdf")
+plt.savefig("outputs/boxplot.pdf")
