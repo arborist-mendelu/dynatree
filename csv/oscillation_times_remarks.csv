@@ -169,3 +169,4 @@ date,tree,measurement,start,end,remark,probe,decrement_start,decrement_end,decre
 2022-08-16,BK14,M04,102.66,128.07,Konec je horší,,,,
 2022-08-16,BK21,M03,84.37,inf,Krásné kmity,,,,
 2022-08-16,BK21,M04,78.11,inf,"Krásné kmity, interpolovatelné mezery",,,,
+2022-08-16,BK24,M04,113.73,139.33,"Krásné kmity, rychle utlumené.",,,,

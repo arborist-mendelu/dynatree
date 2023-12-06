@@ -22,10 +22,13 @@ import base64
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 
+probes = ["Pt3 with Pt4","Pt3 with fixes"]
+
+
 app.layout =  dbc.Container(
     [
     html.H1('Měření Babice, synchronizace a pre-release data', className="text-primary text-center fs-3"),
-    *csv_selection(),
+    *csv_selection(probes),
     dbc.Alert([
     html.Div([
         "Nastavit meze",
@@ -131,18 +134,25 @@ def sestav_csv(measurement, date, tree):
     Output('image', 'src', allow_duplicate=True),
     Input('csv', 'children'),
     Input('plot-button', 'n_clicks'),
+    Input('radio-selection-4', 'value'),
     *[State(f'radio-selection-{i}', 'value') for i in [1,2,3]],
     State('slider','value'),
     State('slider-dpi','value'),
     prevent_initial_call=True
     )    
-def plot_graph(file, button, day, tree, measurement,slider,dpi):
+def plot_graph(file, button, probes, day, tree, measurement, slider, dpi):
     global DF
     if day is None or tree is None or measurement is None:
         return None
         
     buf = io.BytesIO() # in-memory files
     
+    if probes=="Pt3 with Pt4":
+        plot_fixes = False
+        plot_Pt4 = True
+    else:
+        plot_fixes = True
+        plot_Pt4 = False
     df_ext = extend_one_csv(date=day, 
             tree=tree, 
             measurement=measurement, 
@@ -161,7 +171,7 @@ def plot_graph(file, button, day, tree, measurement,slider,dpi):
             xlim=xlim,
             df_extra=df_ext,
             df=DF, 
-            figsize=(10,8))    
+            figsize=(10,8), plot_fixes=plot_fixes, plot_Pt4=plot_Pt4)    
     plt.savefig(buf, format = "png", dpi=dpi)
     plt.close()
     data = base64.b64encode(buf.getbuffer()).decode('utf-8') # encode to html elements

@@ -17,21 +17,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-from lib_dynatree import read_data, directory2date, find_release_time_optics, find_release_time_interval
+from lib_dynatree import read_data, read_data_selected, directory2date, find_release_time_optics, find_release_time_interval
 from lib_dynatree import find_finetune_synchro, read_data_inclinometers, date2dirname
 
 def plot_one_measurement(
         date="2021-03-22",
-        path="../", 
-        tree="01", 
-        measurement="2", 
-        df_remarks=None, 
-        return_figure=True, 
-        save_figure=False, 
+        path="../",
+        tree="01",
+        measurement="2",
+        df_remarks=None,
+        return_figure=True,
+        save_figure=False,
         xlim=(None,None),
         df_extra=None,
         df=None,
-        figsize=(10,7)):
+        figsize=(10,7), 
+        plot_fixes=True, 
+        plot_Pt4=False):
     """
     Vykreslí tři obrázky. 
     V horním je pohyb Pt3 a pootm Pt3 s odečtením posunu bodů na zemi.
@@ -42,26 +44,25 @@ def plot_one_measurement(
     
     ----------
     date : TYPE, optional
-        DESCRIPTION. The default is "01_Mereni_Babice_22032021_optika_zpracovani".
+        The default is "01_Mereni_Babice_22032021_optika_zpracovani".
     path : TYPE, optional
-        DESCRIPTION. The default is "../".
+        The default is "../".
     tree : TYPE, optional
-        DESCRIPTION. The default is "01".
+        The default is "01".
     measurement : TYPE, optional
-        DESCRIPTION. The default is "2".
+        The default is "2".
     df_remarks : TYPE, optional
-        DESCRIPTION. The default is df_remarks.
+        The default is df_remarks.
     return_figure : TYPE, optional
-        DESCRIPTION. The default is True.
+        The default is True.
     save_figure : TYPE, optional
-        DESCRIPTION. The default is False.
+        The default is False.
     xlim: limits on horizontal axis
     df: do not read csv but use this one DataFrame instead
 
     Returns
     -------
-    fig : TYPE
-        DESCRIPTION
+    fig : 
 
     """
       
@@ -79,7 +80,7 @@ def plot_one_measurement(
         date = f"01_Mereni_Babice_{date}_optika_zpracovani"    
     
     if df is None:
-        df = read_data(
+        df = read_data_selected(
             f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")
     else:
         # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{measurement}.csv")
@@ -112,10 +113,20 @@ def plot_one_measurement(
 
     # Plot probes, region of interest for oscillation
     ax = axes[0]
-    df_extra.loc[draw_from:draw_to,fixes].plot(ax=ax)
-    df.loc[draw_from:draw_to,(f'Pt{fix_target}', f'{plot_coordiante}0')].plot(ax=ax)
+    if plot_Pt4:
+        tempdata = df.loc[draw_from:draw_to,[('Pt3', f'{plot_coordiante}0'),('Pt4', f'{plot_coordiante}0')]].copy()
+        tempdata = tempdata - tempdata.iloc[0,:]
+        tempdata.plot(ax=ax)
+        ax.set(title=f"Change of Pt3 and Pt4 from the initial position")    
+    else:
+        if plot_fixes:
+            df_extra.loc[draw_from:draw_to,fixes].plot(ax=ax)
+            ax.set(title=f"Pt{fix_target} and fixes based on points on ground")    
+        else:
+            ax.set(title=f"Pt{fix_target}")    
+        df.loc[draw_from:draw_to,(f'Pt{fix_target}', f'{plot_coordiante}0')].plot(ax=ax)
+
     ax.legend(title="",loc=2)
-    ax.set(title=f"Pt{fix_target} and fixes based on points on ground")    
     ax.grid()
     t = ax.text(
         0, 0, 
@@ -220,7 +231,7 @@ def plot_one_day(date="2021-03-22", path="../"):
     csvfiles.sort()
     for file in csvfiles:
         filename = file.split("/")[-1]
-        print(filename,", ",end="")
+        print(filename,", ",end="", flush=True)
         tree = filename[2:4]
         measurement = filename[7]
         plot_one_measurement(

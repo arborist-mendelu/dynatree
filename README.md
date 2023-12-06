@@ -35,6 +35,7 @@ pomocí programu dash_force_inclino_sync.py buď spuštěním v konzoli nebo ve 
 http://127.0.0.1:8050/ .
 
 Jedno měření je možno zpracovat příkazy jako napříkald následující sada.
+
 ```
 from plot_probes_inclino_force import plot_one_measurement
 
@@ -43,9 +44,9 @@ tree = "BK08"
 day = "2021-03-22"
 
 plot_one_measurement(
-        measurement_day=day,
+        date=day,
         tree=tree, 
-        tree_measurement=measurement, 
+        measurement=measurement, 
         # xlim=(42,50),
         ) 
 ```
