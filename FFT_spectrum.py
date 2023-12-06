@@ -9,8 +9,7 @@ Analyzuje pomoci FFT bud jedno mereni nebo
 """
 
 import pandas as pd
-from lib_dynatree import read_data
-from lib_dynatree import directory2date
+from lib_dynatree import read_data_selected, directory2date
 from lib_dynatree import filename2tree_and_measurement_numbers
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,10 +27,10 @@ df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 
 def do_fft_for_file(
         path="../", 
-        measurement_day="01_Mereni_Babice_22032021_optika_zpracovani",
+        date="01_Mereni_Babice_22032021_optika_zpracovani",
         csvdir="csv",
         tree="01",
-        tree_measurement="2",
+        measurement="2",
         start = 0,
         end = np.inf,
         column_fft=("Pt3","Y0"),
@@ -76,7 +75,7 @@ def do_fft_for_file(
     if np.isnan(start) or np.isnan(end) or (start==end):
         print("Nejsou zadany meze pro signal")
         return None
-    df = read_data(f"{path}{measurement_day}/{csvdir}/BK{tree}_M0{tree_measurement}.csv")
+    df = read_data_selected(f"{path}{date}/{csvdir}/BK{tree}_M0{measurement}.csv")
     
     signal_ = df[column_fft].dropna().loc[start:end]
     if np.isnan(signal_).any():
@@ -117,9 +116,9 @@ def do_fft_for_file(
         ax.grid()
         ax.set(ylabel="FFT", xlabel="Freq./Hz", yscale='log', ylim=(0.001,None))
     
-        plt.suptitle(directory2date(measurement_day)+f", BK{tree}_M0{tree_measurement}")
+        plt.suptitle(directory2date(date)+f", BK{tree}_M0{measurement}")
         plt.tight_layout()
-        fig.savefig(f"{path}{measurement_day}/png_fft/BK{tree}_M0{tree_measurement}.png")
+        fig.savefig(f"{path}{date}/png_fft/BK{tree}_M0{measurement}.png")
         if return_image:
             output['figure']=fig
         else:
@@ -131,13 +130,13 @@ def do_fft_for_file(
 # plt.show(a['figure'])
     
 def do_fft_for_day(
-        measurement_day="01_Mereni_Babice_22032021_optika_zpracovani",
+        date="01_Mereni_Babice_22032021_optika_zpracovani",
         path="./",
         color="C0"
         ):
     for d in ["png_fft"]:
         try:
-           os.makedirs(f"{path}{measurement_day}/{d}")
+           os.makedirs(f"{path}{date}/{d}")
         except FileExistsError:
            # directory already exists
            pass
@@ -145,14 +144,14 @@ def do_fft_for_day(
     fft_data = {}
     
     csvdir="csv"
-    files = os.listdir(f"{path}{measurement_day}/{csvdir}/")
+    files = os.listdir(f"{path}{date}/{csvdir}/")
     files.sort()
     
     for file in files[:]:
         print(file, end="")    
 
-        tree,tree_measurement = filename2tree_and_measurement_numbers(file)
-        bounds_for_fft = df_remarks[(df_remarks["tree"]==f"BK{tree}") & (df_remarks["measurement"]==f"M0{tree_measurement}") & (df_remarks["date"]==directory2date(measurement_day))]
+        tree,measurement = filename2tree_and_measurement_numbers(file)
+        bounds_for_fft = df_remarks[(df_remarks["tree"]==f"BK{tree}") & (df_remarks["measurement"]==f"M0{measurement}") & (df_remarks["date"]==directory2date(date))]
         if bounds_for_fft['probe'].isnull().values.any():
             column_fft = ("Pt3","Y0") 
         else:
@@ -166,9 +165,9 @@ def do_fft_for_day(
             end=end,
             column_fft=column_fft,
             create_image=True,
-            measurement_day=measurement_day,
+            date=date,
             tree=tree,
-            tree_measurement=tree_measurement,
+            measurement=measurement,
             color=color,
             )
         if output_fft is not None:
@@ -182,17 +181,17 @@ def do_fft_for_day(
 
     df_output = pd.DataFrame(fft_data).T
     df_output.columns = ["Freq","Delta freq"]
-    df_output.to_excel(f"fft_data_{measurement_day}.xlsx")
+    df_output.to_excel(f"fft_data_{date}.xlsx")
 
 def main():
-    for MEASUREMENT_DAY, COLOR in [
+    for DATE, COLOR in [
             ["01_Mereni_Babice_22032021_optika_zpracovani", "C0"],
             ["01_Mereni_Babice_29062021_optika_zpracovani", "C1"],
             ["01_Mereni_Babice_05042022_optika_zpracovani", "C0"],
             ["01_Mereni_Babice_16082022_optika_zpracovani", "C1"],
             ]:
-        print(MEASUREMENT_DAY)
-        do_fft_for_day(measurement_day=MEASUREMENT_DAY, color=COLOR, path="../")
+        print(DATE)
+        do_fft_for_day(date=DATE, color=COLOR, path="../")
     
     # Na konci vykreslit přehled
     subprocess.run(["python", "plot_fft.py"])
