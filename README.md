@@ -122,7 +122,3 @@ ln -s ../01_Mereni_Babice_16082022_optika_zpracovani 04
 
 Spojení všech FFT diagramů pro strom na jednu stranu a převod na PDF je ve
 skriptu `all_fft_to_one_page.sh`.
-
-
-
-
