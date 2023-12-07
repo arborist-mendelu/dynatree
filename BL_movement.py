@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
-from lib_dynatree import read_data, get_chains_of_bendlines, find_release_time_optics
+from lib_dynatree import read_data, get_chains_of_bendlines, find_release_time_optics, read_data_selected
 from scipy import interpolate
 from scipy.fft import rfft, rfftfreq
 import shutil
@@ -27,14 +27,17 @@ cesta
 
 cam = 1
 
-df = read_data(f"{cesta}/csv/{TREE}_{MEASUREMENT}.csv")
 
 # Bendlines in the middle, on the left and on the right
 BL_chain_Y = get_chains_of_bendlines(cam=cam)
 BL_chain_X = get_chains_of_bendlines(axis="X", cam=cam)
 
+df = read_data_selected(f"{cesta}/csv/{TREE}_{MEASUREMENT}.csv", probes = ["Time"] + [f"BL{i}" for i in range(44,68)])
+# %%
+
 # Keep only the data on bendlines in memory
-df = df[sum(BL_chain_X, start=[])+sum(BL_chain_Y,start=[])]
+# df = df[sum(BL_chain_X, start=[])+sum(BL_chain_Y,start=[])]
+df = df.loc[:,sum([BL_chain_X[i]+BL_chain_Y[i] for i in [0,1,2]],start=[])]
 df_delta = df - df.iloc[0,:]   # Pracuje se se změnou oproti nulovému času 
 
 
@@ -62,6 +65,7 @@ for i in [0,1,2]:
     y = df.loc[0,BL_chain_Y[i]]-origin["Y"]
     x = df.loc[0,BL_chain_X[i]]-origin["X"]
     plt.plot(y,x,".", color=f"C{i}")
+    
 
 # %%
 
