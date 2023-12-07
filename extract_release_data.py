@@ -17,7 +17,6 @@ nebyl vynulovany inklinometr nebo behem pocatecni faze "poskocil".
 import glob
 import numpy as np
 import pandas as pd
-import time
 
 from lib_dynatree import read_data, read_data_selected
 from lib_dynatree import directory2date, find_release_time_interval
@@ -26,9 +25,9 @@ from lib_dynatree import filename2tree_and_measurement_numbers
 
 def find_release_data_one_measurement(
         date="01_Mereni_Babice_22032021_optika_zpracovani",
-        path="../", 
-        tree="01", 
-        measurement="2", 
+        path="../",
+        tree="01",
+        measurement="2",
         ):
     # print("/nacitam soubory/", flush=True)
     if not "Mereni_Babice" in date:
@@ -38,7 +37,7 @@ def find_release_data_one_measurement(
         tree = tree[-2:]
     if len(measurement)>1:
         measurement = measurement[-1]
-    
+
     df_main = read_data_selected(
         f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")
     df_extra = read_data(
@@ -52,7 +51,7 @@ def find_release_data_one_measurement(
          ], axis=1)
     df = df - df.iloc[0,:]
 
-    # print("/hledam casovy interval/")    
+    # print("/hledam casovy interval/")
     tmin, tmax = find_release_time_interval(df_extra, date, tree, measurement)
 
     # Výběr časového intervalu
@@ -80,7 +79,7 @@ def find_release_data_one_day(date="01_Mereni_Babice_22032021_optika_zpracovani"
         print (f"BK{tree} M0{measurement}, ",end="", flush=True)
         output[f"BK{tree} M0{measurement}"] = find_release_data_one_measurement(date=date, tree=tree, measurement=measurement, path=path)
     df = pd.DataFrame(output)
-    return df    
+    return df
 
 def main():
     dfs = {}
@@ -100,5 +99,4 @@ def main():
 
 if __name__ == "__main__":
     output = main()
-    
 

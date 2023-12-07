@@ -30,7 +30,7 @@ připojení.
 rsync -zarv  -P --prune-empty-dirs --include "*/"  --include="*optika_zpracovani/*/*.TXT" --include="*optika_zpracovani/*/*.csv" --exclude="*" /mnt/ERC/ERC/01_Mereni_Babice_*_optika_zpracovani .
 ```
 Všechno na jeden řádek, zdrojovou cest `/mnt/ERC/ERC` upravit podle potřeby.
-Uvedený příkaz platí, pokud je připojena následujícím příkazem (adresář `/mnt/ERC``
+Uvedený příkaz platí, pokud je připojena následujícím příkazem (adresář `/mnt/ERC`
 musí existovat).
 
 ```

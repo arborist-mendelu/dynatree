@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+
+NEAKTUALNI
+
+
 Created on Sat Nov  4 19:01:02 2023
 
 @author: marik
@@ -15,9 +19,9 @@ def uprav_df(df):
     df["tree"] = [i.split("_")[0] for i in df.index]
     return df
 colors = {'1': 'blue', '2': 'red'}
-df1 = pd.read_excel("pre_release_data_01_Mereni_Babice_22032021_optika_zpracovani.xlsx", index_col=0)
-df2 = pd.read_excel("pre_release_data_01_Mereni_Babice_29062021_optika_zpracovani.xlsx", index_col=0)
-df3 = pd.read_excel("pre_release_data_01_Mereni_Babice_05042022_optika_zpracovani.xlsx", index_col=0)
+df1 = pd.read_excel("outputs/pre_release_data_01_Mereni_Babice_22032021_optika_zpracovani.xlsx", index_col=0)
+df2 = pd.read_excel("outputs/pre_release_data_01_Mereni_Babice_29062021_optika_zpracovani.xlsx", index_col=0)
+df3 = pd.read_excel("outputs/pre_release_data_01_Mereni_Babice_05042022_optika_zpracovani.xlsx", index_col=0)
 df1['date'] = "22-03-2021"
 df2['date'] = "29-06-2021"
 df3['date'] = "05-04-2022"

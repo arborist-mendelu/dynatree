@@ -16,23 +16,18 @@ from scipy.fft import rfft, rfftfreq
 import shutil
 
 
-DATE = "2021-03-22"
-TREE = "BK21"
-MEASUREMENT = "M03"
+DATE, TREE, MEASUREMENT = "2021-03-22", "BK21", "M03"
 MEASUREMENT = "M02"
 
 DATE, TREE, MEASUREMENT = "2022-04-05", "BK12", "M04"
 DATE, TREE, MEASUREMENT = "2021-03-22", "BK08", "M05"
 
-name =  f"{TREE}_{MEASUREMENT}"
-_ = DATE.split("-")
-_.reverse()
-cesta = f"../01_Mereni_Babice_{''.join(_)}_optika_zpracovani"
+cesta = f"../01_Mereni_Babice_{''.join(reversed(DATE.split('-')))}_optika_zpracovani"
 cesta
 
 cam = 1
 
-df = read_data(f"{cesta}/csv/{name}.csv")
+df = read_data(f"{cesta}/csv/{TREE}_{MEASUREMENT}.csv")
 
 # Bendlines in the middle, on the left and on the right
 BL_chain_Y = get_chains_of_bendlines(cam=cam)
@@ -51,12 +46,12 @@ else:
     top_middle_bl = 44
 
 # %%
-start = 68
-end=1000
+# start = 68
+# end=1000
 
-fig, ax = plt.subplots()
+# fig, ax = plt.subplots()
 
-df_delta.loc[start:end,[i for i in BL_chain_Y[0] if f"BL{top_middle_bl}" in i[0]]].plot(ax=ax) # Vykresli všechno na B44 nebo B10, podle kamery
+# df_delta.loc[start:end,[i for i in BL_chain_Y[0] if f"BL{top_middle_bl}" in i[0]]].plot(ax=ax) # Vykresli všechno na B44 nebo B10, podle kamery
 
 # %%
 
@@ -70,13 +65,13 @@ for i in [0,1,2]:
 
 # %%
 
-TEMP_DIR = 'temp/movement'
-shutil.rmtree(TEMP_DIR, ignore_errors=True)
-os.makedirs(TEMP_DIR, exist_ok=True)  
+# TEMP_DIR = 'temp/movement'
+# shutil.rmtree(TEMP_DIR, ignore_errors=True)
+# os.makedirs(TEMP_DIR, exist_ok=True)  
 
 release_time = np.abs(df_delta.loc[:,(f"BL{top_middle_bl}","Pt0AY")]).idxmax()
 
-df_interpolated = pd.DataFrame(index=np.arange(release_time, df.index[-1],0.02), columns=df.columns)
+df_interpolated = pd.DataFrame(index=np.arange(release_time, df.index[-1],0.01), columns=df.columns)
 for col in df.columns:
     f = interpolate.interp1d(df.index, df[col])
     df_interpolated[col] = f(df_interpolated.index)
@@ -84,42 +79,52 @@ for col in df.columns:
 df_interpolated_delta = df_interpolated - df.iloc[0,:]   # Pracuje se se změnou oproti nulovému času 
 
 # %%
+
 fig,ax = plt.subplots()
 
+figs = []
+N = len(df_interpolated.index)
+
 for n,time in enumerate(df_interpolated.index):
+    print(f"\r{100*n/N:.02f} percent finished",end="\r",flush=True)
+
     fig,ax = plt.subplots()
     for i in range(3):
         y = df_interpolated_delta.loc[time,BL_chain_Y[i]]
         x = df_interpolated.loc[time,BL_chain_X[i]] - origin['X']
         ax.plot(y,x,"-", color=f"C{i}")
     ax.set(
-            xlim=(-5,10), 
-            ylim=(0,4000),
+           xlim=(-5,10), 
+           ylim=(0,4000),
            ylabel="vertical position / mm", 
            xlabel="horizontal displacement / mm",
            title=f"Time {time:.3f}"
            )
-    plt.savefig(f"{TEMP_DIR}/{DATE}_{TREE}_{MEASUREMENT}_{n:08}.png")
+    # plt.savefig(f"{TEMP_DIR}/{DATE}_{TREE}_{MEASUREMENT}_{n:08}.png")
+    figs = figs + [fig]
     plt.close(fig)
     # break
 
 # %%
-command = f"ffmpeg -y -framerate 10 -i {TEMP_DIR}/{DATE}_{TREE}_{MEASUREMENT}_%08d.png -c:v libx264 -r 30 -pix_fmt yuv420p {DATE}_{TREE}_{MEASUREMENT}.mp4"
-os.system(command)
 
-# %%
 
-fs = 100
-signal = df_delta.loc[release_time+1:,("BL44","Pt0AY")]
-N = signal.shape[0]
-yf = rfft(signal.values)  # preform FFT analysis
-xf = rfftfreq(N, 1/fs)
-yf_r =  2.0/N * np.abs(yf)
-fig, ax = plt.subplots()
+# # %%
+# command = f"ffmpeg -y -framerate 10 -i {TEMP_DIR}/{DATE}_{TREE}_{MEASUREMENT}_%08d.png -c:v libx264 -r 30 -pix_fmt yuv420p {DATE}_{TREE}_{MEASUREMENT}.mp4"
+# os.system(command)
+
+# # %%
+
+# fs = 100
+# signal = df_delta.loc[release_time+1:,("BL44","Pt0AY")]
+# N = signal.shape[0]
+# yf = rfft(signal.values)  # preform FFT analysis
+# xf = rfftfreq(N, 1/fs)
+# yf_r =  2.0/N * np.abs(yf)
+# fig, ax = plt.subplots()
     
-ax.plot(xf, yf_r, '.', color='gray')
-ax.set(xlim=(0,15), yscale='log')
-#     ax.plot(xf_r[peak_index],yf_r[peak_index],"o", color='red')
+# ax.plot(xf, yf_r, '.', color='gray')
+# ax.set(xlim=(0,15), yscale='log')
+# #     ax.plot(xf_r[peak_index],yf_r[peak_index],"o", color='red')
 
 # %%
 
