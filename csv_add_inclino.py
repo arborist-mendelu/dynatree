@@ -183,7 +183,7 @@ def extend_one_day(date="2021-03-22", path="../", write_csv=False):
     csvfiles.sort()
     for file in csvfiles:
         filename = file.split("/")[-1]
-        print(f"{filename}, ",end="")
+        print(f"{filename}, ",end="", flush=True)
         tree = filename[2:4]
         measurement = filename[7]
         extend_one_csv(

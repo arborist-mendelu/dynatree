@@ -48,10 +48,12 @@ def read_tsv_files(tree, measurement,day="01_Mereni_Babice_22032021_optika_zprac
     if not os.path.isfile(f"{cesta}/BendLineProbe_BL44.tsv"):
         cesta = f"../{day}/exports_xsight/BK_{tree}/100fps/BK{tree}_100fps/BK{tree}_M{measurement}/"    
         if not os.path.isfile(f"{cesta}/BendLineProbe_BL44.tsv"):
-            cesta = f"../{day}/exports_xsight/BK_{tree}/BK_{tree}_100fps/BK_{tree}_M{measurement}/"    
+            cesta = f"../{day}/exports_xsight/BK_{tree}/BK{tree}_100fps/BK_{tree}_M{measurement}/"    
             if not os.path.isfile(f"{cesta}/BendLineProbe_BL44.tsv"):
-                print__ (f"Soubor BL44 {cesta} není k dispozici, asi není zpracováno")
-                return None
+                cesta = f"../{day}/exports_xsight/BK_{tree}/BK_{tree}_100fps/BK_{tree}_M{measurement}/"    
+                if not os.path.isfile(f"{cesta}/BendLineProbe_BL44.tsv"):
+                    print__ (f"Soubor BL44 {cesta} není k dispozici, asi není zpracováno")
+                    return None
 
     ### Definice tabulky s víceúrovňovými nadpisy sloupců, Multiindex
     empty = [[],[]]  # dvě úrovně, na začátku prázdné

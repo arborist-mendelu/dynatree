@@ -1,40 +1,83 @@
-Skripty jsou pro zpracování dat z optiky.
+# Skripty pro zpracování dat z optiky apod
 
-Soubory, které něco kreslí jsou soubory se jménem plot_*.py. Soubory,
-kde se něco testuje a zkouší jsou soubory temp_*.py nebo
-untitled*.py. Ostatní soubory jsou odladěné soubory nebo knihovny pro
-zpracování dat.
+* Soubory, které něco kreslí jsou soubory se jménem `plot_*.py`
+kde se něco testuje a zkouší jsou soubory `temp_*.py` nebo
+`untitled*.py`. Knihovny jsou soubory `lib_*.py`. Ostatní soubory jsou odladěné
+soubory nebo knihovny pro zpracování dat.
+* Některé soubory se dají použít jako knihovny a když se spustí jako programy,
+  vyvíjí nějakou činnost, například upravují csv soubory z hlediska
+  synchronizace. V takovém případě na toto na začátku běhu upozorní a pokračují
+  až po pozitivní odpovědi. 
+
+## Kopie csv souborů
+
+Tahat data pokaždé přes síť je pomalé. Lepší je zkopírovat si data k sobě. 
+
+Vytvořte si adresář, kam stáhnete data a kde budete pracovat. Poté běžte do
+tohoto adresáře. 
+Místo "babice" je možné si dát vlastní název. Může být v libovolném místě adresářové struktury.
+```
+mkdir babice
+cd babice
+```
+
+Pokus máte QNAP disk s ERC daty přimountovaný, je možné použít rsync a stáhnout z
+adresářů `01_Mereni_Babice_*_optika_zpracovani` csv soubory a textové soubory v
+adresáři `pulling_tests`. Doba běhu podle rychlosti sítě, cca 5 minut na rychlém
+připojení. 
+
+```
+rsync -zarv  -P --prune-empty-dirs --include "*/"  --include="*optika_zpracovani/*/*.TXT" --include="*optika_zpracovani/*/*.csv" --exclude="*" /mnt/ERC/ERC/01_Mereni_Babice_*_optika_zpracovani .
+```
+Všechno na jeden řádek, zdrojovou cest `/mnt/ERC/ERC` upravit podle potřeby.
+Uvedený příkaz platí, pokud je připojena následujícím příkazem (adresář `/mnt/ERC``
+musí existovat).
+
+```
+sudo mount -t cifs //10.18.52.96/home /mnt/ERC/ -o ro,username=unod,uid=1000
+```
+
+Na QNAP serveru jsou skripty a adresáři `01_Mereni_Babice_optika_skripty` ale na
+názvu nezáleží. Je možno si stáhnout vše potřebné z GitHubu.
+
+```
+git clone git@github.com:robert-marik/dynatree-optika.git
+```
+
+Repozitář není veřejný, ale můžete tam mít přístup (email Robertovi).
+
 
 ## Krok 1.: Z Xsight do csv, `xsight_tsv2csv.py`
 
 Načtou se tsv soubory všechny soubory z jednoho měření se
-převedou na jeden csv soubor. Skript xsight_tsv2csv.py by se měl
-spusti vždy po přidání dat z optiky. Skript prochází adresáře s
-domluvenými jmény a pr každé měření kontroluje existenci csv
-soubor. Pokud csv soubor existuje, skript nic nedělá. Pokud
-neexistuje, csv soubor je vytvořen.
+převedou na jeden csv soubor. Skript `xsight_tsv2csv.py`` by se měl
+spustit vždy po přidání dat z optiky. Skript prochází adresáře s
+domluvenými jmény a pro každé měření kontroluje existenci csv
+soubor. Pokud csv soubor existuje, skript nic nedělá, jenom vypíše, že soubor
+přeskakuje. Pokud csv soubor neexistuje, je vytvořen.
 
 ## Krok 2.: Přidání dat z inklinoměrů, `csv_add_inclino.py`
 
 Doplnění dat z optiky se provádí přes soubory v adresáři
-pulling_tests. Najde se maximální síla, maximální výchylka Pt3, tato
+pulling_tests. Najde se maximální síla, maximální výchylka `Pt3`, tato
 maxima se sesynchronizují, data se přepočítají tak, aby byla hodnota
 ve stejných časových okamžicích jako jsou data z optiky a vše se uloží
-do csv souboru do adresáře csv_extended. Kvůli úspoře místa a výkonu
+do csv souboru do adresáře `csv_extended`. Kvůli úspoře místa a výkonu
 se nespojuje s původním csv souborem z optiky. Synchronizaci je možno
 vytunit zadáním explicitní opravy v souboru
-csv/synchronization_finetune_inclinometers_fix.csv. Pokud nějaký
+`csv/synchronization_finetune_inclinometers_fix.csv`. Pokud nějaký
 inklinometr poskočil, je možné zadat přes csv soubor interval, na
 kterém má být střední hodnota inklinoměru nulová.
 
 Pokud síla není naměřena, berou se pro synchronizaci začátky měření.
 
 Kromě toho je možno dělat pohodlněji (zobrazit si graf ve vybrané velikosti, 
-s vybraným rozsahem pro čas a s aktuálním zohledněním nastavení v souboru csv/synchronization_finetune_inclinometers_fix.csv)
-pomocí programu dash_force_inclino_sync.py buď spuštěním v konzoli nebo ve Spyderu a následně na 
+s vybraným rozsahem pro čas a s aktuálním zohledněním nastavení v souboru `csv/synchronization_finetune_inclinometers_fix.csv`)
+pomocí programu `dash_force_inclino_sync.py` buď spuštěním v konzoli nebo ve Spyderu a následně na 
 http://127.0.0.1:8050/ .
 
-Jedno měření je možno zpracovat příkazy jako napříkald následující sada.
+Jedno měření je možno zpracovat příkazy jako například následující sada.
+
 ```
 from plot_probes_inclino_force import plot_one_measurement
 
@@ -43,9 +86,9 @@ tree = "BK08"
 day = "2021-03-22"
 
 plot_one_measurement(
-        measurement_day=day,
+        date=day,
         tree=tree, 
-        tree_measurement=measurement, 
+        measurement=measurement, 
         # xlim=(42,50),
         ) 
 ```
@@ -60,27 +103,16 @@ nezohledňují základní frekvence, které jsou moc malé, nebo kde je moc
 velký skok mezi sousedními frekvencemi (je krátký signál).
 
 Kromě toho je možno dělat pohodlněji (zobrazit si graf ve vybrané velikosti, 
-s vybraným rozsahem pro čas a s aktuálním zohledněním nastavení v souboru csv/synchronization_finetune_inclinometers_fix.csv)
-pomocí programu dash_force_inclino_sync.py buď spuštěním v konzoli nebo ve Spyderu a následně na 
+s vybraným rozsahem pro čas a s aktuálním zohledněním nastavení v souboru `csv/synchronization_finetune_inclinometers_fix.csv`)
+pomocí programu `dash_FFT.py` buď spuštěním v konzoli nebo ve Spyderu a následně na 
 http://127.0.0.1:8050/ .
 
 
 
 ## Příkazy pro spojení obrázků do jednoho
 
-
-```
-stromy=`ls */*fft/BK*png | grep "BK.*_" -o | sort | uniq`; for i in $stromy; do montage */*fft/$i*png -tile 3x4 -geometry +0+0 ${i}fft_all.png; done
-```
-```
-stromy=`ls 01*zpracovani/*fft/BK*png | grep "BK.*_" -o | sort | uniq`; for i in $stromy; do montage 01*zpracovani/*fft/$i*png -tile 4x4 -geometry +0+0 ${i}fft_all.png; done
-```
-Obrazky do PDF souboru, osm obrazku na stranu.
-```
-montage 01_Mereni_Babice_16082022_optika_zpracovani/png_with_inclino/BK*png -tile 2x4 -geometry +0+0   D.pdf
-```
-
-Adresare cislovane podle chronologie.
+Některé skripty si ukládají data na disk. Aby se daly obrázky spojit a aby byly
+chronologicky, je výhodné je dát do adresářů číslovaných popořadě.
 ```
 ln -s ../01_Mereni_Babice_22032021_optika_zpracovani 01
 ln -s ../01_Mereni_Babice_29062021_optika_zpracovani 02
@@ -88,10 +120,9 @@ ln -s ../01_Mereni_Babice_05042022_optika_zpracovani 03
 ln -s ../01_Mereni_Babice_16082022_optika_zpracovani 04
 ```
 
-Vsechny png soubory s fft analyzou pro jeden strom na jednu stranu PDF.
-```
-stromy=`ls 0*/*fft/BK*png | grep "BK.*_" -o | sort | uniq`; for i in $stromy; do montage 0*/*fft/$i*png -tile 4x4 -geometry +0+0 ${i}fft_all.png; done
-convert *all.png fft.pdf
+Spojení všech FFT diagramů pro strom na jednu stranu a převod na PDF je ve
+skriptu `all_fft_to_one_page.sh`.
 
-```
+
+
 

@@ -31,6 +31,14 @@ def find_release_data_one_measurement(
         measurement="2", 
         ):
     # print("/nacitam soubory/", flush=True)
+    if not "Mereni_Babice" in date:
+        date = "".join(reversed(date.split("-")))
+        date = f"01_Mereni_Babice_{date}_optika_zpracovani"
+    if len(tree)>2:
+        tree = tree[-2:]
+    if len(measurement)>1:
+        measurement = measurement[-1]
+    
     df_main = read_data_selected(
         f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")
     df_extra = read_data(
@@ -69,7 +77,7 @@ def find_release_data_one_day(date="01_Mereni_Babice_22032021_optika_zpracovani"
     csvfiles = [i.split("/")[-1] for i in csvfiles]
     for file in csvfiles:
         tree, measurement = filename2tree_and_measurement_numbers(file)
-        print (f"BK{tree} M0{measurement}, ",end="")
+        print (f"BK{tree} M0{measurement}, ",end="", flush=True)
         output[f"BK{tree} M0{measurement}"] = find_release_data_one_measurement(date=date, tree=tree, measurement=measurement, path=path)
     df = pd.DataFrame(output)
     return df    
