@@ -209,6 +209,45 @@ plt.show()
 
 # %%
 
+# from scipy import signal
+# b,a = signal.iirfilter(10, [0.75, 1.25], rs=60, btype='bandstop',
+#                        analog=False, ftype='butter', fs=1000,
+#                        output='ba')
+
+from scipy.signal import savgol_filter
+
+data = test.delta_resampled.loc[:,("BL44","Pt0AY")].values
+data = savgol_filter(data, 51, 1)
+time = test.time_resampled
+
+
+fig, ax = plt.subplots()
+ax.plot(time, data, color='black')
+ax2 = ax.twinx()
+
+fs = 100.0  # Sample frequency (Hz)
+Q = 50.0  # Quality factor
+maxima = {}
+#for freq_filter in [0.8,freq_second, 1.0, 1.2, 1.5]:
+for freq_filter in np.arange(0.05,1.5,0.05):    
+    b, a = signal.iirpeak(freq_filter, Q, fs)
+    data_filtered = signal.filtfilt(b, a, data)
+    maximum = np.max(np.abs(data_filtered))
+    maxima[freq_filter] = maximum
+    if maximum>0.06:
+        ax2.plot(time,data_filtered, label=np.round(freq_filter,2))
+
+align_yaxis(ax, ax2)
+fig.legend()
+df = pd.DataFrame(maxima, index=[0]).T
+print(df)
+
+# %%
+
+plt.plot(df)
+
+# %%
+
 fft_data = test.fft[("BL44","Pt0AY")]
 
 filtered_fft = fft_data['fourier'].copy()
@@ -230,23 +269,7 @@ ax2.plot(fft_data['time'], filtered_signal, color="C1")
 align_yaxis(ax, ax2)
 
 
-# %%
 
-# from scipy import signal
-# b,a = signal.iirfilter(10, [0.75, 1.25], rs=60, btype='bandstop',
-#                        analog=False, ftype='butter', fs=1000,
-#                        output='ba')
-data = test.delta_resampled.loc[:,("BL44","Pt0AY")].values
-time = test.time_resampled
-data_filtered = signal.filtfilt(b, a, data)
-
-fig, ax = plt.subplots()
-ax.plot(time, data)
-ax2 = ax.twinx()
-ax2.plot(time,data_filtered, color="C1")
-
-
-align_yaxis(ax, ax2)
 
 # %%
 # from scipy.fft import rfft, rfftfreq
