@@ -80,31 +80,45 @@ def read_tsv_files(tree, measurement,day="01_Mereni_Babice_22032021_optika_zprac
         df = df.copy()
     return df    
 
-for day in experiment_days:
-    print ("===================================================")
-    print (day)
-    for tree in trees:
-        print (f"     Tree {tree}")
-        for measurement in  measurements:
-            print (measurement, " ", end="")
-            if os.path.isfile(f"../{day}/csv/BK{tree}_M{measurement}.csv"):
-                print (f"Soubor ../{day}/csv/BK{tree}_M{measurement}.csv existuje, nic neprepisuju")
-            else:
-                try:
-                    data = read_tsv_files(tree,measurement, day=day)
-                    if data is not None:
-                        print (f"Vytvářím soubor ../{day}/csv/BK{tree}_M{measurement}.csv, typ {np.unique(data.dtypes.values)}")
-                        if not os.path.isdir(f"../{day}/csv"):
-                            os.makedirs(f"../{day}/csv")                    
-                        if len(data) > 10:
-                            data.to_csv(f"../{day}/csv/BK{tree}_M{measurement}.csv")
-                            print (f"{len(data)} rows")
+def main():
+    answer = input("The file will convert xsight files to csv.\nOlder data (if any) will be replaced.\nConfirm y or yes to continue.")
+    if answer.upper() in ["Y", "YES"]:
+        pass
+    else:
+        print("File processing skipped.")
+        return None
+    for day in experiment_days:
+        print ("===================================================")
+        print (day)
+        for tree in trees:
+            print (f"     Tree {tree}")
+            for measurement in  measurements:
+                print (measurement, " ", end="")
+                if os.path.isfile(f"../{day}/csv/BK{tree}_M{measurement}.csv"):
+                    print (f"Soubor ../{day}/csv/BK{tree}_M{measurement}.csv existuje, nic neprepisuju")
+                else:
+                    try:
+                        data = read_tsv_files(tree,measurement, day=day)
+                        if data is not None:
+                            print (f"Vytvářím soubor ../{day}/csv/BK{tree}_M{measurement}.csv, typ {np.unique(data.dtypes.values)}")
+                            if not os.path.isdir(f"../{day}/csv"):
+                                os.makedirs(f"../{day}/csv")                    
+                            if len(data) > 10:
+                                data.to_csv(f"../{day}/csv/BK{tree}_M{measurement}.csv")
+                                print (f"{len(data)} rows")
+                            else:
+                                print ("empty")
                         else:
-                            print ("empty")
-                    else:
-                        print (f"Missing or failed tree {tree} and measurement {measurement}.")
-                except Exception as e:
-                    print (f"CHYBA pri zpracovani {day},{tree},{measurement}")
-                    print (str(e))
+                            print (f"Missing or failed tree {tree} and measurement {measurement}.")
+                    except Exception as e:
+                        print (f"CHYBA pri zpracovani {day},{tree},{measurement}")
+                        print (str(e))
+
+if __name__ == "__main__":
+    main()
+
+
+
+
 
         
