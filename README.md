@@ -50,7 +50,7 @@ Repozitář není veřejný, ale můžete tam mít přístup (email Robertovi).
 ## Krok 1.: Z Xsight do csv, `xsight_tsv2csv.py`
 
 Načtou se tsv soubory všechny soubory z jednoho měření se
-převedou na jeden csv soubor. Skript `xsight_tsv2csv.py`` by se měl
+převedou na jeden csv soubor. Skript `xsight_tsv2csv.py` by se měl
 spustit vždy po přidání dat z optiky. Skript prochází adresáře s
 domluvenými jmény a pro každé měření kontroluje existenci csv
 soubor. Pokud csv soubor existuje, skript nic nedělá, jenom vypíše, že soubor
