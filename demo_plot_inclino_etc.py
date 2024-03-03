@@ -7,7 +7,7 @@ Created on Sat Dec  2 22:11:07 2023
 """
 
 from lib_dynatree import read_data
-from  csv_add_inclino import extend_one_csv
+from csv_add_inclino import extend_one_csv
 from plot_probes_inclino_force import plot_one_measurement
 
 # %%
