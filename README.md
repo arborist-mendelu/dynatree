@@ -76,7 +76,7 @@ s vybraným rozsahem pro čas a s aktuálním zohledněním nastavení v souboru
 pomocí programu `dash_force_inclino_sync.py` buď spuštěním v konzoli nebo ve Spyderu a následně na 
 http://127.0.0.1:8050/ .
 
-Jedno měření je možno zpracovat příkazy jako například následující sada.
+Jedno měření je možno zobrazit příkazy jako například následující sada.
 
 ```
 from plot_probes_inclino_force import plot_one_measurement
@@ -92,6 +92,10 @@ plot_one_measurement(
         # xlim=(42,50),
         ) 
 ```
+
+Při práci ve Spyderu  je možné nastavit zobrazování grafů v samostatném okně příkazem `%matplotlib qt` zadaným v konzoli
+Spyderu. Potom je možné obrázek zvětšit a myší si zobrazit výřez. Zpět na původní 
+funkci je možno příkazem `%matplotlib inline`
 
 ## Krok 3.: `FFT_spectrum.py`
 
