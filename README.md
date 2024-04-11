@@ -21,7 +21,7 @@ mkdir babice
 cd babice
 ```
 
-Pokus máte QNAP disk s ERC daty přimountovaný, je možné použít rsync a stáhnout z
+Pokud máte QNAP disk s ERC daty přimountovaný, je možné použít rsync a stáhnout z
 adresářů `01_Mereni_Babice_*_optika_zpracovani` csv soubory a textové soubory v
 adresáři `pulling_tests`. Doba běhu podle rychlosti sítě, cca 5 minut na rychlém
 připojení. 
@@ -29,7 +29,7 @@ připojení.
 ```
 rsync -zarv  -P --prune-empty-dirs --include "*/"  --include="*optika_zpracovani/*/*.TXT" --include="*optika_zpracovani/*/*.csv" --exclude="*" /mnt/ERC/ERC/01_Mereni_Babice_*_optika_zpracovani .
 ```
-Všechno na jeden řádek, zdrojovou cest `/mnt/ERC/ERC` upravit podle potřeby.
+Všechno na jeden řádek, zdrojovou cestu `/mnt/ERC/ERC` upravit podle potřeby.
 Uvedený příkaz platí, pokud je připojena následujícím příkazem (adresář `/mnt/ERC`
 musí existovat).
 
@@ -37,7 +37,7 @@ musí existovat).
 sudo mount -t cifs //10.18.52.96/home /mnt/ERC/ -o ro,username=unod,uid=1000
 ```
 
-Na QNAP serveru jsou skripty a adresáři `01_Mereni_Babice_optika_skripty` ale na
+Na QNAP serveru jsou skripty v adresáři `01_Mereni_Babice_optika_skripty` ale na
 názvu nezáleží. Je možno si stáhnout vše potřebné z GitHubu.
 
 ```
