@@ -47,7 +47,7 @@ app.layout =  dbc.Container(
     ]]),
     dbc.Button('Load CSV', id='load-button'),html.Span(" "),
     dbc.Button('Plot', id='plot-button'),html.Span(" "),
-    dbc.Button('Delete manual peaks', id='delete-button'),    
+    dbc.Button('Save info', id='save-button'),    
     html.P(id='result', style={'color': 'gray'}),
     dcc.Loading(
                 id="ls-loading-1",
@@ -135,7 +135,8 @@ def update(button, date, tree, measurement):
     df.index=df["Time"].values.reshape(-1)
     data = df[["Time","Pt3","Pt4","Pt11","Pt12","Pt13"]]
     data.to_csv(TEMP_CSV_FILE)
-    return f"file {file} loaded",{},{},None,None
+#    print (data.head())
+    return f"File {file} loaded",{},{},None,None
 
 # Nakresli se graf, bud kliknutim na tlacitko nebo prepnutim probu
 @callback(
@@ -156,6 +157,7 @@ def update_fig(button, probe, day, tree, measurement):
     if probe is None:
         raise PreventUpdate()
     data = pd.read_csv(TEMP_CSV_FILE, header=[0,1], index_col=0, dtype = np.float64)
+#    print (data.head())
     data = data[[i for i in data.columns if "X" not in i[1]]]
     data.columns = [i[0] for i in data.columns]
     data = data - data.iloc[0,:]
@@ -169,24 +171,20 @@ def update_fig(button, probe, day, tree, measurement):
         fig.update_xaxes(range=X_AXES)
     if Y_AXES[0] is not None:
         fig.update_yaxes(range=Y_AXES)
-    try:
-        df_peaks = pd.read_csv(CSV_FILE_PEAKS, index_col=[0,1,2,3]).sort_index()
-        peaks = df_peaks.loc[(day,tree,measurement,probe)].values
-        fig.add_trace(go.Scatter(x=peaks[:,0], y=peaks[:,1], mode='markers', name='markers', marker_size=10))
-    except:
-        pass
-    # fig = px.line(output_data, labels=labels, title=f"{probe} movement")
-    # fig.add_trace(px.scatter(x=[0,10,20],y=[1,2,3], mode='markers'))
+
     return "Graph finished",fig,None,None
+
 
 # Pokud uživatel vybral část grafu, upraví se globální proměnné
 
 @callback(
     Output('result', 'children', allow_duplicate=True),
+    Output('graph-content-2', 'figure', allow_duplicate=True),
     Input('graph-content', 'relayoutData'),
     prevent_initial_call=True
     )
-def update_fft_bounds(graph):
+def update_decrement_image(graph):
+    global TEMP_CSV_FILE
     global X_AXES
     global Y_AXES
     if graph is not None and "xaxis.range[0]" in graph.keys():
@@ -197,21 +195,42 @@ def update_fft_bounds(graph):
         Y_AXES[0] = graph["yaxis.range[0]"]
     if graph is not None and "yaxis.range[1]" in graph.keys():
         Y_AXES[1]= graph["yaxis.range[1]"]
-    return f"Limits updated to {graph}."
+
+    if probe is None:
+        raise PreventUpdate()
+    data = pd.read_csv(TEMP_CSV_FILE, header=[0,1], index_col=0, dtype = np.float64)
+#    print (data.head())
+    data = data[[i for i in data.columns if "X" not in i[1]]]
+    data.columns = [i[0] for i in data.columns]
+    data = data - data.iloc[0,:]
+    if "fixed" in probe:
+        data[probe] = data[probe[:3]] - data[probe[-4:]]
+    fig = go.Figure(layout_title_text=f"{day} {tree} {measurement}: {probe}")
+    fig.add_trace(go.Scatter(x=data.index, y=data[probe], mode='lines', name=probe))
+    fig.update_xaxes(title_text="Time")
+    fig.update_yaxes(title_text="Delta position")
+    if X_AXES[0] is not None:
+        fig.update_xaxes(range=X_AXES)
+    if Y_AXES[0] is not None:
+        fig.update_yaxes(range=Y_AXES)
+
+
+
+    return f"Limits updated to {graph}.\n Current limits for x axis is from {X_AXES[0]} to {X_AXES[1]}",fig
 
 
 @callback(
     Output('result', 'children', allow_duplicate=True),
-    Input('delete-button', 'n_clicks'),
+    Input('save-button', 'n_clicks'),
     *[State(f'radio-selection-{i}', 'value') for i in [1,2,3,4]],
     prevent_initial_call=True
 )
-def delete_peaks(button, day, tree, measurement, probe):
-    global CSV_FILE_PEAKS
-    df = pd.read_csv(CSV_FILE_PEAKS,index_col=(0,1,2,3))
-    df.drop((day,tree,measurement,probe), inplace=True)
-    df.to_csv(CSV_FILE_PEAKS)
-    return f"Deleted manual peaks for {day}-{tree}-{measurement} from {CSV_FILE_PEAKS}"
+def save(button, day, tree, measurement, probe):
+#    global CSV_FILE_PEAKS
+#    df = pd.read_csv(CSV_FILE_PEAKS,index_col=(0,1,2,3))
+#    df.drop((day,tree,measurement,probe), inplace=True)
+#    df.to_csv(CSV_FILE_PEAKS)
+    return f"Saving does not work yet"
 
 @callback(
     Output('result', 'children', allow_duplicate=True),
