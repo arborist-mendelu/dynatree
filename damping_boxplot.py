@@ -22,3 +22,7 @@ sns.boxplot(
     hue="date",
     ax = ax
     )
+[ax.axvline(x+.5,color='gray', lw=1.5) for x in ax.get_xticks()]
+ax.legend()
+ax.set(title="Utlum. Modrá a zelená bez listí, hnědá a červená s listím")
+ax.grid(alpha=0.4)

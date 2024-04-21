@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from scipy import interpolate, signal
 from scipy.fft import fft, fftfreq
+import glob
 
 def read_data(file, index_col="Time", usecols=None):
     """
@@ -32,7 +33,12 @@ def read_data(file, index_col="Time", usecols=None):
     df["Time"] = df.index  # pro pohodlí, aby se k času dalo přistupovat i jako data.Time
     return df
 
-
+def get_csv(date, tree, measurement):
+    """
+    Loads the csv file corresponding to date, tree and measurement
+    """
+    file = f"../{date2dirname(date)}/csv/BK{tree}_M0{measurement}.csv"
+    return read_data(file)
 
 def read_data_selected(file,
                         probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]]):
@@ -299,3 +305,18 @@ def find_release_time_interval(df_extra, date, tree, measurement):
         tmin = np.abs(df_extra.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
         return tmin,tmax
 
+def split_path(file):
+    data = file.split("/")
+    return [file,directory2date(data[1]), data[1], data[3][2:4], data[3][7]]
+
+def get_all_measurements():
+    """
+    Get dataframe with all measurements. The dataframe has columns
+    date, tree and measurement.
+    """
+    files = glob.glob("../01_*/csv/BK*.csv")    
+    out = [split_path(file) for file in files]
+    df = pd.DataFrame([[i[1],i[3],i[4]] for i in out], columns=['day','tree', 'measurement'])
+    df = df.sort_values(by=list(df.columns))
+    df = df.reset_index(drop=True)
+    return df
