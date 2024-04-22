@@ -45,6 +45,10 @@ def get_signal(date=None, tree=None, measurement=None, df = None, probe="Pt3", t
     """
     if df is None:
         df = get_csv(date, tree, measurement)
+    if pd.isna(start):
+        start = 0        
+    if pd.isna(end):
+        end = np.inf        
     df = df[(df["Time"]>start ) 
             &
             (df["Time"]<end )
@@ -68,10 +72,10 @@ def find_damping(
         csvdir="../csv",
         tree="04",
         measurement="3",
+        df=None,
         probe = None, start=None, end=None):
     
     s_, e_, r_ = get_limits(date, tree, measurement)
-    # print(r_)
     if probe is None:
         probe = r_["probe"].values[0]
     if (probe is None) or (pd.isnull(probe)):
@@ -83,8 +87,9 @@ def find_damping(
         start = s_
     if end is None:
         end = e_ 
-    df_data = get_csv(date, tree, measurement)
-    time, signal = get_signal(df=df_data, probe=probe, start=start, end=end)
+    if df is None:
+        df = get_csv(date, tree, measurement)
+    time, signal = get_signal(df=df, probe=probe, start=start, end=end)
     if time is None or signal is None:
         print("Time or signal are None, skipped determinantion of damping")
         return None
@@ -122,7 +127,8 @@ def find_damping(
     fig.suptitle(f"{date}, BK{tree}, M0{measurement}, {probe}, k={k:.4f}")
     
     fig2, ax2 = plt.subplots()
-    df_kopie = df_data - df_data.iloc[0,:]
+    df_kopie = df - df.iloc[0,:]
+    df_kopie = df_kopie[~pd.isna(df_kopie.index)]
     df_kopie[probe].plot(ax=ax2)
     df_kopie.loc[start:,probe].loc[:end,:].plot(ax=ax2, color='red', legend=None)
     ax2.set(title=f"Oscillations {date} BK{tree} M0{measurement}")
@@ -132,31 +138,49 @@ def find_damping(
 def main():
     for date,tree, measurement in get_all_measurements().values:
         print (f"{date} BK{tree} M0{measurement}")
+        ans = find_damping(date=date, tree=tree, measurement=measurement)
         try:
             ans = find_damping(date=date, tree=tree, measurement=measurement)
         except:
             print("FAILED")
             continue
-        if ans is not None:
-            ans['figure'].savefig(f"damping/damping_{date}_BK{tree}_M0{measurement}.png")
-            ans['figure_fulldomain'].savefig(f"damping/oscillation_{date}_BK{tree}_M0{measurement}.png")
-            plt.close(ans['figure'])
-            plt.close(ans['figure_fulldomain'])
-            print(ans['damping'])
+        if ans is None:
+            continue
+        ans['figure'].savefig(f"damping/damping_{date}_BK{tree}_M0{measurement}.png")
+        ans['figure_fulldomain'].savefig(f"damping/oscillation_{date}_BK{tree}_M0{measurement}.png")
+        plt.close(ans['figure'])
+        plt.close(ans['figure_fulldomain'])
+        print(ans['damping'])
 
-            csv_ans_file = "damping/damping_results.csv"
-            try:
-                df_ans = pd.read_csv(csv_ans_file, index_col=[0,1,2], header=0)
-            except:
-                df_ans = pd.DataFrame(columns=["date","tree","measurement","k","q"])
-                df_ans.to_csv(csv_ans_file, index=None)
-                df_ans = pd.read_csv(csv_ans_file, index_col=[0,1,2], header=0)
-        
-            df_ans.loc[(date,f"BK{tree}", f"M0{measurement}"),:] = ans['damping']
-            df_ans.to_csv(csv_ans_file)
-            df_ans
+        csv_ans_file = "damping/damping_results.csv"
+        try:
+            df_ans = pd.read_csv(csv_ans_file, index_col=[0,1,2], header=0)
+        except:
+            df_ans = pd.DataFrame(columns=["date","tree","measurement","k","q"])
+            df_ans.to_csv(csv_ans_file, index=None)
+            df_ans = pd.read_csv(csv_ans_file, index_col=[0,1,2], header=0)
+    
+        df_ans.loc[(date,f"BK{tree}", f"M0{measurement}"),:] = ans['damping']
+        df_ans.to_csv(csv_ans_file)
+        df_ans
 
 
+# ans = find_damping(date = "2021-03-22",tree="04",measurement="4")  # Pt4
+# ans = find_damping(date = "2021-03-22",tree="12",measurement="3")
+# 2022-08-16 BK11 M03
+
+#%%
+
+# df = get_csv("2022-08-16","11","3")
+
+# #%%
+# df[("Pt3","Y0")].plot()
+
+# #%%
+
+# find_damping(date="2022-08-16", tree="11", measurement="3")
+
+#%%
 # for date,tree, measurement in get_all_measurements().values[:2]:
 #     find_damping(date=date, tree=tree, measurement=measurement)
 if __name__ == "__main__":

@@ -8,8 +8,6 @@ Created on Mon Nov  6 19:31:14 2023
 
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-# import glob
-import matplotlib.pyplot as plt
 import streamlit as st
 
 from lib_dynatree import get_all_measurements, get_csv
@@ -40,12 +38,20 @@ with cs[0]:
     with columns[2]:
         measurement = st.radio("Measurement",list(df_measurement['measurement'].unique()), horizontal=True)
     
-    df_data = get_csv(day, tree, measurement)
+    if [day,tree,measurement] not in st.session_state:
+        "Dataframe data loaded from csv file"
+        df_data = get_csv(day, tree, measurement)
+        st.session_state[[day,tree,measurement]] = df_data
+    else:
+        "Dataframe data from cache"
+        df_data = st.session_state[[day,tree,measurement]]    
+    f"The number of cached measurements: {len(st.session_state)}"
     
     with columns[2]:
         probe = st.radio("Probe",["Pt3","Pt4"])
     
-    start,end, remark = get_limits(date=day, tree=tree, measurement=measurement)
+    start, end, remark = get_limits(date=day, tree=tree, measurement=measurement)
+    
     """
     ## Limits
     """
@@ -70,9 +76,8 @@ with cs[0]:
             st.rerun()
     
     remark
-
-    sol = find_damping(date=day, 
-                   tree=tree, measurement=measurement, probe=probe, start=start, end=end)
+    sol = find_damping(date=day, tree=tree, measurement=measurement, 
+                       df=df_data, probe=probe, start=start, end=end)
 
 with cs[1]:
     sol['figure']

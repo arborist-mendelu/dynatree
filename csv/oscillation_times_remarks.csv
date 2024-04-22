@@ -24,7 +24,7 @@ date,tree,measurement,start,end,remark,probe,decrement_start,decrement_end,decre
 2021-03-22,BK11,M03,49.97,76.98,Patrné oscilace při natahování,,,68.0,
 2021-03-22,BK11,M04,57.07,93.16,Pěkné oscilace,,,,
 2021-03-22,BK12,M02,50.56,inf,"Experiment OK, ale neobvyklé tvary peaků",,,,
-2021-03-22,BK12,M03,,,"Dost nepovedené, divný tvar kmitů a jenom několik zakmitnutí",,,,
+2021-03-22,BK12,M03,,,"Dost nepovedené, divný tvar kmitů a jenom několik zakmitnutí",,,-1.0,
 2021-03-22,BK12,M04,23.9,50.2,"Divný tvar kmitů, divné vypuštění, krátká fáze natahování",,,,
 2021-03-22,BK13,M02,59.43,inf,"Pěkné kmity, divný tvar maxim a minim",,,,
 2021-03-22,BK13,M03,74.34,117.71,"Divné vypuštění, zvláštní tvar peaků, na konci roste amplituda",,,,
