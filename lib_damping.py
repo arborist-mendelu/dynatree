@@ -9,8 +9,11 @@ Created on Sun Apr 21 21:24:29 2024
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import glob
+import os
 import matplotlib.pyplot as plt
 from scipy.signal import hilbert
+from scipy.signal import savgol_filter
+from scipy.signal import find_peaks
 # import streamlit as st
 # import scipy
 
@@ -73,8 +76,8 @@ def find_damping(
         tree="04",
         measurement="3",
         df=None,
-        probe = None, start=None, end=None):
-    
+        probe = None, start=None, end=None,
+        method = 'hilbert'):
     s_, e_, r_ = get_limits(date, tree, measurement)
     if probe is None:
         probe = r_["probe"].values[0]
@@ -94,36 +97,29 @@ def find_damping(
         print("Time or signal are None, skipped determinantion of damping")
         return None
     
-    analytic_signal = hilbert(signal)
-    amplitude_envelope = np.abs(analytic_signal)
-    k,q = np.polyfit(time[:-1], np.log(amplitude_envelope[:-1]), 1)
-    # k_lin, q_lin = k,q
-    # [k,q]
-    # kq = scipy.optimize.least_squares(lambda x: sum((np.exp(x[0]*time[:-1:10]+x[1])-amplitude_envelope[:-1:10])**2),[k,q], ftol=1e-18, gtol=1e-18, max_nfev=10000, 
-    #                        #            jac = lambda x:
-    #                        # [sum(2*(np.exp(x[0]*time[:-1]+x[1])-amplitude_envelope[:-1]) * np.exp(x[0]*time[:-1]+x[1]) * time[:-1])
-    #                        #     ,
-    #                        #     sum(2*(np.exp(x[0]*time[:-1]+x[1])-amplitude_envelope[:-1]) * 
-    #                        #         np.exp(x[0]*time[:-1]+x[1]))
-    #                        #     ]           
-    #                        )
-    # kq
-    # k,q = kq['x']
     fig, axs = plt.subplots(2,1)
-    ax =axs[0]
-    ax.plot(time,signal, label='signál')
-    ax.plot(time,-signal, label='opačný signál')
+    axs[0].plot(time,signal, label='signál')
+    axs[0].plot(time,-signal, label='opačný signál')
+
+    axs[1].plot(time,signal, label='signál')
+    axs[1].plot(time,-signal, label='opačný signál')
+    axs[1].set(yscale = 'log', ylim = (0.1,None) )
+    axs[1].grid()
+
+    if method == 'hilbert':
+        amplitude_envelope = np.abs(hilbert(signal))
+        k,q = np.polyfit(time[:-1], 
+                         np.log(amplitude_envelope[:-1]), 1)
+        axs[1].plot(time[:-1], amplitude_envelope[:-1], label='obálka')
+    elif method == 'peaks':
+        smooth_signal = savgol_filter(signal, 100, 2)
+        peaks, _ = find_peaks(np.abs(smooth_signal), distance=50)
+        axs[0].plot(time[peaks], signal[peaks], "o", markersize=10)
+        k,q = np.polyfit(time[peaks], 
+                         np.log(np.abs(signal[peaks])), 1)
     t=np.linspace(start, end)
-    ax.plot(t,np.exp(k*t+q),t, -np.exp(k*t+q), color='gray')    
-    # ax.plot(t,np.exp(k_lin*t+q_lin),t, -np.exp(k_lin*t+q_lin), color='gray', linestyle="--")    
-    ax = axs[1]
-    ax.plot(time,signal, label='signál')
-    ax.plot(time,-signal, label='opačný signál')
-    ax.plot(time[:-1], amplitude_envelope[:-1], label='obálka')
-    ax.plot(time[:-1], np.exp(k*time[:-1]+q), label=f'linearizace, $k={k:.5f}$', color='gray')
-    # ax.plot(time[:-1], np.exp(k_lin*time[:-1]+q_lin), label=f'linearizace, $k_{{lin}}={k_lin:.5f}$', color='gray', linestyle="--")
-    ax.set(yscale = 'log', ylim = (0.1,None) )
-    ax.grid()
+    axs[0].plot(t,np.exp(k*t+q),t, -np.exp(k*t+q), color='gray')    
+    axs[1].plot(time[:-1], np.exp(k*time[:-1]+q), label=f'linearizace, $k={k:.5f}$', color='gray')
     fig.suptitle(f"{date}, BK{tree}, M0{measurement}, {probe}, k={k:.4f}")
     
     fig2, ax2 = plt.subplots()
@@ -135,24 +131,23 @@ def find_damping(
     
     return {'figure': fig, 'damping': [k,q], 'figure_fulldomain':fig2}
 
-def main():
+def main(method='peaks'):
     for date,tree, measurement in get_all_measurements().values:
-        print (f"{date} BK{tree} M0{measurement}")
-        ans = find_damping(date=date, tree=tree, measurement=measurement)
+        print(f"{date} BK{tree} M0{measurement}")
         try:
-            ans = find_damping(date=date, tree=tree, measurement=measurement)
+            ans = find_damping(date=date, tree=tree, measurement=measurement, method=method)
         except:
             print("FAILED")
             continue
         if ans is None:
             continue
-        ans['figure'].savefig(f"damping/damping_{date}_BK{tree}_M0{measurement}.png")
-        ans['figure_fulldomain'].savefig(f"damping/oscillation_{date}_BK{tree}_M0{measurement}.png")
+        ans['figure'].savefig(f"damping_{method}/damping_{date}_BK{tree}_M0{measurement}.png")
+        ans['figure_fulldomain'].savefig(f"damping_{method}/oscillation_{date}_BK{tree}_M0{measurement}.png")
         plt.close(ans['figure'])
         plt.close(ans['figure_fulldomain'])
         print(ans['damping'])
 
-        csv_ans_file = "damping/damping_results.csv"
+        csv_ans_file = f"damping_{method}/damping_results.csv"
         try:
             df_ans = pd.read_csv(csv_ans_file, index_col=[0,1,2], header=0)
         except:
@@ -163,6 +158,7 @@ def main():
         df_ans.loc[(date,f"BK{tree}", f"M0{measurement}"),:] = ans['damping']
         df_ans.to_csv(csv_ans_file)
         df_ans
+        plt.close('all')
 
 
 # ans = find_damping(date = "2021-03-22",tree="04",measurement="4")  # Pt4
@@ -170,6 +166,28 @@ def main():
 # 2022-08-16 BK11 M03
 
 #%%
+# find_damping(method='peaks')
+
+#%%
+
+# time,signal = get_signal(date='2022-04-05', tree="01", measurement="2",start = 96, end=115)
+
+#%%
+
+# from findpeaks import findpeaks
+# fp = findpeaks(method='peakdetect')
+# results = fp.fit(signal)
+# smooth_signal = savgol_filter(signal, 100, 2)
+# peaks, _ = find_peaks(np.abs(smooth_signal), distance=50)
+# plt.plot(time[peaks], signal[peaks], "o", markersize=10)
+# k,q = np.polyfit(time[peaks], 
+#                  np.log(np.abs(signal[peaks])), 1)
+
+# plt.plot(time,signal)
+# plt.plot(time, smooth_signal)
+
+# plt.plot(time, np.exp(k*time+q), label='obálka', color='gray')
+# plt.plot(time, -np.exp(k*time+q), label='obálka', color='gray')
 
 # df = get_csv("2022-08-16","11","3")
 
@@ -183,5 +201,8 @@ def main():
 #%%
 # for date,tree, measurement in get_all_measurements().values[:2]:
 #     find_damping(date=date, tree=tree, measurement=measurement)
+methods = ['hilbert','peaks']
 if __name__ == "__main__":
-    main()
+    for method in methods:
+        os.makedirs(f"damping_{method}", exist_ok=True)
+        main(method=method)

@@ -1,13 +1,16 @@
-# damping_2021-03-22_BK01_M02.png
+for dir in damping_hilbert damping_peaks
+do	   
 
-stromy=`ls damping/damping_*BK*png | grep "BK.*_" -o | sort | uniq`
+    stromy=`ls $dir/damping_*BK*png | grep "BK.*_" -o | sort | uniq`
 
-for i in $stromy
-do
-    echo $i
-    montage damping/damping*$i*png -tile 4x4 -geometry +0+0 damping/${i}_damping_all.png
-    montage damping/oscillation*$i*png -tile 4x4 -geometry +0+0 damping/${i}_oscillation_all.png
+    for i in $stromy
+    do
+	echo $i
+	montage $dir/damping*$i*png -tile 4x4 -geometry +0+0 $dir/${i}_damping_all.png
+	montage $dir/oscillation*$i*png -tile 4x4 -geometry +0+0 $dir/${i}_oscillation_all.png
+    done
+
+    convert $dir/*_damping_all.png $dir/damping_all.pdf
+    convert $dir/*_oscillation_all.png $dir/oscillation_all.pdf
+
 done
-
-convert damping/*_damping_all.png damping/damping_all.pdf
-convert damping/*_oscillation_all.png damping/oscillation_all.pdf

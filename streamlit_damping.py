@@ -49,6 +49,7 @@ with cs[0]:
     
     with columns[2]:
         probe = st.radio("Probe",["Pt3","Pt4"])
+        method= st.radio("Method",["hilbert","peaks"])
     
     start, end, remark = get_limits(date=day, tree=tree, measurement=measurement)
     
@@ -77,7 +78,7 @@ with cs[0]:
     
     remark
     sol = find_damping(date=day, tree=tree, measurement=measurement, 
-                       df=df_data, probe=probe, start=start, end=end)
+                       df=df_data, probe=probe, start=start, end=end, method=method)
 
 with cs[1]:
     sol['figure']
