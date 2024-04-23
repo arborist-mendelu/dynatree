@@ -42,7 +42,7 @@ for method in ["hilbert", "peaks"]:
     
     fig, ax = plt.subplots(figsize=(15,6))
     
-    sns.boxplot(
+    sns.swarmplot(
         data=dfm, 
         x="tree", 
         y="damping", 

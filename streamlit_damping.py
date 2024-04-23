@@ -9,11 +9,33 @@ Created on Mon Nov  6 19:31:14 2023
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import streamlit as st
+import glob
+import lib_dynatree as ld
 
 from lib_dynatree import get_all_measurements, get_csv
 from lib_damping import find_damping, get_limits
 
 csv_ans_file = "damping/damping_results.csv"
+
+if 'periods' not in st.session_state:
+    "Dataframe with periods loaded"
+    # code from damping_boxplot.py
+    fft_files = glob.glob("fft_data*.xlsx")
+    dfs = {}
+    for i in fft_files:
+        day = ld.directory2date(ld.date2dirname(i.split("_")[5]))
+        data = pd.read_excel(i)
+        data["date"] = day
+        data[["tree","measurement"]] = data.iloc[:,0].str.split("_",expand=True)
+        dfs[i]=data
+        
+    df_f = pd.concat(dfs,ignore_index=True)
+    df_f = df_f[["date","tree","measurement","Freq"]]   
+    df_f.index = pd.MultiIndex.from_frame(df_f[["date","tree","measurement"]])
+    df_f = df_f["Freq"]
+    st.session_state['periods'] = df_f
+else:
+    df_f = st.session_state['periods'] 
 
 """
 ## Day, tree, measurement
@@ -77,8 +99,19 @@ with cs[0]:
             st.rerun()
     
     remark
+    
+    """
+    ## Results
+    """
     sol = find_damping(date=day, tree=tree, measurement=measurement, 
                        df=df_data, probe=probe, start=start, end=end, method=method)
+    T = 1/(df_f.at[(day,f"BK{tree}",f"M0{measurement}")])
+    k = sol['damping'][0]
+    f"""
+    * Coefficients $k$ and $q$ from $e^{{kt+q}}$: {sol['damping']}
+    * Period $T$ from FFT (loaded from xlsx files): {T}
+    * Damping $-kT$: {-k*T}
+    """
 
 with cs[1]:
     sol['figure']
