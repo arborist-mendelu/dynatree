@@ -70,7 +70,7 @@ with cs[0]:
     f"The number of cached measurements: {len(st.session_state)}"
     
     with columns[2]:
-        probe = st.radio("Probe",["Pt3","Pt4"])
+        probe = st.radio("Probe",["Pt3","Pt4","BL44","BL45","BL46","BL47","BL48"])
         method= st.radio("Method",["hilbert","peaks"])
     
     start, end, remark = get_limits(date=day, tree=tree, measurement=measurement)
