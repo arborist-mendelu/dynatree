@@ -97,6 +97,9 @@ def find_damping(
         print("Time or signal are None, skipped determinantion of damping")
         return None
     
+    color = {"2021-03-22": "C0", "2021-06-29": "C1", "2022-04-05": "C2", 
+             "2022-08-16": "C3"}
+    
     fig, axs = plt.subplots(2,1)
     axs[0].plot(time,signal, label='signál')
     axs[0].plot(time,-signal, label='opačný signál')
@@ -105,6 +108,11 @@ def find_damping(
     axs[1].plot(time,-signal, label='opačný signál')
     axs[1].set(yscale = 'log', ylim = (0.1,None) )
     axs[1].grid()
+    
+    for ax in axs:
+        for axis in ['top','bottom','left','right']:
+            ax.spines[axis].set_color(color[date])
+            ax.spines[axis].set_linewidth(2)
 
     if method == 'hilbert':
         amplitude_envelope = np.abs(hilbert(signal))
@@ -120,7 +128,7 @@ def find_damping(
     t=np.linspace(start, end)
     axs[0].plot(t,np.exp(k*t+q),t, -np.exp(k*t+q), color='gray')    
     axs[1].plot(time[:-1], np.exp(k*time[:-1]+q), label=f'linearizace, $k={k:.5f}$', color='gray')
-    fig.suptitle(f"{date}, BK{tree}, M0{measurement}, {probe}, k={k:.4f}")
+    fig.suptitle(f"{date}, BK{tree}, M0{measurement}, {probe}, k={k:.4f}", color=color[date])
     
     fig2, ax2 = plt.subplots()
     df_kopie = df - df.iloc[0,:]

@@ -78,8 +78,6 @@ for method in ["hilbert", "peaks"]:
 #%%
 
 
-#%%
-
 directory = "damping_both"
 os.makedirs(directory, exist_ok=True)
 d = {}
@@ -106,7 +104,7 @@ for tree in trees:
         x="measurement", 
         y="damping_peaks", 
         hue="date",
-        ax = ax[0], legend=False
+        ax = ax[0], legend=False,
         )
     ax[0].grid()
     sns.swarmplot(
@@ -119,3 +117,5 @@ for tree in trees:
     ax[1].grid()
     plt.suptitle(f"Tree {tree}", )
     fig.savefig(f"{directory}/{tree}.pdf")
+
+#%%
