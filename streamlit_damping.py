@@ -79,7 +79,7 @@ with cs[0]:
     
     with columns[2]:
         probe = st.radio("Probe",["Pt3","Pt4","BL44","BL45","BL46","BL47","BL48"])
-        method= st.radio("Method",["hilbert","peaks"])
+        # method= st.radio("Method",["hilbert","peaks"])
     
     start, end, remark = get_limits(date=day, tree=tree, measurement=measurement)
     
@@ -120,22 +120,30 @@ with cs[0]:
     """
     ## Results
     """
-    sol = find_damping(date=day, tree=tree, measurement=measurement, 
-                       df=df_data, probe=probe, start=start, end=end, method=method)
+    sol = {}
     T = 1/(df_f.at[(day,f"BK{tree}",f"M0{measurement}")])
-    k = sol['damping'][0]
+    k = {}
+    for method in ['hilbert','peaks']:
+        sol[method] = find_damping(date=day, tree=tree, measurement=measurement, 
+                       df=df_data, probe=probe, start=start, end=end, method=method)
+        k[method] = sol[method]['damping'][0]
     f"""
-    * Coefficients $k$ and $q$ from $e^{{kt+q}}$: {sol['damping']}
+    * Coefficients $k$ and $q$ from $e^{{kt+q}}$: 
+        * Hilbert {sol['hilbert']['damping']}
+        * peaks {sol['peaks']['damping']}        
     * Period $T$ from FFT (loaded from xlsx files): {T}
-    * Damping $-kT$: {-k*T}
+    * **Damping $-kT$ Hilbert transform:** {-k['hilbert']*T}
+    * **Damping $-kT$ peak values:** {-k['peaks']*T}
+    * **Quotient of dampings:** {k['hilbert']/k['peaks']}
     """
 
 with cs[1]:
-    sol['figure']
+    sol['hilbert']['figure']
+    sol['peaks']['figure']
     """
     * Blue curve - original signal
     * Orange curve - original signal multiplied by -1
     * Gray curve - envelope from decreasing exponential, nonlinear least squares method
     * Gray dashed curve - envelope from decreasing exponential, linear leas squares method for logaritm of the data
     """
-    st.pyplot(sol['figure_fulldomain'])
+    st.pyplot(sol['hilbert']['figure_fulldomain'])
