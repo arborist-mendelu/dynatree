@@ -125,9 +125,9 @@ def find_damping(
     fig2, ax2 = plt.subplots()
     df_kopie = df - df.iloc[0,:]
     df_kopie = df_kopie[~pd.isna(df_kopie.index)]
-    df_kopie[probe].plot(ax=ax2)
-    df_kopie.loc[start:,probe].loc[:end,:].plot(ax=ax2, color='red', legend=None)
-    ax2.set(title=f"Oscillations {date} BK{tree} M0{measurement}")
+    df_kopie[(probe,"Y0")].plot(ax=ax2)
+    df_kopie.loc[start:,[(probe,"Y0")]].loc[:end,:].plot(ax=ax2, color='red', legend=None)
+    ax2.set(title=f"Oscillations {date} BK{tree} M0{measurement}, probe ({probe},Y0)")
     
     return {'figure': fig, 'damping': [k,q], 'figure_fulldomain':fig2}
 

@@ -3,6 +3,8 @@
 """
 Created on Mon Nov  6 19:31:14 2023
 
+spuštění :  streamlit run streamlit_damping.py
+
 @author: marik
 """
 
@@ -16,11 +18,14 @@ from lib_dynatree import get_all_measurements, get_csv
 from lib_damping import find_damping, get_limits
 
 csv_ans_file = "damping/damping_results.csv"
+st.set_page_config(layout="wide")
 
 if 'periods' not in st.session_state:
-    "Dataframe with periods loaded"
+    ":orange[INFO: Loading dataframe with frequencies to cache.]"
     # code from damping_boxplot.py
     fft_files = glob.glob("fft_data*.xlsx")
+    if len(fft_files)==0:
+        ":red[ERROR. You need the xlsx files with frequencies to evaluate damping.]"
     dfs = {}
     for i in fft_files:
         day = ld.directory2date(ld.date2dirname(i.split("_")[5]))
@@ -61,13 +66,16 @@ with cs[0]:
         measurement = st.radio("Measurement",list(df_measurement['measurement'].unique()), horizontal=True)
     
     if [day,tree,measurement] not in st.session_state:
-        "Dataframe data loaded from csv file"
+        # ":orange[INFO: Dataframe data loaded from csv file]"
         df_data = get_csv(day, tree, measurement)
         st.session_state[[day,tree,measurement]] = df_data
     else:
-        "Dataframe data from cache"
+        # ":orange[INFO: Dataframe data from cache]"
         df_data = st.session_state[[day,tree,measurement]]    
-    f"The number of cached measurements: {len(st.session_state)}"
+    max_cached = 10
+    f":orange[INFO: The number of cached measurements: {len(st.session_state)} (cache is cleared automatically the if the number exceeds {max_cached})]"
+    if len(st.session_state) > max_cached:
+        st.session_state.clear()
     
     with columns[2]:
         probe = st.radio("Probe",["Pt3","Pt4"])
@@ -98,6 +106,15 @@ with cs[0]:
             df_times.to_csv("csv/oscillation_times_remarks.csv")
             st.rerun()
     
+    """
+    The following table is a record from the file `csv/oscillation_times_remarks.csv`
+    The values used in damping computation are in the columns `decrement_start`
+    and `decrement_end`. You can override these values by setting From and To
+    input fields and pressing Save. The Save button modifies the csv file. If 
+    you are happy with the changes, commit new version of csv file to github 
+    repository.
+    """
+    
     remark
     
     """
@@ -122,4 +139,3 @@ with cs[1]:
     * Gray dashed curve - envelope from decreasing exponential, linear leas squares method for logaritm of the data
     """
     st.pyplot(sol['figure_fulldomain'])
-

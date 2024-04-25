@@ -13,7 +13,7 @@ from FFT_spectrum import do_fft_for_file
 date = "01_Mereni_Babice_22032021_optika_zpracovani"
 tree = "01"
 measurement = "2"
-start  =63
+start  = 63
 
 
 output = do_fft_for_file(date=date, tree=tree, measurement=measurement, return_image=True, start=start)

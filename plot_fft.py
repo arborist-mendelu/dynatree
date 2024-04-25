@@ -20,10 +20,10 @@ dfs = [
      for i in ["22032021","29062021","05042022","16082022"]
      ]
 
-dfs[0]['date'] = "22-03-2021"
-dfs[1]['date'] = "29-06-2021"
-dfs[2]['date'] = "05-04-2022"
-dfs[3]['date'] = "16-08-2022"
+dfs[0]['date'] = "2021-03-22"
+dfs[1]['date'] = "2021-06-29"
+dfs[2]['date'] = "2022-04-05"
+dfs[3]['date'] = "2022-08-16"
 
 dfs[0]['listy'] = False
 dfs[1]['listy'] = True
@@ -74,6 +74,8 @@ ax.legend(loc=2)
 ax.grid(alpha=0.4)
 ax.set(title="Základní frekvence")
 plt.savefig("outputs/swarmplot.pdf")
+
+df[["tree","date","index","Freq"]].sort_values(by=["tree","date","Freq"]).to_csv("outputs/FFT_freq.csv", index=None, header=False)
 
 # %% s listim/bez listi
 

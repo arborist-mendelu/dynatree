@@ -3,7 +3,9 @@
 """
 Created on Sun Nov  5 07:52:51 2023
 
-Analyzuje pomoci FFT bud jedno mereni nebo 
+Analyzuje pomoci FFT bud jedno mereni nebo celý den nebo všechny dny. 
+Je možné načíst jako knihovnu nebo spustit jako program. Pokud je spuštěn jako
+program, dělá FFT analýzu pro všechna měření ve všech dnech. 
 
 @author: marik
 """
