@@ -13,7 +13,7 @@ import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import streamlit as st
 import glob
 import lib_dynatree as ld
-
+import matplotlib.pyplot as plt
 from lib_dynatree import get_all_measurements, get_csv
 from lib_damping import find_damping, get_limits
 
@@ -42,16 +42,16 @@ if 'periods' not in st.session_state:
 else:
     df_f = st.session_state['periods'] 
 
-"""
-## Day, tree, measurement
-"""
 
 df = get_all_measurements()
 
 #%%
-cs = st.columns(2)
+cs = st.columns(4)
 
 with cs[0]:
+    """
+    ## Day, tree, measurement
+    """
     columns = st.columns(3)
     
     with columns[0]:
@@ -127,17 +127,18 @@ with cs[0]:
         sol[method] = find_damping(date=day, tree=tree, measurement=measurement, 
                        df=df_data, probe=probe, start=start, end=end, method=method)
         k[method] = sol[method]['damping'][0]
-    f"""
+    container = st.container()
+    container.write(f"""
     * Coefficients $k$ and $q$ from $e^{{kt+q}}$: 
         * Hilbert {sol['hilbert']['damping']}
         * peaks {sol['peaks']['damping']}        
     * Period $T$ from FFT (loaded from xlsx files): {T}
-    * **Damping $-kT$ Hilbert transform:** {-k['hilbert']*T}
-    * **Damping $-kT$ peak values:** {-k['peaks']*T}
-    * **Quotient of dampings:** {k['hilbert']/k['peaks']}
-    """
+    """)
 
 with cs[1]:
+    """
+    ## Damping using hilbert transform (top) or peaks (bottom)
+    """
     sol['hilbert']['figure']
     sol['peaks']['figure']
     """
@@ -146,4 +147,77 @@ with cs[1]:
     * Gray curve - envelope from decreasing exponential, nonlinear least squares method
     * Gray dashed curve - envelope from decreasing exponential, linear leas squares method for logaritm of the data
     """
-    st.pyplot(sol['hilbert']['figure_fulldomain'])
+
+
+import pywt
+
+
+with cs[2]:
+    """
+    ## Wavelet transform
+    
+    Wavelet transform using the morlet wavelet with frequency corresponding to the 
+    first mode of the tree. The initial and final part should be ignored, see the 
+    cone of influence, <https://www.mathworks.com/help/wavelet/ug/boundary-effects-and-the-cone-of-influence.html>
+
+    The first picture presents the wavelet transformation. The part before the maximum is
+    not considered and equally long part at the and is not considererd as well. (Cone of influence is symmetric.)
+    """
+    #  wavelet
+    
+    # wavelet = st.radio("Wavelet",["cmor1-1","cmor","morl","mexh"], horizontal=True)
+    wavelet = "cmor1-1.5"
+    freq = 1/T   # fft analyza
+    dt = 0.01
+    
+    data = sol['hilbert']['signal']
+    time= sol['hilbert']['time']
+    scale = pywt.frequency2scale(wavelet, [freq*dt])
+    coef, freqs = pywt.cwt(data, scale, wavelet,
+                            sampling_period=dt)
+    fig, ax = plt.subplots()
+    coef = np.abs(coef)[0,:]
+    maximum = np.argmax(coef)
+    ax.plot(time, coef, label=freq)
+    ax.plot(time[maximum], coef[maximum], "o")
+    ax.set(title=f"Waveletova transformace signalu pomoci vlnek")
+    m,q = np.polyfit(time[maximum:-maximum], np.log(coef[maximum:-maximum]), 1)
+    _ = np.linspace(time[maximum], time[-maximum])
+    ax.plot(_,np.exp(m*_+q))
+    ax.set(yscale='log')
+    ax.grid()
+    st.pyplot(fig)
+    k['wavelet'] =  m
+    ans = pd.DataFrame(k,  index=["damping"])*(-T)
+    container.write("* The damping coefficients:")
+    container.write(ans)
+    container.write("* The relative damping coefficients with respect to Hilbert transformation method:")
+    container.write(ans/ans.iloc[0,0])
+
+    
+    "The graph of the data. The red part is the part being analyzed."    
+    st.pyplot(sol['hilbert']['figure_fulldomain'])  
+    
+with cs[3]:
+    """
+    ## Hilbert-Huang transform
+    
+    See <https://www.mathworks.com/help/signal/ref/hht.html> or <https://emd.readthedocs.io>
+    """
+    
+    import emd
+    
+    imf = emd.sift.sift(data)
+    IP, IF, IA = emd.spectra.frequency_transform(imf, dt, 'hilbert')
+    # Define frequency range (low_freq, high_freq, nsteps, spacing)
+    freq_range = (0.1, 10, 80, 'log')
+    f, hht = emd.spectra.hilberthuang(IF, IA, freq_range, sum_time=False)
+    
+    for b in [True, False]:
+        f"* `sharey` parameter is {str(b)}"
+        fig, ax = plt.subplots(figsize=(12,6))
+        emd.plotting.plot_imfs(imf, time_vect=time, sharey=b, ax=ax)
+        st.pyplot(fig)
+    
+    # st.pyplot(emd.plotting.plot_imfs(imf, time_vect=time, sharey=False))
+    

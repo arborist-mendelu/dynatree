@@ -137,7 +137,7 @@ def find_damping(
     df_kopie.loc[start:,[(probe,"Y0")]].loc[:end,:].plot(ax=ax2, color='red', legend=None)
     ax2.set(title=f"Oscillations {date} BK{tree} M0{measurement}, probe ({probe},Y0)")
     
-    return {'figure': fig, 'damping': [k,q], 'figure_fulldomain':fig2}
+    return {'figure': fig, 'damping': [k,q], 'figure_fulldomain':fig2, 'signal':signal, 'time':time}
 
 def main(method='peaks'):
     for date,tree, measurement in get_all_measurements().values:
