@@ -25,41 +25,34 @@ def listy(datum):
      return False
  
 df['listy'] = df['date'].map(listy)
-
-    
-fig, ax = plt.subplots(figsize=(10,6))
-
-sns.swarmplot(
-    data=df, 
-    x="tree", 
-    y="utlum", 
-    hue="listy",
-    ax = ax
-    )
-[ax.axvline(x+.5,color='gray', lw=0.5) for x in ax.get_xticks()]
-ax.legend(loc=2)
-ax.grid(alpha=0.4)
-ax.set(title="Tlumení, všechna měření kromě zcela zkažených", ylim=(0.1,0.6))
-
-
-
+df_all = df
 df_bad = df[(df[['A', 'B', 'C']].max(axis=1) > 0.2)]
+df_fine = df[(df[['A', 'B', 'C']].max(axis=1) < 0.2)]
 
-fig, ax = plt.subplots(figsize=(10,6))
 
-df = df[(df[['A', 'B', 'C']].max(axis=1) < 0.1)]
+for d,t,name in zip([df, df_fine], 
+               ["Všechna měření kromě zcela zkažených", 
+                "Měření, kde všechny tři metody dávají podobné výsledky"
+                ],
+               ["all", "great"]
+               ):
+    fig, axs = plt.subplots(2,1,figsize=(10,6), sharex=True)
+    for funkce,ax in zip([sns.swarmplot, sns.boxplot],axs) :
+        funkce(
+            data=d, 
+            x="tree", 
+            y="utlum", 
+            hue="listy",
+            ax = ax
+            )
+        [ax.axvline(x+.5,color='gray', lw=1.5) for x in ax.get_xticks()]
+        ax.legend(loc=2)
+        ax.grid(alpha=0.4)
+        ax.set(ylim=(0.1,0.6))
+        ax.legend(title="Olistění")
+    plt.suptitle(t)
+    plt.tight_layout()
+    plt.savefig(f"damping_output/00_ouput_{name}.pdf")
 
-sns.boxplot(
-    data=df, 
-    x="tree", 
-    y="utlum", 
-    hue="listy",
-    ax = ax
-    )
-[ax.axvline(x+.5,color='gray', lw=0.5) for x in ax.get_xticks()]
-ax.legend(loc=2)
-ax.grid(alpha=0.4)
-ax.set(title="Tlumení, měření, kde všechny metody dávají podobné výsledky", ylim=(0.1,0.6))
-
-# plt.savefig("outputs/swarmplot.pdf")
+df_bad.drop(columns=['A', 'B', 'C']).to_csv("damping_output/00_bad.csv", index=False)
 
