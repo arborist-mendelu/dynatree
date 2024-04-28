@@ -1,7 +1,7 @@
 date,tree,measurement,start,end,remark,probe,decrement_start,decrement_end,decrement_fixed_by
 2021-03-22,BK01,M02,63.4,70.54,"Jenom dvě periody, ale pěkné zakolísání po vypuštění",,,71.0,
 2021-03-22,BK01,M03,50.83,105.59,"Krásné kmity, dlouhý vzorek",,53.0,105.59,
-2021-03-22,BK01,M04,44.34,97.42,Pěkné kmity,,45.0,90.0,
+2021-03-22,BK01,M04,44.34,97.42,Pěkné kmity,,46.5,90.0,
 2021-03-22,BK04,M02,51.13,99.37,"Oscilace na začátku napínání, jinak pěkné oscilace a dostatek period, zřetelný exp. pokles amplitudy",,,,
 2021-03-22,BK04,M03,40.63,90.9,Pěkné oscilace,,44.0,90.9,
 2021-03-22,BK04,M04,40.36,97.21,"Kmity neslábnou, jeden peak rozsypaný, Pt3 končí moc brzo (použít jiný probe)",Pt4,40.36,58.0,

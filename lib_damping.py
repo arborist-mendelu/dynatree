@@ -14,10 +14,12 @@ import matplotlib.pyplot as plt
 from scipy.signal import hilbert
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
-# import streamlit as st
-# import scipy
+import pywt
 
 from lib_dynatree import get_csv, get_all_measurements
+
+date2color = {"2021-03-22": "C0", "2021-06-29": "C1", "2022-04-05": "C2", 
+             "2022-08-16": "C3"}
 
 def get_limits(date, tree, measurement, csvdir="csv"):
     """
@@ -37,7 +39,7 @@ def get_limits(date, tree, measurement, csvdir="csv"):
     if np.isnan(end):
         end = bounds_for_oscillations["end"].values[0]        
     if np.isnan(start):
-        start = bounds_for_oscillations["start"].values[0]        
+        start = bounds_for_oscillations["start"].values[0]
     return start,end, bounds_for_oscillations
 
 def get_signal(date=None, tree=None, measurement=None, df = None, probe="Pt3", timestep = 0.01, start=None, end = None):
@@ -76,7 +78,7 @@ def find_damping(
         tree="04",
         measurement="3",
         df=None,
-        probe = None, start=None, end=None,
+        probe = None, start=None, end=None, T=None, dt = 0.01,
         method = 'hilbert'):
     s_, e_, r_ = get_limits(date, tree, measurement)
     if probe is None:
@@ -96,10 +98,14 @@ def find_damping(
     if time is None or signal is None:
         print("Time or signal are None, skipped determinantion of damping")
         return None
-    
-    color = {"2021-03-22": "C0", "2021-06-29": "C1", "2022-04-05": "C2", 
-             "2022-08-16": "C3"}
-    
+
+    if T is None:
+        df_f = pd.read_csv("csv/results_fft.csv", index_col=[0,1,2])
+        freq = df_f.at[(date,f"BK{tree}",f"M0{measurement}"),"Freq"]
+        T = 1/freq    
+    else:
+        freq = 1/T
+
     fig, axs = plt.subplots(2,1)
     axs[0].plot(time,signal, label='signál')
     axs[0].plot(time,-signal, label='opačný signál')
@@ -111,7 +117,7 @@ def find_damping(
     
     for ax in axs:
         for axis in ['top','bottom','left','right']:
-            ax.spines[axis].set_color(color[date])
+            ax.spines[axis].set_color(date2color[date])
             ax.spines[axis].set_linewidth(2)
 
     if method == 'hilbert':
@@ -125,10 +131,38 @@ def find_damping(
         axs[0].plot(time[peaks], signal[peaks], "o", markersize=10)
         k,q = np.polyfit(time[peaks], 
                          np.log(np.abs(signal[peaks])), 1)
+    elif method == 'wavelet':
+        fig = plt.subplots()
+        wavelet = "cmor1-1.5"
+        data = signal
+        scale = pywt.frequency2scale(wavelet, [freq*dt])
+        coef, freqs = pywt.cwt(data, scale, wavelet,
+                                sampling_period=dt)
+        fig, ax = plt.subplots()
+        coef = np.abs(coef)[0,:]
+        maximum = np.argmax(coef)
+        ax.plot(time, coef, label=freq)
+        ax.plot(time[maximum], coef[maximum], "o")
+        # ax.set(title="Waveletova transformace signalu pomoci vlnek")
+        try:
+            k,q = np.polyfit(time[maximum:-maximum], np.log(coef[maximum:-maximum]), 1)
+            _ = np.linspace(time[maximum], time[-maximum])
+            ax.plot(_,np.exp(k*_+q))
+        except:
+            k, q = 0, 0
+        if len(time)<2*maximum:
+            print("Inteval too short for wavelets")
+            k, q = 0, 0
+        ax.set(yscale='log')
+        ax.grid()
+        
     t=np.linspace(start, end)
-    axs[0].plot(t,np.exp(k*t+q),t, -np.exp(k*t+q), color='gray')    
-    axs[1].plot(time[:-1], np.exp(k*time[:-1]+q), label=f'linearizace, $k={k:.5f}$', color='gray')
-    fig.suptitle(f"{date}, BK{tree}, M0{measurement}, {probe}, k={k:.4f}", color=color[date])
+    try:
+        axs[0].plot(t,np.exp(k*t+q),t, -np.exp(k*t+q), color='gray')    
+        axs[1].plot(time[:-1], np.exp(k*time[:-1]+q), label=f'linearizace, $k={k:.5f}$', color='gray')
+    except:
+        pass
+    fig.suptitle(f"{date}, BK{tree}, M0{measurement}, {probe}, method: {method}", color=date2color[date])
     
     fig2, ax2 = plt.subplots()
     df_kopie = df - df.iloc[0,:]
@@ -137,80 +171,44 @@ def find_damping(
     df_kopie.loc[start:,[(probe,"Y0")]].loc[:end,:].plot(ax=ax2, color='red', legend=None)
     ax2.set(title=f"Oscillations {date} BK{tree} M0{measurement}, probe ({probe},Y0)")
     
-    return {'figure': fig, 'damping': [k,q], 'figure_fulldomain':fig2, 'signal':signal, 'time':time}
+    return {'figure': fig, 'damping': -k*T, 'figure_fulldomain':fig2, 'signal':signal, 'time':time}
 
-def main(method='peaks'):
+
+methods = ['hilbert','peaks', 'wavelet']
+def main():
+
+    dampings = {}
     for date,tree, measurement in get_all_measurements().values:
         print(f"{date} BK{tree} M0{measurement}")
-        try:
-            ans = find_damping(date=date, tree=tree, measurement=measurement, method=method)
-        except:
-            print("FAILED")
+        dfcsv = get_csv(date, tree, measurement)
+        ans = [find_damping(
+            date=date, tree=tree, measurement=measurement, df=dfcsv, method=method
+            ) for method in methods]
+        if None in ans:
+            dampings[(date,f"BK{tree}", f"M0{measurement}")] = ["None"]*3
             continue
-        if ans is None:
-            continue
-        ans['figure'].savefig(f"damping_{method}/damping_{date}_BK{tree}_M0{measurement}.png")
-        ans['figure_fulldomain'].savefig(f"damping_{method}/oscillation_{date}_BK{tree}_M0{measurement}.png")
-        plt.close(ans['figure'])
-        plt.close(ans['figure_fulldomain'])
-        print(ans['damping'])
-
-        csv_ans_file = f"damping_{method}/damping_results.csv"
-        try:
-            df_ans = pd.read_csv(csv_ans_file, index_col=[0,1,2], header=0)
-        except:
-            df_ans = pd.DataFrame(columns=["date","tree","measurement","k","q"])
-            df_ans.to_csv(csv_ans_file, index=None)
-            df_ans = pd.read_csv(csv_ans_file, index_col=[0,1,2], header=0)
+        for i in range(len(ans)):
+            ans[i]['figure'].savefig(f"damping_output/damping_{date}_BK{tree}_M0{measurement}_{methods[i]}.png")
+        ans[0]['figure_fulldomain'].savefig(f"damping_output/damping_{date}_BK{tree}_M0{measurement}.png")
+        for i in range(len(ans)):
+            plt.close(ans[i]['figure'])
+            plt.close(ans[i]['figure_fulldomain'])
+        print([i['damping'] for i in ans])
     
-        df_ans.loc[(date,f"BK{tree}", f"M0{measurement}"),:] = ans['damping']
-        df_ans.to_csv(csv_ans_file)
-        df_ans
+        dampings[(date,f"BK{tree}", f"M0{measurement}")] = [a['damping'] for a in ans]
         plt.close('all')
+    
+    return dampings
 
-
-# ans = find_damping(date = "2021-03-22",tree="04",measurement="4")  # Pt4
-# ans = find_damping(date = "2021-03-22",tree="12",measurement="3")
-# 2022-08-16 BK11 M03
-
-#%%
-# find_damping(method='peaks')
 
 #%%
 
-# time,signal = get_signal(date='2022-04-05', tree="01", measurement="2",start = 96, end=115)
-
-#%%
-
-# from findpeaks import findpeaks
-# fp = findpeaks(method='peakdetect')
-# results = fp.fit(signal)
-# smooth_signal = savgol_filter(signal, 100, 2)
-# peaks, _ = find_peaks(np.abs(smooth_signal), distance=50)
-# plt.plot(time[peaks], signal[peaks], "o", markersize=10)
-# k,q = np.polyfit(time[peaks], 
-#                  np.log(np.abs(signal[peaks])), 1)
-
-# plt.plot(time,signal)
-# plt.plot(time, smooth_signal)
-
-# plt.plot(time, np.exp(k*time+q), label='obálka', color='gray')
-# plt.plot(time, -np.exp(k*time+q), label='obálka', color='gray')
-
-# df = get_csv("2022-08-16","11","3")
-
-# #%%
-# df[("Pt3","Y0")].plot()
-
-# #%%
-
-# find_damping(date="2022-08-16", tree="11", measurement="3")
-
-#%%
-# for date,tree, measurement in get_all_measurements().values[:2]:
-#     find_damping(date=date, tree=tree, measurement=measurement)
-methods = ['hilbert','peaks']
 if __name__ == "__main__":
-    for method in methods:
-        os.makedirs(f"damping_{method}", exist_ok=True)
-        main(method=method)
+    csv_ans_file = "damping_output/damping_results.csv"
+
+    os.makedirs("damping_output", exist_ok=True)
+    ans = main()
+    df = pd.DataFrame(ans).T
+    df.columns = methods
+    df.index = df.index.rename(["date","tree","measurement"])
+    df.to_csv(csv_ans_file)

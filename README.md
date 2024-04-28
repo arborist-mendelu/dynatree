@@ -130,7 +130,31 @@ skriptu `all_fft_to_one_page.sh`.
 
 ## Útlum
 
-Knihovna `lib_damping.py` obsahuje funkce pro nalezení útlumu dvěma
-metodami: pomocí hilbertovy transformace a vnější obálky a pomocí
-proložení exponenciely body v maximech a minimech časového vývoje
-kmitů.
+Knihovna `lib_damping.py` obsahuje funkce pro nalezení útlumu třemi
+metodami:
+
+* pomocí Hilbertovy transformace a vnější obálky
+* pomocí proložení exponenciely body v maximech a minimech časového vývoje
+kmitů
+* pomocí waveletů
+
+Pro útlum je nutné znát frekvenci kmitů a začátek a konec
+analyzovaného signálu. . K tomuto se používají informace v csv
+souborech `csv/oscillation_times_remarks.csv` a
+`csv/results_fft.csv`. První z těchto souborů je možno editovat ručně,
+druhý je výstupem skriptu `FFT_spectrum.py`. Oba csv soubory jsou pod
+version control.
+
+Pokud je konec analyzovaného časového intervalu roven -1, signál se
+neanalyzuje.
+
+Pokud se knihovna `lib_damping.py` spustí jako skript, analyzuje
+všechna měření a výsledek zapíše do csv souboru
+`damping_output/damping_results.csv`. Tato data čte skript
+`plot_utlum.py`, který kreslí útlum pro jednotlivé stromy a odlišuje
+jednotlivé dny nebo stavy s listím a bez listí.
+
+Aplikace `streamlit_damping.py` umožňuje vybrat si den, strom a měření
+a zobrazí všechny tři výstupy plus Hilbertovu-Huangovu transformaci.
+
+

@@ -11,13 +11,14 @@ program, dělá FFT analýzu pro všechna měření ve všech dnech.
 """
 
 import pandas as pd
-from lib_dynatree import read_data_selected, directory2date
+from lib_dynatree import read_data_selected, directory2date, date2dirname
 from lib_dynatree import filename2tree_and_measurement_numbers
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
 from scipy.fft import fft, fftfreq
 import os
+import glob
 import subprocess
 
 df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
@@ -194,6 +195,21 @@ def main():
             ]:
         print(DATE)
         do_fft_for_day(date=DATE, color=COLOR, path="../")
+
+    # Combine excel fft data to csv        
+    fft_files = glob.glob("fft_data*.xlsx")
+    dfs = {}
+    for i in fft_files:
+        day = directory2date(date2dirname(i.split("_")[5]))
+        data = pd.read_excel(i)
+        data["date"] = day
+        data[["tree","measurement"]] = data.iloc[:,0].str.split("_",expand=True)
+        dfs[i]=data
+    df_f = pd.concat(dfs,ignore_index=True)
+    df_f = df_f[["date","tree","measurement","Freq"]]   
+    df_f.index = pd.MultiIndex.from_frame(df_f[["date","tree","measurement"]])
+    df_f = df_f["Freq"]
+    df_f.to_csv("csv/results_fft.csv")    
     
     # Na konci vykreslit přehled
     subprocess.run(["python", "plot_fft.py"])

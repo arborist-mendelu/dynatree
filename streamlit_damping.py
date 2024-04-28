@@ -16,6 +16,7 @@ import lib_dynatree as ld
 import matplotlib.pyplot as plt
 from lib_dynatree import get_all_measurements, get_csv
 from lib_damping import find_damping, get_limits
+import emd
 
 csv_ans_file = "damping/damping_results.csv"
 st.set_page_config(layout="wide")
@@ -23,21 +24,7 @@ st.set_page_config(layout="wide")
 if 'periods' not in st.session_state:
     ":orange[INFO: Loading dataframe with frequencies to cache.]"
     # code from damping_boxplot.py
-    fft_files = glob.glob("fft_data*.xlsx")
-    if len(fft_files)==0:
-        ":red[ERROR. You need the xlsx files with frequencies to evaluate damping.]"
-    dfs = {}
-    for i in fft_files:
-        day = ld.directory2date(ld.date2dirname(i.split("_")[5]))
-        data = pd.read_excel(i)
-        data["date"] = day
-        data[["tree","measurement"]] = data.iloc[:,0].str.split("_",expand=True)
-        dfs[i]=data
-        
-    df_f = pd.concat(dfs,ignore_index=True)
-    df_f = df_f[["date","tree","measurement","Freq"]]   
-    df_f.index = pd.MultiIndex.from_frame(df_f[["date","tree","measurement"]])
-    df_f = df_f["Freq"]
+    df_f = pd.read_csv("csv/results_fft.csv", index_col=[0,1,2])
     st.session_state['periods'] = df_f
 else:
     df_f = st.session_state['periods'] 
@@ -121,12 +108,13 @@ with cs[0]:
     ## Results
     """
     sol = {}
-    T = 1/(df_f.at[(day,f"BK{tree}",f"M0{measurement}")])
-    k = {}
-    for method in ['hilbert','peaks']:
+    T = 1/(df_f.at[(day,f"BK{tree}",f"M0{measurement}"),"Freq"])
+    damping = {}
+    for method in ['hilbert','peaks','wavelet']:
         sol[method] = find_damping(date=day, tree=tree, measurement=measurement, 
                        df=df_data, probe=probe, start=start, end=end, method=method)
-        k[method] = sol[method]['damping'][0]
+        damping[method] = sol[method]['damping'] 
+
     container = st.container()
     container.write(f"""
     * Coefficients $k$ and $q$ from $e^{{kt+q}}$: 
@@ -148,10 +136,6 @@ with cs[1]:
     * Gray dashed curve - envelope from decreasing exponential, linear leas squares method for logaritm of the data
     """
 
-
-import pywt
-
-
 with cs[2]:
     """
     ## Wavelet transform
@@ -164,36 +148,12 @@ with cs[2]:
     not considered and equally long part at the and is not considererd as well. (Cone of influence is symmetric.)
     """
     #  wavelet
-    
-    # wavelet = st.radio("Wavelet",["cmor1-1","cmor","morl","mexh"], horizontal=True)
-    wavelet = "cmor1-1.5"
-    freq = 1/T   # fft analyza
-    dt = 0.01
-    
-    data = sol['hilbert']['signal']
-    time= sol['hilbert']['time']
-    scale = pywt.frequency2scale(wavelet, [freq*dt])
-    coef, freqs = pywt.cwt(data, scale, wavelet,
-                            sampling_period=dt)
-    fig, ax = plt.subplots()
-    coef = np.abs(coef)[0,:]
-    maximum = np.argmax(coef)
-    ax.plot(time, coef, label=freq)
-    ax.plot(time[maximum], coef[maximum], "o")
-    ax.set(title=f"Waveletova transformace signalu pomoci vlnek")
-    m,q = np.polyfit(time[maximum:-maximum], np.log(coef[maximum:-maximum]), 1)
-    _ = np.linspace(time[maximum], time[-maximum])
-    ax.plot(_,np.exp(m*_+q))
-    ax.set(yscale='log')
-    ax.grid()
-    st.pyplot(fig)
-    k['wavelet'] =  m
-    ans = pd.DataFrame(k,  index=["damping"])*(-T)
+    st.pyplot(sol['wavelet']['figure'])
+    ans = pd.DataFrame(damping,  index=["damping"])
     container.write("* The damping coefficients:")
     container.write(ans)
     container.write("* The relative damping coefficients with respect to Hilbert transformation method:")
     container.write(ans/ans.iloc[0,0])
-
     
     "The graph of the data. The red part is the part being analyzed."    
     st.pyplot(sol['hilbert']['figure_fulldomain'])  
@@ -205,8 +165,9 @@ with cs[3]:
     See <https://www.mathworks.com/help/signal/ref/hht.html> or <https://emd.readthedocs.io>
     """
     
-    import emd
-    
+    dt = 0.01
+    time = sol['hilbert']['time']
+    data= sol['hilbert']['signal']
     imf = emd.sift.sift(data)
     IP, IF, IA = emd.spectra.frequency_transform(imf, dt, 'hilbert')
     # Define frequency range (low_freq, high_freq, nsteps, spacing)

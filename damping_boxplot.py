@@ -48,7 +48,7 @@ for method in ["hilbert", "peaks"]:
     ax.legend()
     ax.set(title=f"Utlum. Modrá a zelená bez listí, hnědá a červená s listím. Method: {method}")
     ax.grid(alpha=0.4)
-    fig.savefig(f"bara/{method}_boxplot.pdf")
+    # fig.savefig(f"bara/{method}_boxplot.pdf")
 
 
 #%%
@@ -73,7 +73,7 @@ for method in ["hilbert", "peaks"]:
     ax.legend()
     ax.set(title=f"Utlum. Modrá a zelená bez listí, hnědá a červená s listím. Method: {method}")
     ax.grid(alpha=0.4)
-    fig.savefig(f"bara/{method}_swarmplot.pdf")
+    # fig.savefig(f"bara/{method}_swarmplot.pdf")
 
 #%%
 
@@ -90,6 +90,22 @@ df = df.merge(d['peaks'])
 df = df.merge(df_f)
 for method in methods:
     df["damping_"+method] = - df["k_"+method] / df["Freq"]
+
+df['quotient'] = df['damping_hilbert']/df['damping_peaks']
+df = df[~((df['quotient']>0.8 ) & (df['quotient']<1/0.8 ))]
+
+#%%
+
+fig, ax = plt.subplots(figsize=(12,6))
+
+sns.swarmplot(
+    data=df, 
+    x="tree", 
+    y="damping_peaks", 
+    hue="date", ax=ax)
+    
+
+#%%
     
 trees = df["tree"].unique()    
 
