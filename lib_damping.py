@@ -59,6 +59,8 @@ def get_signal(date=None, tree=None, measurement=None, df = None, probe="Pt3", t
             (df["Time"]<end )
             ]
     signal = df[(probe,"Y0")].values
+    if fixed_by is not None:
+        signal = signal - df[(fixed_by,"Y0")].values
     time = df.index.values
     idx = np.isnan(signal)
     signal = signal[~idx]
@@ -166,10 +168,16 @@ def find_damping(
     fig.suptitle(f"{date}, BK{tree}, M0{measurement}, {probe}, method: {method}", color=date2color[date])
     
     fig2, ax2 = plt.subplots()
-    df_kopie = df - df.iloc[0,:]
-    df_kopie = df_kopie[~pd.isna(df_kopie.index)]
-    df_kopie[(probe,"Y0")].plot(ax=ax2)
-    df_kopie.loc[start:,[(probe,"Y0")]].loc[:end,:].plot(ax=ax2, color='red', legend=None)
+    sig = df[(probe,"Y0")]
+    t = df.index
+    if fixed_by is not None:
+        sig = sig - df[(fixed_by,"Y0")]
+    sig = sig - sig[0]
+    ax2.plot(t,sig)
+    idx = (t>start) & (t<end)
+    ax2.plot(t[idx], sig[idx], color='red')
+    # df_kopie[(probe,"Y0")].plot(ax=ax2)
+    # df_kopie.loc[start:,[(probe,"Y0")]].loc[:end,:].plot(ax=ax2, color='red', legend=None)
     ax2.set(title=f"Oscillations {date} BK{tree} M0{measurement}, probe ({probe},Y0)")
     
     return {'figure': fig, 'damping': -k*T, 'figure_fulldomain':fig2, 'signal':signal, 'time':time}

@@ -52,6 +52,13 @@ with cs[0]:
     with columns[2]:
         measurement = st.radio("Measurement",list(df_measurement['measurement'].unique()), horizontal=True)
     
+    probe = st.radio("Probe",["auto","Pt3","Pt4"] + [f"BL{i}" for i in range(44,50)], horizontal=True)
+    
+    fixed_by = st.radio("Fixed by",["none","Pt11","Pt12","Pt13"], horizontal=True)
+    if fixed_by == "none":
+        fixed_by = None
+        # method= st.radio("Method",["hilbert","peaks"])
+
     if [day,tree,measurement] not in st.session_state:
         # ":orange[INFO: Dataframe data loaded from csv file]"
         df_data = get_csv(day, tree, measurement)
@@ -64,9 +71,7 @@ with cs[0]:
     if len(st.session_state) > max_cached:
         st.session_state.clear()
     
-    with columns[2]:
-        probe = st.radio("Probe",["auto","Pt3","Pt4","BL44","BL45","BL46","BL47","BL48"])
-        # method= st.radio("Method",["hilbert","peaks"])
+    # with columns[2]:
     
     start, end, remark = get_limits(date=day, tree=tree, measurement=measurement)
     
@@ -93,14 +98,15 @@ with cs[0]:
             df_times.to_csv("csv/oscillation_times_remarks.csv")
             st.rerun()
     
-    """
+    st.markdown("pokus",
+    help = """
     The following table is a record from the file `csv/oscillation_times_remarks.csv`
     The values used in damping computation are in the columns `decrement_start`
     and `decrement_end`. You can override these values by setting From and To
     input fields and pressing Save. The Save button modifies the csv file. If 
     you are happy with the changes, commit new version of csv file to github 
     repository.
-    """
+    """)
     
     remark
     
@@ -112,14 +118,11 @@ with cs[0]:
     damping = {}
     for method in ['hilbert','peaks','wavelet']:
         sol[method] = find_damping(date=day, tree=tree, measurement=measurement, 
-                       df=df_data, probe=probe, start=start, end=end, method=method)
+                       df=df_data, probe=probe, start=start, end=end, method=method, fixed_by=fixed_by)
         damping[method] = sol[method]['damping'] 
 
     container = st.container()
     container.write(f"""
-    * Coefficients $k$ and $q$ from $e^{{kt+q}}$: 
-        * Hilbert {sol['hilbert']['damping']}
-        * peaks {sol['peaks']['damping']}        
     * Period $T$ from FFT (loaded from xlsx files): {T}
     """)
 
@@ -139,7 +142,7 @@ with cs[1]:
 with cs[2]:
     """
     ## Wavelet transform
-    
+ 
     Wavelet transform using the morlet wavelet with frequency corresponding to the 
     first mode of the tree. The initial and final part should be ignored, see the 
     cone of influence, <https://www.mathworks.com/help/wavelet/ug/boundary-effects-and-the-cone-of-influence.html>
@@ -155,7 +158,11 @@ with cs[2]:
     container.write("* The relative damping coefficients with respect to Hilbert transformation method:")
     container.write(ans/ans.iloc[0,0])
     
-    "The graph of the data. The red part is the part being analyzed."    
+    """
+    ## Signal which has been analyzed
+    
+    The graph of the data. The red part is the part being analyzed.
+    """
     st.pyplot(sol['hilbert']['figure_fulldomain'])  
     
 with cs[3]:
@@ -179,6 +186,18 @@ with cs[3]:
         fig, ax = plt.subplots(figsize=(12,6))
         emd.plotting.plot_imfs(imf, time_vect=time, sharey=b, ax=ax)
         st.pyplot(fig)
+    
+    """
+    ## Do static probes Pt11, Pt12, Pt13 move?
+    """
+    
+    subplots = st.radio("Subplots",[False, True], horizontal=True)
+    
+    fig, ax = plt.subplots(figsize=(12,6))
+    sub_df = df_data[[("Pt11","Y0"), ("Pt12","Y0"), ("Pt13","Y0")]]
+    sub_df = sub_df - sub_df.iloc[0,:]
+    sub_df.loc[start:end,:].plot(ax=ax, subplots=subplots)
+    st.pyplot(fig)    
     
     # st.pyplot(emd.plotting.plot_imfs(imf, time_vect=time, sharey=False))
     
