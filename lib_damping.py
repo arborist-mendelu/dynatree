@@ -42,7 +42,7 @@ def get_limits(date, tree, measurement, csvdir="csv"):
         start = bounds_for_oscillations["start"].values[0]
     return start,end, bounds_for_oscillations
 
-def get_signal(date=None, tree=None, measurement=None, df = None, probe="Pt3", timestep = 0.01, start=None, end = None):
+def get_signal(date=None, tree=None, measurement=None, df = None, probe="Pt3", timestep = 0.01, start=None, end = None, fixed_by=None):
     """
     Gets signal defined by the probe, start, end and either dataframe df 
     or triplet day,tree, measurement.
@@ -79,9 +79,10 @@ def find_damping(
         measurement="3",
         df=None,
         probe = None, start=None, end=None, T=None, dt = 0.01,
+        fixed_by = None,
         method = 'hilbert'):
     s_, e_, r_ = get_limits(date, tree, measurement)
-    if probe is None:
+    if (probe is None) or (probe == "auto"):
         probe = r_["probe"].values[0]
     if (probe is None) or (pd.isnull(probe)):
         probe = "Pt3"
@@ -94,7 +95,7 @@ def find_damping(
         end = e_ 
     if df is None:
         df = get_csv(date, tree, measurement)
-    time, signal = get_signal(df=df, probe=probe, start=start, end=end)
+    time, signal = get_signal(df=df, probe=probe, start=start, end=end, fixed_by=fixed_by)
     if time is None or signal is None:
         print("Time or signal are None, skipped determinantion of damping")
         return None
