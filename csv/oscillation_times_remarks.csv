@@ -2,21 +2,21 @@ date,tree,measurement,start,end,remark,probe,decrement_start,decrement_end,decre
 2021-03-22,BK01,M02,63.4,70.54,"Jenom dvě periody, ale pěkné zakolísání po vypuštění",,,71.0,
 2021-03-22,BK01,M03,50.83,105.59,"Krásné kmity, dlouhý vzorek",,53.0,105.59,
 2021-03-22,BK01,M04,44.34,97.42,Pěkné kmity,,46.5,90.0,
-2021-03-22,BK04,M02,51.13,99.37,"Oscilace na začátku napínání, jinak pěkné oscilace a dostatek period, zřetelný exp. pokles amplitudy",,,,
-2021-03-22,BK04,M03,40.63,90.9,Pěkné oscilace,,44.0,90.9,
-2021-03-22,BK04,M04,40.36,97.21,"Kmity neslábnou, jeden peak rozsypaný, Pt3 končí moc brzo (použít jiný probe)",Pt4,40.36,58.0,
-2021-03-22,BK07,M02,119.91,183.49,"Hodně kmitů, zřetelný exponenciální pokles amplitudy, řídká snad interpolovatelná data",,123.0,183.49,
-2021-03-22,BK07,M03,62.66,113.7,Pěkné oscilace,,62.66,105.0,
+2021-03-22,BK04,M02,51.13,99.37,"Oscilace na začátku napínání, jinak pěkné oscilace a dostatek period, zřetelný exp. pokles amplitudy",,,,Pt11
+2021-03-22,BK04,M03,40.63,90.9,Pěkné oscilace,,44.0,90.9,Pt11
+2021-03-22,BK04,M04,40.36,97.21,"Kmity neslábnou, jeden peak rozsypaný, Pt3 končí moc brzo (použít jiný probe)",Pt4,40.36,58.0,Pt11
+2021-03-22,BK07,M02,119.91,183.49,"Hodně kmitů, zřetelný exponenciální pokles amplitudy, řídká snad interpolovatelná data",,123.0,183.49,Pt11
+2021-03-22,BK07,M03,62.66,113.7,Pěkné oscilace,,62.66,105.0,Pt13
 2021-03-22,BK07,M04,42.25,77.6,"Hrbaté natahování, odříznutý divný konec, kmity moc neslábnou",,42.25,60.0,
 2021-03-22,BK07,M05,66.58,117.8,Pěkné oscilace na dlouhém intervalu,,67.0,105.0,
 2021-03-22,BK08,M02,29.24,61.09,Na konci roste amplituda,,,40.0,
 2021-03-22,BK08,M03,63.22,inf,Relativně pěkná křivka,,,86.0,
 2021-03-22,BK08,M04,60.05,100.34,"Pěkné kmity, jenom trochu chlupaté",,,80.0,
 2021-03-22,BK08,M05,47.44,inf,"Chlupato-zubaté napínání, kmity OK s ocasem na konci, zřetelný exp. pokles amplitudy",,,80.0,
-2021-03-22,BK08,M06,33.01,inf,Patrné oscilace při natahování,,,62.0,
+2021-03-22,BK08,M06,33.01,inf,Patrné oscilace při natahování,,,62.0,Pt11
 2021-03-22,BK09,M02,33.07,56.45,"Zašumněné natahování i konec, zvláštní tvar peaků",,,47.0,
 2021-03-22,BK09,M03,39.1,68.92,"Oscilace OK, divný tvar peaků, konec odřezaný kvůli roztřesení, peaky během natahování a před vypuštěním",,,,
-2021-03-22,BK09,M04,41.85,71.47,"Zašumněné natahování, divný tvar prvních peaků",,,,
+2021-03-22,BK09,M04,41.85,71.47,"Zašumněné natahování, divný tvar prvních peaků",,41.85,71.47,Pt11
 2021-03-22,BK10,M02,45.33,inf,"Pěkné oscilace, kousek přerušení, zvláštní tvar peaků",,45.33,75.0,
 2021-03-22,BK10,M03,43.88,70.07,"Roztřesené natahování, velmi zvláštní tvar peaků",,,,
 2021-03-22,BK10,M04,46.18,69.3,"Zašumněné natahování, lehce divný tvar prvních peaků",,,,

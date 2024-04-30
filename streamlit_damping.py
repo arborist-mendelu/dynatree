@@ -52,12 +52,23 @@ with cs[0]:
     with columns[2]:
         measurement = st.radio("Measurement",list(df_measurement['measurement'].unique()), horizontal=True)
     
-    probe = st.radio("Probe",["auto","Pt3","Pt4"] + [f"BL{i}" for i in range(44,50)], horizontal=True)
+    probe = st.radio("Probe",["auto","Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)], horizontal=True)
     
-    fixed_by = st.radio("Fixed by",["none","Pt11","Pt12","Pt13"], horizontal=True)
-    if fixed_by == "none":
+    "Middle BL is 44-51, side BL are 52-59 (compression) and 60-67 (tension)."
+    
+    fixed_by = st.radio("Fixed by",["auto","none","Pt11","Pt12","Pt13"], horizontal=True)
+    if fixed_by == "auto":
+        df_times = pd.read_csv("csv/oscillation_times_remarks.csv", index_col=[0,1,2])        
+        fixed_by = df_times.at[(day,f"BK{tree}",f"M0{measurement}"),"decrement_fixed_by"]
+        f"Fixed by {fixed_by}"
+    if (fixed_by == "none") or pd.isna(fixed_by):
         fixed_by = None
         # method= st.radio("Method",["hilbert","peaks"])
+    if st.button('Save fixed by'):
+        df_times = pd.read_csv("csv/oscillation_times_remarks.csv", index_col=[0,1,2])
+        df_times.at[(day,f"BK{tree}",f"M0{measurement}"),"decrement_fixed_by"] = fixed_by
+        df_times.to_csv("csv/oscillation_times_remarks.csv")
+        st.rerun()
 
     if [day,tree,measurement] not in st.session_state:
         # ":orange[INFO: Dataframe data loaded from csv file]"
