@@ -12,7 +12,9 @@ program, dělá FFT analýzu pro všechna měření ve všech dnech.
 
 import pandas as pd
 from lib_dynatree import read_data_selected, directory2date, date2dirname
-from lib_dynatree import filename2tree_and_measurement_numbers
+from lib_dynatree import filename2tree_and_measurement_numbers, date2color
+from lib_dynatree import get_all_measurements
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
@@ -21,10 +23,43 @@ import os
 import glob
 import subprocess
 
-df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
+df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv", index_col=[0,1,2])
 
 # measurement_day = MEASUREMENT_DAY
 # path = PATH
+
+def interp(df, new_index):
+    """Return a new DataFrame with all columns values interpolated
+    to the new_index values."""
+    df_out = pd.DataFrame(index=new_index, columns=df.columns)
+    df_out.index.name = df.index.name
+
+    for colname in df.columns:
+        df_out[colname] = np.interp(new_index, df.index, df[colname])
+
+    return df_out
+
+def load_data_for_FFT(file="../01_Mereni_Babice_05042022_optika_zpracovani/csv/BK04_M02.csv", start=100, end=120, dt=0.01):
+    """
+    Loads data for FFT. The time will be in the index. Only selected probes are included.
+    """
+
+    data = read_data_selected(file,
+                                 probes = ["Time"]
+                                 +[f"Pt{i}" for i in [0,1,3,4]]
+                                 +[f"BL{i}" for i in range(44,68)])
+    data = data.set_index("Time")
+    idx = pd.isna(data.index)
+    data = data[~idx]
+    col = data.columns
+    col = [i for i in col if 
+           ("P"==i[0][0] and "Y0"==i[1])
+           or ("B"==i[0][0] and "Pt0AY"==i[1])
+           ]
+    data = data.loc[start:end, col]
+    data = interp(data, np.arange(data.index[0],data.index[-1],dt))
+    data = data - data.iloc[0,:]
+    return data
 
 # %% Create subdirectories
 
@@ -33,13 +68,15 @@ def do_fft_for_file(
         date="01_Mereni_Babice_22032021_optika_zpracovani",
         csvdir="csv",
         tree="01",
+        df=None,
         measurement="2",
         start = 0,
         end = np.inf,
         column_fft=("Pt3","Y0"),
         create_image=True,
         color="C1",
-        return_image=False,
+        return_image=True,
+        save_image=False
         ):
     """
     FFT analyza zvoleneho probu v csv souboru    
@@ -56,6 +93,7 @@ def do_fft_for_file(
         Dvouciferné číslo stromu. The default is "01".
     tree_measurement : TYPE, optional
         Jendociferné číslo měření. The default is "2".
+    df : You can pass the dataframe as a parameter. If df is None, reads from the disc.
     start : TYPE, optional
         Začátek časového intervalu. The default is 0.
     end : TYPE, optional
@@ -78,141 +116,219 @@ def do_fft_for_file(
     if np.isnan(start) or np.isnan(end) or (start==end):
         print("Nejsou zadany meze pro signal")
         return None
-    df = read_data_selected(f"{path}{date}/{csvdir}/BK{tree}_M0{measurement}.csv")
-    
-    signal_ = df[column_fft].dropna().loc[start:end]
-    if np.isnan(signal_).any():
-        signal_ = signal_.interpolate()
-    if signal_.shape[0] == 0:
-        print("Nebyl nalezen signal signal")
+    if df is None:
+        df = load_data_for_FFT(f"{path}{date}/{csvdir}/BK{tree}_M0{measurement}.csv",start=start, end=end)
+    output = {}
+    for c in df.columns:
+        output[(date,tree,measurement,c)] = do_fft_for_one_column(df,c,color=color,
+                              return_image=return_image,
+                              save_image=save_image,
+                              create_image=create_image, 
+                              tree=tree, 
+                              measurement=measurement, 
+                              date=date,
+                              path=path
+        )
+    return output
+
+def do_fft_for_one_column(df,
+                          col,
+                          dt=0.01,
+                          create_image=True, 
+                          save_image=False, 
+                          return_image=True,
+                          color="C0",
+                          tree=None,
+                          measurement=None,
+                          date=None,
+                          path=None,
+                          ):
+    signal_fft = df[col].dropna()
+    time_fft = signal_fft.index.values  # grab time
+    signal_fft = signal_fft.values
+    if signal_fft.shape[0] == 0:
+        print("Nebyl nalezen signal")
         return None
-    time = signal_.index  # grab time
-    time = time - time[0] # restart time from zero
-    signal = signal_.values # grab values
-    fs = 100
-    time_fft = np.arange(time[0],time[-1],1/fs) # timeline for resampling
-    f = interpolate.interp1d(time, signal, fill_value="extrapolate")  
-    signal_fft = f(time_fft) # resample
+    time_fft = time_fft - time_fft[0]
     signal_fft = signal_fft - np.nanmean(signal_fft) # mean value to zero
-    
     N = time_fft.shape[0]  # get the number of points
     
     yf = fft(signal_fft)  # preform FFT analysis
-    xf_r = fftfreq(N, 1/fs)[:N//2]
+    xf_r = fftfreq(N, dt)[:N//2]
     yf_r = 2.0/N * np.abs(yf[0:N//2])
     peak_index = np.argmax(yf_r[2:])+2  # find the peak, exclude the start
     peak_position = xf_r[peak_index]
     delta_f = np.diff(xf_r).mean()
-    output = {'peak position': peak_position, 'delta f': delta_f, 'xf_r':xf_r, 'yf_r':yf_r,'peak_index':peak_index}
-
-    if create_image:
-        fig,axs = plt.subplots(2,1)  
-        ax = axs[0]  # plot the signal
-        ax.plot(time,signal-signal[0], ".", color=color, ms=2)
-        ax.set(xlabel="Time/s", ylabel=column_fft[0]+", "+column_fft[1])
-        ax = axs[1]
-        ax.plot(xf_r, yf_r,".", color=color)
-        ax.plot(xf_r[peak_index],yf_r[peak_index],"o", color='red')
-        t = ax.text(xf_r[peak_index]+0.1,yf_r[peak_index],f"{round(xf_r[peak_index],3)}±{np.round(delta_f,3)}",horizontalalignment='left')
-        t.set_bbox(dict(facecolor='yellow', alpha=0.5))
-        ax.set(xlim=(0,3))
-        ax.grid()
-        ax.set(ylabel="FFT", xlabel="Freq./Hz", yscale='log', ylim=(0.001,None))
-    
-        plt.suptitle(directory2date(date)+f", BK{tree}_M0{measurement}")
-        plt.tight_layout()
-        fig.savefig(f"{path}{date}/png_fft/BK{tree}_M0{measurement}.png")
-        if return_image:
-            output['figure']=fig
-        else:
-            plt.close()
+    output = {
+        'peak_position': peak_position, 
+        'delta_f': delta_f, 
+        'xf_r': xf_r, 
+        'yf_r': yf_r,
+        'peak_index': peak_index, 
+        'signal_fft': signal_fft, 
+        'time_fft': time_fft
+        }
     return output
+
+
+def create_fft_image(
+        time_fft=None, 
+        signal_fft=None, 
+        color="C01", 
+        col="", 
+        xf_r=None, 
+        yf_r=None, 
+        peak_index=None, 
+        delta_f=None, 
+        date=None, 
+        tree=None, 
+        measurement=None, 
+        path="", 
+        peak_position=None
+        ):
+    fig,axs = plt.subplots(2,1)  
+    ax = axs[0]  # plot the signal
+    ax.plot(time_fft,signal_fft-signal_fft[0], ".", color=color, ms=2)
+    ax.set(xlabel="Time/s",ylabel=col)
+    ax = axs[1]
+    ax.plot(xf_r, yf_r,".", color=color)
+    ax.plot(xf_r[peak_index],yf_r[peak_index],"o", color='red')
+    t = ax.text(xf_r[peak_index]+0.1,yf_r[peak_index],f"{round(xf_r[peak_index],3)}±{np.round(delta_f,3)}",horizontalalignment='left')
+    t.set_bbox(dict(facecolor='yellow', alpha=0.5))
+    ax.set(xlim=(0,3))
+    ax.grid()
+    ax.set(ylabel="FFT", xlabel="Freq./Hz", yscale='log', ylim=(0.001,None))
+
+    # plt.suptitle(directory2date(date)+f", BK{tree}_M0{measurement}")
+    plt.tight_layout()
+    return fig
 
 
 # a = do_fft_for_file(start=51.7, end=np.inf, column_fft=("Pt3","Y0"), measurement_day="01_Mereni_Babice_29062021_optika_zpracovani", tree="01", tree_measurement="3", return_image=True)
 # plt.show(a['figure'])
     
-def do_fft_for_day(
-        date="01_Mereni_Babice_22032021_optika_zpracovani",
-        path="./",
-        color="C0"
-        ):
-    for d in ["png_fft"]:
-        try:
-           os.makedirs(f"{path}{date}/{d}")
-        except FileExistsError:
-           # directory already exists
-           pass
+# def do_fft_for_day(
+#         date="01_Mereni_Babice_22032021_optika_zpracovani",
+#         path="./",
+#         color="C0"
+#         ):
+#     for d in ["png_fft"]:
+#         try:
+#            os.makedirs(f"{path}{date}/{d}")
+#         except FileExistsError:
+#            # directory already exists
+#            pass
     
-    fft_data = {}
+#     fft_data = {}
     
-    csvdir="csv"
-    files = os.listdir(f"{path}{date}/{csvdir}/")
-    files.sort()
+#     csvdir="csv"
+#     files = os.listdir(f"{path}{date}/{csvdir}/")
+#     files.sort()
     
-    for file in files[:]:
-        print(file, end="")    
+#     for file in files[:]:
+#         print(file, end="")    
 
-        tree,measurement = filename2tree_and_measurement_numbers(file)
-        bounds_for_fft = df_remarks[(df_remarks["tree"]==f"BK{tree}") & (df_remarks["measurement"]==f"M0{measurement}") & (df_remarks["date"]==directory2date(date))]
-        if bounds_for_fft['probe'].isnull().values.any():
-            column_fft = ("Pt3","Y0") 
-        else:
-            column_fft = (bounds_for_fft['probe'].iat[0],"Y0") 
+#         tree,measurement = filename2tree_and_measurement_numbers(file)
+#         bounds_for_fft = df_remarks[(df_remarks["tree"]==f"BK{tree}") & (df_remarks["measurement"]==f"M0{measurement}") & (df_remarks["date"]==directory2date(date))]
+#         if bounds_for_fft['probe'].isnull().values.any():
+#             column_fft = ("Pt3","Y0") 
+#         else:
+#             column_fft = (bounds_for_fft['probe'].iat[0],"Y0") 
             
-        start = bounds_for_fft['start'].iat[0]
-        end = bounds_for_fft['end'].iat[0]
-        print(f"{column_fft} from {start} to {end}: ", end="")        
-        output_fft = do_fft_for_file(
-            start=start, 
-            end=end,
-            column_fft=column_fft,
-            create_image=True,
-            date=date,
-            tree=tree,
-            measurement=measurement,
-            color=color,
-            )
-        if output_fft is not None:
-            peak_position = output_fft['peak position']
-            delta_f = output_fft['delta f']        
+#         start = bounds_for_fft['start'].iat[0]
+#         end = bounds_for_fft['end'].iat[0]
+#         print(f"{column_fft} from {start} to {end}: ", end="")        
+#         output_fft = do_fft_for_file(
+#             start=start, 
+#             end=end,
+#             column_fft=column_fft,
+#             create_image=True,
+#             date=date,
+#             tree=tree,
+#             measurement=measurement,
+#             color=color,
+#             )
+#         if output_fft is not None:
+#             peak_position = output_fft['peak_position']
+#             delta_f = output_fft['delta_f']        
         
-            print (np.round(peak_position,3), "±",np.round(delta_f,3))
-            fft_data[file.replace(".csv","")] = [peak_position, delta_f]
-        else:
-            print("output is None")
+#             print (np.round(peak_position,6), "±",np.round(delta_f,6))
+#             fft_data[file.replace(".csv","")] = [peak_position, delta_f]
+#         else:
+#             print("output is None")
 
-    df_output = pd.DataFrame(fft_data).T
-    df_output.columns = ["Freq","Delta freq"]
-    df_output.to_excel(f"fft_data_{date}.xlsx")
+#     df_output = pd.DataFrame(fft_data).T
+#     df_output.columns = ["Freq","Delta freq"]
+#     df_output.to_excel(f"fft_data_{date}.xlsx")
+
+# def main_test():
+#     date,tree,measurement = "2022-08-16","04","3"
+#     bounds_for_fft = df_remarks.loc[[(date,f"BK{tree}",f"M0{measurement}")],:]
+#     # if bounds_for_fft['probe'].isnull().values.any():
+#     #     column_fft = ("Pt3","Y0") 
+#     # else:
+#     #     column_fft = (bounds_for_fft['probe'].iat[0],"Y0") 
+#     probe = ("Pt3","Y0")         
+#     start = bounds_for_fft[['start']].iat[0,0]
+#     end = bounds_for_fft[['end']].iat[0,0]
+#     print(f"{probe} from {start} to {end}: ", end="")        
+    
+#     data = load_data_for_FFT(start=start,end=end)
+#     output = do_fft_for_one_column(
+#         data, 
+#         probe, 
+#         date="01_Mereni_Babice_22032021_optika_zpracovani"
+#         )
+#     fig = create_fft_image(**output)
+#     plt.suptitle("AA")
+#     plt.tight_layout()
+#     return [output,fig]
 
 def main():
-    for DATE, COLOR in [
-            ["01_Mereni_Babice_22032021_optika_zpracovani", "C0"],
-            ["01_Mereni_Babice_29062021_optika_zpracovani", "C1"],
-            ["01_Mereni_Babice_05042022_optika_zpracovani", "C0"],
-            ["01_Mereni_Babice_16082022_optika_zpracovani", "C1"],
-            ]:
-        print(DATE)
-        do_fft_for_day(date=DATE, color=COLOR, path="../")
-
-    # Combine excel fft data to csv        
-    fft_files = glob.glob("fft_data*.xlsx")
-    dfs = {}
-    for i in fft_files:
-        day = directory2date(date2dirname(i.split("_")[5]))
-        data = pd.read_excel(i)
-        data["date"] = day
-        data[["tree","measurement"]] = data.iloc[:,0].str.split("_",expand=True)
-        dfs[i]=data
-    df_f = pd.concat(dfs,ignore_index=True)
-    df_f = df_f[["date","tree","measurement","Freq"]]   
-    df_f.index = pd.MultiIndex.from_frame(df_f[["date","tree","measurement"]])
-    df_f = df_f["Freq"]
-    df_f.to_csv("csv/results_fft.csv")    
-    
-    # Na konci vykreslit přehled
-    subprocess.run(["python", "plot_fft.py"])
+    df = get_all_measurements()
+    output_data = {}
+    probes = [f"Pt{i}" for i in [3,4]] +[
+        f"BL{i}" for i in range(44,68)]
+    for date,tree,measurement in df.values:
+        bounds_for_fft = df_remarks.loc[[(date,f"BK{tree}",f"M0{measurement}")],:]
+        start = bounds_for_fft[['start']].iat[0,0]
+        end = bounds_for_fft[['end']].iat[0,0]
+        if pd.isna(start):
+            print("Start not defined")
+            continue
+        if start < .1:
+            print("Start is not set")
+            continue
+        print(f"{date} BK{tree} M0{measurement} from {start} to {end}, ", end="")        
+        data = load_data_for_FFT(
+            file=f"../{date2dirname(date)}/csv/BK{tree}_M0{measurement}.csv",
+            start=start,end=end)
+        print(", ",round(data.index[-1]-data.index[0],1)," sec.")
+        for probe in probes:
+            try:
+                output = do_fft_for_one_column(
+                    data, 
+                    probe
+                    )
+            except:
+                print("Something failed in do_fft_for_one_columne")
+                output = None
+            if output is None:
+                print(f"Probe {probe} failed")
+                output_data[(date,tree,measurement,probe)
+                      ] = [np.nan]*3
+                continue
+            print(date,probe, round(output['peak_position'],6), "±",np.round(output['delta_f'],6))
+            length = output['time_fft'][-1] - output['time_fft'][0]
+            output_data[(date,tree,measurement,probe)
+                  ]  = [output['peak_position'], output['delta_f'], length]
+            # with open("fft_ouput.csv", 'a') as file:
+            #     file.write(f"{date},{tree},{measurement},{output['peak_position']}, {output['delta_f']}\n")
+    return output_data
 
 if __name__ == "__main__":
-    main()
+    output_data = main()
+    df = pd.DataFrame(output_data).T
+    df.columns=['freq','err','length']
+    df.index.names = ["date","tree","measurement","probe"]
+    df.to_csv("results/fft.csv")

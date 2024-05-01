@@ -73,7 +73,8 @@ def read_data_selected(file,
                      )
     # adjust index and column names
     df.columns = pd.MultiIndex.from_arrays(sloupce)
-    df.index = df["Time"].values.reshape(-1)
+    if "Time" in probes:
+        df.index = df["Time"].values.reshape(-1)
     return df
 
 def directory2date(d):
@@ -321,3 +322,10 @@ def get_all_measurements():
     df = df.sort_values(by=list(df.columns))
     df = df.reset_index(drop=True)
     return df
+
+date2color = {
+    '2022-04-05': "C0",
+    '2022-08-16': "C1",
+    '2021-03-22': "C0",
+    '2021-06-29': "C1",
+    }
