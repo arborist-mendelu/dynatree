@@ -198,7 +198,7 @@ def read_data_inclinometers(file, release=None, delta_time=0):
         file,
         skiprows=55, 
         decimal=",",
-        delim_whitespace=True,    
+        sep='\s+',    
         skipinitialspace=True,
         na_values="-"
         )
@@ -246,6 +246,7 @@ def find_finetune_synchro(date, tree, measurement, cols="delta time"):
     if not "M" in str(measurement):
         measurement = f"M0{measurement}"
     df = pd.read_csv("csv/synchronization_finetune_inclinometers_fix.csv",header=[0,1], index_col=[0,1,2])     
+    df = df.sort_index()
     if not (date,tree,measurement) in df.index:
         if cols=="delta time":
             return 0
