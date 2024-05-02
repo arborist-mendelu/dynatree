@@ -11,29 +11,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 
-def uprav_df(df):
-    df["tree"] = [i.split("_")[0] for i in df.index]
-    return df
-colors = {'1': 'blue', '2': 'red'}
-dfs = [
-     pd.read_excel(f"fft_data_01_Mereni_Babice_{i}_optika_zpracovani.xlsx", index_col=0)
-     for i in ["22032021","29062021","05042022","16082022"]
-     ]
-
-dfs[0]['date'] = "2021-03-22"
-dfs[1]['date'] = "2021-06-29"
-dfs[2]['date'] = "2022-04-05"
-dfs[3]['date'] = "2022-08-16"
-
-dfs[0]['listy'] = False
-dfs[1]['listy'] = True
-dfs[2]['listy'] = False
-dfs[3]['listy'] = True
-
-
-df = pd.concat(dfs)
-
-df = df.copy().pipe(uprav_df)
+probe = "Pt4"
+df = pd.read_csv("results/fft.csv", dtype = {'tree': str, 'date': str})
+df = df[df["probe"].str.contains(probe)]
+df["leaves"] = False
+idx = (df["date"] == "2021-06-29") | (df["date"] == "2022-08-16")
+df.loc[idx,"leaves"] = True
+#%%
 
 df.reset_index(inplace=True)
 
@@ -58,43 +42,44 @@ df.reset_index(inplace=True)
 
 # %% swarmplot
 
-fig, ax = plt.subplots(figsize=(10,6))
+fig, axs = plt.subplots(2,1,figsize=(14,10), sharex=True)
+
+ax = axs[0]
 
 f_min = 0.1
 delta_f_min = 0.05
 sns.swarmplot(
-    data=df[(df["Freq"]>f_min) & (df["Delta freq"]<delta_f_min)], 
+    data=df[(df["freq"]>f_min) & (df["err"]<delta_f_min)], 
     x="tree", 
-    y="Freq", 
+    y="freq", 
     hue="date",
     ax = ax
     )
 [ax.axvline(x+.5,color='gray', lw=0.5) for x in ax.get_xticks()]
 ax.legend(loc=2)
 ax.grid(alpha=0.4)
-ax.set(title="Základní frekvence")
-plt.savefig("outputs/swarmplot.pdf")
+ax.set(title=f"Základní frekvence {probe}")
+# ax.set(ylim=(0,14))
 
-df[["tree","date","index","Freq"]].sort_values(by=["tree","date","Freq"]).to_csv("outputs/FFT_freq.csv", index=None, header=False)
-
-# %% s listim/bez listi
+ax = axs[1]
 
 f_min = 0.15
 delta_f_min = 0.05
 
-df2 = df.copy()[(df["Freq"]>f_min) & (df["Delta freq"]<delta_f_min)]
+df2 = df.copy()[(df["freq"]>f_min) & (df["err"]<delta_f_min)]
 
-fig, ax = plt.subplots(figsize=(10,6))
+# fig, ax = plt.subplots(figsize=(10,6))
 
 sns.boxplot(
     data=df2, 
     x="tree", 
-    y="Freq", 
-    hue="listy",
+    y="freq", 
+    hue="leaves",
     ax = ax
     )
 [ax.axvline(x+.5,color='gray', lw=0.5) for x in ax.get_xticks()]
-ax.legend(loc=2, title="Olistění")
+ax.legend(loc=2, title="Leaves")
 ax.grid(alpha=0.4)
-ax.set(title="Základní frekvence (dvě měření s listy a dvě bez listů)")
+# ax.set(title=f"Základní frekvence (dvě měření s listy a dvě bez listů) {probe}")
+# ax.set(ylim=(0,14))
 plt.savefig("outputs/boxplot.pdf")

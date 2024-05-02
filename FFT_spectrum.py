@@ -11,17 +11,12 @@ program, dělá FFT analýzu pro všechna měření ve všech dnech.
 """
 
 import pandas as pd
-from lib_dynatree import read_data_selected, directory2date, date2dirname
-from lib_dynatree import filename2tree_and_measurement_numbers, date2color
+from lib_dynatree import read_data_selected, date2dirname
 from lib_dynatree import get_all_measurements
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import interpolate
 from scipy.fft import fft, fftfreq
-import os
-import glob
-import subprocess
 
 df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv", index_col=[0,1,2])
 
@@ -43,7 +38,6 @@ def load_data_for_FFT(file="../01_Mereni_Babice_05042022_optika_zpracovani/csv/B
     """
     Loads data for FFT. The time will be in the index. Only selected probes are included.
     """
-
     data = read_data_selected(file,
                                  probes = ["Time"]
                                  +[f"Pt{i}" for i in [0,1,3,4]]
@@ -152,7 +146,7 @@ def do_fft_for_one_column(df,
     time_fft = time_fft - time_fft[0]
     signal_fft = signal_fft - np.nanmean(signal_fft) # mean value to zero
     N = time_fft.shape[0]  # get the number of points
-    
+
     yf = fft(signal_fft)  # preform FFT analysis
     xf_r = fftfreq(N, dt)[:N//2]
     yf_r = 2.0/N * np.abs(yf[0:N//2])
@@ -203,87 +197,6 @@ def create_fft_image(
     plt.tight_layout()
     return fig
 
-
-# a = do_fft_for_file(start=51.7, end=np.inf, column_fft=("Pt3","Y0"), measurement_day="01_Mereni_Babice_29062021_optika_zpracovani", tree="01", tree_measurement="3", return_image=True)
-# plt.show(a['figure'])
-    
-# def do_fft_for_day(
-#         date="01_Mereni_Babice_22032021_optika_zpracovani",
-#         path="./",
-#         color="C0"
-#         ):
-#     for d in ["png_fft"]:
-#         try:
-#            os.makedirs(f"{path}{date}/{d}")
-#         except FileExistsError:
-#            # directory already exists
-#            pass
-    
-#     fft_data = {}
-    
-#     csvdir="csv"
-#     files = os.listdir(f"{path}{date}/{csvdir}/")
-#     files.sort()
-    
-#     for file in files[:]:
-#         print(file, end="")    
-
-#         tree,measurement = filename2tree_and_measurement_numbers(file)
-#         bounds_for_fft = df_remarks[(df_remarks["tree"]==f"BK{tree}") & (df_remarks["measurement"]==f"M0{measurement}") & (df_remarks["date"]==directory2date(date))]
-#         if bounds_for_fft['probe'].isnull().values.any():
-#             column_fft = ("Pt3","Y0") 
-#         else:
-#             column_fft = (bounds_for_fft['probe'].iat[0],"Y0") 
-            
-#         start = bounds_for_fft['start'].iat[0]
-#         end = bounds_for_fft['end'].iat[0]
-#         print(f"{column_fft} from {start} to {end}: ", end="")        
-#         output_fft = do_fft_for_file(
-#             start=start, 
-#             end=end,
-#             column_fft=column_fft,
-#             create_image=True,
-#             date=date,
-#             tree=tree,
-#             measurement=measurement,
-#             color=color,
-#             )
-#         if output_fft is not None:
-#             peak_position = output_fft['peak_position']
-#             delta_f = output_fft['delta_f']        
-        
-#             print (np.round(peak_position,6), "±",np.round(delta_f,6))
-#             fft_data[file.replace(".csv","")] = [peak_position, delta_f]
-#         else:
-#             print("output is None")
-
-#     df_output = pd.DataFrame(fft_data).T
-#     df_output.columns = ["Freq","Delta freq"]
-#     df_output.to_excel(f"fft_data_{date}.xlsx")
-
-# def main_test():
-#     date,tree,measurement = "2022-08-16","04","3"
-#     bounds_for_fft = df_remarks.loc[[(date,f"BK{tree}",f"M0{measurement}")],:]
-#     # if bounds_for_fft['probe'].isnull().values.any():
-#     #     column_fft = ("Pt3","Y0") 
-#     # else:
-#     #     column_fft = (bounds_for_fft['probe'].iat[0],"Y0") 
-#     probe = ("Pt3","Y0")         
-#     start = bounds_for_fft[['start']].iat[0,0]
-#     end = bounds_for_fft[['end']].iat[0,0]
-#     print(f"{probe} from {start} to {end}: ", end="")        
-    
-#     data = load_data_for_FFT(start=start,end=end)
-#     output = do_fft_for_one_column(
-#         data, 
-#         probe, 
-#         date="01_Mereni_Babice_22032021_optika_zpracovani"
-#         )
-#     fig = create_fft_image(**output)
-#     plt.suptitle("AA")
-#     plt.tight_layout()
-#     return [output,fig]
-
 def main():
     df = get_all_measurements()
     output_data = {}
@@ -305,6 +218,10 @@ def main():
             start=start,end=end)
         print(", ",round(data.index[-1]-data.index[0],1)," sec.")
         for probe in probes:
+            if probe[0] == "P":
+                probe = (probe,"Y0")
+            else:
+                probe = (probe,"Pt0AY")            
             try:
                 output = do_fft_for_one_column(
                     data, 
@@ -322,8 +239,6 @@ def main():
             length = output['time_fft'][-1] - output['time_fft'][0]
             output_data[(date,tree,measurement,probe)
                   ]  = [output['peak_position'], output['delta_f'], length]
-            # with open("fft_ouput.csv", 'a') as file:
-            #     file.write(f"{date},{tree},{measurement},{output['peak_position']}, {output['delta_f']}\n")
     return output_data
 
 if __name__ == "__main__":
@@ -332,3 +247,19 @@ if __name__ == "__main__":
     df.columns=['freq','err','length']
     df.index.names = ["date","tree","measurement","probe"]
     df.to_csv("results/fft.csv")
+    # date = "2021-03-22"
+    # tree = "01"
+    # measurement = "2"
+    # probe = 'Pt3'
+    # if probe[0] == "P":
+    #     probe = (probe,"Y0")
+    # else:
+    #     probe = (probe,"Pt0AY")            
+    # data = load_data_for_FFT(
+    #         file=f"../{date2dirname(date)}/csv/BK{tree}_M0{measurement}.csv",start=63.4, end=70.54)
+    # output = do_fft_for_one_column(
+    #     data, 
+    #     probe
+    #     )
+    # output
+    # fig = create_fft_image(**output)

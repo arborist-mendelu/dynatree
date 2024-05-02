@@ -70,7 +70,7 @@ st.write(f"{date} BK{tree} M0{measurement} from {start} to {end}, ", end="")
 data = load_data_for_FFT(
     file=f"../{date2dirname(date)}/csv/BK{tree}_M0{measurement}.csv",
     start=start,end=end)
-print(", ",round(data.index[-1]-data.index[0],1)," sec.")
+# print(", ",round(data.index[-1]-data.index[0],1)," sec.")
 
 output = do_fft_for_one_column(
     data, 
