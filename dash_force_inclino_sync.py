@@ -19,6 +19,7 @@ from lib_dynatree import read_data_selected, read_data
 
 import io
 import base64
+import numpy as np
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 
@@ -127,8 +128,16 @@ def sestav_csv(measurement, date, tree):
     _ = "".join(_)
     file = f"../01_Mereni_Babice_{_}_optika_zpracovani/csv/{tree}_{measurement}.csv"
     DF = read_data_selected(file)
+    data = DF[("Pt3","Y0")]
+    data = data - data[0]
+    data = np.abs(data)
+    idx = np.argmax(data)
+    time = DF.index[idx]
+    time = [time-2, time+2]
+    print(f"------ Time is {time}")
+    # [0,DF.index.max()]
     FILENAME = file
-    return file,DF.index.max(),[0,DF.index.max()],None
+    return file,DF.index.max(),time,None
 
 @callback(
     Output('image', 'src', allow_duplicate=True),

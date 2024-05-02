@@ -117,7 +117,7 @@ def plot_one_measurement(
         tempdata = df.loc[draw_from:draw_to,[('Pt3', f'{plot_coordiante}0'),('Pt4', f'{plot_coordiante}0')]].copy()
         tempdata = tempdata - tempdata.iloc[0,:]
         tempdata.plot(ax=ax)
-        ax.set(title=f"Change of Pt3 and Pt4 from the initial position")    
+        ax.set(title=f"Distance of Pt3 and Pt4 from the initial position")    
     else:
         if plot_fixes:
             df_extra.loc[draw_from:draw_to,fixes].plot(ax=ax)
