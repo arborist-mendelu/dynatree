@@ -19,6 +19,7 @@ from matplotlib import ticker
 
 from lib_dynatree import read_data, read_data_selected, directory2date, find_release_time_optics, find_release_time_interval
 from lib_dynatree import find_finetune_synchro, read_data_inclinometers, date2dirname
+import pathlib
 
 def plot_one_measurement(
         date="2021-03-22",
@@ -209,12 +210,14 @@ def plot_one_measurement(
     tmin, tmax = find_release_time_interval(df_extra, date, tree, measurement)
     
     for ax in axes:
+        ax.set(xlim=(tmin-(tmax-tmin), max(tmax+2*(tmax-tmin),release_time_optics)))
         ax.axvspan(tmin,tmax, alpha=.5, color="yellow")
         # pre_release_data[file.replace(".csv","")] = delta_df.mean()
         ax.set(xlim=xlim, ylim=(None, None))        
     axes[2].set(ylim=(0,None))
     fig.tight_layout()
     if save_figure:
+        pathlib.Path(f"{path}{date}/png_with_inclino").mkdir(parents=True, exist_ok=True)
         fig.savefig(
             f"{path}{date}/png_with_inclino/BK{tree}_M0{measurement}.png", dpi=100)
     if return_figure:

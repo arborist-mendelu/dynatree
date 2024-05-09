@@ -23,7 +23,7 @@ df = df.dropna()
 #%%
 
 
-fig, axs = plt.subplots(2,1,figsize=(14,10), sharex=True)
+fig, axs = plt.subplots(2,1,figsize=(14,10), sharex=True, sharey=True)
 
 ax = axs[0]
 
@@ -44,15 +44,15 @@ ax.set(title=f"Základní frekvence {probe}")
 
 ax = axs[1]
 
-f_min = 0.15
-delta_f_min = 0.05
+# f_min = 0.15
+# delta_f_min = 0.05
 
-df2 = df.copy()[(df["freq"]>f_min) & (df["err"]<delta_f_min)]
+# df2 = df.copy()[(df["freq"]>f_min) & (df["err"]<delta_f_min)]
 
 # fig, ax = plt.subplots(figsize=(10,6))
 
 sns.boxplot(
-    data=df2, 
+    data=df, 
     x="tree", 
     y="freq", 
     hue="leaves",
@@ -61,6 +61,10 @@ sns.boxplot(
 [ax.axvline(x+.5,color='gray', lw=0.5) for x in ax.get_xticks()]
 ax.legend(loc=2, title="Leaves")
 ax.grid(alpha=0.4)
+
+axs[0].set(ylim=(0.17,0.38))
+axs[1].set(ylim=(0.17,0.38))
+
 # ax.set(title=f"Základní frekvence (dvě měření s listy a dvě bez listů) {probe}")
 # ax.set(ylim=(0,14))
 plt.savefig("outputs/boxplot.pdf")
@@ -92,7 +96,7 @@ plt.show()
 #%%
 
 # https://gist.github.com/robert-marik/635affe37158d3fae1ef4f5bf3798dd8
-skupiny = [list(df.loc[i,'freq_diff_from_mean_rescaled']) for i in df.groupby(by='leaves').groups.values()]
+skupiny = [df.loc[i,'freq_diff_from_mean_rescaled'] for i in df.groupby(by='leaves').groups.values()]
 #print(skupiny) # kontrola prvku ve skupine
 #print(len(skupiny)) # kontrola poctu skupin
 for i in skupiny:
@@ -101,10 +105,23 @@ for i in skupiny:
 print("ANOVA: ", scipy.stats.f_oneway(*skupiny))
 print("t-test: ", scipy.stats.ttest_ind(*skupiny, equal_var=True))
 
+#%%
+
+
+for leaves in df['leaves'].unique():
+  sm.qqplot(df[df['leaves']==leaves].loc[:,'freq_diff_from_mean_rescaled'], line='45', fit = True)
+  ax = plt.gca()
+  ax.set_title(f"Leaves {leaves}")
+
+#%%
+# for tree in df['tree'].unique():
+#   sm.qqplot(df[df['tree']==tree].loc[:,'freq_diff_from_mean_rescaled'], line='45', fit = True)
+#   ax = plt.gca()
+#   ax.set_title(f"Tree {tree}")
 
 #%%
 
-skupiny = [list(df.loc[i,'freq_diff_from_mean_rescaled']) for i in df.groupby(by='tree').groups.values()]
+skupiny = [df.loc[i,'freq_diff_from_mean_rescaled'] for i in df.groupby(by='tree').groups.values()]
 #print(skupiny) # kontrola prvku ve skupine
 #print(len(skupiny)) # kontrola poctu skupin
 print("ANOVA: ", scipy.stats.f_oneway(*skupiny))

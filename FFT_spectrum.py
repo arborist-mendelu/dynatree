@@ -30,26 +30,36 @@ def interp(df, new_index):
     df_out.index.name = df.index.name
 
     for colname in df.columns:
-        df_out[colname] = np.interp(new_index, df.index, df[colname])
-
+        df_ = df[colname].dropna()
+        try:
+            df_out[colname] = np.interp(new_index, df_.index, df_.values, right=np.nan)
+        except:
+            df_out[colname] = np.nan
     return df_out
 
-def load_data_for_FFT(file="../01_Mereni_Babice_05042022_optika_zpracovani/csv/BK04_M02.csv", start=100, end=120, dt=0.01):
+def load_data_for_FFT(
+        file="../01_Mereni_Babice_05042022_optika_zpracovani/csv/BK04_M02.csv", 
+        start=100, 
+        end=120, 
+        dt=0.01, 
+        probes = ["Time"]
+            +[f"Pt{i}" for i in [0,1,3,4]]
+            +[f"BL{i}" for i in range(44,68)],
+        filter_cols=True
+        ):
     """
     Loads data for FFT. The time will be in the index. Only selected probes are included.
     """
-    data = read_data_selected(file,
-                                 probes = ["Time"]
-                                 +[f"Pt{i}" for i in [0,1,3,4]]
-                                 +[f"BL{i}" for i in range(44,68)])
+    data = read_data_selected(file, probes = probes)
     data = data.set_index("Time")
     idx = pd.isna(data.index)
     data = data[~idx]
     col = data.columns
-    col = [i for i in col if 
-           ("P"==i[0][0] and "Y0"==i[1])
-           or ("B"==i[0][0] and "Pt0AY"==i[1])
-           ]
+    if filter_cols:
+        col = [i for i in col if 
+               ("P"==i[0][0] and "Y0"==i[1])
+               or ("B"==i[0][0] and "Pt0AY"==i[1])
+               ]
     data = data.loc[start:end, col]
     data = interp(data, np.arange(data.index[0],data.index[-1],dt))
     data = data - data.iloc[0,:]

@@ -38,19 +38,26 @@ with cs[0]:
     with columns[2]:
         measurement = st.radio("Measurement",list(df_measurement['measurement'].unique()), horizontal=True)
     
-    probe = st.radio("Probe",["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)], horizontal=True)
+    probe = st.radio("Probe",["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)] + ["Elasto"], horizontal=True)
     
     "Middle BL is 44-51, side BL are 52-59 (compression) and 60-67 (tension)."
 
     if probe[0] == "P":
         probe = (probe,"Y0")
+    elif probe[0] == "E":
+        probe = ("Elasto(90)","")
     else:
         probe = (probe,"Pt0AY")
     date = day
     bounds_for_fft = df_remarks.loc[[(date,f"BK{tree}",f"M0{measurement}")],:]
     start = bounds_for_fft[['start']].iat[0,0]
     end = bounds_for_fft[['end']].iat[0,0]
-    
+    if end == np.inf:
+        end = 1000
+    if pd.isna(end):
+        end = 1000
+    if pd.isna(start):
+        start = 0
     new_start = st.number_input("Signal start",value=start)
     new_end = st.number_input("Signal end",value=end)
     start = new_start
@@ -66,10 +73,20 @@ start,end
     # if start < .1:
     #     print("Start is not set")
     #     continue
-st.write(f"{date} BK{tree} M0{measurement} from {start} to {end}, ", end="")        
-data = load_data_for_FFT(
-    file=f"../{date2dirname(date)}/csv/BK{tree}_M0{measurement}.csv",
-    start=start,end=end)
+st.write(f"{date} BK{tree} M0{measurement} from {start} to {end}, ")        
+if probe[0][0]=="E":
+    file_csv = f"../{date2dirname(date)}/csv_extended/BK{tree}_M0{measurement}.csv"
+    data = load_data_for_FFT(
+        file=file_csv,
+        start=start,end=end, 
+        filter_cols=False, 
+        probes=["Time", "Elasto(90)"])
+else:
+    file_csv = f"../{date2dirname(date)}/csv/BK{tree}_M0{measurement}.csv"
+    data = load_data_for_FFT(
+        file=file_csv,
+        start=start,end=end)
+
 # print(", ",round(data.index[-1]-data.index[0],1)," sec.")
 
 output = do_fft_for_one_column(
