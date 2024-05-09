@@ -1,0 +1,68 @@
+date,tree,measurement,start,end,remark
+2021-03-22,BK01,M02,65.0,101.48,Only short signal in optics (7 sec). The match between optics and acc not great.
+2021-03-22,BK01,M03,52.0,106.56,ACC and optics agree.
+2021-03-22,BK01,M04,47.4,98.3,Nice match.
+2021-03-22,BK04,M02,53.9,100.37,ACC03 much worse than in optics. 
+2021-03-22,BK04,M03,41.0,91.5,"A02 good match with optics, A03 is a total mess."
+2021-03-22,BK04,M04,41.0,98.45,"ACC3 is chaotic, ACC2 nice."
+2021-03-22,BK07,M02,119.96,183.1,
+2021-03-22,BK07,M03,63.0,113.96,"ACC3 chaos, ostatni ACC podobne ale u ACC1 automat preskakuje prvni peak - opravit."
+2021-03-22,BK07,M04,43.0,83.43,"ACC3 chaos, ostatni ACC podobne ale u ACC1 automat preskakuje prvni peak - opravit."
+2021-03-22,BK07,M05,67.8,118.56,"ACC3 chaos, ostatni ACC podobne ale u ACC1 automat preskakuje prvni peak - opravit."
+2021-03-22,BK08,M02,30.0,61.16,
+2021-03-22,BK08,M03,64.0,97.16,
+2021-03-22,BK08,M04,60.0,90.0,
+2021-03-22,BK08,M06,34.0,69.51,
+2021-03-22,BK08,M05,47.5,84.77,
+2021-03-22,BK09,M02,33.0,57.3,
+2021-03-22,BK10,M04,47.0,69.94,
+2021-03-22,BK11,M02,41.0,90.3,
+2021-03-22,BK11,M03,50.0,77.47,
+2021-03-22,BK11,M04,57.0,93.7,
+2021-03-22,BK12,M02,50.0,85.15,
+2021-03-22,BK12,M03,37.0,59.43,
+2021-03-22,BK13,M03,73.0,118.27,
+2021-06-29,BK01,M02,50.0,77.8,"Match, but not great. Optics short signal (14 sec)."
+2021-06-29,BK01,M03,50.0,70.51,"Match, but not great."
+2021-06-29,BK01,M04,55.0,81.0,"ACC3 and ACC2 differ (0.27 versus 0.23), ACC3 matches optics."
+2021-06-29,BK01,M05,58.0,92.11,Match with optics (0.272 versus 0.264)
+2022-04-05,BK01,M02,95.04,139.01,Match with optics.
+2022-04-05,BK01,M03,72.05,112.32,"Optics 0.311, ACC 0.298"
+2022-04-05,BK01,M04,70.95,136.9,Optics gives higher freq (0.295 versus 0.288)
+2022-08-16,BK01,M02,105.0,135.0,"Optics gives different frequency (0.265 versus 0.258 acc2 and 276 acc3) if the signal is considered to te end. If the suspicious end is not included, freq on ACC2 and ACC3 match."
+2022-08-16,BK01,M03,115.0,164.93,acc2 and acc3 do not match
+2022-08-16,BK01,M04,133.0,203.19,"ACC2 much better and smoother than ACC3, ACC3 has better match to optics."
+2021-06-29,BK04,M02,46.0,77.28,"ACC3 matches optics, ACC2 different freq."
+2021-06-29,BK04,M03,36.0,67.92,"ACC3 has a match with optics, but the spectrum does not look great. ACC2 has smaller freq than ACC3 (0.188 versus 0.219)"
+2021-06-29,BK04,M04,35.0,77.91,"ACC2 and ACC3 have perfect match, also both agree with optics"
+2022-04-05,BK04,M02,89.95,143.0,"ACC2 and ACC3 math together and also great match with optics. The signal is smooth but increases at the end. If the end is removed, the frequency increases."
+2022-04-05,BK04,M03,72.0,131.0,Great match between acc2 and acc3 (0.23). Optics about the same (0.22)
+2022-04-05,BK04,M04,70.0,132.53,Acc2 and acc3 match optics.
+2022-08-16,BK04,M02,99.0,150.39,
+2022-08-16,BK04,M03,100.94,154.23,"ACC 1,2,3 koresponduji."
+2022-08-16,BK04,M04,72.0,121.78,"ACC1, 2, a 3 koresponduji."
+2021-06-29,BK07,M02,79.0,112.56,Prubeh kmitu obecne spatny
+2021-06-29,BK07,M03,71.0,106.27,Prubeh signalu nedava optimisticke vyhlidky.
+2021-06-29,BK07,M04,84.0,116.4,Prubeh signalu divny.
+2021-06-29,BK07,M05,65.0,97.01,Nic moc.
+2022-04-05,BK07,M02,160.0,219.17,"ACC3 chaos, ostatni souhlasi a jsou mirne vetsi nez optika (0.321 versus 0.315)"
+2022-04-05,BK07,M03,61.0,95.0,"ACC3 divny, ostatni OK, ACC1 a 2 souhlasi s optikou, ACC4 vyraznejsi peak jinde."
+2022-04-05,BK07,M04,78.0,100.0,"ACC1 a 2 souhlasi s optikou, 3 a 4 divne."
+2022-08-16,BK07,M02,136.0,204.82,"ACC1 a ACC3 krasne peaky, shoda s optikou, ACC2 a ACC4 chaos"
+2022-08-16,BK07,M03,87.0,120.0,ACC1 az 3 shoda s optikou. ACC4 chaos.
+2022-08-16,BK07,M04,92.0,135.0,ACC1 az 3 shoda s optikou. ACC4 chaos.
+2022-08-16,BK07,M05,117.0,146.0,ACC1 az 3 shoda s optikou. ACC4 chaos.
+2021-06-29,BK08,M02,53.0,78.24,Chaoticke
+2021-06-29,BK08,M03,33.0,59.14,
+2021-06-29,BK08,M04,66.0,98.55,
+2021-06-29,BK08,M05,59.0,81.65,"ACC1 a 3 jsou podobne, ale signal je skaredy"
+2022-04-05,BK08,M02,55.0,90.0,
+2022-04-05,BK08,M03,58.5,90.0,
+2022-04-05,BK08,M04,56.0,95.0,
+2022-08-16,BK08,M02,106.5,150.0,
+2022-08-16,BK08,M03,75.5,110.0,
+2022-08-16,BK08,M04,76.0,120.0,
+2021-03-22,BK09,M03,39.5,73.83,Skaredy prubeh
+2021-03-22,BK09,M04,41.5,71.47,Nepekne
+2021-06-29,BK09,M02,37.0,70.85,
+2022-04-05,BK10,M02,53.0,80.0,
