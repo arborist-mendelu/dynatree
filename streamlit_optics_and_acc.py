@@ -26,30 +26,28 @@ df_osc_times = pd.read_csv("csv/oscillation_times_remarks.csv")
 
 #%%
 
-c = st.columns(2)
 
-with c[0]:
-    """
-    ## Day, tree, measurement
-    """
-    columns = st.columns(3)
-    
-    dates = np.unique(np.array([f"{i['date']}"for i in data]))
-    dates.sort()
-    with columns[0]:
-        date = st.radio("Day",dates)
-    
-    trees = np.unique(np.array([i['tree'] for i in data if i['date']==date]))
-    trees.sort()
-    with columns[1]:
-        tree = st.radio("Tree",trees, horizontal=True)
-    
-    
-    measurements = np.array([i['measurement'] for i in data if i['date']==date and i['tree']==tree])
-    measurements.sort()
-    with columns[2]:
-        measurement = st.radio("Measurement",measurements, horizontal=True)
-        acc_axis = st.radio("Axis",["x","y","z"], horizontal=True)
+"""
+## Day, tree, measurement
+"""
+columns = st.columns(3)
+
+dates = np.unique(np.array([f"{i['date']}"for i in data]))
+dates.sort()
+with columns[0]:
+    date = st.radio("Day",dates)
+
+trees = np.unique(np.array([i['tree'] for i in data if i['date']==date]))
+trees.sort()
+with columns[1]:
+    tree = st.radio("Tree",trees, horizontal=True)
+
+
+measurements = np.array([i['measurement'] for i in data if i['date']==date and i['tree']==tree])
+measurements.sort()
+with columns[2]:
+    measurement = st.radio("Measurement",measurements, horizontal=True)
+    acc_axis = st.radio("Axis",["x","y","z"], horizontal=True)
 
 
 #%%
@@ -81,15 +79,16 @@ release_acc = df[df.sub(df.mean()).div(df.std()).abs().lt(1)].mean()
 release_optics = dt.find_release_time_optics(df_optics)
 df_acc.index = df_acc.index - release_acc + release_optics
 
+columns = st.columns(3)
 
-for limits in [[0, max(df_acc.index[-1],df_optics.index[-1])], [release_optics-1,release_optics+1], [start,end]]: 
-    fig, ax = plt.subplots(2,1)
-    df_acc[acc_columns].plot(ax=ax[0])
-    df_optics[(probe,"Y0")].plot(ax=ax[1])
-    ax[0].axvline(release_optics, color='k')
-    ax[1].axvline(release_optics, color='k')
+for i,limits in enumerate([[0, max(df_acc.index[-1],df_optics.index[-1])], [release_optics-1,release_optics+1], [start,end]]): 
+    fig, ax = plt.subplots(figsize=(10,15))
+    df_acc.loc[limits[0]:limits[1],acc_columns].plot(ax=ax,subplots=True)
+    # df_optics[(probe,"Y0")].plot()
+    # ax[0].axvline(release_optics, color='k')
+    # ax[1].axvline(release_optics, color='k')
 
-    for a in ax:
-        a.set(xlim=limits, ylim=(None, None))
-    with c[1]:
+    # for a in ax:
+    #     a.set(xlim=limits, ylim=(None, None))
+    with columns[i]:
         st.pyplot(fig)
