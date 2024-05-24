@@ -188,20 +188,25 @@ def create_fft_image(
         tree=None, 
         measurement=None, 
         path="", 
-        peak_position=None
+        peak_position=None, 
+        only_fft = False,
+        ymin = 0.001
         ):
-    fig,axs = plt.subplots(2,1)  
-    ax = axs[0]  # plot the signal
-    ax.plot(time_fft,signal_fft-signal_fft[0], ".", color=color, ms=2)
-    ax.set(xlabel="Time/s",ylabel=col)
-    ax = axs[1]
+    if only_fft:
+        fig,ax = plt.subplots(1,1)  
+    else:
+        fig,axs = plt.subplots(2,1)  
+        ax = axs[0]  # plot the signal
+        ax.plot(time_fft,signal_fft-signal_fft[0], ".", color=color, ms=2)
+        ax.set(xlabel="Time/s",ylabel=col)
+        ax = axs[1]
     ax.plot(xf_r, yf_r,".", color=color)
     ax.plot(xf_r[peak_index],yf_r[peak_index],"o", color='red')
     t = ax.text(xf_r[peak_index]+0.1,yf_r[peak_index],f"{round(xf_r[peak_index],3)}±{np.round(delta_f,3)}",horizontalalignment='left')
     t.set_bbox(dict(facecolor='yellow', alpha=0.5))
     ax.set(xlim=(0,3))
     ax.grid()
-    ax.set(ylabel="FFT", xlabel="Freq./Hz", yscale='log', ylim=(0.001,None))
+    ax.set(ylabel="FFT", xlabel="Freq./Hz", yscale='log', ylim=(ymin,None))
 
     # plt.suptitle(directory2date(date)+f", BK{tree}_M0{measurement}")
     plt.tight_layout()

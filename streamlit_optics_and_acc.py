@@ -17,6 +17,8 @@ import streamlit as st
 import FFT_spectrum as fftdt
 import lib_dynatree as dt
 
+plt.rcParams["figure.figsize"] = (10,4)
+
 fs = 100 # resampled signal
 files = glob.glob("../01_Mereni_Babice_*_optika_zpracovani/csv/*")
 data = [{'year':i[24:28], 'month': i[22:24], 'day': i[20:22], 'measurement': i[-6:-4], 'tree':i[-10:-8],
@@ -54,7 +56,19 @@ with columns[2]:
 
 year,month,day=date.split("-")
 df_optics = dt.read_data(f"../01_Mereni_Babice_{day}{month}{year}_optika_zpracovani/csv/BK{tree}_M{measurement}.csv")
+df_optics = df_optics - df_optics.iloc[0,:]
 df_acc = pd.read_csv(f"../acc/csv/{date}-BK{tree}-M{measurement}.csv", index_col=0)
+
+#%%
+
+"Probes from optics"
+
+options_data = [i for i in df_optics.columns if "Y" in i[1]]
+options_data.sort()
+options = st.multiselect(
+    "Which probes from Optics you want to plot and analyze?",
+    options_data,
+    [])
 
 #%%
 
@@ -72,23 +86,62 @@ start, end = row.loc[:,["start","end"]].values.reshape(-1)
 probe = row['probe'].iat[0]
 if pd.isna(probe):
     probe = "Pt3"
-acc_columns = [i for i in df_acc.columns if acc_axis in i or acc_axis.upper() in i]
+acc_columns = [i for i in df_acc.columns if "_"+acc_axis in i or "_"+acc_axis.upper() in i]
 df = df_acc[acc_columns].abs().idxmax()
 
 release_acc = df[df.sub(df.mean()).div(df.std()).abs().lt(1)].mean()
 release_optics = dt.find_release_time_optics(df_optics)
 df_acc.index = df_acc.index - release_acc + release_optics
 
-columns = st.columns(3)
+f"Release time is {release_optics}. It has been establieshed from the following ACC."
+df[df.sub(df.mean()).div(df.std()).abs().lt(1)].T
 
-for i,limits in enumerate([[0, max(df_acc.index[-1],df_optics.index[-1])], [release_optics-1,release_optics+1], [start,end]]): 
-    fig, ax = plt.subplots(figsize=(10,15))
-    df_acc.loc[limits[0]:limits[1],acc_columns].plot(ax=ax,subplots=True)
-    # df_optics[(probe,"Y0")].plot()
-    # ax[0].axvline(release_optics, color='k')
-    # ax[1].axvline(release_optics, color='k')
+columns = st.columns(4)
 
-    # for a in ax:
-    #     a.set(xlim=limits, ylim=(None, None))
-    with columns[i]:
-        st.pyplot(fig)
+for c,text in zip(columns, ["Full time domain","Release ±1 sec", "Oscillations", "FFT analysis"]):
+    with c:
+        "## "+text
+
+def create_images(df, column=None, start=None, end=None, release_optics=None, tmax = 1e10):
+    ans = []
+    for i,limits in enumerate([[0, tmax], [release_optics-1,release_optics+1], [start,end]]): 
+        fig, ax = plt.subplots()
+        df.loc[limits[0]:limits[1],column].plot(ax=ax,lw=2)
+        ax.grid()
+        if i < 2:
+            # df_optics[(probe,"Y0")].plot()
+            ax.axvline(release_optics, color='k', alpha=0.4, lw=0.5, linestyle="--")
+            # ax[1].axvline(release_optics, color='k')
+        ans += [fig]
+    out = fftdt.do_fft_for_one_column(df.loc[start:end, :], column, create_image=False)
+    fig = fftdt.create_fft_image(**out, only_fft=True, ymin = 0.0001)
+    ans += [fig]
+    return ans
+
+for i,c in enumerate(acc_columns):
+    "### "+c
+    columns = st.columns(4)
+    ans = create_images(df=df_acc, column=c, start=start, end=end, release_optics=release_optics)
+    for j,a in enumerate(ans):
+        with columns[j]:
+            st.pyplot(a)
+
+df_optics = fftdt.interp(df_optics, np.arange(df_optics.index[0],df_optics.index[-1],0.01))
+
+for i,c in enumerate(options):
+    "### "+str(c)
+    columns = st.columns(4)
+    ans = create_images(df=df_optics, column=c, start=start, end=end, release_optics=release_optics)
+    for j,a in enumerate(ans):
+        with columns[j]:
+            st.pyplot(a)
+
+        
+# out = fftdt.do_fft_for_one_column(df_acc.loc[start:end, :], acc_columns[0], create_image=False)
+# fig = fftdt.create_fft_image(**out)
+
+# with columns[-1]:        
+#     st.pyplot(fig)
+        
+# for option in options:        
+#     pass
