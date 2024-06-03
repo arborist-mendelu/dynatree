@@ -68,7 +68,7 @@ options_data.sort()
 options = st.multiselect(
     "Which probes from Optics you want to plot and analyze?",
     options_data,
-    [])
+    [("Pt3","Y0")])
 
 #%%
 
@@ -116,12 +116,12 @@ def create_images(df, column=None, start=None, end=None, release_optics=None, tm
     out = fftdt.do_fft_for_one_column(df.loc[start:end, :], column, create_image=False)
     fig = fftdt.create_fft_image(**out, only_fft=True, ymin = 0.0001)
     ans += [fig]
-    return ans
+    return ans, out
 
 for i,c in enumerate(acc_columns):
-    "### "+c
+    ans, out = create_images(df=df_acc, column=c, start=start, end=end, release_optics=release_optics)
+    f"### {c}, freq = {out['peak_position']:.3f} Hz"
     columns = st.columns(4)
-    ans = create_images(df=df_acc, column=c, start=start, end=end, release_optics=release_optics)
     for j,a in enumerate(ans):
         with columns[j]:
             st.pyplot(a)
@@ -129,9 +129,9 @@ for i,c in enumerate(acc_columns):
 df_optics = fftdt.interp(df_optics, np.arange(df_optics.index[0],df_optics.index[-1],0.01))
 
 for i,c in enumerate(options):
-    "### "+str(c)
+    ans, out = create_images(df=df_optics, column=c, start=start, end=end, release_optics=release_optics)
+    f"### {c}, freq = {out['peak_position']:.3f} Hz"
     columns = st.columns(4)
-    ans = create_images(df=df_optics, column=c, start=start, end=end, release_optics=release_optics)
     for j,a in enumerate(ans):
         with columns[j]:
             st.pyplot(a)
