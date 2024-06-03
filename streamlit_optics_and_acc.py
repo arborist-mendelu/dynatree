@@ -83,6 +83,9 @@ row = df_osc_times[
     (df_osc_times['measurement']==f"M{measurement}")
      ]
 start, end = row.loc[:,["start","end"]].values.reshape(-1)
+f"Start: {start}, End: {end}"
+
+start = st.number_input("start", value=start)
 probe = row['probe'].iat[0]
 if pd.isna(probe):
     probe = "Pt3"
@@ -93,7 +96,11 @@ release_acc = df[df.sub(df.mean()).div(df.std()).abs().lt(1)].mean()
 release_optics = dt.find_release_time_optics(df_optics)
 df_acc.index = df_acc.index - release_acc + release_optics
 
-f"Release time is {release_optics}. It has been establieshed from the following ACC."
+f"""
+* Release time is {release_optics} in optics time. 
+* Release time in ACC time has been establieshed from the ACC in the folloiwing table. 
+* The difference between both realease times is {release_acc-release_optics}.
+"""
 df[df.sub(df.mean()).div(df.std()).abs().lt(1)].T
 
 columns = st.columns(4)
