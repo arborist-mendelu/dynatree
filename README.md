@@ -112,6 +112,10 @@ pomocí programu `dash_FFT.py` buď spuštěním v konzoli nebo ve Spyderu a ná
 http://127.0.0.1:8050/ .
 
 
+## Release data
+
+Skript `extract_release_data.py`
+
 
 ## Příkazy pro spojení obrázků do jednoho
 

@@ -231,9 +231,9 @@ def find_finetune_synchro(date, tree, measurement, cols="delta time"):
     Raises error, is there are more than two rows in the file.
     Returns the value or the array corresponding to the col variable.
     
-    If cols is "delta time" returns 0 if not found and the value is found.
+    If cols is "delta time" returns 0 if not found and the value if found.
     
-    In ither cases returns None if the row is not found
+    In all cases returns None if the row is not found
     
     Date is either 22032021 or 2021-03-22 format or 01_Mereni_Babice_22032021_optika_zpracovani
     """
@@ -285,9 +285,9 @@ def find_release_time_interval(df_extra, date, tree, measurement):
     Find release time
     
     Returns manually determined time limits if there are data available in the csv file.
-    Returns [0,0]
+    Returns [0,0] if the data for force do not exist.
     
-    Othervise returns time interval in which trhe force is between 80 and 95 percent 
+    Othervise returns time interval in which the force is between 80 and 95 percent 
     of maxima.
     """
 

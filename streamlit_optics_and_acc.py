@@ -126,7 +126,7 @@ for i,c in enumerate(acc_columns):
         with columns[j]:
             st.pyplot(a)
 
-df_optics = fftdt.interp(df_optics, np.arange(df_optics.index[0],df_optics.index[-1],0.01))
+df_optics = fftdt.interp(df_optics, np.arange(df_optics.index.min(),df_optics.index.max(),0.01))
 
 for i,c in enumerate(options):
     ans, out = create_images(df=df_optics, column=c, start=start, end=end, release_optics=release_optics)

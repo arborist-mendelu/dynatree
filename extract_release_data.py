@@ -47,7 +47,7 @@ def find_release_data_one_measurement(
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     df = pd.concat(
         [df_main[["Time","Pt3","Pt4"]],
-         df_extra[["Force(100)", "Elasto(90)"]+list_inclino]
+         df_extra[["Force(100)", "Elasto(90)","RopeAngle(100)"]+list_inclino]
          ], axis=1)
     df = df - df.iloc[0,:]
 
