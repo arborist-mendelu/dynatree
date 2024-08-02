@@ -14,7 +14,7 @@ import lib_dynatree as ld
 import matplotlib.pyplot as plt
 from lib_dynatree import get_all_measurements, get_csv, date2dirname, date2color
 st.set_page_config(layout="wide")
-from FFT_spectrum import df_remarks, load_data_for_FFT, do_fft_for_one_column, create_fft_image
+from FFT_spectrum import df_remarks, load_data_for_FFT, do_fft_for_one_column, create_fft_image, extend_series_with_zeros
 
 df = get_all_measurements()
 
@@ -37,6 +37,13 @@ with cs[0]:
     df_measurement = df_day[df_day['tree']==tree]
     with columns[2]:
         measurement = st.radio("Measurement",list(df_measurement['measurement'].unique()), horizontal=True)
+    
+    preprocessing_function = st.radio("Preprocessing signal function",["None", "Zeros around, 2 sec", "Zeros around, 4 sec"])
+    preprocessing = lambda x:x
+    if preprocessing_function == "Zeros around, 2 sec":
+        preprocessing = lambda x:extend_series_with_zeros(x,tail=2)
+    if preprocessing_function == "Zeros around, 4 sec":
+        preprocessing = lambda x:extend_series_with_zeros(x,tail=4)
     
     probe = st.radio("Probe",["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)] + ["Elasto"], horizontal=True)
     
@@ -91,7 +98,8 @@ else:
 
 output = do_fft_for_one_column(
     data, 
-    probe
+    probe, 
+    preprocessing=preprocessing
     )
 if output is None:
     print(f"Probe {probe} failed")

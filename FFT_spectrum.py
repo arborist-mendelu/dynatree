@@ -297,7 +297,7 @@ if __name__ == "__main__":
     df = pd.DataFrame(output_data).T
     df.columns=['freq','err','length']
     df.index.names = ["date","tree","measurement","probe"]
-    df.to_csv("results/fft.csv")
+    df.to_csv("results/fft_tail.csv")
     # date = "2021-03-22"
     # tree = "01"
     # measurement = "2"
