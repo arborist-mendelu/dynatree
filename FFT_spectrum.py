@@ -37,6 +37,39 @@ def interp(df, new_index):
             df_out[colname] = np.nan
     return df_out
 
+def extend_dataframe_with_zeros(data, tail=2):
+    """
+    Input: dataframe with time in the index
+    Output: copy of the dataframe with zero signal at the initial and final 
+            part
+    
+    The mean value is subtracted from the data and zero sequences are
+    added on the initial and final part of the data.
+    The index is supposed to be time in regular steps. The length of the 
+    added sequence is in the variable tail.
+    """
+    data_pad = data.copy()
+    data_pad = data_pad.dropna()
+    data_pad = data_pad - data_pad.mean()
+    dt = data_pad.index[1]-data_pad.index[0]
+    time_start = np.arange(data_pad.index[0]-tail, data_pad.index[0], dt)
+    time_end = np.arange(data_pad.index[-1]+dt, data_pad.index[-1]+tail, dt)
+    time_extended = np.concatenate([time_start,time_end])
+    df_extended = pd.DataFrame(index = time_extended)
+    df_extended[data.columns] = 0
+    data_pad = pd.concat([data_pad, df_extended])
+    data_pad = data_pad.sort_index()
+    return data_pad
+
+def extend_series_with_zeros(data, tail=2):
+    """
+    Wrapper for extending series by zeros converting to dataframe
+    and using extend_dataframe_with_zeros function
+    """
+    df = pd.DataFrame(data)
+    df = extend_dataframe_with_zeros(df, tail=tail)
+    return df[df.columns[0]]
+
 def load_data_for_FFT(
         file="../01_Mereni_Babice_05042022_optika_zpracovani/csv/BK04_M02.csv", 
         start=100, 
@@ -146,8 +179,11 @@ def do_fft_for_one_column(df,
                           measurement=None,
                           date=None,
                           path=None,
+                          preprocessing = None
                           ):
-    signal_fft = df[col].dropna()
+    signal_fft = df[col].dropna().copy()
+    if preprocessing is not None:
+        signal_fft = preprocessing(signal_fft)
     time_fft = signal_fft.index.values  # grab time
     signal_fft = signal_fft.values
     if signal_fft.shape[0] == 0:
