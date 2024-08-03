@@ -276,7 +276,8 @@ def main():
             try:
                 output = do_fft_for_one_column(
                     data, 
-                    probe
+                    probe, 
+                    # preprocessing=lambda x:extend_series_with_zeros(x,tail=2)
                     )
             except:
                 print("Something failed in do_fft_for_one_columne")
@@ -297,7 +298,7 @@ if __name__ == "__main__":
     df = pd.DataFrame(output_data).T
     df.columns=['freq','err','length']
     df.index.names = ["date","tree","measurement","probe"]
-    df.to_csv("results/fft_tail.csv")
+    df.to_csv("results/fft.csv")
     # date = "2021-03-22"
     # tree = "01"
     # measurement = "2"

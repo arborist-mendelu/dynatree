@@ -9,34 +9,19 @@ Created on Wed May  1 17:24:26 2024
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import streamlit as st
-import glob
-import lib_dynatree as ld
-import matplotlib.pyplot as plt
-from lib_dynatree import get_all_measurements, get_csv, date2dirname, date2color
-st.set_page_config(layout="wide")
+from lib_dynatree import date2dirname, date2color
 from FFT_spectrum import df_remarks, load_data_for_FFT, do_fft_for_one_column, create_fft_image, extend_series_with_zeros
+import lib_streamlit as stl
 
-df = get_all_measurements()
+st.set_page_config(layout="wide")
+
 
 #%%
 cs = st.columns(2)
 
 with cs[0]:
-    """
-    ## Day, tree, measurement
-    """
-    columns = st.columns(3)
-    
-    with columns[0]:
-        day = st.radio("Day",list(df['day'].unique()))
-    
-    df_day = df[df['day']==day]
-    with columns[1]:
-        tree = st.radio("Tree",list(df_day['tree'].unique()), horizontal=True)
-    
-    df_measurement = df_day[df_day['tree']==tree]
-    with columns[2]:
-        measurement = st.radio("Measurement",list(df_measurement['measurement'].unique()), horizontal=True)
+
+    day, tree, measurement = stl.get_measurement()
     
     preprocessing_function = st.radio("Preprocessing signal function",["None", "Zeros around, 2 sec", "Zeros around, 4 sec"])
     preprocessing = lambda x:x
