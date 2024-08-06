@@ -40,6 +40,9 @@ upraveny_seznam = np.array([ data(retezec) + [re.sub(r'^.*?(Mereni_Babice)', r'\
 
 df = pd.DataFrame(upraveny_seznam).drop_duplicates()
 df.columns=["date","state","kind","tree","measurement","directory","files"]
+nove_poradi = ['date', 'tree', 'measurement', 'state', 'kind', 'directory', 'files']
+df = df[nove_poradi]
+
 df = df[df['measurement'].str.startswith('M0')]
 df = df.sort_values(by = ["date","tree","measurement"])
 df.to_csv("csv/tsv_dirs.csv", index=None)
