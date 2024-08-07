@@ -226,7 +226,7 @@ def create_fft_image(
         path="", 
         peak_position=None, 
         only_fft = False,
-        ymin = 0.001
+        ymin = 0.001, 
         ):
     if only_fft:
         fig,ax = plt.subplots(1,1)  

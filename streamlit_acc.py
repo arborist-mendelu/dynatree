@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
 import FFT_spectrum as fftdt
+import lib_streamlit
 
 fs = 100 # resampled signal
 
@@ -34,29 +35,14 @@ df_files = najdi_soubory_acc_csv("../acc/csv")
 c = st.columns(3)
 
 with c[0]:
-    """
-    ## Day, tree, measurement
-    """
-    columns = st.columns(3)
-    
-    
-    dates = df_files['date'].unique()
-    dates.sort()
-    with columns[0]:
-        date = st.radio("Day",dates)
-    
-    trees = df_files[ df_files['date'] == date ]['tree'].unique()
-    trees.sort()
-    with columns[1]:
-        tree = st.radio("Tree",trees, horizontal=True)
-    
-    
-    measurements = df_files[ (df_files['date'] == date) & (df_files['tree'] == tree) ]['measurement'].unique()
-    measurements.sort()
-    with columns[2]:
-        measurement = st.radio("Measurement",measurements, horizontal=True)
-        axis = st.radio("Axis",["X","Y","Z"], horizontal=True)
-        subplots= st.radio("Subplots",[True, False, "False and rescale"], horizontal=True)
+    # columns = st.columns(3)
+    date, tree, measurement = lib_streamlit.get_measurement()
+    tree = f"BK{tree}"
+    measurement = f"M0{measurement}"
+    # with columns[2]:
+    axis = st.radio("Axis",["X","Y","Z"], horizontal=True)
+    subplots= st.radio("Subplots",[True, False, "False and rescale"], horizontal=True)
+    tail = st.radio("Tail length",[0,2,4,8,10], horizontal=True)
 
 df = pd.read_csv(f"../acc/csv/{date}-{tree}-{measurement}.csv", index_col=0)
 df.index = np.arange(df.shape[0])/100
@@ -128,7 +114,7 @@ with c[1]:
 # sub_df = sub_df - sub_df.mean()
 with c[2]:
     for col in sub_df.columns:
-        fft_output = fftdt.do_fft_for_one_column(sub_df, col)
+        fft_output = fftdt.do_fft_for_one_column(sub_df, col, preprocessing=lambda x:fftdt.extend_series_with_zeros(x,tail=tail))
         fft_image = fftdt.create_fft_image(**fft_output)
         fft_image.axes[0].set(title = col)
         st.write(fft_output['peak_position'])
