@@ -115,7 +115,7 @@ def extend_one_csv(
         date="2021_03_22", 
         tree="01", 
         measurement="2", 
-        path="/mnt/ERC/ERC/Mereni_Babice_zpracovani/data", 
+        path="../data", 
         write_csv=False, 
         df=None):
     """
@@ -171,7 +171,7 @@ def extend_one_csv(
         df_fixed_and_inclino.to_csv(f"{path}/csv_extended/{date}/BK{tree}_M0{measurement}.csv")
     return df_fixed_and_inclino
 
-def extend_one_day(date="2021_03_22", path="/mnt/ERC/ERC/Mereni_Babice_zpracovani/data", write_csv=False):
+def extend_one_day(date="2021_03_22", path="../data", write_csv=False):
        
     try:
         os.makedirs(f"{path}/csv_extended/{date}")
