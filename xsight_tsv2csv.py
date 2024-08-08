@@ -43,6 +43,11 @@ def read_tsv_files(tree, measurement,day="01_Mereni_Babice_22032021_optika_zprac
     Returns
     -------
     Funkce čte tsv soubory z xsightu a transformuje do dataframe s MultiIndexem
+    
+    f"../{day}/exports_xsight/BK_{tree}/100fps/BK{tree}_100fps/BK{tree}_M{measurement}/"  
+    f"../{day}/exports_xsight/BK_{tree}/BK{tree}_100fps/BK_{tree}_M{measurement}/"
+    f"../{day}/exports_xsight/BK_{tree}/BK{tree}_100fps/BK{tree}_M{measurement}/"
+    f"../{day}/exports_xsight/BK_{tree}/BK_{tree}_100fps/BK_{tree}_M{measurement}/"    
     """
     cesta = f"../{day}/exports_xsight/BK_{tree}/BK{tree}_100fps/BK{tree}_M{measurement}/"    
     if not os.path.isfile(f"{cesta}/BendLineProbe_BL44.tsv"):

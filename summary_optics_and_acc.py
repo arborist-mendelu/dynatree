@@ -13,12 +13,13 @@ import FFT_spectrum as fftdt
 import lib_dynatree as dt
 from PIL import Image, ImageDraw, ImageFont
 import resource
+import shutil
 
 limit_in_gb = 5
 limit_in_bytes = limit_in_gb * 1024 * 1024 * 1024
 resource.setrlimit(resource.RLIMIT_AS, (limit_in_bytes,limit_in_bytes))
 
-plt.rcParams["figure.figsize"] = (10,6)
+plt.rcParams["figure.figsize"] = (8,5)
 
 fs = 100 # resampled signal
 # files = glob.glob("../01_Mereni_Babice_*_optika_zpracovani/csv/*")
@@ -73,16 +74,25 @@ def main(date,tree, measurement):
                 ax.axvline(release_optics, color='k', alpha=0.4, lw=0.5, linestyle="--")
                 # ax[1].axvline(release_optics, color='k')
             ans += [fig]
-        out = fftdt.do_fft_for_one_column(df.loc[start:end, :], column, create_image=False, preprocessing=lambda x:fftdt.extend_series_with_zeros(x,tail=tail))
-        fig = fftdt.create_fft_image(**out, 
-                                     only_fft=only_fft, 
-                                     ymin = 0.0001)
+        try:
+            out = fftdt.do_fft_for_one_column(df.loc[start:end, :], column, create_image=False, preprocessing=lambda x:fftdt.extend_series_with_zeros(x,tail=tail))
+            fig = fftdt.create_fft_image(**out, 
+                                         only_fft=only_fft, 
+                                         ymin = 0.0001)
+        except:
+            print("!!! FFT fialed")
+            out = None
+            fig = None
         ans += [fig]
         return ans, out
     
     def uloz(ans, c, date, tree, measurement):
         for i in range(4):
-            ans[i].savefig(f"temp/{i}.png")
+            dst = f"temp/{i}.png"
+            if ans[i] is None:
+                shutil.copy("failed.png", dst)            
+            else:
+                ans[i].savefig(dst)
         imgs = [Image.open(f"temp/{i}.png") for i in range(4)]
         width, height = imgs[0].size
         cs = {
@@ -96,11 +106,13 @@ def main(date,tree, measurement):
             ('Pt4', 'Y0'):"Pt4"}
         c_fixed = cs[c]
         nadpis = f"{date} BK{tree} M0{measurement} {c_fixed}"
-        font = ImageFont.truetype("arial.ttf", 40)
+
+        font = ImageFont.truetype("DejaVuSans.ttf", 25)
+
         # Vytvoření nového obrázku s prostorem pro nadpis
         nadpis_height = 60  # výška prostoru pro nadpis (může se měnit podle velikosti fontu)
         combined_image = Image.new('RGB', (2 * width, 2 * height + nadpis_height), (255, 255, 255))
-        
+
         # Vložení nadpisu
         draw = ImageDraw.Draw(combined_image)
         bbox = draw.textbbox((0, 0), nadpis, font=font)
@@ -119,11 +131,15 @@ def main(date,tree, measurement):
         # Uložení výsledného obrázku
         combined_image.save(f"temp/{date}_BK{tree}_M0{measurement}_{c_fixed}.png")    
 
-    def uloz(ans, c, date, tree, measurement):
-        pass
-            
+    # def uloz(ans, c, date, tree, measurement):
+    #     pass
     for i,c in enumerate(acc_columns):
         ans, out = create_images(df=df_acc, column=c, start=start, end=end, release_optics=release_optics)
+        try:
+            peak = out['peak_position']
+        except:
+            peak = None
+        print(c,peak)
         uloz(ans,c, date, tree, measurement)
         plt.close('all')
         
@@ -152,4 +168,6 @@ for index, row in df.iterrows():
         main(row["day"], row["tree"], row["measurement"])
     except:
         print(f"Something failed for ", row["day"], row["tree"], row["measurement"])
+    # break
 
+# main("2021-03-22", "12", "3")

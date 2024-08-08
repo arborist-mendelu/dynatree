@@ -135,7 +135,7 @@ def uloz(ans, c, date, tree, measurement):
         ('Pt4', 'Y0'):"Pt4"}
     c_fixed = cs[c]
     nadpis = f"{date} BK{tree} M0{measurement} {c_fixed}"
-    font = ImageFont.truetype("arial.ttf", 40)
+    font = ImageFont.load_default()    
     # Vytvoření nového obrázku s prostorem pro nadpis
     nadpis_height = 60  # výška prostoru pro nadpis (může se měnit podle velikosti fontu)
     combined_image = Image.new('RGB', (2 * width, 2 * height + nadpis_height), (255, 255, 255))

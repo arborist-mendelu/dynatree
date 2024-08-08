@@ -21,11 +21,13 @@ for file in files:
     keys = keys + [i for i in data.keys() if not isinstance(i,tuple)] + ["_".join(i) for i in data.keys() if isinstance(i, tuple)]
 keys = np.unique(keys)
 
+
 #%%
 
 df_dict = {}
 i = 0
 for file in files:
+    print (file)
     with open(file,'rb') as f:
         data = pickle.load(f)
     for k in data.keys():
@@ -35,9 +37,10 @@ for file in files:
             name = k
         if k == 'data':
             continue
-        i = i+1
-        d = data['data']
-        df_dict[i] = [d['date'], d['tree'], d['measurement'], name, data[k]['peak_position']]
+        if data[k] is not None:
+            i = i+1
+            d = data['data']
+            df_dict[i] = [d['date'], d['tree'], d['measurement'], name, data[k]['peak_position']]
 
 #%%
 
