@@ -3,6 +3,8 @@
 """
 Created on Tue Nov  7 12:52:38 2023
 
+POZN: 8.8.2024 byly upraveny cesty pro nove ulozeni souboru. 
+
 Načte inklinoměry, sílu a elastometr, přeškáluje čas na stejné časy
 jako v optice, synchronizuje okamžiky vypuštění podle maxima síly a
 maxima Pt3.
@@ -44,7 +46,7 @@ import pandas as pd
 import numpy as np
 import warnings
 from scipy import interpolate
-from lib_dynatree import read_data, find_release_time_optics, date2dirname
+from lib_dynatree import read_data, find_release_time_optics
 from lib_dynatree import read_data_inclinometers, find_finetune_synchro, directory2date
 
 def fix_data_by_points_on_ground(df):
@@ -110,10 +112,10 @@ def resample_data_from_inclinometers(df_pulling_tests, df):
     return df_resampled
 
 def extend_one_csv(
-        date="2021-03-22", 
+        date="2021_03_22", 
         tree="01", 
         measurement="2", 
-        path="../", 
+        path="/mnt/ERC/ERC/Mereni_Babice_zpracovani/data", 
         write_csv=False, 
         df=None):
     """
@@ -133,12 +135,11 @@ def extend_one_csv(
     # accept both BK04 and 04 as a tree number
     tree = tree[-2:]
     # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
-    date = date2dirname(date)
         
     # Read data file
     # načte data z csv souboru
     if df is None:
-        df = read_data(f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")   
+        df = read_data(f"{path}/csv/{date}/BK{tree}_M0{measurement}.csv")   
     # df se sploupci s odectenim pohybu bodu na zemi
     df_fixed = df.copy().pipe(fix_data_by_points_on_ground) 
     # df s daty z inklinoměrů, synchronizuje a interpoluje na stejné časové okamžiky
@@ -148,7 +149,7 @@ def extend_one_csv(
     
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     df_pulling_tests_ = read_data_inclinometers(
-        f"{path}{date}/pulling_tests/BK_{tree}_M{measurement}.TXT", 
+        f"{path}/pulling_tests/{date}/BK_{tree}_M{measurement}.TXT", 
         release=release_time_optics, 
         delta_time=delta_time
         )
@@ -167,19 +168,17 @@ def extend_one_csv(
 
     df_fixed_and_inclino = pd.concat([df_fixed,df_pulling_tests], axis=1)
     if write_csv:
-        df_fixed_and_inclino.to_csv(f"{path}{date}/csv_extended/BK{tree}_M0{measurement}.csv")
+        df_fixed_and_inclino.to_csv(f"{path}/csv_extended/{date}/BK{tree}_M0{measurement}.csv")
     return df_fixed_and_inclino
 
-def extend_one_day(date="2021-03-22", path="../", write_csv=False):
-    
-    date = date2dirname(date)
-    
+def extend_one_day(date="2021_03_22", path="/mnt/ERC/ERC/Mereni_Babice_zpracovani/data", write_csv=False):
+       
     try:
-        os.makedirs(f"{path}{date}/csv_extended")
+        os.makedirs(f"{path}/csv_extended/{date}")
     except FileExistsError:
        # directory already exists
        pass    
-    csvfiles =  glob.glob(f"../{date}/csv/*.csv")
+    csvfiles =  glob.glob(f"{path}/csv/{date}/*.csv")
     csvfiles.sort()
     for file in csvfiles:
         filename = file.split("/")[-1]
@@ -202,10 +201,10 @@ def main():
         print("File processing skipped.")
         return None
     for i in [
-            "2021-03-22", 
-            "2021-06-29", 
-            "2022-04-05", 
-            "2022-08-16"
+            "2021_03_22", 
+            "2021_06_29", 
+            "2022_04_05", 
+            "2022_08_16"
             ]:
         print(i)
         print("=====================================================")

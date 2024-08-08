@@ -9,7 +9,7 @@ soubory nebo knihovny pro zpracování dat.
   synchronizace. V takovém případě na toto na začátku běhu upozorní a pokračují
   až po pozitivní odpovědi. 
 
-## Kopie csv souborů
+## Kopie csv souborů - platílo pro staré umístění, nově je potřeba přizpůsobit
 
 Tahat data pokaždé přes síť je pomalé. Lepší je zkopírovat si data k sobě. 
 
