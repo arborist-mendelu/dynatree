@@ -107,16 +107,23 @@ def create_images(df, column=None, start=None, end=None, release_optics=None, tm
             ax.axvline(release_optics, color='k', alpha=0.4, lw=0.5, linestyle="--")
             # ax[1].axvline(release_optics, color='k')
         ans += [fig]
-    out = fftdt.do_fft_for_one_column(df.loc[start:end, :], column, create_image=False, preprocessing=lambda x:fftdt.extend_series_with_zeros(x,tail=tail))
-    fig = fftdt.create_fft_image(**out, 
-                                 only_fft=only_fft, 
-                                 ymin = 0.0001)
-    ans += [fig]
+    try:
+        out = fftdt.do_fft_for_one_column(df.loc[start:end, :], column, create_image=False, preprocessing=lambda x:fftdt.extend_series_with_zeros(x,tail=tail))
+        fig = fftdt.create_fft_image(**out, 
+                                     only_fft=only_fft, 
+                                     ymin = 0.0001)
+        ans += [fig]
+    except:
+        out = None
+        ans += [None]
     return ans, out
 
 def uloz(ans, c, date, tree, measurement):
     for i in range(4):
-        ans[i].savefig(f"temp/{i}.png")
+        if ans[i] is None:
+            return None
+        else:
+            ans[i].savefig(f"temp/{i}.png")
     imgs = [Image.open(f"temp/{i}.png") for i in range(4)]
     width, height = imgs[0].size
     cs = {
@@ -174,11 +181,12 @@ df_optics = fftdt.interp(df_optics, np.arange(df_optics.index.min(),df_optics.in
 for i,c in enumerate(options):
     ans, out = create_images(df=df_optics, column=c, start=start, end=end, release_optics=release_optics)
     uloz(ans,c, date, tree, measurement)
-    f"### {c}, freq = {out['peak_position']:.3f} Hz"
-    columns = st.columns(4)
-    for j,a in enumerate(ans):
-        with columns[j]:
-            st.pyplot(a)
+    if out is not None:
+        f"### {c}, freq = {out['peak_position']:.3f} Hz"
+        columns = st.columns(4)
+        for j,a in enumerate(ans):
+            with columns[j]:
+                st.pyplot(a)
 
 c = ('Elasto(90)', 'nan')
 df_elasto = df_elasto[[c]]
@@ -186,10 +194,11 @@ df_elasto = fftdt.interp(df_elasto, np.arange(df_elasto.index.min(),df_elasto.in
 
 ans, out = create_images(df=df_elasto, column=c, start=start, end=end, release_optics=release_optics)
 uloz(ans,c, date, tree, measurement)
-f"### {c}, freq = {out['peak_position']:.3f} Hz"
-columns = st.columns(4)
-for j,a in enumerate(ans):
-    with columns[j]:
-        st.pyplot(a)
+if out is not None:
+    f"### {c}, freq = {out['peak_position']:.3f} Hz"
+    columns = st.columns(4)
+    for j,a in enumerate(ans):
+        with columns[j]:
+            st.pyplot(a)
             
 
