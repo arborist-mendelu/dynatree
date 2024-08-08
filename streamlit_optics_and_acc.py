@@ -69,6 +69,8 @@ start, end = row.loc[:,["start","end"]].values.reshape(-1)
 f"Default values. Start: {start}, End: {end}"
 
 start = st.number_input("start", value=start)
+if not np.isfinite(end):
+    end = df_optics.index[-1]
 end = st.number_input("end", value=end)
 # probe = row['probe'].iat[0]
 # if pd.isna(probe):
@@ -119,9 +121,15 @@ def uloz(ans, c, date, tree, measurement):
     width, height = imgs[0].size
     cs = {
         "Data1_A01_x":"A01",
+        "Data1_A02_x":"A02",
         "Data1_A03_x":"A03",
         "Data1_ACC2_X_axis":"A02",
         "Data1_ACC4_X_axis":"A04",
+        "Data1_A01_z":"A01",
+        "Data1_A02_z":"A02",
+        "Data1_A03_z":"A03",
+        "Data1_ACC2_Z_axis":"A02",
+        "Data1_ACC4_Z_axis":"A04",
         ('Elasto(90)', 'nan'):"Elasto",
         ('Pt3', 'Y0'):"Pt3",
         ('Pt4', 'Y0'):"Pt4"}

@@ -12,6 +12,11 @@ import numpy as np
 import FFT_spectrum as fftdt
 import lib_dynatree as dt
 from PIL import Image, ImageDraw, ImageFont
+import resource
+
+limit_in_gb = 5
+limit_in_bytes = limit_in_gb * 1024 * 1024 * 1024
+resource.setrlimit(resource.RLIMIT_AS, (limit_in_bytes,limit_in_bytes))
 
 plt.rcParams["figure.figsize"] = (10,6)
 
@@ -56,7 +61,6 @@ def main(date,tree, measurement):
     release_acc = df[df.sub(df.mean()).div(df.std()).abs().lt(1)].mean()
     release_optics = dt.find_release_time_optics(df_optics)
     df_acc.index = df_acc.index - release_acc + release_optics
-    
     
     def create_images(df, column=None, start=None, end=None, release_optics=None, tmax = 1e10, only_fft=only_fft):
         ans = []
@@ -114,12 +118,15 @@ def main(date,tree, measurement):
         
         # Uložení výsledného obrázku
         combined_image.save(f"temp/{date}_BK{tree}_M0{measurement}_{c_fixed}.png")    
-    
-    
+
+    def uloz(ans, c, date, tree, measurement):
+        pass
+            
     for i,c in enumerate(acc_columns):
         ans, out = create_images(df=df_acc, column=c, start=start, end=end, release_optics=release_optics)
         uloz(ans,c, date, tree, measurement)
-
+        plt.close('all')
+        
     options = [("Pt3","Y0"),("Pt4","Y0")]
     
     df_optics = df_optics[options]
@@ -128,6 +135,7 @@ def main(date,tree, measurement):
     for i,c in enumerate(options):
         ans, out = create_images(df=df_optics, column=c, start=start, end=end, release_optics=release_optics)
         uloz(ans,c, date, tree, measurement)
+        plt.close('all')
     
     c = ('Elasto(90)', 'nan')
     df_elasto = df_elasto[[c]]
@@ -135,12 +143,13 @@ def main(date,tree, measurement):
     
     ans, out = create_images(df=df_elasto, column=c, start=start, end=end, release_optics=release_optics)
     uloz(ans,c, date, tree, measurement)
+    plt.close('all')
             
 df = dt.get_all_measurements()
 for index, row in df.iterrows():
-    print(row)
+    print(row["day"], row["tree"], row["measurement"])
     try:
-        main(*row)
+        main(row["day"], row["tree"], row["measurement"])
     except:
-        print(f"Something failed for {row}")
+        print(f"Something failed for ", row["day"], row["tree"], row["measurement"])
 
