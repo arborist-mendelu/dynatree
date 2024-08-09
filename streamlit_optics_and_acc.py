@@ -225,3 +225,16 @@ nakresli_grafy(out, ans)
 plt.close('all')
             
 
+"""
+
+## Popis
+
+* Podle nastavení dne, stromu a měření se vykreslí data pro akcelerometry, 
+Pt3 a Pt4 z optiky a Elastometr.
+* Kreslí se tři časové průběhy pro vizuální kontrolu (všechno, detail vypuštění a oscilatorická část).
+* Ve čtvrtém sloupci je buď FFT nebo FFT společně s analyzovaným signálem (pokud se třeba na začátek a na konec přidává nula).
+* Je možné přidat pátý sloupec s interkativním FFT grafem pro zobrazení detailu a odečtení hodnot.
+* Každý obrázek se dá zvětšit na fullscreen tlačítkem, které se objeví po najetí myší na obrázek. Zpět je ESC nebo ikonka.
+* [Videoukázka](https://ctrlv.tv/Xh7H)
+
+"""
