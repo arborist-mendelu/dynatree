@@ -1,0 +1,10 @@
+oscillation_times_acc.csv  
+oscillation_times_remarks.csv  - rucne, zacatky a konce k oscilatoricke casti a k casti pro analyzu utlumu 
+peaks_for_decrement.csv  
+PT_notes.csv  - od Bary mailem
+PT_notes_with_pt.csv  - od Bary mailem
+results_fft.csv  
+synchronization_finetune_inclinometers_fix.csv  - rucne, rucni doladeni inklinometru a elastometru, pote spustit csv_add_inclino, extract_release_data, pripadne plot_probes_inclino_force
+release_data_XXX.csv - vysledek skriptu extract_release_data,
+tsv_dirs.csv - vysledek skriptu, obsahuje cesty k tsv souborum
+
