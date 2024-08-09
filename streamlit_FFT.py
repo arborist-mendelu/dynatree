@@ -22,6 +22,8 @@ cs = st.columns(2)
 with cs[0]:
 
     day, tree, measurement = stl.get_measurement()
+    tree = tree[-2:]
+    measurement = measurement[-1]
     
     preprocessing_function = st.radio("Preprocessing signal function",["None", "Zeros around, 2 sec", "Zeros around, 4 sec"])
     preprocessing = lambda x:x
@@ -41,6 +43,7 @@ with cs[0]:
     else:
         probe = (probe,"Pt0AY")
     date = day
+    
     bounds_for_fft = df_remarks.loc[[(date,f"BK{tree}",f"M0{measurement}")],:]
     start = bounds_for_fft[['start']].iat[0,0]
     end = bounds_for_fft[['end']].iat[0,0]
@@ -67,14 +70,14 @@ start,end
     #     continue
 st.write(f"{date} BK{tree} M0{measurement} from {start} to {end}, ")        
 if probe[0][0]=="E":
-    file_csv = f"../{date2dirname(date)}/csv_extended/BK{tree}_M0{measurement}.csv"
+    file_csv = f"../data/csv_extended/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv"
     data = load_data_for_FFT(
         file=file_csv,
         start=start,end=end, 
         filter_cols=False, 
         probes=["Time", "Elasto(90)"])
 else:
-    file_csv = f"../{date2dirname(date)}/csv/BK{tree}_M0{measurement}.csv"
+    file_csv = f"../data/csv/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv"
     data = load_data_for_FFT(
         file=file_csv,
         start=start,end=end)
