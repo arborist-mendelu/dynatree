@@ -11,9 +11,9 @@ from csv_add_inclino import extend_one_csv
 from plot_probes_inclino_force import plot_one_measurement
 
 # %%
-measurement = "M03"
-tree = "BK08"
-date = "2022-04-05"
+measurement = "M04"
+tree = "BK12"
+date = "2021-03-22"
 # DF = read_data("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
 # %%
 
@@ -31,7 +31,7 @@ plot_one_measurement(
         date=date,
         tree=tree, 
         measurement=measurement, 
-        # xlim=(0,10),
+        # xlim=(0,50),
         # df_extra=df_ext,
         # df=DF
         return_figure=True

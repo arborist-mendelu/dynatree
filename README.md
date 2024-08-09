@@ -9,7 +9,7 @@ soubory nebo knihovny pro zpracování dat.
   synchronizace. V takovém případě na toto na začátku běhu upozorní a pokračují
   až po pozitivní odpovědi. 
 
-## Kopie csv souborů - platílo pro staré umístění, nově je potřeba přizpůsobit
+## Kopie csv souborů - platilo pro staré umístění, nově je potřeba přizpůsobit
 
 Tahat data pokaždé přes síť je pomalé. Lepší je zkopírovat si data k sobě. 
 
@@ -47,8 +47,14 @@ git clone git@github.com:robert-marik/dynatree-optika.git
 Repozitář není veřejný, ale můžete tam mít přístup (email Robertovi).
 
 
-## Krok 1.: Z Xsight do csv, `xsight_tsv2csv.py`
+## Krok 1.: Z Xsight do csv, `xsight_tsv2csv.py`, `find_tsv.py`
 
+### `find_tsv.py`
+
+Najde adresare s tsv soubory a zapise je spolu s datem a cislem stromu a mereni 
+do databaze `csv/tsv_dirs.csv`
+
+### `xsight_tsv2csv.py`
 Načtou se tsv soubory všechny soubory z jednoho měření se
 převedou na jeden csv soubor. Skript `xsight_tsv2csv.py` by se měl
 spustit vždy po přidání dat z optiky. Skript prochází adresáře s
@@ -161,4 +167,5 @@ jednotlivé dny nebo stavy s listím a bez listí.
 Aplikace `streamlit_damping.py` umožňuje vybrat si den, strom a měření
 a zobrazí všechny tři výstupy plus Hilbertovu-Huangovu transformaci.
 
+## 
 

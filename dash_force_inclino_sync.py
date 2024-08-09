@@ -123,10 +123,10 @@ def sestav_csv(measurement, date, tree):
     global FILENAME
     if measurement is None or date is None or tree is None:
         return None,1,[0,1],None
-    _ = date.split("-")
-    _ .reverse()
-    _ = "".join(_)
-    file = f"../01_Mereni_Babice_{_}_optika_zpracovani/csv/{tree}_{measurement}.csv"
+    # _ = date.split("-")
+    # _ .reverse()
+    # _ = "".join(_)
+    file = f"../data/csv/{date.replace('-','_')}/{tree}_{measurement}.csv"
     DF = read_data_selected(file)
     data = DF[("Pt3","Y0")]
     data = data - data[0]
@@ -165,7 +165,7 @@ def plot_graph(file, button, probes, day, tree, measurement, slider, dpi):
     df_ext = extend_one_csv(date=day, 
             tree=tree, 
             measurement=measurement, 
-            path="../", 
+            path="../data", 
             write_csv=False,
             df=DF
             )    

@@ -119,7 +119,7 @@ def extend_one_csv(
         write_csv=False, 
         df=None):
     """
-    Reads csv file in a 01_Mereni_Babice_22032021_optika_zpracovani/csv like directory, 
+    Reads csv file in a csv like directory, 
     adds data from inclinometers (reads from pulling_test subdirectory) and saves to 
     csv_extended subdirectory if write_csv is True. If df is given, the reading of csv 
     file is skipped and the given dataframe is used.
@@ -146,10 +146,12 @@ def extend_one_csv(
     release_time_optics = find_release_time_optics(df)
     
     delta_time = find_finetune_synchro(directory2date(date), tree,measurement)
+    if delta_time != 0:
+        print(f"\n  info: Fixing data, nonzero delta time {delta_time} found.")
     
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     df_pulling_tests_ = read_data_inclinometers(
-        f"{path}/pulling_tests/{date}/BK_{tree}_M{measurement}.TXT", 
+        f"{path}/pulling_tests/{date.replace('-','_')}/BK_{tree}_M{measurement}.TXT", 
         release=release_time_optics, 
         delta_time=delta_time
         )
@@ -163,12 +165,13 @@ def extend_one_csv(
         if bounds is None or np.isnan(bounds).any():
             continue
         start,end = bounds
+        print(f"\n  info: Fixing inclinometer {inclino}, setting to zero from {start} to {end}.")
         inclino_mean = df_pulling_tests.loc[start:end,inclino].mean()
         df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean                
 
     df_fixed_and_inclino = pd.concat([df_fixed,df_pulling_tests], axis=1)
     if write_csv:
-        df_fixed_and_inclino.to_csv(f"{path}/csv_extended/{date}/BK{tree}_M0{measurement}.csv")
+        df_fixed_and_inclino.to_csv(f"{path}/csv_extended/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv")
     return df_fixed_and_inclino
 
 def extend_one_day(date="2021_03_22", path="../data", write_csv=False):

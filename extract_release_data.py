@@ -24,24 +24,20 @@ from lib_dynatree import filename2tree_and_measurement_numbers
 
 
 def find_release_data_one_measurement(
-        date="01_Mereni_Babice_22032021_optika_zpracovani",
-        path="../",
+        date="2021-03-22",
+        path="../data",
         tree="01",
         measurement="2",
         ):
-    # print("/nacitam soubory/", flush=True)
-    if not "Mereni_Babice" in date:
-        date = "".join(reversed(date.split("-")))
-        date = f"01_Mereni_Babice_{date}_optika_zpracovani"
     if len(tree)>2:
         tree = tree[-2:]
     if len(measurement)>1:
         measurement = measurement[-1]
 
     df_main = read_data_selected(
-        f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")
+        f"{path}/csv/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv")
     df_extra = read_data(
-        f"{path}{date}/csv_extended/BK{tree}_M0{measurement}.csv")
+        f"{path}/csv_extended/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv")
 
     # print("/extrahuji data/", flush=True)
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
@@ -67,10 +63,10 @@ def find_release_data_one_measurement(
             df_means[f"{inclino}_{lb}_{ub}"]=np.mean(df_notna.loc[lb:ub,inclino])
     return df_means
 
-def find_release_data_one_day(date="01_Mereni_Babice_22032021_optika_zpracovani", path="../"):
+def find_release_data_one_day(date="2021-03-22", path="../data"):
     output = {}
     # Find csv files
-    csvfiles =  glob.glob(f"../{date}/csv/*.csv")
+    csvfiles =  glob.glob(f"{path}/csv/{date.replace('-','_')}/*.csv")
     csvfiles.sort()
     # Drop directory name
     csvfiles = [i.split("/")[-1] for i in csvfiles]
@@ -83,17 +79,17 @@ def find_release_data_one_day(date="01_Mereni_Babice_22032021_optika_zpracovani"
 
 def main():
     dfs = {}
-    for i in [
-                    "01_Mereni_Babice_22032021_optika_zpracovani",   
-                    "01_Mereni_Babice_29062021_optika_zpracovani", 
-                    "01_Mereni_Babice_05042022_optika_zpracovani",
-                    "01_Mereni_Babice_16082022_optika_zpracovani",
+    for i in [ 
+                    "2021-03-22",   
+                    "2021-06-29", 
+                    "2022-04-05",
+                    "2022-08-16",
                     ]:
         print()
         print(i)
         print("=====================================================")
-        dfs[directory2date(i)] = find_release_data_one_day(date=i).T
-        pd.DataFrame(dfs[directory2date(i)]).to_csv(f"outputs/release_data_{directory2date(i)}.csv")
+        dfs[i] = find_release_data_one_day(date=i).T
+        pd.DataFrame(dfs[i]).to_csv(f"csv/release_data_{i}.csv")
     return dfs
 
 

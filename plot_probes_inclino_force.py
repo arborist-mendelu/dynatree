@@ -23,7 +23,7 @@ import pathlib
 
 def plot_one_measurement(
         date="2021-03-22",
-        path="../",
+        path="../data",
         tree="01",
         measurement="2",
         df_remarks=None,
@@ -75,20 +75,17 @@ def plot_one_measurement(
     # accept both BK04 and 04 as a tree number
     tree = tree[-2:]
     # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
-    if len(date)==10:
-        date = "".join(reversed(date.split("-")))
-    if len(date)==8:
-        date = f"01_Mereni_Babice_{date}_optika_zpracovani"    
+    date = date.replace("-","_")
     
     if df is None:
         df = read_data_selected(
-            f"{path}{date}/csv/BK{tree}_M0{measurement}.csv")
+            f"{path}/csv/{date}/BK{tree}_M0{measurement}.csv")
     else:
         # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{measurement}.csv")
         pass
     if df_extra is None:
         df_extra = read_data(
-            f"{path}{date}/csv_extended/BK{tree}_M0{measurement}.csv")
+            f"{path}/csv_extended/{date}/BK{tree}_M0{measurement}.csv")
 
     draw_from,draw_to = xlim
     if draw_from == None:
@@ -100,7 +97,7 @@ def plot_one_measurement(
     bounds_for_fft = df_remarks[
         (df_remarks["tree"] == f"BK{tree}") & 
         (df_remarks["measurement"] == f"M0{measurement}") & 
-        (df_remarks["date"] == directory2date(date))
+        (df_remarks["date"] == date.replace("_","-"))
             ]
     fix_target = 3
     plot_coordiante = "Y"
@@ -154,7 +151,7 @@ def plot_one_measurement(
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     release_time_optics = find_release_time_optics(df)
     df_pulling_tests = read_data_inclinometers(
-        f"{path}{date}/pulling_tests/BK_{tree}_M{measurement}.TXT", 
+        f"{path}/pulling_tests/{date}/BK_{tree}_M{measurement}.TXT", 
         release=release_time_optics, 
         delta_time=delta_time
         )    
@@ -210,38 +207,38 @@ def plot_one_measurement(
     tmin, tmax = find_release_time_interval(df_extra, date, tree, measurement)
     
     for ax in axes:
-        ax.set(xlim=(tmin-(tmax-tmin), max(tmax+2*(tmax-tmin),release_time_optics)))
+        # Nasledujici radek omezi graf na okamzik okolo vypusteni
+        # ax.set(xlim=(tmin-(tmax-tmin), max(tmax+2*(tmax-tmin),release_time_optics)))
         ax.axvspan(tmin,tmax, alpha=.5, color="yellow")
         # pre_release_data[file.replace(".csv","")] = delta_df.mean()
         ax.set(xlim=xlim, ylim=(None, None))        
     axes[2].set(ylim=(0,None))
     fig.tight_layout()
     if save_figure:
-        pathlib.Path(f"{path}{date}/png_with_inclino").mkdir(parents=True, exist_ok=True)
+        pathlib.Path(f"{path}/../vystupy/png_with_inclino/").mkdir(parents=True, exist_ok=True)
         fig.savefig(
-            f"{path}{date}/png_with_inclino/BK{tree}_M0{measurement}.png", dpi=100)
+            f"{path}/../vystupy/png_with_inclino/{date}_BK{tree}_M0{measurement}.png", dpi=100)
     if return_figure:
         return fig
     else:
         plt.close(fig)
 
-def plot_one_day(date="2021-03-22", path="../"):
+def plot_one_day(date="2021-03-22", path="../data"):
     
     # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
-    date = date2dirname(date)
+    # date = date2dirname(date)
     
-    csvfiles =  glob.glob(f"../{date}/csv/*.csv")
+    csvfiles =  glob.glob(f"../data/csv/{date.replace('-','_')}/*.csv")
     csvfiles.sort()
     for file in csvfiles:
-        filename = file.split("/")[-1]
+        filename = file.split("/")[-1].replace(".csv","")
         print(filename,", ",end="", flush=True)
-        tree = filename[2:4]
-        measurement = filename[7]
+        tree, measurement = filename.split("_")
         plot_one_measurement(
             date=date, 
             path=path, 
-            tree=tree, 
-            measurement=measurement, 
+            tree=tree[-2:], 
+            measurement=measurement[-1], 
             save_figure=True, 
             return_figure=False)
     print()    

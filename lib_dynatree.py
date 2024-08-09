@@ -79,10 +79,10 @@ def read_data_selected(file,
 
 def directory2date(d):
     """
-    Converts directory from the form '01_Mereni_Babice_22032021_optika_zpracovani'
+    Converts directory from the form '2021_03_22'
     to date like 2021-03-22
     """
-    return f"{d[21:25]}-{d[19:21]}-{d[17:19]}"  
+    return d.replace("_","-")  
 
 
 def filename2tree_and_measurement_numbers(f):
@@ -214,6 +214,8 @@ def read_data_inclinometers(file, release=None, delta_time=0):
         release_time_force = df_pulling_tests["Force(100)"].idxmax()
         
     # Sync the dataframe from inclino to optics    
+    if delta_time != 0:
+        print(f"  info: Using time fix {delta_time} when reading data from inclino/force/elasto")
     df_pulling_tests["Time_inclino"] = df_pulling_tests.index
     df_pulling_tests["Time"] = df_pulling_tests["Time_inclino"] - release_time_force + release + delta_time
     df_pulling_tests.set_index("Time", inplace=True)
@@ -225,22 +227,18 @@ def find_finetune_synchro(date, tree, measurement, cols="delta time"):
     """
     Returns line from csv/synchronization_finetune_inclinometers_fix.csv
     corresponding to the date, tree and measurement numbers. Accepts both 
-    24122021 and 2021-12-24 for date, both BK02 and 02 for tree, both 3 and M03 
+    2021_12_24 and 2021-12-24 for date, both BK02 and 02 for tree, both 3 and M03 
     for measurement. 
     
-    Raises error, is there are more than two rows in the file.
     Returns the value or the array corresponding to the col variable.
     
     If cols is "delta time" returns 0 if not found and the value if found.
     
     In all cases returns None if the row is not found
     
-    Date is either 22032021 or 2021-03-22 format or 01_Mereni_Babice_22032021_optika_zpracovani
+    Date is either 2021_03_22 or 2021-03-22 format 
     """
-    if "Mereni_Babice" in date:
-        date = directory2date(date)
-    if not "-" in date:
-        date = f"{date[-4:]}-{date[2:4]}-{date[:2]}"
+    date = date.replace("_","-")
     if not "BK" in str(tree):
         tree = f"BK{tree}"
     if not "M" in str(measurement):
@@ -291,8 +289,6 @@ def find_release_time_interval(df_extra, date, tree, measurement):
     of maxima.
     """
 
-    if "Mereni_Babice" in date:
-        date = directory2date(date)
     check_manual_data = find_finetune_synchro(date, tree, measurement, cols="pre_release")
     if check_manual_data is not None and ~(np.isnan(check_manual_data).any()):
         return check_manual_data
@@ -310,16 +306,17 @@ def find_release_time_interval(df_extra, date, tree, measurement):
 
 def split_path(file):
     data = file.split("/")
-    return [file,directory2date(data[1]), data[1], data[3][2:4], data[3][7]]
+    data[-1] = data[-1].replace(".csv","")
+    return [file,data[3].replace("_","-")] + data[-1].split("_")
 
 def get_all_measurements():
     """
     Get dataframe with all measurements. The dataframe has columns
     date, tree and measurement.
     """
-    files = glob.glob("../01_*/csv/BK*.csv")    
+    files = glob.glob("../data/csv/*/BK*.csv")        
     out = [split_path(file) for file in files]
-    df = pd.DataFrame([[i[1],i[3],i[4]] for i in out], columns=['day','tree', 'measurement'])
+    df = pd.DataFrame([i[1:] for i in out], columns=['day','tree', 'measurement'])
     df = df.sort_values(by=list(df.columns))
     df = df.reset_index(drop=True)
     return df

@@ -9,12 +9,14 @@ import glob
 import pandas as pd
 
 def file2data(filename):
-    filename = filename.split("_")
-    datum = filename[3]
-    datum = f"{datum[-4:]}-{datum[2:4]}-{datum[:2]}"
-    return datum,filename[5].split("/")[-1],filename[6].split(".")[0]    
+    filename = filename.split("/")
+    datum = filename[3].replace("_","-")
+    filename[-1] = filename[-1].replace(".csv","")
+    strom, mereni = filename[-1].split("_")
+    return datum, strom, mereni
   
-csv_files = glob.glob("../01_Mereni_Babice*optika_zpracovani/csv/*.csv")
+  
+csv_files = glob.glob("../data/csv/*/*.csv")
 csv_files.sort()
 csv_files = [file2data(i) for i in csv_files]
 df = pd.DataFrame(csv_files, columns=["date","tree", "measurement"])
