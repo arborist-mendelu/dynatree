@@ -7,7 +7,6 @@ Created on Thu May 23 12:37:18 2024
 """
 
 import pandas as pd
-import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
@@ -15,6 +14,7 @@ import FFT_spectrum as fftdt
 import lib_dynatree as dt
 import lib_streamlit
 from PIL import Image, ImageDraw, ImageFont
+import plotly.graph_objs as go
 
 plt.rcParams["figure.figsize"] = (10,6)
 st.set_page_config(layout="wide")
@@ -33,9 +33,15 @@ tree = tree[-2:]
 measurement = measurement[-1]
 # tree = f"BK{tree}"
 # measurement = f"0{measurement}"
-acc_axis = st.radio("Axis",["x","y","z"], horizontal=True)
-tail = st.radio("Tail length",[0,2,4,8,10], horizontal=True)
-only_fft = st.radio("Skip signal plot abve the FFT (switch to False to see the effect of nonzero tail setting)",[True, False], horizontal=True)
+
+columns = st.columns(3)
+with columns[0]:
+    acc_axis = st.radio("ACC axis",["x","y","z"], horizontal=True, index=2)
+with columns[1]:
+    tail = st.radio("Tail length (the length of the zero signal at the start and at the end).",[0,2,4,8,10], horizontal=True)
+with columns[2]:
+    only_fft = st.radio("Skip signal plot above the FFT (switch to False to see the effect of nonzero tail setting).",[True, False], horizontal=True)
+    interactive_fft = st.radio("Allow interactive reading of data from FFT specturm",[True, False], horizontal=True, index=1)
 
 #%%
 
@@ -93,9 +99,13 @@ f"""
 """
 df[df.sub(df.mean()).div(df.std()).abs().lt(1)].T
 
-columns = st.columns(4)
+colnames = ["Full time domain","Release ±1 sec", "Oscillations", "FFT analysis", "Interactive FFT"]
 
-for c,text in zip(columns, ["Full time domain","Release ±1 sec", "Oscillations", "FFT analysis"]):
+if not interactive_fft :
+    colnames = colnames[:-1]
+columns = st.columns(len(colnames))
+    
+for c,text in zip(columns, colnames):
     with c:
         "## "+text
 
@@ -169,40 +179,49 @@ def uloz(ans, c, date, tree, measurement):
     combined_image.save(f"temp/{date}_BK{tree}_M0{measurement}_{c_fixed}.png")    
 
 
-for i,c in enumerate(acc_columns):
-    ans, out = create_images(df=df_acc, column=c, start=start, end=end, release_optics=release_optics)
-    uloz(ans,c, date, tree, measurement)
+def nakresli_grafy(out,ans):
     if out is not None:
         f"### {c}, freq = {out['peak_position']:.3f} Hz"
-        columns = st.columns(4)
+        columns = st.columns(len(colnames))
         for j,a in enumerate(ans):
             with columns[j]:
                 st.pyplot(a)
+                plt.close(a)
+        if not interactive_fft:
+            return
+        with columns[4]:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=out['xf_r'], y=out['yf_r'], mode='markers'))
+            # Nastavení rozsahu osy x, logaritmické osy y a velikosti obrázku
+            fig.update_layout(
+                xaxis=dict(range=[0, 3], title='freq.'),
+                yaxis=dict(type='log', title='FFT'),
+                width=400,  # Zmenšení šířky grafu
+                height=300,  # Zmenšení výšky grafu
+            )
+            st.plotly_chart(fig)
+
+
+for i,c in enumerate(acc_columns):
+    ans, out = create_images(df=df_acc, column=c, start=start, end=end, release_optics=release_optics)
+    # uloz(ans,c, date, tree, measurement)
+    nakresli_grafy(out,ans)
 
 df_optics = df_optics[options]
 df_optics = fftdt.interp(df_optics, np.arange(df_optics.index.min(),df_optics.index.max(),0.01))
 
 for i,c in enumerate(options):
     ans, out = create_images(df=df_optics, column=c, start=start, end=end, release_optics=release_optics)
-    uloz(ans,c, date, tree, measurement)
-    if out is not None:
-        f"### {c}, freq = {out['peak_position']:.3f} Hz"
-        columns = st.columns(4)
-        for j,a in enumerate(ans):
-            with columns[j]:
-                st.pyplot(a)
+    # uloz(ans,c, date, tree, measurement)
+    nakresli_grafy(out,ans)
 
 c = ('Elasto(90)', 'nan')
 df_elasto = df_elasto[[c]]
 df_elasto = fftdt.interp(df_elasto, np.arange(df_elasto.index.min(),df_elasto.index.max(),0.01))
 
 ans, out = create_images(df=df_elasto, column=c, start=start, end=end, release_optics=release_optics)
-uloz(ans,c, date, tree, measurement)
-if out is not None:
-    f"### {c}, freq = {out['peak_position']:.3f} Hz"
-    columns = st.columns(4)
-    for j,a in enumerate(ans):
-        with columns[j]:
-            st.pyplot(a)
+# uloz(ans,c, date, tree, measurement)
+nakresli_grafy(out, ans)
+plt.close('all')
             
 
