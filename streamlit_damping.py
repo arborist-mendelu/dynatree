@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 from lib_dynatree import get_all_measurements, get_csv
 from lib_damping import find_damping, get_limits
 import emd
+import lib_streamlit as stl
+
 
 csv_ans_file = "damping/damping_results.csv"
 st.set_page_config(layout="wide")
@@ -36,21 +38,26 @@ df = get_all_measurements()
 cs = st.columns(4)
 
 with cs[0]:
-    """
-    ## Day, tree, measurement
-    """
-    columns = st.columns(3)
     
-    with columns[0]:
-        day = st.radio("Day",list(df['day'].unique()))
+    day, tree, measurement = stl.get_measurement()
+    tree = tree[-2:]
+    measurement = measurement[-1]
+        
+    # """
+    # ## Day, tree, measurement
+    # """
+    # columns = st.columns(3)
     
-    df_day = df[df['day']==day]
-    with columns[1]:
-        tree = st.radio("Tree",list(df_day['tree'].unique()), horizontal=True)
+    # with columns[0]:
+    #     day = st.radio("Day",list(df['day'].unique()))
     
-    df_measurement = df_day[df_day['tree']==tree]
-    with columns[2]:
-        measurement = st.radio("Measurement",list(df_measurement['measurement'].unique()), horizontal=True)
+    # df_day = df[df['day']==day]
+    # with columns[1]:
+    #     tree = st.radio("Tree",list(df_day['tree'].unique()), horizontal=True)
+    
+    # df_measurement = df_day[df_day['tree']==tree]
+    # with columns[2]:
+    #     measurement = st.radio("Measurement",list(df_measurement['measurement'].unique()), horizontal=True)
     
     probe = st.radio("Probe",["auto","Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)], horizontal=True)
     

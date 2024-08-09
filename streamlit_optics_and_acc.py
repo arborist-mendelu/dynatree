@@ -28,6 +28,8 @@ df_osc_times = pd.read_csv("csv/oscillation_times_remarks.csv")
 #%%
 
 date, tree, measurement = lib_streamlit.get_measurement()
+tree = tree[-2:]
+measurement = measurement[-1]
 # tree = f"BK{tree}"
 # measurement = f"0{measurement}"
 acc_axis = st.radio("Axis",["x","y","z"], horizontal=True)
@@ -37,10 +39,10 @@ only_fft = st.radio("Skip signal plot abve the FFT (switch to False to see the e
 #%%
 
 year,month,day=date.split("-")
-df_optics = dt.read_data(f"../01_Mereni_Babice_{day}{month}{year}_optika_zpracovani/csv/BK{tree}_M0{measurement}.csv")
+df_optics = dt.read_data(f"../data/csv/{year}_{month}_{day}/BK{tree}_M0{measurement}.csv")
 df_optics = df_optics - df_optics.iloc[0,:]
-df_acc = pd.read_csv(f"../acc/csv/{date}-BK{tree}-M0{measurement}.csv", index_col=0)
-df_elasto = dt.read_data(f"../01_Mereni_Babice_{day}{month}{year}_optika_zpracovani/csv_extended/BK{tree}_M0{measurement}.csv")
+df_acc = pd.read_csv(f"../data/acc/csv/{date}-BK{tree}-M0{measurement}.csv", index_col=0)
+df_elasto = dt.read_data(f"../data/csv_extended/{year}_{month}_{day}/BK{tree}_M0{measurement}.csv")
 
 #%%
 

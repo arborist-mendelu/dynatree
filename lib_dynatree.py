@@ -38,7 +38,7 @@ def get_csv(date, tree, measurement):
     Loads the csv file corresponding to date, tree and measurement
     """
     print ("get_csv called, this may be time consuming")
-    file = f"../{date2dirname(date)}/csv/BK{tree}_M0{measurement}.csv"
+    file = f"../data/csv/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv"
     return read_data(file)
 
 def read_data_selected(file,
