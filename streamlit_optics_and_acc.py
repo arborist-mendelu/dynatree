@@ -171,11 +171,12 @@ def uloz(ans, c, date, tree, measurement):
 for i,c in enumerate(acc_columns):
     ans, out = create_images(df=df_acc, column=c, start=start, end=end, release_optics=release_optics)
     uloz(ans,c, date, tree, measurement)
-    f"### {c}, freq = {out['peak_position']:.3f} Hz"
-    columns = st.columns(4)
-    for j,a in enumerate(ans):
-        with columns[j]:
-            st.pyplot(a)
+    if out is not None:
+        f"### {c}, freq = {out['peak_position']:.3f} Hz"
+        columns = st.columns(4)
+        for j,a in enumerate(ans):
+            with columns[j]:
+                st.pyplot(a)
 
 df_optics = df_optics[options]
 df_optics = fftdt.interp(df_optics, np.arange(df_optics.index.min(),df_optics.index.max(),0.01))
