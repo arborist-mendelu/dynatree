@@ -17,6 +17,7 @@ import lib_streamlit
 from PIL import Image, ImageDraw, ImageFont
 
 plt.rcParams["figure.figsize"] = (10,6)
+st.set_page_config(layout="wide")
 
 fs = 100 # resampled signal
 # files = glob.glob("../01_Mereni_Babice_*_optika_zpracovani/csv/*")

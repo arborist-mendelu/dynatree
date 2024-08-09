@@ -18,6 +18,7 @@ import FFT_spectrum as fftdt
 import lib_streamlit
 
 fs = 100 # resampled signal
+st.set_page_config(layout="wide")
 
 def najdi_soubory_acc_csv(adresar):
 
@@ -37,14 +38,14 @@ c = st.columns(3)
 with c[0]:
     # columns = st.columns(3)
     date, tree, measurement = lib_streamlit.get_measurement()
-    tree = f"BK{tree}"
-    measurement = f"M0{measurement}"
+#    tree = f"BK{tree}"
+#    measurement = f"M0{measurement}"
     # with columns[2]:
     axis = st.radio("Axis",["X","Y","Z"], horizontal=True)
     subplots= st.radio("Subplots",[True, False, "False and rescale"], horizontal=True)
     tail = st.radio("Tail length",[0,2,4,8,10], horizontal=True)
 
-df = pd.read_csv(f"../acc/csv/{date}-{tree}-{measurement}.csv", index_col=0)
+df = pd.read_csv(f"../data/acc/csv/{date}-{tree}-{measurement}.csv", index_col=0)
 df.index = np.arange(df.shape[0])/100
 df = df - df.iloc[0,:]
 cols = [i for i in df.columns if f"_{axis}" in i.upper()]
