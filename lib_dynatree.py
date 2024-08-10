@@ -307,14 +307,14 @@ def find_release_time_interval(df_extra, date, tree, measurement):
 def split_path(file):
     data = file.split("/")
     data[-1] = data[-1].replace(".csv","")
-    return [file,data[3].replace("_","-")] + data[-1].split("_")
+    return [file,data[-2].replace("_","-")] + data[-1].split("_")
 
-def get_all_measurements():
+def get_all_measurements(cesta="../data"):
     """
     Get dataframe with all measurements. The dataframe has columns
     date, tree and measurement.
     """
-    files = glob.glob("../data/csv/*/BK*.csv")        
+    files = glob.glob(cesta+"/csv/*/BK*.csv")        
     out = [split_path(file) for file in files]
     df = pd.DataFrame([i[1:] for i in out], columns=['day','tree', 'measurement'])
     df = df.sort_values(by=list(df.columns))
