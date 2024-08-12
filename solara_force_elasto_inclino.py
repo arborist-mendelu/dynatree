@@ -1,4 +1,24 @@
-data_path = "../data"
+DATA_PATH = "../data"
+
+navod = """
+## Oscilace, inklinometry, elastometr
+
+* Vyber si den, strom a měření a klikni na tlačítko. Vykreslí se kmity Pt3 nahoře, 
+  inklinometry uprostřed a 
+  síla a elastometr dole
+* Zkontroluj, jestli je správně zarovnán okamžik vypuštění, 
+  kontroluj v posledním obrázku sílu (oranžové tečky) a výchylku (modrá čára).
+* Pokud síla a výchylka nejsou zarovnány okamžikem vypuštění, můžeš doladit v souboru 
+  `csv/synchronization_finetune_inclinometers_fix.csv`
+* Po ukončení je potřeba zohlednit změny v csv souboru. 
+  Je proto potřeba spustit  skript `csv_add_inclino.py` pro pro začlenění informací do `csv_extra`,
+  dále `extract_release_data.py` pro opravená data před vypuštěním a případně 
+  `plot_probes_inclino_force.py` pro obrázky jaké jsou zde.
+* Posuvníkem si můžeš změnit rozsah na ose x, aby šla dobře vidět kvalita nebo nekvalita
+  synchronizace a aby se dalo posoudit, jestli je rozsah před vypuštěním (žlutý pás) umístěn rozumně.  
+
+"""
+
 import sys
 import glob
 import matplotlib.pyplot as plt
@@ -20,7 +40,7 @@ def split_path(file):
     data[-1] = data[-1].replace(".csv","")
     return [file,data[-2].replace("_","-")] + data[-1].split("_")
 
-def get_all_measurements(cesta=data_path):
+def get_all_measurements(cesta=DATA_PATH):
     """
     Get dataframe with all measurements. The dataframe has columns
     date, tree and measurement.
@@ -79,12 +99,12 @@ def nakresli():
         endlim = None
     else:
         endlim = end.value
-    file = f"{data_path}/csv/{day.value.replace('-','_')}/{tree.value}_{measurement.value}.csv"
+    file = f"{DATA_PATH}/csv/{day.value.replace('-','_')}/{tree.value}_{measurement.value}.csv"
     DF = read_data_selected(file)
     df_ext = extend_one_csv(date=day.value, 
             tree=tree.value, 
             measurement=measurement.value, 
-            path=data_path, 
+            path=DATA_PATH, 
             write_csv=False,
             df=DF
             )        
@@ -92,7 +112,7 @@ def nakresli():
             date=day.value,
             tree=tree.value, 
             measurement=measurement.value, 
-            path=data_path,
+            path=DATA_PATH,
             plot_fixes=probe.value=="Pt3 with fixes", 
             plot_Pt4=probe.value=="Pt3 with Pt4",
             xlim=(start.value,endlim),
@@ -102,25 +122,6 @@ def nakresli():
             )    
     return fig
     
-navod = """
-## Oscilace, inklinometry, elastometr
-
-* Vyber si den, strom a měření a klikni na tlačítko. Vykreslí se kmity Pt3 nahoře, 
-  inklinometry uprostřed a 
-  síla a elastometr dole
-* Zkontroluj, jestli je správně zarovnán okamžik vypuštění, 
-  kontroluj v posledním obrázku sílu (oranžové tečky) a výchylku (modrá čára).
-* Pokud síla a výchylka nejsou zarovnány okamžikem vypuštění, můžeš doladit v souboru 
-  `csv/synchronization_finetune_inclinometers_fix.csv`
-* Po ukončení je potřeba zohlednit změny v csv souboru. 
-  Je proto potřeba spustit  skript `csv_add_inclino.py` pro pro začlenění informací do `csv_extra`,
-  dále `extract_release_data.py` pro opravená data před vypuštěním a případně 
-  `plot_probes_inclino_force.py` pro obrázky jaké jsou zde.
-* Posuvníkem si můžeš změnit rozsah na ose x, aby šla dobře vidět kvalita nebo nekvalita
-  synchronizace a aby se dalo posoudit, jestli je rozsah před vypuštěním (žlutý pás) umístěn rozumně.  
-
-"""
-
 @solara.component
 def Page():
     solara.Title("Oscillation: optics, inclinometers, elastometer, force synchro")
@@ -140,13 +141,13 @@ def Page():
                     solara.InputFloat("End", value=end, continuous_update=False)                
         solara.Div(style={"margin-bottom": "10px"})
         with solara.Row():
-            # solara.Info(f"Day {day.value}, Tree {tree.value}. Available measurements: {available_measurements(df, day.value, tree.value, )}")
             solara.Button("Run calculation", on_click=nakresli, color="primary")
             solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}, {probe.value}, {plot_fixes}, {plot_Pt4}")
     solara.ProgressLinear(nakresli.pending)    
     if measurement.value not in available_measurements(df, day.value, tree.value):
         solara.Error(f"Measurement {measurement.value} not available for this tree.")
         return
+    
     if nakresli.finished:
         plt.show(nakresli.value)
     elif nakresli.not_called:

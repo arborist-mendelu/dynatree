@@ -7,6 +7,7 @@ Created on Sun Nov  5 07:56:28 2023
 """
 
 import pandas as pd
+import polars as pl
 import numpy as np
 from scipy import interpolate, signal
 from scipy.fft import fft, fftfreq
@@ -33,6 +34,20 @@ def read_data(file, index_col="Time", usecols=None):
     df["Time"] = df.index  # pro pohodlí, aby se k času dalo přistupovat i jako data.Time
     return df
 
+def read_data_by_polars(file):
+    """
+    Alternative to read_data with default attributes, but using faster alternative
+    """
+    df_polars = pl.read_csv(file, skip_rows_after_header=1)   # read data
+    df_polars = df_polars.to_pandas()
+    df_polars_headers = pl.read_csv(file, has_header=False, n_rows=2).to_numpy() # read multiindex column names
+    df_polars_headers[1,1]="" # set the same index as in pandas reader
+    idx = pd.MultiIndex.from_arrays(df_polars_headers)
+    df_polars.index = df_polars["Time"] # set index
+    df_polars.columns = idx
+    df_polars = df_polars.drop([("source","data")], axis=1)
+    return df_polars
+    
 def get_csv(date, tree, measurement):
     """
     Loads the csv file corresponding to date, tree and measurement
@@ -198,7 +213,7 @@ def read_data_inclinometers(file, release=None, delta_time=0):
         file,
         skiprows=55, 
         decimal=",",
-        sep='\s+',    
+        sep=r'\s+',    
         skipinitialspace=True,
         na_values="-"
         )
