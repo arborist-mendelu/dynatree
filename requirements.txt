@@ -1,0 +1,12 @@
+pandas
+matplotlib
+numpy
+dash
+dash-bootstrap-components
+spyder
+jupyterlab
+scipy
+streamlit
+emd
+polars
+solara

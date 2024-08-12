@@ -1,1 +1,1 @@
-conda install pandas numpy matplotlib streamlit dash scipy solara spyder
+conda install pandas numpy matplotlib streamlit dash scipy solara spyder polars
