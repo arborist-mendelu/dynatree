@@ -92,6 +92,34 @@ def read_data_selected(file,
         df.index = df["Time"].values.reshape(-1)
     return df
 
+def read_data_selected_by_polars(file,
+                        probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]]):
+    """
+    Faster variant of read_data_selected. Makes use of polar library.
+    """
+    headers = pl.read_csv(
+        file, 
+        n_rows=2, has_header=False,
+        ).to_numpy()
+    first_row = headers[0]
+    sloupce = list(np.nonzero(np.isin(first_row,probes))[0])
+
+    # read csv file    
+    df = pl.read_csv(
+        file,
+        has_header=False,
+        skip_rows=2,
+        columns=[int(i) for i in sloupce]
+        ).to_pandas()
+    #%%
+
+    headers[1,1]=""
+    idx = pd.MultiIndex.from_arrays(headers[:,sloupce])
+    df = df.set_axis(idx, axis=1)
+    # if "Time" in probes:
+    df.index = df["Time"].values.reshape(-1)
+    return df
+
 def directory2date(d):
     """
     Converts directory from the form '2021_03_22'
