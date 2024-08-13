@@ -30,10 +30,9 @@ import numpy as np
 import solara
 from solara.lab import task
 SOLARA_PROXY_CACHE_DIR = "/tmp/solara2"
-from lib_dynatree import read_data
 from csv_add_inclino import extend_one_csv
 from plot_probes_inclino_force import plot_one_measurement
-from lib_dynatree import read_data_selected, read_data
+from lib_dynatree import read_data_selected_by_polars
 
 def split_path(file):
     data = file.split("/")
@@ -100,7 +99,7 @@ def nakresli():
     else:
         endlim = end.value
     file = f"{DATA_PATH}/csv/{day.value.replace('-','_')}/{tree.value}_{measurement.value}.csv"
-    DF = read_data_selected(file)
+    DF = read_data_selected_by_polars(file)
     df_ext = extend_one_csv(date=day.value, 
             tree=tree.value, 
             measurement=measurement.value, 
