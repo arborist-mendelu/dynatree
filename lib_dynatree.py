@@ -45,7 +45,8 @@ def read_data_by_polars(file):
     idx = pd.MultiIndex.from_arrays(df_polars_headers)
     df_polars.index = df_polars["Time"] # set index
     df_polars.columns = idx
-    df_polars = df_polars.drop([("source","data")], axis=1)
+    if ("source","data") in df_polars.columns: # drop unenecessary column
+        df_polars = df_polars.drop([("source","data")], axis=1)
     return df_polars
     
 def get_csv(date, tree, measurement):
