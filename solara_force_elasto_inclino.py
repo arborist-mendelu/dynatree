@@ -22,14 +22,11 @@ navod = """
 import sys
 import glob
 import matplotlib.pyplot as plt
-#sys.path.append('./ERC/ERC/Mereni_Babice_zpracovani/skripty/')
-#from extract_release_data import find_release_data_one_measurement
 import lib_dynatree as lt
 import pandas as pd
 import numpy as np
 import solara
 from solara.lab import task
-SOLARA_PROXY_CACHE_DIR = "/tmp/solara2"
 from csv_add_inclino import extend_one_csv
 from plot_probes_inclino_force import plot_one_measurement
 from lib_dynatree import read_data_selected_by_polars
