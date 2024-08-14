@@ -85,11 +85,88 @@ def find_intervals_to_split_measurements(date, tree, csv="csv/intervals_split_M0
         select = select.iat[0,:]
     return np.array([int(i) for i in select["intervals"].values[0].replace("[","").replace("]","").split(",")]).reshape(-1,2)
 
+
+def process_inclinometers(df_, height_of_anchorage=None, rope_angle=None, 
+                          height_of_pt=None):
+    """
+    The input is dataframe loaded by pd.read_csv from pull_tests directory.
+    
+    * Converts Inclino(80) and Inclino(81) to blue and yellow respectively.
+    * Evaluates the total angle of inclination
+    * Evaluates horizontal and vertical forces
+    * 
+    """
+    df = df_.copy()
+    # convert multiindex to single index
+    sloupce = df.columns
+    # sloupce = [f"{i[0]}/{i[1]}" for i in sloupce]
+    sloupce = [i.replace("Inclino(80)","blue").replace("Inclino(81)","yellow") for i in sloupce]    
+    df.columns = sloupce    
+        #process columns
+    df.loc[:,["blue"]] = arctand(np.sqrt((tand(df["blueX"]))**2 + (tand(df["blueY"]))**2 ))
+    df.loc[:,["yellow"]] = arctand(np.sqrt((tand(df["yellowX"]))**2 + (tand(df["yellowY"]))**2 ))    
+    for inclino in ["blue","yellow"]:
+        # najde maximum bez ohledu na znamenko
+        maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
+        # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
+        if maxima[f"{inclino}X"]>maxima[f"{inclino}Y"]:
+            df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}X"]
+            df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}Y"]
+        else:
+            df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}Y"]
+            df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}X"]
+        # Najde pozici, kde je extremalni hodnota - nejkladnejsi nebo nejzapornejsi
+        idx = df[f"{inclino}_Maj"].abs().idxmax()
+        # promenna bude jednicka pokus je extremalni hodnota kladna a minus
+        # jednicka, pokud je extremalni hodnota zaporna
+        if pd.isna(idx):
+            znamenko = 1
+        else:
+            znamenko = np.sign(df[f"{inclino}_Maj"][idx])
+        # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
+        # blueM, blueV, yellowM, yellowV
+        for axis in ["_Maj", "_Min"]:
+            df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]    
+        # convert index to multiindex
+    # evaluate the horizontal and vertical component
+    if rope_angle is None:
+        # If rope angle is not given, use the data from the table
+        rope_angle = df['RopeAngle(100)']
+    # evaluate horizontal and vertical force components and moment
+    df.loc[:,['F_horizontal']] = df['Force(100)'] * np.cos(np.deg2rad(rope_angle))
+    df.loc[:,['F_vertical']] = df['Force(100)'] * np.sin(np.deg2rad(rope_angle))
+    df.loc[:,['M']] = df['F_horizontal'] * height_of_anchorage
+    df.loc[:,['M_Pt']] = df['F_horizontal'] * ( height_of_anchorage - height_of_pt )
+    sloupce = [i.split("/") for i in df.columns]
+    sloupce = [i if len(i)>1 else [i[0],'nan'] for i in sloupce ]
+    # df.columns = pd.MultiIndex.from_tuples(sloupce)
+    return df
+    
+def tand(angle):
+    """
+    Evaluates tangens of the angle. The angli is in degrees.
+    """
+    return np.tan(np.deg2rad(angle))
+def arctand(value):
+    """
+    Evaluates arctan. Return the angle in degrees.
+    """
+    return np.rad2deg(np.arctan(value))    
+
 #%%
 measurement = "1"
 date = "2021-03-22"
 year,month,day=date.split("-")
 tree = "16"
+
+
+df_pt_notes = pd.read_csv("csv/PT_notes_with_pt.csv", sep=",")
+df_pt_notes.index = df_pt_notes["tree"]
+
+# Rope angle
+rope_angle = df_pt_notes.at[int(tree),'angle_of_anchorage']
+height_of_anchorage = df_pt_notes.at[int(tree),'height_of_anchorage']
+height_of_pt = df_pt_notes.at[int(tree),'height_of_pt']
 
 def get_static_pulling_data(year, month, day, tree, measurement, directory=DIRECTORY):
     if measurement == "1":
@@ -103,8 +180,10 @@ def get_static_pulling_data(year, month, day, tree, measurement, directory=DIREC
 
 
 out = get_static_pulling_data(year, month, day, tree, measurement)
-out = get_static_pulling_data(year, month, day, tree, "3")
-out = get_static_pulling_data(year, month, day, tree, "2")
+# out = get_static_pulling_data(year, month, day, tree, "3")
+# out = get_static_pulling_data(year, month, day, tree, "2")
+
+process_inclinometers(out['dataframe'], height_of_anchorage=height_of_anchorage, height_of_pt=height_of_pt)
 
 #%%
 times = out['times']
