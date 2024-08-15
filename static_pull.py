@@ -131,6 +131,9 @@ def process_inclinometers_major_minor(df_, height_of_anchorage=None, rope_angle=
 
 def process_forces(df_, height_of_anchorage=None, rope_angle=None, 
                           height_of_pt=None):
+    """
+    Input is a dataframe with Force(100) column
+    """
     df = pd.DataFrame(index=df_.index)
     # evaluate the horizontal and vertical component
     if rope_angle is None:
@@ -158,64 +161,59 @@ def arctand(value):
     return np.rad2deg(np.arctan(value))    
 
 #%%
-measurement = "1"
-date = "2021-03-22"
-year,month,day=date.split("-")
-tree = "16"
+# measurement = "1"
+# day = "2021-03-22"
+# tree = "16"
 
 
 df_pt_notes = pd.read_csv("csv/PT_notes_with_pt.csv", sep=",")
 df_pt_notes.index = df_pt_notes["tree"]
 
-# Rope angle
-rope_angle = df_pt_notes.at[int(tree),'angle_of_anchorage']
-height_of_anchorage = df_pt_notes.at[int(tree),'height_of_anchorage']
-height_of_pt = df_pt_notes.at[int(tree),'height_of_pt']
-
-def get_static_pulling_data(year, month, day, tree, measurement, directory=DIRECTORY):
+def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY):
+    measurement = measurement[-1]
+    tree = tree[-2:]
+    print(tree, measurement)
     if measurement == "1":
-        df = read_data_inclinometers(f"{directory}/pulling_tests/{year}_{month}_{day}/BK_{tree}_M{measurement}.TXT")
-        out = split_df_static_pulling(df, intervals = find_intervals_to_split_measurements(date, tree))
+        df = read_data_inclinometers(f"{directory}/pulling_tests/{day.replace('-','_')}/BK_{tree}_M{measurement}.TXT")
+        out = split_df_static_pulling(df, intervals = find_intervals_to_split_measurements(day, tree))
         times = out['times']
     else:
-        df = read_data_by_polars(f"{directory}/csv_extended/{year}_{month}_{day}/BK{tree}_M0{measurement}.csv")
+        df = read_data_by_polars(f"{directory}/csv_extended/{day.replace('-','_')}/BK{tree}_M0{measurement}.csv")
         times = [{"minimum":0, "maximum": df["Force(100)"].idxmax().values[0]}]
     return {'times': times, 'dataframe': df}
 
 
-out = get_static_pulling_data(year, month, day, tree, measurement)
-# out = get_static_pulling_data(year, month, day, tree, "3")
-# out = get_static_pulling_data(year, month, day, tree, "2")
-out['dataframe'] = out['dataframe'].interpolate()
 
 #%%
 
-df_with_major = process_inclinometers_major_minor(
-    out['dataframe'])
+def nakresli(day, tree, measurement):
+    out = get_static_pulling_data(day, tree, measurement)
+    out['dataframe']=out['dataframe'].interpolate()
+    tree = tree[-2:]
+    measurement = measurement[-1]
+    df_with_major = process_inclinometers_major_minor(out['dataframe'])
 
-df_with_forces = process_forces(
-    out['dataframe'], 
-    height_of_anchorage=height_of_anchorage, 
-    height_of_pt=height_of_pt
-    )
+    df_with_forces = process_forces(
+        out['dataframe'], 
+        height_of_anchorage=df_pt_notes.at[int(tree),'height_of_anchorage'], 
+        height_of_pt=df_pt_notes.at[int(tree),'height_of_pt']
+        )
 
-#%%
-times = out['times']
-dataframe = out['dataframe']
-ax = dataframe["Force(100)"].plot()
-ax.set(title=f"{year}-{month}-{day} BK{tree} M0{measurement}")
-for _ in times:
-    dataframe.loc[_['minimum']:_['maximum'],"Force(100)"].plot(ax=ax)
+    # Rope angle
+    # rope_angle = df_pt_notes.at[int(tree),'angle_of_anchorage']
 
-#%%
-
-dataframe.loc[_['minimum']:_['maximum'],:]
+    #%%
+    times = out['times']
+    dataframe = out['dataframe']
+    fig, ax = plt.subplots()
+    dataframe["Force(100)"].plot(ax=ax)
+    ax.set(title=f"{day} BK{tree} M0{measurement}")
+    for _ in times:
+        dataframe.loc[_['minimum']:_['maximum'],"Force(100)"].plot(ax=ax)
+    return fig
     
-# #%%
-# %time
-# measurement = "2"
-# df = read_data_by_polars(f"{DIRECTORY}/csv_extended/{year}_{month}_{day}/BK{tree}_M0{measurement}.csv")
-# df.index.name="Time"
-# {"minimum":0, "maximum": df["Force(100)"].idxmax()}
+#%%
+
+# dataframe.loc[_['minimum']:_['maximum'],:]
 
  
