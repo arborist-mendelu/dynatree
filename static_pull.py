@@ -28,7 +28,12 @@ def split_df_static_pulling(
     """
     Analyzes data in static tests, with three pulls. Inputs the dataframe, 
     outputs the list of dictionaries with minimal force, maximal force 
-    df_ori is the dataframe as obtained from read_data_inclinometers
+    df_ori is the dataframe as obtained from read_data_inclinometers.
+    
+    Initial estimate of subintervals can be provided. If not, it is detected 
+    automatically.
+    
+    
     """
     df= df_ori.copy()[["Force(100)"]].dropna()
     
@@ -86,7 +91,7 @@ def find_intervals_to_split_measurements(date, tree, csv="csv/intervals_split_M0
     return np.array([int(i) for i in select["intervals"].values[0].replace("[","").replace("]","").split(",")]).reshape(-1,2)
 
 
-def process_inclinometers(df_, height_of_anchorage=None, rope_angle=None, 
+def process_inclinometers_major_minor(df_, height_of_anchorage=None, rope_angle=None, 
                           height_of_pt=None):
     """
     The input is dataframe loaded by pd.read_csv from pull_tests directory.
@@ -96,16 +101,10 @@ def process_inclinometers(df_, height_of_anchorage=None, rope_angle=None,
     * Evaluates horizontal and vertical forces
     * 
     """
-    df = df_.copy()
-    # convert multiindex to single index
-    sloupce = df.columns
-    # sloupce = [f"{i[0]}/{i[1]}" for i in sloupce]
-    sloupce = [i.replace("Inclino(80)","blue").replace("Inclino(81)","yellow") for i in sloupce]    
-    df.columns = sloupce    
-        #process columns
-    df.loc[:,["blue"]] = arctand(np.sqrt((tand(df["blueX"]))**2 + (tand(df["blueY"]))**2 ))
-    df.loc[:,["yellow"]] = arctand(np.sqrt((tand(df["yellowX"]))**2 + (tand(df["yellowY"]))**2 ))    
+    df = pd.DataFrame(index=df_.index, columns=["blue","yellow"])
+    df[["blueX","blueY","yellowX","yellowY"]] = df_[["Inclino(80)X","Inclino(80)Y", "Inclino(81)X","Inclino(81)Y",]]
     for inclino in ["blue","yellow"]:
+        df.loc[:,[inclino]] = arctand(np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 ))
         # najde maximum bez ohledu na znamenko
         maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
         # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
@@ -128,13 +127,18 @@ def process_inclinometers(df_, height_of_anchorage=None, rope_angle=None,
         for axis in ["_Maj", "_Min"]:
             df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]    
         # convert index to multiindex
+        return df
+
+def process_forces(df_, height_of_anchorage=None, rope_angle=None, 
+                          height_of_pt=None):
+    df = pd.DataFrame(index=df_.index)
     # evaluate the horizontal and vertical component
     if rope_angle is None:
         # If rope angle is not given, use the data from the table
-        rope_angle = df['RopeAngle(100)']
+        rope_angle = df_['RopeAngle(100)']
     # evaluate horizontal and vertical force components and moment
-    df.loc[:,['F_horizontal']] = df['Force(100)'] * np.cos(np.deg2rad(rope_angle))
-    df.loc[:,['F_vertical']] = df['Force(100)'] * np.sin(np.deg2rad(rope_angle))
+    df.loc[:,['F_horizontal']] = df_['Force(100)'] * np.cos(np.deg2rad(rope_angle))
+    df.loc[:,['F_vertical']] = df_['Force(100)'] * np.sin(np.deg2rad(rope_angle))
     df.loc[:,['M']] = df['F_horizontal'] * height_of_anchorage
     df.loc[:,['M_Pt']] = df['F_horizontal'] * ( height_of_anchorage - height_of_pt )
     sloupce = [i.split("/") for i in df.columns]
@@ -182,8 +186,18 @@ def get_static_pulling_data(year, month, day, tree, measurement, directory=DIREC
 out = get_static_pulling_data(year, month, day, tree, measurement)
 # out = get_static_pulling_data(year, month, day, tree, "3")
 # out = get_static_pulling_data(year, month, day, tree, "2")
+out['dataframe'] = out['dataframe'].interpolate()
 
-process_inclinometers(out['dataframe'], height_of_anchorage=height_of_anchorage, height_of_pt=height_of_pt)
+#%%
+
+df_with_major = process_inclinometers_major_minor(
+    out['dataframe'])
+
+df_with_forces = process_forces(
+    out['dataframe'], 
+    height_of_anchorage=height_of_anchorage, 
+    height_of_pt=height_of_pt
+    )
 
 #%%
 times = out['times']
@@ -192,6 +206,10 @@ ax = dataframe["Force(100)"].plot()
 ax.set(title=f"{year}-{month}-{day} BK{tree} M0{measurement}")
 for _ in times:
     dataframe.loc[_['minimum']:_['maximum'],"Force(100)"].plot(ax=ax)
+
+#%%
+
+dataframe.loc[_['minimum']:_['maximum'],:]
     
 # #%%
 # %time
