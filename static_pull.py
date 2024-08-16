@@ -8,9 +8,9 @@ Created on Wed Aug 14 13:25:19 2024
 
 DIRECTORY = "../data"
 import pandas as pd
-import glob
-import os
-from scipy.signal import find_peaks
+# import glob
+# import os
+# from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,17 +22,25 @@ from lib_dynatree import read_data_inclinometers, read_data_by_polars
 def split_df_static_pulling(
         df_ori, 
         intervals=None,
-        upper_bound=0.8,
-        lower_bound=0.2,
+        # upper_bound=0.8,
+        # lower_bound=0.2,
         ):
     """
     Analyzes data in static tests, with three pulls. Inputs the dataframe, 
-    outputs the list of dictionaries with minimal force, maximal force 
-    df_ori is the dataframe as obtained from read_data_inclinometers.
+    outputs the dictionary. 
     
-    Initial estimate of subintervals can be provided. If not, it is detected 
-    automatically.
+    output['times'] contains the time intervals of increasing pulling force. 
+    output['df_interpolated'] return interpolated force values. 
     
+    Initial estimate of subintervals can be provided in a file
+    csv/intervals_split_M01.csv. If not, the initial guess is created 
+    automatically. 
+    
+    Method description:
+        * drop nan values of force
+        * interpolate and smooth out
+        * find intervals where function is decreasing from top down
+        * find a maximum and then the minimum which preceeds this maximum    
     
     """
     df= df_ori.copy()[["Force(100)"]].dropna()
@@ -62,25 +70,20 @@ def split_df_static_pulling(
         df_subset = df.loc[start:end,"Force(100)"]
         maximum_idx = np.argmax(df_subset)
         t = {'maximum': df_subset.index[maximum_idx]}
-        # maximum_force = np.max(df_subset)
-        # upper_limit_force_idx = np.argmax(df_subset>upper_bound*maximum_force)
-        # upper_limit_force_time = df_subset.index[upper_limit_force_idx]
-        # t['upper_limit_force'] = upper_limit_force_time
-    
+
         df_subset = df.loc[start:t['maximum'],"Force(100)"]
         idxmin = df_subset.idxmin()
         t['minimum'] = idxmin
-    
-        # df_subset = df_subset[idxmin:]
-        # df_subset = df_subset[::-1]
-        
-        # lower_limit_force_idx = np.argmax(df_subset<lower_bound*maximum_force)
-        # lower_limit_force_time = df_subset.index[lower_limit_force_idx]
-        # t['lower_limit_force'] = lower_limit_force_time
+
         time = time + [t]
     return {'times':time, 'df_interpolated': df_interpolated}
 
-def find_intervals_to_split_measurements(date, tree, csv="csv/intervals_split_M01.csv"):
+def find_intervals_to_split_measurements_from_csv(date, tree, csv="csv/intervals_split_M01.csv"):
+    """
+    Tries to find initial gues for separation of pulls in M1 measurement
+    from csv file. If the measturement is not included (most cases), return None. 
+    In this case the splitting is done automatically.
+    """
     df = pd.read_csv(csv, index_col=[], dtype={"tree":str}, sep=";")
     select = df[(df["date"]==date) & (df["tree"]==tree)]
     if select.shape[0] == 0:
@@ -88,7 +91,15 @@ def find_intervals_to_split_measurements(date, tree, csv="csv/intervals_split_M0
     elif select.shape[0] > 1:
         print (f"Warning, multiple pairs of date-tree in file {csv}")
         select = select.iat[0,:]
-    return np.array([int(i) for i in select["intervals"].values[0].replace("[","").replace("]","").split(",")]).reshape(-1,2)
+    return np.array([
+        int(i) for i in (
+            select["intervals"]
+                .values[0]
+                .replace("[","")
+                .replace("]","")
+                .split(",")
+                )
+        ]).reshape(-1,2)
 
 
 def process_inclinometers_major_minor(df_, height_of_anchorage=None, rope_angle=None, 
@@ -104,7 +115,9 @@ def process_inclinometers_major_minor(df_, height_of_anchorage=None, rope_angle=
     df = pd.DataFrame(index=df_.index, columns=["blue","yellow"])
     df[["blueX","blueY","yellowX","yellowY"]] = df_[["Inclino(80)X","Inclino(80)Y", "Inclino(81)X","Inclino(81)Y",]]
     for inclino in ["blue","yellow"]:
-        df.loc[:,[inclino]] = arctand(np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 ))
+        df.loc[:,[inclino]] = arctand(
+            np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 )
+            )
         # najde maximum bez ohledu na znamenko
         maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
         # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
@@ -140,12 +153,12 @@ def process_forces(df_, height_of_anchorage=None, rope_angle=None,
         # If rope angle is not given, use the data from the table
         rope_angle = df_['RopeAngle(100)']
     # evaluate horizontal and vertical force components and moment
-    df.loc[:,['F_horizontal']] = df_['Force(100)'] * np.cos(np.deg2rad(rope_angle))
-    df.loc[:,['F_vertical']] = df_['Force(100)'] * np.sin(np.deg2rad(rope_angle))
-    df.loc[:,['M']] = df['F_horizontal'] * height_of_anchorage
-    df.loc[:,['M_Pt']] = df['F_horizontal'] * ( height_of_anchorage - height_of_pt )
-    sloupce = [i.split("/") for i in df.columns]
-    sloupce = [i if len(i)>1 else [i[0],'nan'] for i in sloupce ]
+    df.loc[:,['F_horizontal']] = (df_['Force(100)'] * np.cos(np.deg2rad(rope_angle))).values
+    df.loc[:,['F_vertical']] = (df_['Force(100)'] * np.sin(np.deg2rad(rope_angle))).values
+    df.loc[:,['M']] = (df['F_horizontal'] * height_of_anchorage).values
+    df.loc[:,['M_Pt']] = (df['F_horizontal'] * ( height_of_anchorage - height_of_pt )).values
+    # sloupce = [i.split("/") for i in df.columns]
+    # sloupce = [i if len(i)>1 else [i[0],'nan'] for i in sloupce ]
     # df.columns = pd.MultiIndex.from_tuples(sloupce)
     return df
     
@@ -172,48 +185,96 @@ df_pt_notes.index = df_pt_notes["tree"]
 def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY):
     measurement = measurement[-1]
     tree = tree[-2:]
-    print(tree, measurement)
     if measurement == "1":
         df = read_data_inclinometers(f"{directory}/pulling_tests/{day.replace('-','_')}/BK_{tree}_M{measurement}.TXT")
-        out = split_df_static_pulling(df, intervals = find_intervals_to_split_measurements(day, tree))
+        out = split_df_static_pulling(df, intervals = find_intervals_to_split_measurements_from_csv(day, tree))
         times = out['times']
     else:
         df = read_data_by_polars(f"{directory}/csv_extended/{day.replace('-','_')}/BK{tree}_M0{measurement}.csv")
         times = [{"minimum":0, "maximum": df["Force(100)"].idxmax().values[0]}]
     return {'times': times, 'dataframe': df}
 
+def get_computed_data(day,tree,measurement, out):
+    df_with_major = process_inclinometers_major_minor(out['dataframe'])
+    df_with_forces = process_forces(
+        out['dataframe'], 
+        height_of_anchorage=df_pt_notes.at[int(tree),'height_of_anchorage'], 
+        height_of_pt=df_pt_notes.at[int(tree),'height_of_pt']
+        )
+    return df_with_major, df_with_forces
 
-
+def get_interval_of_interest(df, maximal_fraction=0.8, minimal_fraction=0.2):
+    """
+    The input is the dataframe with maximal value at the end. Return indices
+    for values between given fraction of maximal value. 
+    """
+    maximum = df.iat[-1,0]
+    mask = df>maximal_fraction*maximum
+    upper = mask.idxmax().iloc[0]
+    subdf = df.loc[:upper,:]
+    mask = subdf<minimal_fraction*maximum
+    lower = mask.iloc[::-1,0].idxmax()
+    # lowerindex = mask.shape[0] - mask.iloc[:,0].values[::-1].argmax()
+    # lower = mask.index[lowerindex]
+    # lower = mask[mask == True].dropna().index.max() 
+    return lower, upper
+    
 #%%
+
+
 
 def nakresli(day, tree, measurement):
     out = get_static_pulling_data(day, tree, measurement)
     out['dataframe']=out['dataframe'].interpolate()
     tree = tree[-2:]
     measurement = measurement[-1]
-    df_with_major = process_inclinometers_major_minor(out['dataframe'])
+    df_with_major, df_with_forces = get_computed_data(day, tree, measurement, out)
+    dataframe = out['dataframe']
+    fig, ax = plt.subplots()
+    dataframe["Force(100)"].plot(ax=ax)
+    ax.set(title=f"Static {day} BK{tree} M0{measurement}")
+    figs = []
+    for i,_ in enumerate(out['times']):
+        subdf = dataframe.loc[_['minimum']:_['maximum'],["Force(100)"]]
+        subdf.plot(ax=ax, legend=False)
+        # Find limits for given interval of forces
+        lower, upper = get_interval_of_interest(subdf)
+        
+        subdf[lower:upper].plot(ax=ax, legend=False, linewidth=4)
+        f,a = plt.subplots()
+        subdf[lower:upper].plot(ax=a, legend=False)
+        a.set(title=f"Detail, pull {i}")        
+        figs = figs + [f]
+    return fig,figs
 
-    df_with_forces = process_forces(
-        out['dataframe'], 
-        height_of_anchorage=df_pt_notes.at[int(tree),'height_of_anchorage'], 
-        height_of_pt=df_pt_notes.at[int(tree),'height_of_pt']
-        )
-
-    # Rope angle
-    # rope_angle = df_pt_notes.at[int(tree),'angle_of_anchorage']
-
-    #%%
+        # maximum_force = np.max(df_subset)
+        # upper_limit_force_idx = np.argmax(df_subset>upper_bound*maximum_force)
+        # upper_limit_force_time = df_subset.index[upper_limit_force_idx]
+        # t['upper_limit_force'] = upper_limit_force_time        # df_subset = df_subset[idxmin:]
+        # df_subset = df_subset[::-1]
+        
+        # lower_limit_force_idx = np.argmax(df_subset<lower_bound*maximum_force)
+        # lower_limit_force_time = df_subset.index[lower_limit_force_idx]
+        # t['lower_limit_force'] = lower_limit_force_time
+    
+def main()    :
+    day,tree,measurement = "2021-03-22", "BK09", "M02"
+    tree=tree[-2:]
+    measurement = measurement[-1]
+    out = get_static_pulling_data(day, tree, measurement)
+    df_with_major, df_with_forces = get_computed_data(day, tree, measurement, out)
     times = out['times']
     dataframe = out['dataframe']
     fig, ax = plt.subplots()
     dataframe["Force(100)"].plot(ax=ax)
     ax.set(title=f"{day} BK{tree} M0{measurement}")
     for _ in times:
-        dataframe.loc[_['minimum']:_['maximum'],"Force(100)"].plot(ax=ax)
-    return fig
-    
-#%%
+        dataframe.loc[_['minimum']:_['maximum'],"Force(100)"].plot(ax=ax, legend=False)
+    return fig 
 
-# dataframe.loc[_['minimum']:_['maximum'],:]
-
- 
+if __name__ == "__main__":
+    # main()
+    day,tree,measurement = "2021-03-22", "BK09", "M03"
+    tree=tree[-2:]
+    measurement = measurement[-1]
+    nakresli(day, tree, measurement)

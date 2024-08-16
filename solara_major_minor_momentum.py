@@ -12,6 +12,8 @@ navod = """
 Návod se napíše později.
 """
 
+title = "Pulling, force, inclinometers, elastometer"
+
 import solara
 from solara.lab import task
 import glob
@@ -60,7 +62,7 @@ def nakresli():
 
 @solara.component
 def Page():
-    solara.Title("Oscillation: optics, inclinometers, elastometer, force synchro")
+    solara.Title(title)
     with solara.Sidebar():
         solara.Markdown(navod)
     with solara.Card():
@@ -69,7 +71,9 @@ def Page():
             solara.ToggleButtonsSingle(value=tree, values=list(trees), on_value=lambda x: measurement.set(measurements[0]))
             with solara.Row():
                 solara.ToggleButtonsSingle(value=measurement, 
-                                           values=available_measurements(df, day.value, tree.value))
+                                           values=available_measurements(df, day.value, tree.value),
+                                           on_value=lambda x:nakresli()
+                                           )
         solara.Div(style={"margin-bottom": "10px"})
         with solara.Row():
             solara.Button("Run calculation", on_click=nakresli, color="primary")
