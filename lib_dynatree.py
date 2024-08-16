@@ -15,6 +15,9 @@ import glob
 
 def read_data(file, index_col="Time", usecols=None):
     """
+    If file is parquet file, return the dataframe from this file.
+    
+    The rest if relict from previous versions.
     Reads csv file, returns dataframe.
     The index_col is the index of the column with index for the dataframe. 
     If index is string, then the position of the index is guessed from the first line

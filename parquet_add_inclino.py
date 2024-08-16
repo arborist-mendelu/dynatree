@@ -111,7 +111,7 @@ def resample_data_from_inclinometers(df_pulling_tests, df):
         df_resampled[col] = f(df.index)
     return df_resampled
 
-def extend_one_csv(
+def extend_one_file(
         date="2021_03_22", 
         tree="01", 
         measurement="2", 
@@ -191,7 +191,7 @@ def main(path="../data"):
         print(f"{date}/{filename}, ",end="", flush=True)
         tree = filename[2:4]
         measurement = filename[7]
-        extend_one_csv(
+        extend_one_file(
             date=date, 
             path=path, 
             tree=tree, 

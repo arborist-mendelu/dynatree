@@ -27,13 +27,13 @@ import pandas as pd
 import numpy as np
 import solara
 from solara.lab import task
-from csv_add_inclino import extend_one_csv
+from parquet_add_inclino import extend_one_file
 from plot_probes_inclino_force import plot_one_measurement
-from lib_dynatree import read_data_selected_by_polars
+from lib_dynatree import read_data
 
 def split_path(file):
     data = file.split("/")
-    data[-1] = data[-1].replace(".csv","")
+    data[-1] = data[-1].replace(".parquet","")
     return [file,data[-2].replace("_","-")] + data[-1].split("_")
 
 def get_all_measurements(cesta=DATA_PATH):
@@ -41,12 +41,15 @@ def get_all_measurements(cesta=DATA_PATH):
     Get dataframe with all measurements. The dataframe has columns
     date, tree and measurement.
     """
-    files = glob.glob(cesta+"/csv/*/BK*.csv")        
+    files = glob.glob(cesta+"/parquet/*/BK*M??.parquet")        
     out = [split_path(file) for file in files]
     df = pd.DataFrame([i[1:] for i in out], columns=['day','tree', 'measurement'])
     df = df.sort_values(by=list(df.columns))
     df = df.reset_index(drop=True)
     return df
+
+#%%
+
 def available_measurements(df, day, tree):
     select_rows = (df["day"]==day) & (df["tree"]==tree)
     values = df[select_rows]["measurement"].values
@@ -95,13 +98,13 @@ def nakresli():
         endlim = None
     else:
         endlim = end.value
-    file = f"{DATA_PATH}/csv/{day.value.replace('-','_')}/{tree.value}_{measurement.value}.csv"
-    DF = read_data_selected_by_polars(file)
-    df_ext = extend_one_csv(date=day.value, 
+    file = f"{DATA_PATH}/parquet/{day.value.replace('-','_')}/{tree.value}_{measurement.value}.parquet"
+    DF = read_data(file)
+    df_ext = extend_one_file(date=day.value, 
             tree=tree.value, 
             measurement=measurement.value, 
             path=DATA_PATH, 
-            write_csv=False,
+            write_file=False,
             df=DF
             )        
     fig = plot_one_measurement(
