@@ -24,6 +24,8 @@ def read_data(file, index_col="Time", usecols=None):
     # and set index_col to this position. This allows to specify index_col for 
     # data with multiindex.
     #print (f"Reading file {file}.")
+    if "parquet" in file:
+        return pd.read_parquet(file)
     if isinstance(index_col,str):
         with open(file) as f:
             first_line = f.readline().strip('\n')

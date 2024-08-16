@@ -18,10 +18,6 @@ import os.path
 import glob
 import re
 
-
-df_tsv = pd.read_csv("csv/tsv_dirs.csv")
-
-
 def read_tsv_files(cesta, prefix="/mnt/ERC/ERC"):
     """
 
@@ -67,14 +63,18 @@ def read_tsv_files(cesta, prefix="/mnt/ERC/ERC"):
 #%%
 
 def main():
-    # answer = input("The file will convert xsight files to parquet files.\nOlder data (if any) will be replaced.\nConfirm y or yes to continue.")
-    answer = "Y"
+    answer = input("The file will convert xsight files to parquet files.\nOlder data (if any) will be replaced.\nConfirm y or yes to continue.")
+    # answer = "Y"
     if answer.upper() in ["Y", "YES"]:
         pass
     else:
         print("File processing skipped.")
         return None
+    df_tsv = pd.read_csv("csv/tsv_dirs.csv")
     for index, row in df_tsv.iterrows():
+        if "30fps" in row["directory"]:
+            print (f"Skipping 30fps {row['directory']}")
+            continue
         print(row["date"])
         date = row['date']
         tree = row['tree']

@@ -67,7 +67,10 @@ domluvenými jmény a pro každé měření kontroluje existenci csv
 soubor. Pokud csv soubor existuje, skript nic nedělá, jenom vypíše, že soubor
 přeskakuje. Pokud csv soubor neexistuje, je vytvořen.
 
-## Krok 2.: Přidání dat z inklinoměrů, `csv_add_inclino.py`
+## Krok 2.: Přidání dat z inklinoměrů, `parquet_add_inclino.py`
+
+Následující komentář je pro csv soubory. Od 16.8.2024 předěláno 
+na parquet soubory, jinak vše zůstává v platnosti.
 
 Doplnění dat z optiky se provádí přes soubory v adresáři
 pulling_tests. Najde se maximální síla, maximální výchylka `Pt3`, tato
