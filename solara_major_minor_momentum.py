@@ -59,10 +59,10 @@ measurement = solara.reactive(measurements[0])
 def nakresli():
     return static_pull.nakresli(day.value, tree.value, measurement.value)
     
-
 @solara.component
 def Page():
     solara.Title(title)
+    solara.Style(".widget-image{width:100%}")
     with solara.Sidebar():
         solara.Markdown(navod)
     with solara.Card():
@@ -84,7 +84,10 @@ def Page():
         return
     
     if nakresli.finished:
-        plt.show(nakresli.value)
+        f = nakresli.value
+        with solara.ColumnsResponsive(6): 
+            for _ in f:
+                solara.FigureMatplotlib(_)
     elif nakresli.not_called:
         solara.Text("Vyber měření a stiskni tlačítko Run calculation")
     else:

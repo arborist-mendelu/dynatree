@@ -140,10 +140,14 @@ def process_inclinometers_major_minor(df_, height_of_anchorage=None, rope_angle=
         for axis in ["_Maj", "_Min"]:
             df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]    
         # convert index to multiindex
-        return df
+    return df
 
-def process_forces(df_, height_of_anchorage=None, rope_angle=None, 
-                          height_of_pt=None):
+def process_forces(
+        df_, 
+        height_of_anchorage=None, 
+        rope_angle=None,
+        height_of_pt=None
+        ):
     """
     Input is a dataframe with Force(100) column
     """
@@ -153,13 +157,12 @@ def process_forces(df_, height_of_anchorage=None, rope_angle=None,
         # If rope angle is not given, use the data from the table
         rope_angle = df_['RopeAngle(100)']
     # evaluate horizontal and vertical force components and moment
+    # obrat s values je potreba, protoze df_ ma MultiIndex
     df.loc[:,['F_horizontal']] = (df_['Force(100)'] * np.cos(np.deg2rad(rope_angle))).values
     df.loc[:,['F_vertical']] = (df_['Force(100)'] * np.sin(np.deg2rad(rope_angle))).values
-    df.loc[:,['M']] = (df['F_horizontal'] * height_of_anchorage).values
-    df.loc[:,['M_Pt']] = (df['F_horizontal'] * ( height_of_anchorage - height_of_pt )).values
-    # sloupce = [i.split("/") for i in df.columns]
-    # sloupce = [i if len(i)>1 else [i[0],'nan'] for i in sloupce ]
-    # df.columns = pd.MultiIndex.from_tuples(sloupce)
+    df.loc[:,['M']] = df['F_horizontal'] * height_of_anchorage
+    df.loc[:,['M_Pt']] = df['F_horizontal'] * ( height_of_anchorage - height_of_pt )
+
     return df
     
 def tand(angle):
@@ -174,10 +177,6 @@ def arctand(value):
     return np.rad2deg(np.arctan(value))    
 
 #%%
-# measurement = "1"
-# day = "2021-03-22"
-# tree = "16"
-
 
 df_pt_notes = pd.read_csv("csv/PT_notes_with_pt.csv", sep=",")
 df_pt_notes.index = df_pt_notes["tree"]
@@ -203,7 +202,7 @@ def get_computed_data(day,tree,measurement, out):
         )
     return df_with_major, df_with_forces
 
-def get_interval_of_interest(df, maximal_fraction=0.8, minimal_fraction=0.2):
+def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.1):
     """
     The input is the dataframe with maximal value at the end. Return indices
     for values between given fraction of maximal value. 
@@ -232,20 +231,52 @@ def nakresli(day, tree, measurement):
     dataframe = out['dataframe']
     fig, ax = plt.subplots()
     dataframe["Force(100)"].plot(ax=ax)
-    ax.set(title=f"Static {day} BK{tree} M0{measurement}")
+    ax.set(title=f"Static {day} BK{tree} M0{measurement}", ylabel="Force")
     figs = []
     for i,_ in enumerate(out['times']):
         subdf = dataframe.loc[_['minimum']:_['maximum'],["Force(100)"]]
-        subdf.plot(ax=ax, legend=False)
+        subdf.plot(ax=ax)
         # Find limits for given interval of forces
-        lower, upper = get_interval_of_interest(subdf)
+        lower, upper = get_interval_of_interest(subdf)        
+        subdf[lower:upper].plot(ax=ax, linewidth=4)
+        f,a = plt.subplots(2,2)
+        a = a.reshape(-1)
+        subdf[lower:upper].plot(ax=a[0], legend=False, xlabel="Time", ylabel="Force")
         
-        subdf[lower:upper].plot(ax=ax, legend=False, linewidth=4)
-        f,a = plt.subplots()
-        subdf[lower:upper].plot(ax=a, legend=False)
-        a.set(title=f"Detail, pull {i}")        
+        df_with_major.loc[
+            lower:upper,[i for i in df_with_major.columns if "_" in i]
+            ].plot(ax=a[1], xlabel="Time")
+        a[1].grid()
+        
+        for color in ["blue", "yellow"]:
+            a[2].plot(
+                dataframe.loc[lower:upper,["Force(100)"]].values, 
+                df_with_major.loc[lower:upper,[f"{color}_Maj"]].values,
+                ".", 
+                label=color
+                # color=color
+                )
+        a[2].set(xlabel="Force", ylabel="Inclino Major"
+                 # , facecolor="lightgray"
+                 )
+        a[2].legend(title="Inclinometers")
+        for color in ["blue", "yellow"]:
+            a[3].plot(
+                dataframe.loc[lower:upper,["Force(100)"]].values, 
+                df_with_major.loc[lower:upper,[f"{color}_Min"]].values,
+                ".", 
+                label=color
+                # color=color
+                )
+        a[3].set(xlabel="Force", ylabel="Inclino Minor"
+                 # , facecolor="lightgray"
+                 )
+        a[3].legend(title="Inclinometers")
+        ax.legend(["Síla","Náběh síly","Rozmezí 10/90\nprocent max."])
+        f.suptitle(f"Detail, pull {i}")        
+        plt.tight_layout()
         figs = figs + [f]
-    return fig,figs
+    return [fig] + figs
 
         # maximum_force = np.max(df_subset)
         # upper_limit_force_idx = np.argmax(df_subset>upper_bound*maximum_force)

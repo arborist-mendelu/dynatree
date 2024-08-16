@@ -54,6 +54,11 @@ Repozitář není veřejný, ale můžete tam mít přístup (email Robertovi).
 Najde adresare s tsv soubory a zapise je spolu s datem a cislem stromu a mereni 
 do databaze `csv/tsv_dirs.csv`
 
+### `xsight_tsv2parquet.py`
+
+Čte data uložená předchozím skriptem a ukládá meření do parquet souborů. To je 
+sice binární fomrát, ale rychlejší a úspornější varianta csv.
+
 ### `xsight_tsv2csv.py`
 Načtou se tsv soubory všechny soubory z jednoho měření se
 převedou na jeden csv soubor. Skript `xsight_tsv2csv.py` by se měl
