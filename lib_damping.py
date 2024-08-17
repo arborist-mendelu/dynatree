@@ -188,6 +188,8 @@ def main():
 
     dampings = {}
     for date,tree, measurement in get_all_measurements().values:
+        measurement = measurement[-1]
+        tree = tree[-2:]
         print(f"{date} BK{tree} M0{measurement}")
         dfcsv = get_data(date, tree, measurement)
         ans = [find_damping(

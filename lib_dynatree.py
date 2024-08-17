@@ -141,7 +141,7 @@ def directory2date(d):
 def filename2tree_and_measurement_numbers(f):
     tree,tree_measurement,*_ = f.split("_")
     tree = tree.replace("BK","")
-    tree_measurement = tree_measurement.replace("M0","").replace(".csv","")
+    tree_measurement = tree_measurement.replace("M0","").replace(".parquet","")
     return tree,tree_measurement
 
 

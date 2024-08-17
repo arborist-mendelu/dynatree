@@ -35,9 +35,9 @@ def find_release_data_one_measurement(
         measurement = measurement[-1]
 
     df_main = read_data_selected(
-        f"{path}/csv/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv")
+        f"{path}/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet")
     df_extra = read_data(
-        f"{path}/csv_extended/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv")
+        f"{path}/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}_pulling.parquet")
 
     # print("/extrahuji data/", flush=True)
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
@@ -66,11 +66,11 @@ def find_release_data_one_measurement(
 def find_release_data_one_day(date="2021-03-22", path="../data"):
     output = {}
     # Find csv files
-    csvfiles =  glob.glob(f"{path}/csv/{date.replace('-','_')}/*.csv")
-    csvfiles.sort()
+    files =  glob.glob(f"{path}/parquet/{date.replace('-','_')}/*.parquet")
+    files.sort()
     # Drop directory name
-    csvfiles = [i.split("/")[-1] for i in csvfiles]
-    for file in csvfiles:
+    files = [i.split("/")[-1] for i in files]
+    for file in files:
         tree, measurement = filename2tree_and_measurement_numbers(file)
         print (f"BK{tree} M0{measurement}, ",end="", flush=True)
         output[f"BK{tree} M0{measurement}"] = find_release_data_one_measurement(date=date, tree=tree, measurement=measurement, path=path)
