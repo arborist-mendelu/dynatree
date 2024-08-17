@@ -194,6 +194,10 @@ def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY):
     return {'times': times, 'dataframe': df}
 
 def get_computed_data(day,tree,measurement, out):
+    """
+    Gets the data from process_inclinometers_major_minor and
+    process_forces functions.
+    """
     df_with_major = process_inclinometers_major_minor(out['dataframe'])
     df_with_forces = process_forces(
         out['dataframe'], 
@@ -220,8 +224,6 @@ def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.1):
     
 #%%
 
-
-
 def nakresli(day, tree, measurement):
     out = get_static_pulling_data(day, tree, measurement)
     out['dataframe']=out['dataframe'].interpolate()
@@ -239,7 +241,7 @@ def nakresli(day, tree, measurement):
         # Find limits for given interval of forces
         lower, upper = get_interval_of_interest(subdf)        
         subdf[lower:upper].plot(ax=ax, linewidth=4)
-        f,a = plt.subplots(2,2)
+        f,a = plt.subplots(2,2, figsize=(12,9))
         a = a.reshape(-1)
         subdf[lower:upper].plot(ax=a[0], legend=False, xlabel="Time", ylabel="Force")
         
