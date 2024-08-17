@@ -12,7 +12,22 @@ import numpy as np
 from scipy import interpolate, signal
 from scipy.fft import fft, fftfreq
 import glob
+from functools import wraps
+import time
 
+# from https://dev.to/kcdchennai/python-decorator-to-measure-execution-time-54hk
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
+        return result
+    return timeit_wrapper
+
+@timeit
 def read_data(file, index_col="Time", usecols=None):
     """
     If file is parquet file, return the dataframe from this file.
@@ -61,6 +76,7 @@ def get_data(date, tree, measurement):
     file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet"
     return read_data(file)
 
+@timeit
 def read_data_selected(file,
                         probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]]):
     """

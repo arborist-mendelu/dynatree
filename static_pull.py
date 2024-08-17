@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Wed Aug 14 13:25:19 2024
@@ -16,14 +15,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import linregress
 from scipy.interpolate import interp1d
-from lib_dynatree import read_data_inclinometers, read_data
+from lib_dynatree import read_data_inclinometers, read_data, timeit
+from functools import cache
 
 
 def split_df_static_pulling(
         df_ori, 
         intervals=None,
-        # upper_bound=0.8,
-        # lower_bound=0.2,
         ):
     """
     Analyzes data in static tests, with three pulls. Inputs the dataframe, 
@@ -181,6 +179,7 @@ def arctand(value):
 df_pt_notes = pd.read_csv("csv/PT_notes_with_pt.csv", sep=",")
 df_pt_notes.index = df_pt_notes["tree"]
 
+@timeit
 def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY):
     measurement = measurement[-1]
     tree = tree[-2:]
@@ -193,11 +192,15 @@ def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY):
         times = [{"minimum":0, "maximum": df["Force(100)"].idxmax().values[0]}]
     return {'times': times, 'dataframe': df}
 
-def get_computed_data(day,tree,measurement, out):
+def get_computed_data(day,tree,measurement, out=None):
     """
-    Gets the data from process_inclinometers_major_minor and
+    Gets the data from process_inclinometers_major_minor and from
     process_forces functions.
+    
+    out is the output of get_static_pulling_data(day, tree, measurement)
     """
+    if out is None:
+        out = get_static_pulling_data(day, tree, measurement)
     df_with_major = process_inclinometers_major_minor(out['dataframe'])
     df_with_forces = process_forces(
         out['dataframe'], 
@@ -229,7 +232,7 @@ def nakresli(day, tree, measurement):
     out['dataframe']=out['dataframe'].interpolate()
     tree = tree[-2:]
     measurement = measurement[-1]
-    df_with_major, df_with_forces = get_computed_data(day, tree, measurement, out)
+    df_with_major, df_with_forces = get_computed_data(day, tree, measurement)
     dataframe = out['dataframe']
     fig, ax = plt.subplots()
     dataframe["Force(100)"].plot(ax=ax)
@@ -307,7 +310,7 @@ def main()    :
 
 if __name__ == "__main__":
     # main()
-    day,tree,measurement = "2021-03-22", "BK09", "M03"
+    day,tree,measurement = "2021-03-22", "BK09", "M04"
     tree=tree[-2:]
     measurement = measurement[-1]
     nakresli(day, tree, measurement)
