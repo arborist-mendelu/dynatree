@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import linregress
 from scipy.interpolate import interp1d
-from lib_dynatree import read_data_inclinometers, read_data_by_polars
+from lib_dynatree import read_data_inclinometers, read_data
 
 
 def split_df_static_pulling(
@@ -189,7 +189,7 @@ def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY):
         out = split_df_static_pulling(df, intervals = find_intervals_to_split_measurements_from_csv(day, tree))
         times = out['times']
     else:
-        df = read_data_by_polars(f"{directory}/csv_extended/{day.replace('-','_')}/BK{tree}_M0{measurement}.csv")
+        df = read_data(f"{directory}/parquet/{day.replace('-','_')}/BK{tree}_M0{measurement}_pulling.parquet")
         times = [{"minimum":0, "maximum": df["Force(100)"].idxmax().values[0]}]
     return {'times': times, 'dataframe': df}
 

@@ -8,15 +8,14 @@ Analyzuje pomoci FFT jedno mereni
 @author: marik
 """
 
-from FFT_spectrum import do_fft_for_file
+from FFT_spectrum import do_fft_for_file, create_fft_image
 
-date = "01_Mereni_Babice_22032021_optika_zpracovani"
+date = "2021-03-22"
 tree = "01"
 measurement = "2"
 start  = 63
 
+output = do_fft_for_file(
+    date=date, tree=tree, measurement=measurement, return_image=True, start=start)
 
-output = do_fft_for_file(date=date, tree=tree, measurement=measurement, return_image=True, start=start)
-output.keys()
-output['figure']
-
+create_fft_image(**output[(date,tree,measurement,('Pt3','Y0'))])

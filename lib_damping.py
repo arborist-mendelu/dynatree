@@ -16,7 +16,7 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 import pywt
 
-from lib_dynatree import get_csv, get_all_measurements
+from lib_dynatree import get_data, get_all_measurements
 
 date2color = {"2021-03-22": "C0", "2021-06-29": "C1", "2022-04-05": "C2", 
              "2022-08-16": "C3"}
@@ -49,7 +49,7 @@ def get_signal(date=None, tree=None, measurement=None, df = None, probe="Pt3", t
     Also interpolates to timestep and shifts the signal to have zero mean value. 
     """
     if df is None:
-        df = get_csv(date, tree, measurement)
+        df = get_data(date, tree, measurement)
     if pd.isna(start):
         start = 0        
     if pd.isna(end):
@@ -96,7 +96,7 @@ def find_damping(
     if end is None:
         end = e_ 
     if df is None:
-        df = get_csv(date, tree, measurement)
+        df = get_data(date, tree, measurement)
     time, signal = get_signal(df=df, probe=probe, start=start, end=end, fixed_by=fixed_by)
     if time is None or signal is None:
         print("Time or signal are None, skipped determinantion of damping")
@@ -189,7 +189,7 @@ def main():
     dampings = {}
     for date,tree, measurement in get_all_measurements().values:
         print(f"{date} BK{tree} M0{measurement}")
-        dfcsv = get_csv(date, tree, measurement)
+        dfcsv = get_data(date, tree, measurement)
         ans = [find_damping(
             date=date, tree=tree, measurement=measurement, df=dfcsv, method=method
             ) for method in methods]

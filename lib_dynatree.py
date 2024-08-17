@@ -54,12 +54,11 @@ def read_data_by_polars(file):
         df_polars = df_polars.drop([("source","data")], axis=1)
     return df_polars
     
-def get_csv(date, tree, measurement):
+def get_data(date, tree, measurement):
     """
-    Loads the csv file corresponding to date, tree and measurement
+    Loads the data file corresponding to date, tree and measurement
     """
-    print ("get_csv called, this may be time consuming")
-    file = f"../data/csv/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv"
+    file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet"
     return read_data(file)
 
 def read_data_selected(file,
@@ -68,7 +67,7 @@ def read_data_selected(file,
 
     Parameters
     ----------
-    file :  csv files with data
+    file :  csv or parquet file with data
     probes : probes which should be included in te output
         DESCRIPTION. The default is ["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]].
 
@@ -77,6 +76,11 @@ def read_data_selected(file,
     df :  dataframe from the file, but only columns with first index level specified in 
     probe variable. 
     """
+    if "parquet" in file:
+        df = pd.read_parquet(file)
+        columns = [i for i in df.columns if i[0] in probes]
+        df = df[columns]
+        return df
     # find column numbers to read
     df_headers = pd.read_csv(file, 
                      nrows=2, header=None,
@@ -355,7 +359,7 @@ def find_release_time_interval(df_extra, date, tree, measurement):
 
 def split_path(file):
     data = file.split("/")
-    data[-1] = data[-1].replace(".csv","")
+    data[-1] = data[-1].replace(".parquet","")
     return [file,data[-2].replace("_","-")] + data[-1].split("_")
 
 def get_all_measurements(cesta="../data"):
@@ -363,7 +367,7 @@ def get_all_measurements(cesta="../data"):
     Get dataframe with all measurements. The dataframe has columns
     date, tree and measurement.
     """
-    files = glob.glob(cesta+"/csv/*/BK*.csv")        
+    files = glob.glob(cesta+"/parquet/*/BK*M??.parquet")        
     out = [split_path(file) for file in files]
     df = pd.DataFrame([i[1:] for i in out], columns=['day','tree', 'measurement'])
     df = df.sort_values(by=list(df.columns))

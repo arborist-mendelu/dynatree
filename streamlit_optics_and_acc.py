@@ -46,10 +46,10 @@ with columns[2]:
 #%%
 
 year,month,day=date.split("-")
-df_optics = dt.read_data(f"../data/csv/{year}_{month}_{day}/BK{tree}_M0{measurement}.csv")
+df_optics = dt.read_data(f"../data/parquet/{year}_{month}_{day}/BK{tree}_M0{measurement}.parquet")
 df_optics = df_optics - df_optics.iloc[0,:]
 df_acc = pd.read_csv(f"../data/acc/csv/{date}-BK{tree}-M0{measurement}.csv", index_col=0)
-df_elasto = dt.read_data(f"../data/csv_extended/{year}_{month}_{day}/BK{tree}_M0{measurement}.csv")
+df_elasto = dt.read_data(f"../data/parquet/{year}_{month}_{day}/BK{tree}_M0{measurement}_pulling.parquet")
 
 #%%
 

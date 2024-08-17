@@ -71,7 +71,7 @@ def extend_series_with_zeros(data, tail=2):
     return df[df.columns[0]]
 
 def load_data_for_FFT(
-        file="../01_Mereni_Babice_05042022_optika_zpracovani/csv/BK04_M02.csv", 
+        file="../data/parquet/2021_03_22/BK04_M02.parquet", 
         start=100, 
         end=120, 
         dt=0.01, 
@@ -101,8 +101,8 @@ def load_data_for_FFT(
 # %% Create subdirectories
 
 def do_fft_for_file(
-        path="../", 
-        date="01_Mereni_Babice_22032021_optika_zpracovani",
+        path="../data", 
+        date="2021-03-22",
         csvdir="csv",
         tree="01",
         df=None,
@@ -154,7 +154,7 @@ def do_fft_for_file(
         print("Nejsou zadany meze pro signal")
         return None
     if df is None:
-        df = load_data_for_FFT(f"{path}{date}/{csvdir}/BK{tree}_M0{measurement}.csv",start=start, end=end)
+        df = load_data_for_FFT(f"{path}/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet",start=start, end=end)
     output = {}
     for c in df.columns:
         output[(date,tree,measurement,c)] = do_fft_for_one_column(df,c,color=color,

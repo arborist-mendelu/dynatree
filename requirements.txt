@@ -10,3 +10,6 @@ streamlit
 emd
 polars
 solara
+seaborn
+pywavelets
+emd

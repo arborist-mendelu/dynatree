@@ -79,13 +79,13 @@ def plot_one_measurement(
     
     if df is None:
         df = read_data_selected(
-            f"{path}/csv/{date}/BK{tree}_M0{measurement}.csv")
+            f"{path}/parquet/{date}/BK{tree}_M0{measurement}.parquet")
     else:
         # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{measurement}.csv")
         pass
     if df_extra is None:
         df_extra = read_data(
-            f"{path}/csv_extended/{date}/BK{tree}_M0{measurement}.csv")
+            f"{path}/parquet/{date}/BK{tree}_M0{measurement}_pulling.parquet")
 
     draw_from,draw_to = xlim
     if draw_from == None:

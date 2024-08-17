@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 import dash_bootstrap_components as dbc
 import lib_analyze_filenames as laf
-# from lib_dynatree import do_fft
+from lib_dynatree import read_data
 import os
 
 pio.templates.default = "plotly_white"
@@ -126,13 +126,9 @@ def vymaz_graf(mereni):
 )
 def update(button, date, tree, measurement):
     global TEMP_CSV_FILE
-    _ = date.split("-")
-    _.reverse()
-    date = "".join(_)
-    file = f"../01_Mereni_Babice_{date}_optika_zpracovani/csv/{tree}_{measurement}.csv"
-    df = pd.read_csv(file,
-                  header=[0,1], index_col=0, dtype = np.float64)    
-    df.index=df["Time"].values.reshape(-1)
+    file = f"../data/parquet/{date.replace('-','_')}/{tree}_{measurement}.csv"
+    df = read_data(file)    
+    # df.index=df["Time"].values.reshape(-1)
     data = df[["Time","Pt3","Pt4","Pt11","Pt12","Pt13"]]
     data.to_csv(TEMP_CSV_FILE)
 #    print (data.head())
@@ -195,7 +191,7 @@ def update_decrement_image(graph):
         Y_AXES[0] = graph["yaxis.range[0]"]
     if graph is not None and "yaxis.range[1]" in graph.keys():
         Y_AXES[1]= graph["yaxis.range[1]"]
-
+    probe = probes[0]
     if probe is None:
         raise PreventUpdate()
     data = pd.read_csv(TEMP_CSV_FILE, header=[0,1], index_col=0, dtype = np.float64)

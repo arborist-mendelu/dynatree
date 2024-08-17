@@ -14,7 +14,7 @@ import streamlit as st
 import glob
 import lib_dynatree as ld
 import matplotlib.pyplot as plt
-from lib_dynatree import get_all_measurements, get_csv
+from lib_dynatree import get_all_measurements, get_data
 from lib_damping import find_damping, get_limits
 import emd
 import lib_streamlit as stl
@@ -79,7 +79,7 @@ with cs[0]:
 
     if [day,tree,measurement] not in st.session_state:
         # ":orange[INFO: Dataframe data loaded from csv file]"
-        df_data = get_csv(day, tree, measurement)
+        df_data = get_data(day, tree, measurement)
         st.session_state[[day,tree,measurement]] = df_data
     else:
         # ":orange[INFO: Dataframe data from cache]"

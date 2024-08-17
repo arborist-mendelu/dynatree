@@ -11,12 +11,12 @@ import pandas as pd
 def file2data(filename):
     filename = filename.split("/")
     datum = filename[3].replace("_","-")
-    filename[-1] = filename[-1].replace(".csv","")
+    filename[-1] = filename[-1].replace(".parquet","")
     strom, mereni = filename[-1].split("_")
     return datum, strom, mereni
   
   
-csv_files = glob.glob("../data/csv/*/*.csv")
+csv_files = glob.glob("../data/parquet/*/BK??_M??.parquet")
 csv_files.sort()
 csv_files = [file2data(i) for i in csv_files]
 df = pd.DataFrame(csv_files, columns=["date","tree", "measurement"])

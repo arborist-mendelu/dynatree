@@ -70,16 +70,16 @@ start,end
     #     continue
 st.write(f"{date} BK{tree} M0{measurement} from {start} to {end}, ")        
 if probe[0][0]=="E":
-    file_csv = f"../data/csv_extended/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv"
+    file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}_pulling.parquet"
     data = load_data_for_FFT(
-        file=file_csv,
+        file=file,
         start=start,end=end, 
         filter_cols=False, 
         probes=["Time", "Elasto(90)"])
 else:
-    file_csv = f"../data/csv/{date.replace('-','_')}/BK{tree}_M0{measurement}.csv"
+    file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet"
     data = load_data_for_FFT(
-        file=file_csv,
+        file=file,
         start=start,end=end)
 
 # print(", ",round(data.index[-1]-data.index[0],1)," sec.")
