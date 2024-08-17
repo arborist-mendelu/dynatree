@@ -254,7 +254,7 @@ def main():
     probes = [f"Pt{i}" for i in [3,4]] +[
         f"BL{i}" for i in range(44,68)]
     for date,tree,measurement in df.values:
-        bounds_for_fft = df_remarks.loc[[(date,f"BK{tree}",f"M0{measurement}")],:]
+        bounds_for_fft = df_remarks.loc[[(date,f"{tree}",f"{measurement}")],:]
         start = bounds_for_fft[['start']].iat[0,0]
         end = bounds_for_fft[['end']].iat[0,0]
         if pd.isna(start):
@@ -265,7 +265,7 @@ def main():
             continue
         print(f"{date} BK{tree} M0{measurement} from {start} to {end}, ", end="")        
         data = load_data_for_FFT(
-            file=f"../{date2dirname(date)}/csv/BK{tree}_M0{measurement}.csv",
+            file=f"../data/parquet/{date.replace('-','_')}/{tree}_{measurement}.parquet",
             start=start,end=end)
         print(", ",round(data.index[-1]-data.index[0],1)," sec.")
         for probe in probes:
@@ -299,6 +299,7 @@ if __name__ == "__main__":
     df.columns=['freq','err','length']
     df.index.names = ["date","tree","measurement","probe"]
     df.to_csv("results/fft.csv")
+    
     # date = "2021-03-22"
     # tree = "01"
     # measurement = "2"

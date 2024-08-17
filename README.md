@@ -19,15 +19,17 @@ Místo "babice" je možné si dát vlastní název. Může být v libovolném m�
 ```
 mkdir babice
 cd babice
+mkdir skripty
+mkdir data
 ```
 
 Pokud máte QNAP disk s ERC daty přimountovaný, je možné použít rsync a stáhnout z
-adresářů `01_Mereni_Babice_*_optika_zpracovani` csv soubory a textové soubory v
+adresářů `Mereni_Babice_zpracovani/data` datové parquet soubory a textové soubory v
 adresáři `pulling_tests`. Doba běhu podle rychlosti sítě, cca 5 minut na rychlém
 připojení. 
 
 ```
-rsync -zarv  -P --prune-empty-dirs --include "*/"  --include="*optika_zpracovani/*/*.TXT" --include="*optika_zpracovani/*/*.csv" --exclude="*" /mnt/ERC/ERC/01_Mereni_Babice_*_optika_zpracovani .
+rsync -zarv  -P --prune-empty-dirs --include "*/"  --include="*/*.TXT" --include="*/*.parquet" --exclude="*" /mnt/ERC/ERC/Mereni_Babice_zpracovani/data .
 ```
 Všechno na jeden řádek, zdrojovou cestu `/mnt/ERC/ERC` upravit podle potřeby.
 Uvedený příkaz platí, pokud je připojena následujícím příkazem (adresář `/mnt/ERC`
@@ -37,7 +39,7 @@ musí existovat).
 sudo mount -t cifs //10.18.52.96/home /mnt/ERC/ -o ro,username=unod,uid=1000
 ```
 
-Na QNAP serveru jsou skripty v adresáři `01_Mereni_Babice_optika_skripty` ale na
+Na QNAP serveru jsou skripty v adresáři `Mereni_Babice_zpracovani/skripty` ale na
 názvu nezáleží. Je možno si stáhnout vše potřebné z GitHubu.
 
 ```
@@ -60,6 +62,8 @@ do databaze `csv/tsv_dirs.csv`
 sice binární fomrát, ale rychlejší a úspornější varianta csv.
 
 ### `xsight_tsv2csv.py`
+UZ SE NEPOUZIVA.
+
 Načtou se tsv soubory všechny soubory z jednoho měření se
 převedou na jeden csv soubor. Skript `xsight_tsv2csv.py` by se měl
 spustit vždy po přidání dat z optiky. Skript prochází adresáře s
@@ -88,7 +92,9 @@ Pokud síla není naměřena, berou se pro synchronizaci začátky měření.
 Kromě toho je možno dělat pohodlněji (zobrazit si graf ve vybrané velikosti, 
 s vybraným rozsahem pro čas a s aktuálním zohledněním nastavení v souboru `csv/synchronization_finetune_inclinometers_fix.csv`)
 pomocí programu `dash_force_inclino_sync.py` buď spuštěním v konzoli nebo ve Spyderu a následně na 
-http://127.0.0.1:8050/ .
+http://127.0.0.1:8050/ . 
+
+Update: preferovanější varianta je `solara_force_elasto_inclino.py`.
 
 Jedno měření je možno zobrazit příkazy jako například následující sada.
 

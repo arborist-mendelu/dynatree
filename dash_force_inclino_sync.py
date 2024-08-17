@@ -60,10 +60,10 @@ app.layout =  dbc.Container(
   kontroluj v posledním obrázku sílu (oranžové tečky) a výchylku (modrá čára).
 * Pokud síla a výchylka nejsou zarovnány okamžikem vypuštění, můžeš doladit v souboru 
   `csv/synchronization_finetune_inclinometers_fix.csv`
-* Po ukončení je potřeba zohlednit změny v csv souboru. Je proto potřeba spustit  skript `csv_add_inclino.py` pro pro začlenění informací do `csv_extra`,
+* Po ukončení je potřeba zohlednit změny v csv souboru. Je proto potřeba spustit  skript `parquet_add_inclino.py` pro pro začlenění informací do `parquet/*pulling.parquet`,
   dále `extract_release_data.py` pro opravená data před vypuštěním a případně `plot_probes_inclino_force.py`
   pro obrázky jaké jsou zde.
-* Posuvníkem si můžeš změnit rozsa na ose x, aby šla dobře vidět kvalita nebo nekvalita
+* Posuvníkem si můžeš změnit rozsah na ose x, aby šla dobře vidět kvalita nebo nekvalita
   synchronizace a aby se dalo posoudit, jestli je rozsah před vypuštěním (žlutý pás) umístěn rozumně.  
                  """
                  ),
@@ -126,7 +126,7 @@ def sestav_csv(measurement, date, tree):
     # _ = date.split("-")
     # _ .reverse()
     # _ = "".join(_)
-    file = f"../data/csv/{date.replace('-','_')}/{tree}_{measurement}.csv"
+    file = f"../data/parquet/{date.replace('-','_')}/{tree}_{measurement}.parquet"
     DF = read_data_selected(file)
     data = DF[("Pt3","Y0")]
     data = data - data[0]
