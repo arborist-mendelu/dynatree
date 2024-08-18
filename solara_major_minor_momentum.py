@@ -8,20 +8,17 @@ Created on Thu Aug 15 14:00:04 2024
 
 DATA_PATH = "../data"
 
-navod = """
-Návod se napíše později.
-"""
-
 title = "Pulling, force, inclinometers, elastometer"
 
 import solara
 from solara.lab import task
+import solara.lab
+import solara.express as px
 import glob
-import numpy as np
 import pandas as pd
 import static_pull
 import matplotlib.pyplot as plt
-
+# import hvplot.pandas
 
 def split_path(file):
     data = file.split("/")
@@ -55,16 +52,38 @@ day = solara.reactive(days[0])
 tree = solara.reactive(trees[0])
 measurement = solara.reactive(measurements[0])
 
+xdata = solara.reactive("Time")
+ydata = solara.reactive(["Force(100)"])
+pull = solara.reactive(0)
+restrict_data = solara.reactive(True)
+interactive_graph = solara.reactive(False)
+ignore_optics_data = solara.reactive(False)
+
+def fix_input(a):
+    if len(a)==0:
+        return ["Force(100)"]
+    else:
+        return a
+    
 @task
 def nakresli():
-    return static_pull.nakresli(day.value, tree.value, measurement.value)
+    return static_pull.nakresli(day.value, tree.value, measurement.value, ignore_optics_data.value)
     
 @solara.component
 def Page():
     solara.Title(title)
-    solara.Style(".widget-image{width:100%}")
+    solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
     with solara.Sidebar():
-        solara.Markdown(navod)
+        solara.Markdown(" ")
+    with solara.lab.Tabs():
+        with solara.lab.Tab("Grafy"):
+            MainPage()
+        with solara.lab.Tab("Návod a komentáře"):
+            Help()        
+        
+    # MainPage()
+
+def MainPage():
     with solara.Card():
         with solara.Column():
             solara.ToggleButtonsSingle(value=day, values=list(days), on_value=lambda x: measurement.set(measurements[0]))
@@ -74,6 +93,7 @@ def Page():
                                            values=available_measurements(df, day.value, tree.value),
                                            on_value=lambda x:nakresli()
                                            )
+                solara.Switch(label="Ignore prepocessed files for M2 and higher", value=ignore_optics_data)
         solara.Div(style={"margin-bottom": "10px"})
         with solara.Row():
             solara.Button("Run calculation", on_click=nakresli, color="primary")
@@ -82,16 +102,128 @@ def Page():
     if measurement.value not in available_measurements(df, day.value, tree.value):
         solara.Error(f"Measurement {measurement.value} not available for this tree.")
         return
-    
-    if nakresli.finished:
+
+    if nakresli.not_called:
+        solara.Text("Vyber měření a stiskni tlačítko Run calculation")
+    elif not nakresli.finished:
+        with solara.Row():
+            solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
+            solara.SpinnerSolara(size="100px")
+    else:
         f = nakresli.value
         with solara.ColumnsResponsive(6): 
             for _ in f:
                 solara.FigureMatplotlib(_)
-    elif nakresli.not_called:
-        solara.Text("Vyber měření a stiskni tlačítko Run calculation")
-    else:
-        with solara.Row():
-            solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
-            solara.SpinnerSolara(size="100px")
+        plt.close('all')
+        data = static_pull.proces_data(day.value, tree.value, measurement.value, ignore_optics_data.value)
+        # data['dataframe']["Time"] = data['dataframe'].index
+        # solara.DataFrame(data['dataframe'], items_per_page=20)
+        # cols = data['dataframe'].columns
+        with solara.Card():
+            solara.Markdown("## Increasing part of the time-force diagram")
             
+            with solara.Sidebar():
+                cols = ['Time','Force(100)', 'Elasto(90)', 'Elasto-strain',
+                        # 'Inclino(80)X', 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 
+                'RopeAngle(100)',
+                'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY', 
+                'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
+                'F_horizontal_Rope', 'F_vertical_Rope',
+                'M_Rope', 'M_Pt_Rope', 'F_horizontal_PT', 'F_vertical_PT', 'M_PT',
+                'M_Pt_PT']
+                with solara.Card():
+                    solara.Markdown("### Horizontal axis \n\n Choose one variable.")
+                    solara.ToggleButtonsSingle(values=cols, value=xdata, dense=True)
+                with solara.Card():
+                    solara.Markdown("### Vertical axis \n\n Choose one or more variables.")
+                    solara.ToggleButtonsMultiple(values=cols, value=ydata, dense=True)
+                pulls = list(range(len(data['times'])))
+            
+            if measurement.value == "M1":
+                solara.Markdown("Pull No. of M1")
+                solara.ToggleButtonsSingle(values=pulls, value=pull)
+                pull_value = pull.value
+            else:
+                pull_value = 0
+            subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
+
+            solara.Switch(label="Restrict to 10%-90% of Fmax", value=restrict_data)
+            solara.Switch(label="Interactive graph", value=interactive_graph)
+            if restrict_data.value:
+                lower, upper = static_pull.get_interval_of_interest(subdf)        
+                subdf = subdf.loc[lower:upper,:]            
+
+            if interactive_graph.value:
+                kwds = {"template":"simple_white", "height":600}
+                try:
+                    if xdata.value == "Time":
+                        px.scatter(subdf.astype(float), y=fix_input(ydata.value), **kwds)
+                    else:
+                        px.scatter(subdf.astype(float), x=xdata.value, y=fix_input(ydata.value), **kwds)
+                except:
+                    solara.Error(solara.Markdown("""### Image failed. 
+                                 
+* Something is wrong. Switch to noninteractive plot or change variables setting. 
+* This error appears especially if you try to plot both forces and inclinometers on vertical axis.
+"""
+                                 ))
+            else:
+                fig, ax = plt.subplots()
+                if xdata.value == "Time":
+                    subdf["Time"] = subdf.index
+                for i,_ in enumerate(fix_input(ydata.value)):
+                    subdf.plot(x=xdata.value, y=_, kind='scatter', ax=ax, color=f"C{i}", label=_)
+                ax.grid()
+                ax.legend()
+                solara.FigureMatplotlib(fig)
+            
+            try:
+                # find regresions
+                if xdata.value != "Time":
+                    subsubdf = subdf.loc[:,[xdata.value]+[i for i in ydata.value if i!=xdata.value]]
+                    reg_df = static_pull.get_regressions(subsubdf, xdata.value)
+                    solara.DataFrame(reg_df.iloc[:,:4])                
+            except:
+                solara.Error("Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
+
+
+def Help():
+    solara.Markdown(
+"""
+## Návod
+
+### Práce
+
+**Pokud máš otevřeno v zápisníku Jupyteru, bude vhodnější maximalizovat aplikaci. V modrém pásu napravo je ikonka na maximalizaci uvnitř okna prohlížeče.**
+
+Vyber datum, strom a měření. Pokud se obrázek neaktualizuje automaticky, klikni na tlačítko pro spuštění výpočtu. Výpočet se spustí kliknutím tlačítka nebo změnou volby měření. Pokud se mění strom nebo den a měření zůstává M1, je potřeba stisknout tlačítko.
+
+
+Zobrazí se průběh experimentu, náběh (resp. tři náběhy) síly do maxima a zvýrazněná část pro analýzu. Ta je 10-90 procent, ale možná má smyslu zkusit i jiné meze.
+
+Poté máš možnost si detailněji vybrat, co má být v dalším grafu na vodorovné a svislé ose. Tlačítka pro výběr se objeví v bočním panelu, aby se dala skrývat a nezavazela. Počítá se regrese mezi veličinou na vodorovné ose a každou z veličin na ose svislé.
+
+### Popis
+
+* Inlinometr blue je 80, yelllow je 81. Výchylky v jednotlivých osách jsou blueX a blueY resp. blue_Maj a blue_Min. Celková výchylka je blue. Podobně  druhý inklinometr.
+* F se rozkládá na vodorovnou a svislou složku.Vodorovná se používá k výpočtu momentu v bodě úvazu (M) a v bodě Pt3 (M_PT). K tomu je potřeba znát odchylku lana od vodorovné polohy. Toto je možné 
+    1. zjistit ze siloměru v pull TXT souborech jako Ropeangle(100) 
+    2. anebo použít fixní hodnotu z geometrie a měření délek. 
+* Druhá varianta je spolehlivější, **Rope(100) má dost rozeskákané hodnoty.**
+  Vypočítané veličiny mají na konci _Rope nebo _PT. Asi se hodí více ty s _PT na konci.
+* Elasto-strain je Elasto(90)/200000.
+
+### Data
+
+Je rozdíl mezi daty ze statiky a pull-release.
+Data pro M01 jsou přímo z TXT souborů produkovaných přístrojem. Data pro další 
+měření (M02 a výše) byla zpracována: 
+    
+* počátek se sesynchronizoval s optikou, 
+* data se interpolovala na stejné časy jako v optice (tedy je více dat) 
+* a někdy se ručně opravilo nevynulování nebo nedokonalé vynulování inklinoměru. 
+
+Dá se snadno přepnout na to, aby se všechna data brala z TXT souborů (volba `skip_optics` ve funkci `get_static_pulling_data`), ale přišli bychom o opravy s vynulováním. Resp. bylo by potřeba to zapracovat.
+
+"""
+        )

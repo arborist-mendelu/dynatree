@@ -273,6 +273,7 @@ def read_data_inclinometers(file, release=None, delta_time=0):
         )
     df_pulling_tests["Time"] = df_pulling_tests["Time"] - df_pulling_tests["Time"][0]
     df_pulling_tests.set_index("Time", inplace=True)
+    df_pulling_tests = df_pulling_tests.drop(['Nr', 'Year', 'Month', 'Day'], axis=1)
     # df_pulling_tests.interpolate(inplace=True, axis=1)
     if release is None:
         return df_pulling_tests
@@ -289,7 +290,7 @@ def read_data_inclinometers(file, release=None, delta_time=0):
     df_pulling_tests["Time"] = df_pulling_tests["Time_inclino"] - release_time_force + release + delta_time
     df_pulling_tests.set_index("Time", inplace=True)
     df_pulling_tests["Time"] = df_pulling_tests.index
-        
+
     return df_pulling_tests
 
 def find_finetune_synchro(date, tree, measurement, cols="delta time"):
