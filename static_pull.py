@@ -298,7 +298,7 @@ def nakresli(day, tree, measurement, skip_optics=False):
         subdf.plot(ax=ax, legend=False)
     
         # Find limits for given interval of forces
-        lower, upper = get_interval_of_interest(subdf)        
+        lower, upper = get_interval_of_interest(subdf, maximal_fraction=0.9)        
         subdf[lower:upper].plot(ax=ax, linewidth=4, legend=False)
         ax.legend(["Síla","Náběh síly","Rozmezí 10 až 90\nprocent max."])
 

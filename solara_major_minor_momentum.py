@@ -52,12 +52,13 @@ day = solara.reactive(days[0])
 tree = solara.reactive(trees[0])
 measurement = solara.reactive(measurements[0])
 
-xdata = solara.reactive("Time")
-ydata = solara.reactive(["Force(100)"])
+xdata = solara.reactive("M_PT")
+ydata = solara.reactive(["blue","yellow"])
 pull = solara.reactive(0)
 restrict_data = solara.reactive(True)
 interactive_graph = solara.reactive(False)
 ignore_optics_data = solara.reactive(False)
+force_interval = solara.reactive("None")
 
 def fix_input(a):
     if len(a)==0:
@@ -74,16 +75,22 @@ def Page():
     solara.Title(title)
     solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
     with solara.Sidebar():
-        solara.Markdown(" ")
+        solara.Markdown("Výběr proměnných pro záložku \"Volba proměnných a regrese\".")
+    Selection()
     with solara.lab.Tabs():
         with solara.lab.Tab("Grafy"):
-            MainPage()
+            Graphs()
+        with solara.lab.Tab("Volba proměnných a regrese"):
+            try:
+                Detail()
+            except:
+                solara.Info("Nejprve záložka Grafy")
         with solara.lab.Tab("Návod a komentáře"):
             Help()        
         
     # MainPage()
 
-def MainPage():
+def Selection():
     with solara.Card():
         with solara.Column():
             solara.ToggleButtonsSingle(value=day, values=list(days), on_value=lambda x: measurement.set(measurements[0]))
@@ -93,34 +100,50 @@ def MainPage():
                                            values=available_measurements(df, day.value, tree.value),
                                            on_value=lambda x:nakresli()
                                            )
-                solara.Switch(label="Ignore prepocessed files for M2 and higher", value=ignore_optics_data)
+                with solara.Tooltip("Umožní ignorovat preprocessing udělaný na tahovkách M2 a více. Tím bude stejná metodika jako pro M01 (tam se preprocessing nedělal), ale přijdeme o časovou synchronizaci s optikou a hlavně přijdeme o opravu vynulování inklinometrů."):
+                    solara.Switch(label="Ignore prepocessed files for M2 and higher", value=ignore_optics_data)
         solara.Div(style={"margin-bottom": "10px"})
         with solara.Row():
             solara.Button("Run calculation", on_click=nakresli, color="primary")
-            solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}")    
+            solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}")   
+            
+def Graphs():            
     solara.ProgressLinear(nakresli.pending)    
     if measurement.value not in available_measurements(df, day.value, tree.value):
         solara.Error(f"Measurement {measurement.value} not available for this tree.")
         return
 
     if nakresli.not_called:
-        solara.Text("Vyber měření a stiskni tlačítko Run calculation")
+        solara.Info("Vyber měření a stiskni tlačítko \"Run calculation\"")
+        solara.Warning("Pokud pracuješ v prostředí JupyterHub, asi bude lepší aplikaci maximalizovat. Tlačítko je v modrém pásu úplně napravo.")
     elif not nakresli.finished:
         with solara.Row():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
             solara.SpinnerSolara(size="100px")
     else:
+        solara.Markdown("Na obrázku je průběh experimentu (časový průběh síly) a detaily pro rozmezí 10%-90% maxima síly. \n\n V detailech je časový průběh síly, časový průběh na inklinometrech a grafy inklinometry versus síla nebo moment. Jestli moment z Rope nebo z tabulky PT viz karta s Návod a komentáře.")
         f = nakresli.value
         with solara.ColumnsResponsive(6): 
             for _ in f:
                 solara.FigureMatplotlib(_)
         plt.close('all')
-        data = static_pull.proces_data(day.value, tree.value, measurement.value, ignore_optics_data.value)
         # data['dataframe']["Time"] = data['dataframe'].index
         # solara.DataFrame(data['dataframe'], items_per_page=20)
         # cols = data['dataframe'].columns
+def Detail():
+    data = static_pull.proces_data(day.value, tree.value, measurement.value, ignore_optics_data.value)
+    if nakresli.not_called:
+        solara.Info("Nejdřív nakresli graf v první záložce.")        
+    elif not nakresli.finished:
+        with solara.Row():
+            solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
+            solara.SpinnerSolara(size="100px")
+    else:
         with solara.Card():
             solara.Markdown("## Increasing part of the time-force diagram")
+            solara.Markdown("""
+                    Pro výběr proměnných na vodorovnou a svislou osu otevři menu v sidebaru (tři čárky v horním panelu). Po výběru můžeš sidebar zavřít. Přednastavený je moment vypočítaný z geometrie na vodorovné ose a oba inlinometry na svislé ose.
+                    """)
             
             with solara.Sidebar():
                 cols = ['Time','Force(100)', 'Elasto(90)', 'Elasto-strain',
@@ -148,13 +171,15 @@ def MainPage():
             subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
 
             solara.Switch(label="Restrict to 10%-90% of Fmax", value=restrict_data)
-            solara.Switch(label="Interactive graph", value=interactive_graph)
+            with solara.Tooltip("Umožní zobrazit graf pomocí plotly. Bude možné vybírat rozsah, odečítat hodnoty apod."):
+                solara.Switch(label="Interactive graph", value=interactive_graph)
             if restrict_data.value:
                 lower, upper = static_pull.get_interval_of_interest(subdf)        
                 subdf = subdf.loc[lower:upper,:]            
 
+            title = f"{day.value} {tree.value} {measurement.value} Pull {pull.value}"
             if interactive_graph.value:
-                kwds = {"template":"simple_white", "height":600}
+                kwds = {"template":"simple_white", "height":600, "title":title}
                 try:
                     if xdata.value == "Time":
                         px.scatter(subdf.astype(float), y=fix_input(ydata.value), **kwds)
@@ -175,6 +200,7 @@ def MainPage():
                     subdf.plot(x=xdata.value, y=_, kind='scatter', ax=ax, color=f"C{i}", label=_)
                 ax.grid()
                 ax.legend()
+                ax.set(title = title)
                 solara.FigureMatplotlib(fig)
             
             try:
@@ -194,14 +220,10 @@ def Help():
 
 ### Práce
 
-**Pokud máš otevřeno v zápisníku Jupyteru, bude vhodnější maximalizovat aplikaci. V modrém pásu napravo je ikonka na maximalizaci uvnitř okna prohlížeče.**
-
-Vyber datum, strom a měření. Pokud se obrázek neaktualizuje automaticky, klikni na tlačítko pro spuštění výpočtu. Výpočet se spustí kliknutím tlačítka nebo změnou volby měření. Pokud se mění strom nebo den a měření zůstává M1, je potřeba stisknout tlačítko.
-
-
-Zobrazí se průběh experimentu, náběh (resp. tři náběhy) síly do maxima a zvýrazněná část pro analýzu. Ta je 10-90 procent, ale možná má smyslu zkusit i jiné meze.
-
-Poté máš možnost si detailněji vybrat, co má být v dalším grafu na vodorovné a svislé ose. Tlačítka pro výběr se objeví v bočním panelu, aby se dala skrývat a nezavazela. Počítá se regrese mezi veličinou na vodorovné ose a každou z veličin na ose svislé.
+* **Pokud máš otevřeno v zápisníku Jupyteru, bude vhodnější maximalizovat aplikaci. V modrém pásu napravo je ikonka na maximalizaci uvnitř okna prohlížeče.**
+* Vyber datum, strom a měření. Pokud se obrázek neaktualizuje automaticky, klikni na tlačítko pro spuštění výpočtu. Výpočet se spustí kliknutím tlačítka nebo změnou volby měření. Pokud se mění strom nebo den a měření zůstává M1, je potřeba stisknout tlačítko.
+* Zobrazí se průběh experimentu, náběh (resp. tři náběhy) síly do maxima a zvýrazněná část pro analýzu. Ta je 10-90 procent, ale možná má smyslu zkusit i jiné meze.
+* Poté máš možnost si detailněji vybrat, co má být v dalším grafu na vodorovné a svislé ose. Tlačítka pro výběr se objeví v bočním panelu, aby se dala skrývat a nezavazela. Počítá se regrese mezi veličinou na vodorovné ose a každou z veličin na ose svislé.
 
 ### Popis
 
@@ -212,6 +234,11 @@ Poté máš možnost si detailněji vybrat, co má být v dalším grafu na vodo
 * Druhá varianta je spolehlivější, **Rope(100) má dost rozeskákané hodnoty.**
   Vypočítané veličiny mají na konci _Rope nebo _PT. Asi se hodí více ty s _PT na konci.
 * Elasto-strain je Elasto(90)/200000.
+
+### Komenáře
+
+* V diagramech síla nebo moment versus inklinometry není moc změna trendu mezi první polovinou diagramu a celkem. Takže je asi jedno jestli bereme pro sílu rozmezí 10-90 procent Fmax ebo 10-40 procent.
+* Veličina Rope(100) ze siloměru má dost rozeskákané hodnoty a to zašpiní cokoliv, co se pomocí toho počítá. Asi nebrat. To jsou veličiny, které mají na konci text "_Rope". Místo nich použít ty, co mají na konci "_PT"
 
 ### Data
 
@@ -224,6 +251,8 @@ měření (M02 a výše) byla zpracována:
 * a někdy se ručně opravilo nevynulování nebo nedokonalé vynulování inklinoměru. 
 
 Dá se snadno přepnout na to, aby se všechna data brala z TXT souborů (volba `skip_optics` ve funkci `get_static_pulling_data`), ale přišli bychom o opravy s vynulováním. Resp. bylo by potřeba to zapracovat.
+
+
 
 """
         )
