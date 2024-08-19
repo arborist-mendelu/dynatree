@@ -58,6 +58,7 @@ pull = solara.reactive(0)
 restrict_data = solara.reactive(True)
 interactive_graph = solara.reactive(False)
 ignore_optics_data = solara.reactive(False)
+all_data = solara.reactive(False)
 force_interval = solara.reactive("None")
 
 def fix_input(a):
@@ -75,8 +76,8 @@ def Page():
     solara.Title(title)
     solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
     with solara.Sidebar():
-        solara.Markdown("Výběr proměnných pro záložku \"Volba proměnných a regrese\".")
-    Selection()
+        # solara.Markdown("Výběr proměnných pro záložku \"Volba proměnných a regrese\".")
+        Selection()
     with solara.lab.Tabs():
         with solara.lab.Tab("Grafy"):
             Graphs()
@@ -89,6 +90,12 @@ def Page():
             Help()        
         
     # MainPage()
+
+# def clear():
+#     # https://stackoverflow.com/questions/37653784/how-do-i-use-cache-clear-on-python-functools-lru-cache
+#     static_pull.nakresli.__dict__["__wrapped__"].cache_clear()
+#     static_pull.proces_data.__dict__["__wrapped__"].cache_clear()
+    
 
 def Selection():
     with solara.Card():
@@ -105,6 +112,7 @@ def Selection():
         solara.Div(style={"margin-bottom": "10px"})
         with solara.Row():
             solara.Button("Run calculation", on_click=nakresli, color="primary")
+            # solara.Button("Clear cache", on_click=clear(), color="primary")
             solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}")   
             
 def Graphs():            
@@ -114,7 +122,7 @@ def Graphs():
         return
 
     if nakresli.not_called:
-        solara.Info("Vyber měření a stiskni tlačítko \"Run calculation\"")
+        solara.Info("Vyber měření a stiskni tlačítko \"Run calculation\". Ovládací prvky jsou v sidebaru. Pokud není otevřený, otevři klilnutím na tři čárky nalevo v modrém pásu.")
         solara.Warning("Pokud pracuješ v prostředí JupyterHub, asi bude lepší aplikaci maximalizovat. Tlačítko je v modrém pásu úplně napravo.")
     elif not nakresli.finished:
         with solara.Row():
@@ -163,23 +171,30 @@ def Detail():
                 pulls = list(range(len(data['times'])))
             
             if measurement.value == "M1":
-                solara.Markdown("Pull No. of M1")
-                solara.ToggleButtonsSingle(values=pulls, value=pull)
+                with solara.Row():
+                    solara.Markdown("Pull No. of M1:")
+                    solara.ToggleButtonsSingle(values=pulls, value=pull)
                 pull_value = pull.value
             else:
                 pull_value = 0
             subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
 
-            solara.Switch(label="Restrict to 10%-90% of Fmax", value=restrict_data)
-            with solara.Tooltip("Umožní zobrazit graf pomocí plotly. Bude možné zoomovat, odečítat hodnoty, klikáním na legendu skrývat a odkrývat proměnné apod."):
-                solara.Switch(label="Interactive graph", value=interactive_graph)
-            if restrict_data.value:
-                lower, upper = static_pull.get_interval_of_interest(subdf)        
-                subdf = subdf.loc[lower:upper,:]            
+            with solara.Row():
+                solara.Switch(label="Restrict 10%-90% of Fmax", value=restrict_data)
+                with solara.Tooltip("Umožní zobrazit graf pomocí plotly. Bude možné zoomovat, odečítat hodnoty, klikáním na legendu skrývat a odkrývat proměnné apod."):
+                    solara.Switch(label="Interactive graph", value=interactive_graph)
+                if restrict_data.value:
+                    lower, upper = static_pull.get_interval_of_interest(subdf)        
+                    subdf = subdf.loc[lower:upper,:]            
+                with solara.Tooltip("Umožní zobrazit grafy veličin pro celý časový průběh."):
+                    solara.Switch(label="Ignore time restriction", value=all_data)
+                if all_data.value:
+                    subdf = data['dataframe']
 
             title = f"{day.value} {tree.value} {measurement.value} Pull {pull.value}"
             if interactive_graph.value:
-                kwds = {"template":"simple_white", "height":600, "title":title}
+                kwds = {"template":"plotly_white", "height":600, "title":title}
+                # kwds = {"height":600, "title":title}
                 try:
                     if xdata.value == "Time":
                         px.scatter(subdf.astype(float), y=fix_input(ydata.value), **kwds)
@@ -196,10 +211,8 @@ def Detail():
                 fig, ax = plt.subplots()
                 if xdata.value == "Time":
                     subdf["Time"] = subdf.index
-                for i,_ in enumerate(fix_input(ydata.value)):
-                    subdf.plot(x=xdata.value, y=_, kind='scatter', ax=ax, color=f"C{i}", label=_)
+                subdf.plot(x=xdata.value, y=ydata.value, style='.', ax=ax)
                 ax.grid()
-                ax.legend()
                 ax.set(title = title)
                 solara.FigureMatplotlib(fig)
             
@@ -231,14 +244,16 @@ def Help():
 * F se rozkládá na vodorovnou a svislou složku.Vodorovná se používá k výpočtu momentu v bodě úvazu (M) a v bodě Pt3 (M_PT). K tomu je potřeba znát odchylku lana od vodorovné polohy. Toto je možné 
     1. zjistit ze siloměru v pull TXT souborech jako Ropeangle(100) 
     2. anebo použít fixní hodnotu z geometrie a měření délek. 
-* Druhá varianta je spolehlivější, **Rope(100) má dost rozeskákané hodnoty.**
+* Druhá varianta je spolehlivější, **Rope(100) má někdy celkem rozeskákané hodnoty.**
   Vypočítané veličiny mají na konci _Rope nebo _PT. Asi se hodí více ty s _PT na konci.
 * Elasto-strain je Elasto(90)/200000.
 
 ### Komenáře
 
-* V diagramech síla nebo moment versus inklinometry není moc změna trendu mezi první polovinou diagramu a celkem. Takže je asi jedno jestli bereme pro sílu rozmezí 10-90 procent Fmax ebo 10-40 procent.
+* V diagramech síla nebo moment versus inklinometry není moc změna trendu mezi první polovinou diagramu a celkem. Takže je asi jedno jestli bereme pro sílu rozmezí 10-90 procent Fmax nebo 10-40 procent.
 * Veličina Rope(100) ze siloměru má dost rozeskákané hodnoty a to zašpiní cokoliv, co se pomocí toho počítá. Asi nebrat. To jsou veličiny, které mají na konci text "_Rope". Místo nich použít ty, co mají na konci "_PT"
+* Graf moment versus inlinometry má někdy na začátku trochu neplechu. Možná mají velký vliv nevynulované hodnoty 
+  inklinometrů, protože se přidávají k malým náklonům a hodně zkreslují. Zvážit posunutí rozmezí na vyšší hodnotu než 10 procent Fmax.
 
 ### Data
 

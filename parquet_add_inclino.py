@@ -134,8 +134,9 @@ def extend_one_file(
     measurement = measurement[-1]
     # accept both BK04 and 04 as a tree number
     tree = tree[-2:]
-    # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
-        
+    # accepts all "2021_03_22" and "2021-03-22" as measurement_day
+    date = date.replace("-","_")    
+    
     # Read data file
     # načte data z csv souboru
     if df is None:

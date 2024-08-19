@@ -123,6 +123,8 @@ def nakresli():
     
 @solara.component
 def Page():
+    solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
+    
     solara.Title("Oscillation: optics, inclinometers, elastometer, force synchro")
     with solara.Sidebar():
         solara.Markdown(navod)
@@ -148,7 +150,7 @@ def Page():
         return
     
     if nakresli.finished:
-        plt.show(nakresli.value)
+        solara.FigureMatplotlib(nakresli.value)
     elif nakresli.not_called:
         solara.Text("Vyber měření a stiskni tlačítko Run calculation")
     else:

@@ -267,7 +267,6 @@ def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.1):
 #%%
 
 @timeit
-@lru_cache(20)
 def proces_data(day, tree, measurement, skip_optics=False):
     """
     skip_optics False means ifgnore parquet files and read original TXT file.
@@ -283,7 +282,6 @@ def proces_data(day, tree, measurement, skip_optics=False):
     return {'times': out['times'], 'dataframe': pd.concat([dataframe, ans], axis=1)}
 
 @timeit    
-@lru_cache(40)
 def nakresli(day, tree, measurement, skip_optics=False):
     ans = proces_data(day, tree, measurement, skip_optics=skip_optics)
     dataframe = ans['dataframe']
