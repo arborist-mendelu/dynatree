@@ -306,7 +306,7 @@ def nakresli(day, tree, measurement, skip_optics=False):
         a = a.reshape(-1)
         df = dataframe.loc[lower:upper,:]
         
-        df.loc[:,["Force(100)"]].plot(ax=a[0], legend=False, xlabel="Time", ylabel="Force")
+        df.loc[:,["Force(100)"]].plot(ax=a[0], legend=False, xlabel="Time", ylabel="Force", style='.')
         # df columns: ['Force(100)', 'Elasto(90)', 'Elasto-strain', 'Inclino(80)X',
         # 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 'RopeAngle(100)',
         # 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY', 
@@ -317,19 +317,19 @@ def nakresli(day, tree, measurement, skip_optics=False):
         colors = ["blue","yellow"]
  
         df.loc[:,["blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"]
-               ].plot(ax=a[2], xlabel="Time")
+               ].plot(ax=a[2], xlabel="Time", style='.')
         a[2].grid()
         a[2].set(ylabel="Angle")
         a[2].legend(title="Inclinometer_axis")
         
-        df.plot(x="Force(100)", y=colors, ax=a[1], ylabel="Inclinometer", xlabel="Force")
+        df.plot(x="Force(100)", y=colors, ax=a[1], ylabel="Angle", xlabel="Force", style='.')
         a[1].legend(title="Inclinometers")
 
 
         a[3].plot(df["M_PT"], df[colors], '.')
         a[3].set(
                     xlabel = "Momentum from PT", 
-                    ylabel = "Inclinometer",
+                    ylabel = "Angle",
                     )
         a[3].legend(colors)
         

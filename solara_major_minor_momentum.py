@@ -122,14 +122,20 @@ def Graphs():
         return
 
     if nakresli.not_called:
-        solara.Info("Vyber měření a stiskni tlačítko \"Run calculation\". Ovládací prvky jsou v sidebaru. Pokud není otevřený, otevři klilnutím na tři čárky nalevo v modrém pásu.")
+        solara.Info(solara.Markdown("""
+                        
+* Vyber měření a stiskni tlačítko \"Run calculation\". 
+* Ovládací prvky jsou v sidebaru. Pokud není otevřený, otevři kliknutím na tři čárky nalevo v modrém pásu.
+* Při změně vstupů se většinou obrázek aktualizuje, ale ne vždy. Pokud nadpis na obrázku nesouhlasí s vybranými hodnotami, spusť výpočet tlačítkem \"Run calculation\".
+
+                                    """))
         solara.Warning("Pokud pracuješ v prostředí JupyterHub, asi bude lepší aplikaci maximalizovat. Tlačítko je v modrém pásu úplně napravo.")
     elif not nakresli.finished:
         with solara.Row():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
             solara.SpinnerSolara(size="100px")
     else:
-        solara.Markdown("Na obrázku je průběh experimentu (časový průběh síly) a detaily pro rozmezí 10%-90% maxima síly. \n\n V detailech je časový průběh síly, časový průběh na inklinometrech a grafy inklinometry versus síla nebo moment. Jestli moment z Rope nebo z tabulky PT viz karta s Návod a komentáře.")
+        solara.Markdown("Na obrázku je průběh experimentu (časový průběh síly) a detaily pro rozmezí 10%-90% maxima síly. \n\n V detailech je časový průběh síly, časový průběh na inklinometrech a grafy inklinometry versus síla nebo moment. Jestli moment z Rope nebo z tabulky PT viz karta Návod a komentáře.")
         f = nakresli.value
         with solara.ColumnsResponsive(6): 
             for _ in f:
@@ -141,7 +147,7 @@ def Graphs():
 def Detail():
     data = static_pull.proces_data(day.value, tree.value, measurement.value, ignore_optics_data.value)
     if nakresli.not_called:
-        solara.Info("Nejdřív nakresli graf v první záložce.")        
+        solara.Info("Nejdřív nakresli graf v první záložce. Klikni na Run calculation v sidebaru.")        
     elif not nakresli.finished:
         with solara.Row():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
@@ -191,7 +197,7 @@ def Detail():
                 if all_data.value:
                     subdf = data['dataframe']
 
-            title = f"{day.value} {tree.value} {measurement.value} Pull {pull.value}"
+            title = f"{day.value} {tree.value} {measurement.value} Pull {pull_value}"
             if interactive_graph.value:
                 kwds = {"template":"plotly_white", "height":600, "title":title}
                 # kwds = {"height":600, "title":title}
