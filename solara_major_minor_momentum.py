@@ -171,7 +171,7 @@ def Detail():
             subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
 
             solara.Switch(label="Restrict to 10%-90% of Fmax", value=restrict_data)
-            with solara.Tooltip("Umožní zobrazit graf pomocí plotly. Bude možné vybírat rozsah, odečítat hodnoty apod."):
+            with solara.Tooltip("Umožní zobrazit graf pomocí plotly. Bude možné zoomovat, odečítat hodnoty, klikáním na legendu skrývat a odkrývat proměnné apod."):
                 solara.Switch(label="Interactive graph", value=interactive_graph)
             if restrict_data.value:
                 lower, upper = static_pull.get_interval_of_interest(subdf)        
