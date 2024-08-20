@@ -18,30 +18,9 @@ import glob
 import pandas as pd
 import static_pull
 import matplotlib.pyplot as plt
-# import hvplot.pandas
-
-def split_path(file):
-    data = file.split("/")
-    data[-1] = data[-1].replace(".TXT","")
-    return [file,data[-2].replace("_","-")] + data[-1].split("_")
-
-def get_all_measurements(cesta=DATA_PATH):
-    """
-    Get dataframe with all measurements. The dataframe has columns
-    date, tree and measurement.
-    """
-    files = glob.glob(cesta+"/pulling_tests/*/BK_??_M?.TXT")       
-    files = [i.replace("BK_","BK") for i in files]
-    out = [split_path(file) for file in files]
-    df = pd.DataFrame([i[1:] for i in out], columns=['day','tree', 'measurement'])
-    df = df.sort_values(by=list(df.columns))
-    df = df.reset_index(drop=True)
-    return df
-
-def available_measurements(df, day, tree):
-    select_rows = (df["day"]==day) & (df["tree"]==tree)
-    values = df[select_rows]["measurement"].values
-    return list(values)
+import numpy as np
+import lib_dynatree
+from static_pull import get_all_measurements, available_measurements
 
 df = get_all_measurements()
 days = df["day"].drop_duplicates().values
@@ -52,8 +31,9 @@ day = solara.reactive(days[0])
 tree = solara.reactive(trees[0])
 measurement = solara.reactive(measurements[0])
 
-xdata = solara.reactive("M_PT")
+xdata = solara.reactive("M_Measure")
 ydata = solara.reactive(["blue","yellow"])
+ydata2 = solara.reactive([])
 pull = solara.reactive(0)
 restrict_data = solara.reactive(True)
 interactive_graph = solara.reactive(False)
@@ -62,13 +42,23 @@ all_data = solara.reactive(False)
 force_interval = solara.reactive("None")
 
 def fix_input(a):
+    """
+    The input is a list. 
+    
+    The output is ["Force(100)"] is the input is empty. If not empty, the 
+    input is copied to output.
+    
+    Used for drawing. If no value is selected for the graph, the Force(100) 
+    is plotted.
+    """
     if len(a)==0:
         return ["Force(100)"]
-    else:
-        return a
+    return a
     
 @task
-def nakresli():
+def nakresli(reset_measurements = False):
+    if reset_measurements:
+        measurement.set(measurements[0])
     return static_pull.nakresli(day.value, tree.value, measurement.value, ignore_optics_data.value)
     
 @solara.component
@@ -85,7 +75,7 @@ def Page():
             try:
                 Detail()
             except:
-                solara.Info("Nejprve záložka Grafy")
+                solara.Error("Něco se nepovedlo. Možná mrkni nejprve na záložku Grafy")
         with solara.lab.Tab("Návod a komentáře"):
             Help()        
         
@@ -94,14 +84,13 @@ def Page():
 # def clear():
 #     # https://stackoverflow.com/questions/37653784/how-do-i-use-cache-clear-on-python-functools-lru-cache
 #     static_pull.nakresli.__dict__["__wrapped__"].cache_clear()
-#     static_pull.proces_data.__dict__["__wrapped__"].cache_clear()
-    
+#     static_pull.process_data.__dict__["__wrapped__"].cache_clear()
 
 def Selection():
     with solara.Card():
         with solara.Column():
-            solara.ToggleButtonsSingle(value=day, values=list(days), on_value=lambda x: measurement.set(measurements[0]))
-            solara.ToggleButtonsSingle(value=tree, values=list(trees), on_value=lambda x: measurement.set(measurements[0]))
+            solara.ToggleButtonsSingle(value=day, values=list(days), on_value=lambda x: nakresli(reset_measurements=True))
+            solara.ToggleButtonsSingle(value=tree, values=list(trees), on_value=lambda x: nakresli(reset_measurements=True))
             with solara.Row():
                 solara.ToggleButtonsSingle(value=measurement, 
                                            values=available_measurements(df, day.value, tree.value),
@@ -145,7 +134,7 @@ def Graphs():
         # solara.DataFrame(data['dataframe'], items_per_page=20)
         # cols = data['dataframe'].columns
 def Detail():
-    data = static_pull.proces_data(day.value, tree.value, measurement.value, ignore_optics_data.value)
+    data = static_pull.process_data(day.value, tree.value, measurement.value, ignore_optics_data.value)
     if nakresli.not_called:
         solara.Info("Nejdřív nakresli graf v první záložce. Klikni na Run calculation v sidebaru.")        
     elif not nakresli.finished:
@@ -166,14 +155,18 @@ def Detail():
                 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY', 
                 'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
                 'F_horizontal_Rope', 'F_vertical_Rope',
-                'M_Rope', 'M_Pt_Rope', 'F_horizontal_PT', 'F_vertical_PT', 'M_PT',
-                'M_Pt_PT']
+                'M_Rope', 'M_Pt_Rope', 'M_Elasto_Rope',
+                'F_horizontal_Measure', 'F_vertical_Measure',
+                'M_Measure', 'M_Pt_Measure', 'M_Elasto_Measure',]
                 with solara.Card():
                     solara.Markdown("### Horizontal axis \n\n Choose one variable.")
                     solara.ToggleButtonsSingle(values=cols, value=xdata, dense=True)
                 with solara.Card():
                     solara.Markdown("### Vertical axis \n\n Choose one or more variables.")
                     solara.ToggleButtonsMultiple(values=cols, value=ydata, dense=True)
+                with solara.Card():
+                    solara.Markdown("### Second vertical axis \n\n Choose one variable for right vertical axis. Does not work great in interactive plots. In interactive plots we plot rescaled data such. The scale factor is determined from maxima.")
+                    solara.ToggleButtonsSingle(values=[None]+cols, value=ydata2, dense=True)
                 pulls = list(range(len(data['times'])))
             
             if measurement.value == "M1":
@@ -202,10 +195,19 @@ def Detail():
                 kwds = {"template":"plotly_white", "height":600, "title":title}
                 # kwds = {"height":600, "title":title}
                 try:
-                    if xdata.value == "Time":
-                        px.scatter(subdf.astype(float), y=fix_input(ydata.value), **kwds)
+                    subdf = subdf.astype(float)
+                    if ydata2.value!=None: # Try to add rescaled column
+                        maximum_target = subdf[fix_input(ydata.value)].values.max()
+                        maximum_ori = subdf[ydata2.value].values.max()
+                        subdf.loc[:,f"{ydata2.value}_rescaled"] = subdf.loc[:,ydata2.value]/np.abs(maximum_ori/maximum_target)
+                        extradata = [f"{ydata2.value}_rescaled"]
                     else:
-                        px.scatter(subdf.astype(float), x=xdata.value, y=fix_input(ydata.value), **kwds)
+                        extradata = []
+                    cols_to_draw = fix_input(ydata.value + extradata)
+                    if xdata.value == "Time":
+                        px.scatter(subdf, y=cols_to_draw, **kwds)
+                    else:
+                        px.scatter(subdf, x=xdata.value, y=cols_to_draw, **kwds)
                 except:
                     solara.Error(solara.Markdown("""### Image failed. 
                                  
@@ -218,16 +220,33 @@ def Detail():
                 if xdata.value == "Time":
                     subdf["Time"] = subdf.index
                 subdf.plot(x=xdata.value, y=ydata.value, style='.', ax=ax)
+                if ydata2.value!=None:
+                    ax2 = ax.twinx()
+                    # see https://stackoverflow.com/questions/24280180/matplotlib-colororder-and-twinx
+                    ax2._get_lines = ax._get_lines
+                    subdf.plot(x=xdata.value, y=ydata2.value, style='.', ax=ax2)
+                    # ask matplotlib for the plotted objects and their labels
+                    lines, labels = ax.get_legend_handles_labels()
+                    lines2, labels2 = ax2.get_legend_handles_labels()
+                    ax.get_legend().remove()
+                    ax2.legend(lines + lines2, labels + labels2)                    
                 ax.grid()
                 ax.set(title = title)
                 solara.FigureMatplotlib(fig)
-            
+                
             try:
                 # find regresions
                 if xdata.value != "Time":
-                    subsubdf = subdf.loc[:,[xdata.value]+[i for i in ydata.value if i!=xdata.value]]
-                    reg_df = static_pull.get_regressions(subsubdf, xdata.value)
-                    solara.DataFrame(reg_df.iloc[:,:4])                
+                    # subsubdf = subdf.loc[:,[xdata.value]+[i for i in ydata.value+[ydata2.value] if i!=xdata.value]]
+                    if ydata2.value is None:
+                        target = ydata.value
+                    else:
+                        target = [ydata2.value] + ydata.value
+                    reg_df = static_pull.get_regressions(
+                        subdf,
+                        [[xdata.value] + target]
+                        )
+                    solara.DataFrame(reg_df.iloc[:,:5])                
             except:
                 solara.Error("Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
 
@@ -247,7 +266,7 @@ def Help():
 ### Popis
 
 * Inlinometr blue je 80, yelllow je 81. Výchylky v jednotlivých osách jsou blueX a blueY resp. blue_Maj a blue_Min. Celková výchylka je blue. Podobně  druhý inklinometr.
-* F se rozkládá na vodorovnou a svislou složku.Vodorovná se používá k výpočtu momentu v bodě úvazu (M) a v bodě Pt3 (M_PT). K tomu je potřeba znát odchylku lana od vodorovné polohy. Toto je možné 
+* F se rozkládá na vodorovnou a svislou složku.Vodorovná se používá k výpočtu momentu v bodě úvazu (M) a v bodě Pt3 (M_Pt). K tomu je potřeba znát odchylku lana od vodorovné polohy. Toto je možné 
     1. zjistit ze siloměru v pull TXT souborech jako Ropeangle(100) 
     2. anebo použít fixní hodnotu z geometrie a měření délek. 
 * Druhá varianta je spolehlivější, **Rope(100) má někdy celkem rozeskákané hodnoty.**

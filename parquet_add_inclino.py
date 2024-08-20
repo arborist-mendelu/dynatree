@@ -10,14 +10,17 @@ jako v optice, synchronizuje okamžiky vypuštění podle maxima síly a
 maxima Pt3.
 
 Čte následující data:
+
 * data z optiky v {measurement_day}/csv/
 * data z adresáře {measurement_day}/pulling_tests/
 
 Zapisuje následující data:
+
 * data z inklinoměrů sesynchronizovaná na optiku do
   {measurement_day}/csv_extended/*csv
 
 Provádí následující činnost:
+
 * Odečte od Pt3,4 pozice Pt11,12,13
 * Odečte od Pt1,2 pozice Pt8,9,10
 * Snaží se sesynchronizovat obě datové sady.

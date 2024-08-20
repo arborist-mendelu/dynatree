@@ -3,6 +3,8 @@
 """
 Created on Sun Apr 21 17:37:18 2024
 
+2024-08-20: The function date2dirname used old directory names. Should be fixed.
+
 @author: marik
 """
 

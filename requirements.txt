@@ -13,3 +13,6 @@ solara
 seaborn
 pywavelets
 emd
+sphinx 
+sphinx_rtd_theme 
+openpyxl

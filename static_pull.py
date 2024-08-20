@@ -2,27 +2,41 @@
 """
 Created on Wed Aug 14 13:25:19 2024
 
+Inputs the pulling data. Raw pullling data for M1, preprocessed pulling data 
+for M2 and higher (parquet_add_inclino.py script).
+
+Used in solara_major_minor_momentum.py  vit visualizations.
+
+Used to get regressions between variables in the phase of static pulling.
+
 @author: marik
 """
 
-DIRECTORY = "../data"
 import pandas as pd
-# import glob
-# import os
-# from scipy.signal import find_peaks
-from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import savgol_filter
 from scipy.stats import linregress
 from scipy.interpolate import interp1d
 from lib_dynatree import read_data_inclinometers, read_data, timeit
-from functools import lru_cache
-# import seaborn as sns
+# from functools import lru_cache
+import lib_dynatree
+import re
+
+DIRECTORY = "../data"
+
+def get_all_measurements(cesta=DIRECTORY):
+    return lib_dynatree.get_all_measurements(cesta, suffix="TXT", directory="pulling_tests")
+
+def available_measurements(df, day, tree):
+    select_rows = (df["day"]==day) & (df["tree"]==tree)
+    values = df[select_rows]["measurement"].values
+    return list(values)
 
 def split_df_static_pulling(
-        df_ori, 
-        intervals=None,
-        ):
+    df_ori,
+    intervals=None,
+    ):
     """
     Analyzes data in static tests, with three pulls. Inputs the dataframe, 
     outputs the dictionary. 
@@ -42,7 +56,7 @@ def split_df_static_pulling(
     
     """
     df= df_ori.copy()[["Force(100)"]].dropna()
-    
+
     # Interpolace a vyhlazeni
     new_index = np.arange(df.index[0],df.index[-1],0.1)
     window_length = 100
@@ -56,7 +70,7 @@ def split_df_static_pulling(
     if intervals is None:
         # Divide domain into interval where force is large and small
         maximum = df_interpolated["Force(100)"].max()
-        df_interpolated["Force_step"] = (df_interpolated["Force(100)"]>0.5*maximum).astype(int) 
+        df_interpolated["Force_step"] = (df_interpolated["Force(100)"]>0.5*maximum).astype(int)
 
         # identify jumps down
         diff_d1 = df_interpolated["Force_step"].diff()
@@ -79,7 +93,7 @@ def split_df_static_pulling(
 def find_intervals_to_split_measurements_from_csv(date, tree, csv="csv/intervals_split_M01.csv"):
     """
     Tries to find initial gues for separation of pulls in M1 measurement
-    from csv file. If the measturement is not included (most cases), return None. 
+    from csv file. If the measurement is not included (most cases), return None. 
     In this case the splitting is done automatically.
     """
     df = pd.read_csv(csv, index_col=[], dtype={"tree":str}, sep=";")
@@ -100,14 +114,15 @@ def find_intervals_to_split_measurements_from_csv(date, tree, csv="csv/intervals
         ]).reshape(-1,2)
 
 
-def process_inclinometers_major_minor(df_, height_of_anchorage=None, rope_angle=None, 
-                          height_of_pt=None):
+def process_inclinometers_major_minor(df_):
     """
     The input is dataframe loaded by pd.read_csv from pull_tests directory.
     
     * Converts Inclino(80) and Inclino(81) to blue and yellow respectively.
     * Evaluates the total angle of inclination from X and Y part
     * Adds the columns with Major and Minor axis.
+    
+    Returns new dataframe with the corresponding columns
     """
     df = pd.DataFrame(index=df_.index, columns=["blue","yellow"])
     df[["blueX","blueY","yellowX","yellowY"]] = df_[["Inclino(80)X","Inclino(80)Y", "Inclino(81)X","Inclino(81)Y",]]
@@ -135,17 +150,42 @@ def process_inclinometers_major_minor(df_, height_of_anchorage=None, rope_angle=
         # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
         # blueM, blueV, yellowM, yellowV
         for axis in ["_Maj", "_Min"]:
-            df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]    
+            df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]
     return df
 
+def read_tree_configuration():
+    file_path = "../data/Popis_Babice_VSE_13082024.xlsx"
+    sheet_name = "Prehledova tabulka_zakludaje"
+    
+    # Načtení dat s vynecháním druhého řádku a nastavením sloupce D jako index
+    df = pd.read_excel(
+        file_path,
+        sheet_name=sheet_name,
+        skiprows=[1],  # Vynechání druhého řádku
+        index_col=0,   # Nastavení čtvrtého sloupce (D) jako index
+        nrows=13,       # Načtení 13 řádků s daty
+        usecols="D,G,H,I,K,M",  # Načtení pouze sloupců D, G, H, K, L
+    )
+    
+    df.columns=["angle_of_anchorage", "distance_of_anchorage",
+             "height_of_anchorage", "height_of_pt",
+             "height_of_elastometer"]
+    
+    return df
+# df_pt_notes = pd.read_csv("csv/PT_notes_with_pt.csv", sep=",")
+# df_pt_notes.index = df_pt_notes["tree"]
+df_pt_notes = read_tree_configuration()
+
 def process_forces(
-        df_, 
-        height_of_anchorage=None, 
+        df_,
+        height_of_anchorage=None,
         rope_angle=None,
-        height_of_pt=None
+        height_of_pt=None, 
+        height_of_elastometer=None
         ):
     """
-    Input is a dataframe with Force(100) column
+    Input is a dataframe with Force(100) column. Evaluates horizontal and vertical 
+    component of the force and moments of force
     """
     df = pd.DataFrame(index=df_.index)
     # evaluate the horizontal and vertical component
@@ -154,13 +194,15 @@ def process_forces(
         rope_angle = df_['RopeAngle(100)']
     # evaluate horizontal and vertical force components and moment
     # obrat s values je potreba, protoze df_ ma MultiIndex
+    # shorter names
     df.loc[:,['F_horizontal']] = (df_['Force(100)'] * np.cos(np.deg2rad(rope_angle))).values
     df.loc[:,['F_vertical']] = (df_['Force(100)'] * np.sin(np.deg2rad(rope_angle))).values
     df.loc[:,['M']] = df['F_horizontal'] * height_of_anchorage
     df.loc[:,['M_Pt']] = df['F_horizontal'] * ( height_of_anchorage - height_of_pt )
-
+    df.loc[:,['M_Elasto']] = df['F_horizontal'] * ( 
+                height_of_anchorage - height_of_elastometer )
     return df
-    
+
 def tand(angle):
     """
     Evaluates tangens of the angle. The angli is in degrees.
@@ -170,21 +212,7 @@ def arctand(value):
     """
     Evaluates arctan. Return the angle in degrees.
     """
-    return np.rad2deg(np.arctan(value))    
-
-def get_regressions(df, independent="Time"):
-    regrese = {}
-    dependent = [_ for _ in df.columns if _ !=independent]
-    for i in dependent:
-        reg = linregress(df[independent].astype(float),df[i].astype(float))
-        regrese[i] = [i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
-    df = pd.DataFrame(regrese, index=["Name", "Slope", "Intercept", "R^2", "p-value", "stderr", "intercept_stderr"], columns=dependent).T
-    return df
-
-#%%
-
-df_pt_notes = pd.read_csv("csv/PT_notes_with_pt.csv", sep=",")
-df_pt_notes.index = df_pt_notes["tree"]
+    return np.rad2deg(np.arctan(value))
 
 def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY, skip_optics=False):
     """
@@ -224,27 +252,29 @@ def get_computed_data(day,tree,measurement, out=None, skip_optics=False):
     """
     if out is None:
         out = get_static_pulling_data(day, tree, measurement,skip_optics=skip_optics)
-    
+
     ans = {}
-    
+
     ans['inclinometers'] = process_inclinometers_major_minor(out['dataframe'])
-    
+
     ans['forces_from_rope_angle'] = process_forces(
-        out['dataframe'], 
-        height_of_anchorage=df_pt_notes.at[int(tree),'height_of_anchorage'], 
-        height_of_pt=df_pt_notes.at[int(tree),'height_of_pt']
-        )
-
-    ans['forces_from_pt_data'] = process_forces(
-        out['dataframe'], 
-        height_of_anchorage=df_pt_notes.at[int(tree),'height_of_anchorage'], 
+        out['dataframe'],
+        height_of_anchorage=df_pt_notes.at[int(tree),'height_of_anchorage'],
         height_of_pt=df_pt_notes.at[int(tree),'height_of_pt'],
-        rope_angle=df_pt_notes.at[int(tree),'angle_of_anchorage']
+        height_of_elastometer=df_pt_notes.at[int(tree),'height_of_elastometer'],
         )
 
-    for n,s in zip(['forces_from_pt_data', 'forces_from_rope_angle'],["PT","Rope"]):
+    ans['forces_from_measurements'] = process_forces(
+        out['dataframe'],
+        height_of_anchorage=df_pt_notes.at[int(tree),'height_of_anchorage'],
+        height_of_pt=df_pt_notes.at[int(tree),'height_of_pt'],
+        rope_angle=df_pt_notes.at[int(tree),'angle_of_anchorage'],
+        height_of_elastometer=df_pt_notes.at[int(tree),'height_of_elastometer'],
+        )
+
+    for n,s in zip(['forces_from_measurements', 'forces_from_rope_angle'],["Measure","Rope"]):
         ans[n].columns = [f"{i}_{s}" for i in ans[n]]
-        
+
     answer = pd.concat([ans[i] for i in ans.keys()], axis=1)
     return answer
 
@@ -252,6 +282,8 @@ def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.1):
     """
     The input is the dataframe with maximal value at the end. Return indices
     for values between given fraction of maximal value. 
+    
+    Used to focus on the interval of interest when processing static pulling data.
     """
     maximum = df.iat[-1,0]
     mask = df>maximal_fraction*maximum
@@ -261,13 +293,11 @@ def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.1):
     lower = mask.iloc[::-1,0].idxmax()
     # lowerindex = mask.shape[0] - mask.iloc[:,0].values[::-1].argmax()
     # lower = mask.index[lowerindex]
-    # lower = mask[mask == True].dropna().index.max() 
+    # lower = mask[mask == True].dropna().index.max()
     return lower, upper
-    
-#%%
 
-@timeit
-def proces_data(day, tree, measurement, skip_optics=False):
+# @timeit
+def process_data(day, tree, measurement, skip_optics=False):
     """
     skip_optics False means ifgnore parquet files and read original TXT file.
     """
@@ -278,81 +308,153 @@ def proces_data(day, tree, measurement, skip_optics=False):
     dataframe = out['dataframe']
     tree = tree[-2:]
     measurement = measurement[-1]
-    ans = get_computed_data(day, tree, measurement,out)    
+    ans = get_computed_data(day, tree, measurement,out)
     return {'times': out['times'], 'dataframe': pd.concat([dataframe, ans], axis=1)}
 
-@timeit    
+# @timeit
 def nakresli(day, tree, measurement, skip_optics=False):
-    ans = proces_data(day, tree, measurement, skip_optics=skip_optics)
-    dataframe = ans['dataframe']
+    """
+    Plot the data as in the Solara app.
     
+    `skip_optics` means that the data from optics are not considered. 
+    Thus no synchrnonization with optical data and no reset of inclinometers.
+    Probabably should be kept `False`.
+    """
+    ans = process_data(day, tree, measurement, skip_optics=skip_optics)
+    dataframe = ans['dataframe']
+
     fig, ax = plt.subplots()
     dataframe["Force(100)"].plot(ax=ax)
     ax.set(title=f"Static {day} {tree} {measurement}", ylabel="Force")
-    
+
     figs = []
     for i,_ in enumerate(ans['times']):
         subdf = dataframe.loc[_['minimum']:_['maximum'],["Force(100)"]]
         subdf.plot(ax=ax, legend=False)
-    
+
         # Find limits for given interval of forces
-        lower, upper = get_interval_of_interest(subdf, maximal_fraction=0.9)        
+        lower, upper = get_interval_of_interest(subdf, maximal_fraction=0.9)
         subdf[lower:upper].plot(ax=ax, linewidth=4, legend=False)
         ax.legend(["Síla","Náběh síly","Rozmezí 10 až 90\nprocent max."])
 
-        f,a = plt.subplots(2,2, 
+        f,a = plt.subplots(2,2,
                            figsize=(12,9)
                            )
         a = a.reshape(-1)
         df = dataframe.loc[lower:upper,:]
-        
+
         df.loc[:,["Force(100)"]].plot(ax=a[0], legend=False, xlabel="Time", ylabel="Force", style='.')
         # df columns: ['Force(100)', 'Elasto(90)', 'Elasto-strain', 'Inclino(80)X',
         # 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 'RopeAngle(100)',
-        # 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY', 
+        # 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY',
         # 'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
         # 'F_horizontal_Rope', 'F_vertical_Rope',
         # 'M_Rope', 'M_Pt_Rope', 'F_horizontal_PT', 'F_vertical_PT', 'M_PT',
         # 'M_Pt_PT']
         colors = ["blue","yellow"]
- 
+
         df.loc[:,["blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"]
                ].plot(ax=a[2], xlabel="Time", style='.')
         a[2].grid()
         a[2].set(ylabel="Angle")
         a[2].legend(title="Inclinometer_axis")
-        
+
         df.plot(x="Force(100)", y=colors, ax=a[1], ylabel="Angle", xlabel="Force", style='.')
         a[1].legend(title="Inclinometers")
 
 
-        a[3].plot(df["M_PT"], df[colors], '.')
+        a[3].plot(df["M_Measure"], df[colors], '.')
         a[3].set(
-                    xlabel = "Momentum from PT", 
+                    xlabel = "Momentum from Measured rope angle",
                     ylabel = "Angle",
                     )
         a[3].legend(colors)
-        
+
         for _ in [a[0],a[1],a[3]]:
             _.set(ylim=(0,None))
             _.grid()
-        f.suptitle(f"Detail, pull {i}")        
+        f.suptitle(f"Detail, pull {i}")
         plt.tight_layout()
         figs = figs + [f]
     return [fig] + figs
 
-def main():
+def main_nakresli():
     day,tree,measurement = "2021-03-22", "BK01", "M02"
     tree=tree[-2:]
     measurement = measurement[-1]
     nakresli(day, tree, measurement)
-    data = proces_data(day, tree, measurement)
+    data = process_data(day, tree, measurement)
     pull_value=0
     subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
-    lower, upper = get_interval_of_interest(subdf)        
-    subdf = subdf.loc[lower:upper,["M_PT","blue","yellow"]]
-    get_regressions(subdf, "M_PT")
-    
-if __name__ == "__main__":
-    main()
+    lower, upper = get_interval_of_interest(subdf)
+    subdf = subdf.loc[lower:upper,["M_Measure","blue","yellow"]]
+    get_regressions(subdf, "M_Measure")
 
+def get_regressions_for_one_measurement(day, tree, measurement):
+    data = process_data(day, tree, measurement)
+    reg_df = {}
+    for pull_value,times in enumerate(data['times']):
+        subdf = data['dataframe'].loc[times['minimum']:times['maximum'],:]
+        lower, upper = get_interval_of_interest(subdf)
+        subdf = subdf.loc[lower:upper,:]
+        # df columns: ['Force(100)', 'Elasto(90)', 'Elasto-strain', 'Inclino(80)X',
+        # 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 'RopeAngle(100)',
+        # 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY',
+        # 'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
+        # 'F_horizontal_Rope', 'F_vertical_Rope',
+        # 'M_Rope', 'M_Pt_Rope', 'F_horizontal_PT', 'F_vertical_PT', 'M_PT',
+        # 'M_Pt_PT']        
+        reg_df[pull_value] = get_regressions(subdf,
+            [
+            ["M_PT","blue", "yellow", "Elasto-strain", "Force(100)", "F_horizontal_PT"],
+            ["M_Pt_PT","blue", "yellow", "Elasto-strain", "Force(100)", "F_horizontal_PT" ],
+            ["Elasto-strain","blue","yellow","M_PT","Force(100)","F_horizontal_PT"],
+            ]
+            )
+        reg_df[pull_value].loc[:,"pull"] = pull_value
+    reg_df_sum = pd.concat(list(reg_df.values()))
+    reg_df_sum.loc[:,["date","tree","measurement"]] = [day, tree, measurement]
+    return reg_df_sum
+
+def get_regressions(df, collist):
+    """
+    Return regression in dataframe. If collist is not list but column name, this
+    column is independent variable and other columns are dependenet variable. 
+    
+    If colist is list, it is assumed that it is a list of lists. In each sublist, 
+    the regression of the first item to the oter ones is evaluated.
+    """
+    df = df.astype(float)
+    if not isinstance(collist, list):
+        return get_regressions_for_one_column(df, collist)
+    data = [get_regressions_for_one_column(df.loc[:,i], i[0]) for i in collist]
+    return pd.concat(data)
+
+def get_regressions_for_one_column(df, independent):
+    regrese = {}
+    dependent = [_ for _ in df.columns if _ !=independent]
+    for i in dependent:
+        reg = linregress(df[independent],df[i])
+        regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
+    df = pd.DataFrame(regrese, index=["Independent", "Dependent", "Slope", "Intercept", "R^2", "p-value", "stderr", "intercept_stderr"], columns=dependent).T
+    return df
+
+def main():
+    df = get_all_measurements()
+    all_data = {}
+    for i,row in df.iterrows():
+        day = row['day']
+        tree = row['tree']
+        measurement = row['measurement']
+        print (f"Processing {day} {tree} {measurement}")
+        try:
+            all_data[i] = get_regressions_for_one_measurement(day, tree, measurement)
+        except:
+            print(f"Failed. Day,tree,measurement : {day},{tree},{measurement}")
+    df_all_data = pd.concat(all_data).reset_index(drop=True)
+    return df_all_data
+
+if __name__ == "__main__":
+    # main_output = main()
+    # main_output.to_csv("csv_output/regresions_static.csv")
+    main_nakresli()

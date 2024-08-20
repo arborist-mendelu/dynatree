@@ -1,1 +1,1 @@
-conda install pandas numpy matplotlib streamlit dash scipy solara spyder polars emd seaborn pywavelets
+conda install pandas numpy matplotlib streamlit dash scipy solara spyder polars emd seaborn pywavelets sphinx sphinx_rtd_theme sphinx sphinx_rtd_theme openpyxl

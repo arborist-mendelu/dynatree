@@ -11,7 +11,7 @@ program, dělá FFT analýzu pro všechna měření ve všech dnech.
 """
 
 import pandas as pd
-from lib_dynatree import read_data_selected, date2dirname
+from lib_dynatree import read_data_selected
 from lib_dynatree import get_all_measurements
 
 import matplotlib.pyplot as plt
@@ -40,8 +40,7 @@ def interp(df, new_index):
 def extend_dataframe_with_zeros(data, tail=2):
     """
     Input: dataframe with time in the index
-    Output: copy of the dataframe with zero signal at the initial and final 
-            part
+    Output: copy of the dataframe with zero signal at the initial and the final part
     
     The mean value is subtracted from the data and zero sequences are
     added on the initial and final part of the data.

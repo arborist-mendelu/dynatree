@@ -27,7 +27,7 @@ def timeit(func):
         return result
     return timeit_wrapper
 
-@timeit
+# @timeit
 def read_data(file, index_col="Time", usecols=None):
     """
     If file is parquet file, return the dataframe from this file.
@@ -76,7 +76,7 @@ def get_data(date, tree, measurement):
     file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet"
     return read_data(file)
 
-@timeit
+# @timeit
 def read_data_selected(file,
                         probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]]):
     """
@@ -339,13 +339,13 @@ def find_finetune_synchro(date, tree, measurement, cols="delta time"):
 # start,end = find_finetune_synchro("2021-03-22", "BK01", "M02", "Inclino(80)Y")
 
 
-def date2dirname(date):
-    # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
-    if len(date)==10:
-        date = "".join(reversed(date.split("-")))
-    if len(date)==8:
-        date = f"01_Mereni_Babice_{date}_optika_zpracovani"
-    return date
+# def date2dirname(date):
+#     # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
+#     if len(date)==10:
+#         date = "".join(reversed(date.split("-")))
+#     if len(date)==8:
+#         date = f"01_Mereni_Babice_{date}_optika_zpracovani"
+#     return date
 
 
 def find_release_time_interval(df_extra, date, tree, measurement):
@@ -374,18 +374,21 @@ def find_release_time_interval(df_extra, date, tree, measurement):
         tmin = np.abs(df_extra.loc[:maxforceidx,["Force(100)"]]-maxforce*percent2).idxmin().values[0]
         return tmin,tmax
 
-def split_path(file):
+def split_path(file, suffix="parquet"):
+    # fix for bad names containing BK_10 instead of BK10
+    file = file.replace("BK_","BK") 
     data = file.split("/")
-    data[-1] = data[-1].replace(".parquet","")
+    data[-1] = data[-1].replace(f".{suffix}","")
     return [file,data[-2].replace("_","-")] + data[-1].split("_")
 
-def get_all_measurements(cesta="../data"):
+def get_all_measurements(cesta="../data", suffix="parquet", directory="parquet"):
     """
     Get dataframe with all measurements. The dataframe has columns
     date, tree and measurement.
     """
-    files = glob.glob(cesta+"/parquet/*/BK*M??.parquet")        
-    out = [split_path(file) for file in files]
+    files = glob.glob(cesta+f"/{directory}/*/BK*M??.{suffix}") 
+    files += glob.glob(cesta+f"/{directory}/*/BK*M?.{suffix}")
+    out = [split_path(file, suffix=suffix) for file in files]
     df = pd.DataFrame([i[1:] for i in out], columns=['day','tree', 'measurement'])
     df = df.sort_values(by=list(df.columns))
     df = df.reset_index(drop=True)

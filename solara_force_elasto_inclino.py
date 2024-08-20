@@ -14,8 +14,8 @@ navod = """
   Je proto potřeba spustit  skript `parquet_add_inclino.py` pro pro začlenění informací do datovych souboru,
   dále `extract_release_data.py` pro opravená data před vypuštěním a případně 
   `plot_probes_inclino_force.py` pro obrázky jaké jsou zde.
-* Posuvníkem si můžeš změnit rozsah na ose x, aby šla dobře vidět kvalita nebo nekvalita
-  synchronizace a aby se dalo posoudit, jestli je rozsah před vypuštěním (žlutý pás) umístěn rozumně.  
+* Zadáním hodnot si můžeš změnit rozsah na ose x, aby šla dobře vidět kvalita nebo nekvalita
+  synchronizace a aby se dalo posoudit, jestli je rozsah před vypuštěním (žlutý pás) umístěn rozumně. (Žlutý pás se zatím /2024-08-20/ k ničemu nepoužívá.) Obě hodnoty nulové znamenají celý rozsah.  
 
 """
 
@@ -48,6 +48,7 @@ def get_all_measurements(cesta=DATA_PATH):
     df = df.reset_index(drop=True)
     return df
 
+major_minor = solara.reactive(True)
 #%%
 
 def available_measurements(df, day, tree):
@@ -117,7 +118,8 @@ def nakresli():
             xlim=(start.value,endlim),
             df_extra=df_ext,
             df=DF,
-            return_figure=True
+            return_figure=True,
+            major_minor=major_minor
             )    
     return fig
     
@@ -137,13 +139,15 @@ def Page():
                                            values=available_measurements(df, day.value, tree.value),
                                            on_value=reset_limits)
                 solara.ToggleButtonsSingle(value=probe, values=probes)
+                with solara.Tooltip("{Plot Major and Minor rather than X and Y. Also rename inclinometers to blue/yellow and make the maximal value positive."):
+                    solara.Switch(label="Label as Major/Minor", value=major_minor)
                 solara.InputFloat("Start", value=start, continuous_update=False)   
                 with solara.Tooltip("End of the plot. If 0, then the end of the plot is the end of the data."):             
                     solara.InputFloat("End", value=end, continuous_update=False)                
         solara.Div(style={"margin-bottom": "10px"})
         with solara.Row():
             solara.Button("Run calculation", on_click=nakresli, color="primary")
-            solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}, {probe.value}, {plot_fixes}, {plot_Pt4}")
+            solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}, {probe.value}")
     solara.ProgressLinear(nakresli.pending)    
     if measurement.value not in available_measurements(df, day.value, tree.value):
         solara.Error(f"Measurement {measurement.value} not available for this tree.")

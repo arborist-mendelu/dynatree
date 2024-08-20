@@ -17,8 +17,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-from lib_dynatree import read_data, read_data_selected, directory2date, find_release_time_optics, find_release_time_interval
-from lib_dynatree import find_finetune_synchro, read_data_inclinometers, date2dirname
+from lib_dynatree import read_data, read_data_selected, find_release_time_optics, find_release_time_interval
+from lib_dynatree import find_finetune_synchro, read_data_inclinometers
+from static_pull import process_inclinometers_major_minor
 import pathlib
 
 def plot_one_measurement(
@@ -34,7 +35,10 @@ def plot_one_measurement(
         df=None,
         figsize=(10,7), 
         plot_fixes=True, 
-        plot_Pt4=False):
+        plot_Pt4=False,
+        major_minor=False,
+        release_detail=False
+        ):
     """
     Vykreslí tři obrázky. 
     V horním je pohyb Pt3 a pootm Pt3 s odečtením posunu bodů na zemi.
@@ -43,22 +47,9 @@ def plot_one_measurement(
     aby se dala porovnat se silou a v samostatné soustavě souřadnic 
     data z eleastometru.
     
-    ----------
-    date : TYPE, optional
-        The default is "01_Mereni_Babice_22032021_optika_zpracovani".
-    path : TYPE, optional
-        The default is "../".
-    tree : TYPE, optional
-        The default is "01".
-    measurement : TYPE, optional
-        The default is "2".
-    df_remarks : TYPE, optional
-        The default is df_remarks.
-    return_figure : TYPE, optional
-        The default is True.
-    save_figure : TYPE, optional
-        The default is False.
-    xlim: limits on horizontal axis
+    major_minor: pokud je True, kresli se major a minor. Jinak inclino(80) a incino (81)
+    release_detail: pokud je True, kresli se detail okolo vypusteni
+    
     df: do not read csv but use this one DataFrame instead
 
     Returns
@@ -162,9 +153,15 @@ def plot_one_measurement(
         start,end = bounds
         inclino_mean = df_pulling_tests.loc[start:end,inclino].mean()
         df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean
-    df_pulling_tests.loc[draw_from:draw_to,list_inclino].plot(ax=ax, style=".")
+    if major_minor:
+        list_major_minor = ["blue_Maj", "blue_Min", "yellow_Maj","yellow_Min"]
+        df_major_minor = process_inclinometers_major_minor(df_pulling_tests)
+        df_major_minor.loc[draw_from:draw_to,list_major_minor].plot(ax=ax, style=".")
+        ax.legend(list_major_minor, title="", loc=3)
+    else:
+        df_pulling_tests.loc[draw_from:draw_to,list_inclino].plot(ax=ax, style=".")
+        ax.legend(list_inclino, title="", loc=3)
     ax.grid()
-    ax.legend(list_inclino, title="", loc=3)
     ax.set(title="Inclinometers")
         
     # plot force and strain
@@ -208,7 +205,8 @@ def plot_one_measurement(
     
     for ax in axes:
         # Nasledujici radek omezi graf na okamzik okolo vypusteni
-        # ax.set(xlim=(tmin-(tmax-tmin), max(tmax+2*(tmax-tmin),release_time_optics)))
+        if release_detail:
+            ax.set(xlim=(tmin-(tmax-tmin), max(tmax+2*(tmax-tmin),release_time_optics)))
         ax.axvspan(tmin,tmax, alpha=.5, color="yellow")
         # pre_release_data[file.replace(".csv","")] = delta_df.mean()
         ax.set(xlim=xlim, ylim=(None, None))        
@@ -225,13 +223,10 @@ def plot_one_measurement(
 
 def plot_one_day(date="2021-03-22", path="../data"):
     
-    # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
-    # date = date2dirname(date)
-    
-    csvfiles =  glob.glob(f"../data/csv/{date.replace('-','_')}/*.csv")
-    csvfiles.sort()
-    for file in csvfiles:
-        filename = file.split("/")[-1].replace(".csv","")
+    files =  glob.glob(f"../data/parquet/{date.replace('-','_')}/BK??_M??.parquet")
+    files.sort()
+    for file in files:
+        filename = file.split("/")[-1].replace(".parquet","")
         print(filename,", ",end="", flush=True)
         tree, measurement = filename.split("_")
         plot_one_measurement(
@@ -240,7 +235,10 @@ def plot_one_day(date="2021-03-22", path="../data"):
             tree=tree[-2:], 
             measurement=measurement[-1], 
             save_figure=True, 
-            return_figure=False)
+            return_figure=False, 
+            major_minor=True, 
+            release_detail=True
+            )
     print()    
     print(f"Konec zpracování pro {date}")
     
