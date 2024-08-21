@@ -12,8 +12,34 @@ import numpy as np
 from scipy import interpolate, signal
 from scipy.fft import fft, fftfreq
 import glob
-from functools import wraps
+from functools import wraps, lru_cache
 import time
+
+# 
+import logging
+from logging.handlers import RotatingFileHandler
+logFile = '/tmp/dynatree.log'
+
+logger = logging.getLogger("dynatree")
+file_handler = RotatingFileHandler(logFile, maxBytes=100000, backupCount=10)
+screen_handler = logging.StreamHandler()
+logging.basicConfig(
+    handlers=[file_handler, screen_handler],
+    level=logging.INFO,
+    format="[%(asctime)s] %(levelname)s | %(message)s",
+    )
+
+# logger.setLevel(logging.WARNING)
+# logger.disabled = True
+
+# file_handler.setLevel(logging.ERROR)
+# file_handler.disabled = True ## nefunguje
+# logger.removeHandler(file_handler)
+# logger.error("Chyba")
+# logger.warning("Varovani")
+# logger.info("Informace")
+# logger.debug("ladeni")
+
 
 # from https://dev.to/kcdchennai/python-decorator-to-measure-execution-time-54hk
 def timeit(func):
@@ -23,11 +49,13 @@ def timeit(func):
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         total_time = end_time - start_time
-        print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
+        msg = f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds'
+        logger.info(msg)
+        # print(msg)
         return result
     return timeit_wrapper
 
-# @timeit
+@timeit
 def read_data(file, index_col="Time", usecols=None):
     """
     If file is parquet file, return the dataframe from this file.
@@ -76,7 +104,8 @@ def get_data(date, tree, measurement):
     file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet"
     return read_data(file)
 
-# @timeit
+@timeit
+@lru_cache(4)
 def read_data_selected(file,
                         probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]]):
     """

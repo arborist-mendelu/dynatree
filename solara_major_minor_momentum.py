@@ -22,6 +22,7 @@ import numpy as np
 import lib_dynatree
 from static_pull import get_all_measurements, available_measurements
 
+
 df = get_all_measurements()
 days = df["day"].drop_duplicates().values
 trees = df["tree"].drop_duplicates().values
@@ -75,7 +76,8 @@ def Page():
             try:
                 Detail()
             except:
-                solara.Error("Něco se nepovedlo. Možná mrkni nejprve na záložku Grafy")
+                solara.Error("Něco se nepovedlo. Možná není vybráno nic pro svislou osu. nebo je vybrána stejná veličina pro vodorovnou a svislou osu. Nebo je nějaký jiný problém. Možná mrkni nejprve na záložku Grafy")
+                # lib_dynatree.logger.error("Solara: Kreslení grafu selhalo")
         with solara.lab.Tab("Návod a komentáře"):
             Help()        
         
@@ -149,7 +151,7 @@ def Detail():
                     """)
             
             with solara.Sidebar():
-                cols = ['Time','Force(100)', 'Elasto(90)', 'Elasto-strain',
+                cols = ['Time','Pt3','Pt4','Force(100)', 'Elasto(90)', 'Elasto-strain',
                         # 'Inclino(80)X', 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 
                 'RopeAngle(100)',
                 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY', 
@@ -163,10 +165,10 @@ def Detail():
                     solara.ToggleButtonsSingle(values=cols, value=xdata, dense=True)
                 with solara.Card():
                     solara.Markdown("### Vertical axis \n\n Choose one or more variables.")
-                    solara.ToggleButtonsMultiple(values=cols, value=ydata, dense=True)
+                    solara.ToggleButtonsMultiple(values=cols[1:], value=ydata, dense=True)
                 with solara.Card():
-                    solara.Markdown("### Second vertical axis \n\n Choose one variable for right vertical axis. Does not work great in interactive plots. In interactive plots we plot rescaled data such. The scale factor is determined from maxima.")
-                    solara.ToggleButtonsSingle(values=[None]+cols, value=ydata2, dense=True)
+                    solara.Markdown("### Second vertical axis \n\n Choose one variable for right vertical axis. Does not work great in interactive plots. In interactive plots we plot rescaled data. The scale factor is determined from maxima.")
+                    solara.ToggleButtonsSingle(values=[None]+cols[1:], value=ydata2, dense=True)
                 pulls = list(range(len(data['times'])))
             
             if measurement.value == "M1":
@@ -197,8 +199,9 @@ def Detail():
                 try:
                     subdf = subdf.astype(float)
                     if ydata2.value!=None: # Try to add rescaled column
-                        maximum_target = subdf[fix_input(ydata.value)].values.max()
-                        maximum_ori = subdf[ydata2.value].values.max()
+                        maximum_target = np.nanmax(subdf[fix_input(ydata.value)].values)
+                        maximum_ori = np.nanmax(subdf[ydata2.value].values)
+                        print (f"maxima jsou {maximum_target} a {maximum_ori}")
                         subdf.loc[:,f"{ydata2.value}_rescaled"] = subdf.loc[:,ydata2.value]/np.abs(maximum_ori/maximum_target)
                         extradata = [f"{ydata2.value}_rescaled"]
                     else:
@@ -246,6 +249,7 @@ def Detail():
                         subdf,
                         [[xdata.value] + target]
                         )
+                    # subdf.to_csv("temp.csv")
                     solara.DataFrame(reg_df.iloc[:,:5])                
             except:
                 solara.Error("Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
@@ -268,15 +272,15 @@ def Help():
 * Inlinometr blue je 80, yelllow je 81. Výchylky v jednotlivých osách jsou blueX a blueY resp. blue_Maj a blue_Min. Celková výchylka je blue. Podobně  druhý inklinometr.
 * F se rozkládá na vodorovnou a svislou složku.Vodorovná se používá k výpočtu momentu v bodě úvazu (M) a v bodě Pt3 (M_Pt). K tomu je potřeba znát odchylku lana od vodorovné polohy. Toto je možné 
     1. zjistit ze siloměru v pull TXT souborech jako Ropeangle(100) 
-    2. anebo použít fixní hodnotu z geometrie a měření délek. 
-* Druhá varianta je spolehlivější, **Rope(100) má někdy celkem rozeskákané hodnoty.**
-  Vypočítané veličiny mají na konci _Rope nebo _PT. Asi se hodí více ty s _PT na konci.
+    2. anebo použít fixní hodnotu z geometrie a měření délek
+    3. anebo použít fixní hodnotu naměřenou na začátku experimentu.
+* Druhé dvě varianty jsou spolehlivější, **Rope(100) má někdy celkem rozeskákané hodnoty.**  Vypočítané veličiny mají na konci _Rope (varianta 1) nebo _Measure (varianta 3). Varianta 2 bude stejná jsko 3, jenom se lišit konstantním faktorem. Asi se hodí více data s _Measure na konci.
 * Elasto-strain je Elasto(90)/200000.
 
 ### Komenáře
 
 * V diagramech síla nebo moment versus inklinometry není moc změna trendu mezi první polovinou diagramu a celkem. Takže je asi jedno jestli bereme pro sílu rozmezí 10-90 procent Fmax nebo 10-40 procent.
-* Veličina Rope(100) ze siloměru má dost rozeskákané hodnoty a to zašpiní cokoliv, co se pomocí toho počítá. Asi nebrat. To jsou veličiny, které mají na konci text "_Rope". Místo nich použít ty, co mají na konci "_PT"
+* Veličina Rope(100) ze siloměru má dost rozeskákané hodnoty a to zašpiní cokoliv, co se pomocí toho počítá. Asi nebrat. To jsou veličiny, které mají na konci text "_Rope". Místo nich použít ty, co mají na konci "_Measure"
 * Graf moment versus inlinometry má někdy na začátku trochu neplechu. Možná mají velký vliv nevynulované hodnoty 
   inklinometrů, protože se přidávají k malým náklonům a hodně zkreslují. Zvážit posunutí rozmezí na vyšší hodnotu než 10 procent Fmax.
 
@@ -292,7 +296,16 @@ měření (M02 a výše) byla zpracována:
 
 Dá se snadno přepnout na to, aby se všechna data brala z TXT souborů (volba `skip_optics` ve funkci `get_static_pulling_data`), ale přišli bychom o opravy s vynulováním. Resp. bylo by potřeba to zapracovat.
 
+### Poznámky
 
+|Měření   |Poznámka   |
+|:--|:--|
+|2021-03-22 BK08 M05| Siloměr neměřil. Není síla ani momenty.|
+|2022-08-16 BK13 M02| Optika totálně selhala. TODO: brát jako statiku, viz níže.|
+|2022-08-16 BK16 M01| Po zatáhnutí zůstávala velká deformace. Ale zpracování OK.|
+|2022-04-05 BK21 M05| Vůbec není v optice. Zatím vyhozeno. TODO: brát jako statiku, viz níže.|
+
+Pokud chceš dynamické měření brát jako statiku, přepni přepínač "Ignore prepocessed files for M2 and higher" (vedle sezamu dostupných měření.)
 
 """
         )

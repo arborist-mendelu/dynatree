@@ -23,6 +23,9 @@ from lib_dynatree import read_data_inclinometers, read_data, timeit
 import lib_dynatree
 import re
 
+logger = lib_dynatree.logger
+
+
 DIRECTORY = "../data"
 
 def get_all_measurements(cesta=DIRECTORY):
@@ -79,11 +82,11 @@ def split_df_static_pulling(
 
     time = []
     for start,end in intervals:
-        df_subset = df.loc[start:end,"Force(100)"]
+        df_subset = df.loc[(df.index > start) & (df.index < end),"Force(100)"]
         maximum_idx = np.argmax(df_subset)
         t = {'maximum': df_subset.index[maximum_idx]}
 
-        df_subset = df.loc[start:t['maximum'],"Force(100)"]
+        df_subset = df.loc[(df.index > start) & (df.index < t['maximum']),"Force(100)"]
         idxmin = df_subset.idxmin()
         t['minimum'] = idxmin
 
@@ -280,16 +283,20 @@ def get_computed_data(day,tree,measurement, out=None, skip_optics=False):
 
 def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.1):
     """
-    The input is the dataframe with maximal value at the end. Return indices
-    for values between given fraction of maximal value. 
+    The input is the dataframe with one columns and maximal value at the end. 
+    Return indices for values between given fraction of maximal value. 
     
     Used to focus on the interval of interest when processing static pulling data.
     """
     maximum = df.iat[-1,0]
-    mask = df>maximal_fraction*maximum
+    minimum = df.iat[1,0]
+    if np.isnan(minimum):
+        minimum = 0
+    
+    mask = df>maximal_fraction*(maximum-minimum)+minimum
     upper = mask.idxmax().iloc[0]
     subdf = df.loc[:upper,:]
-    mask = subdf<minimal_fraction*maximum
+    mask = subdf<minimal_fraction*(maximum-minimum)+minimum
     lower = mask.iloc[::-1,0].idxmax()
     # lowerindex = mask.shape[0] - mask.iloc[:,0].values[::-1].argmax()
     # lower = mask.index[lowerindex]
@@ -304,12 +311,24 @@ def process_data(day, tree, measurement, skip_optics=False):
     # read data, either M02, 3, 4, etc or three pulls in M1
     # interpolate the missing data if necessary
     out = get_static_pulling_data(day, tree, measurement, skip_optics=skip_optics)
-    out['dataframe']=out['dataframe'].interpolate(method='index')
+    
+    # remove nan in index if necessary before interpolation
+    idxna = out['dataframe'].index.isna()
+    out['dataframe'].iloc[~idxna,:]=out['dataframe'].iloc[~idxna,:].interpolate(method='index')
     dataframe = out['dataframe']
     tree = tree[-2:]
     measurement = measurement[-1]
+    if measurement != '1':
+        pt_3_4 = lib_dynatree.read_data_selected(f"../data/parquet/{day.replace('-','_')}/BK{tree}_M0{measurement}.parquet")
+        pt_3_4 = pt_3_4.loc[:,[("Pt3","Y0"),("Pt4","Y0")]]
+        pt_3_4 = pt_3_4 - pt_3_4.iloc[0,:]
+        pt_3_4.columns = ["Pt3","Pt4"]
+    else:
+        pt_3_4 = pd.DataFrame(index=dataframe.index,data={"Pt3": np.nan, "Pt4":np.nan})
     ans = get_computed_data(day, tree, measurement,out)
-    return {'times': out['times'], 'dataframe': pd.concat([dataframe, ans], axis=1)}
+    
+    df = pd.concat([dataframe, ans,pt_3_4], axis=1)
+    return {'times': out['times'], 'dataframe': df}
 
 # @timeit
 def nakresli(day, tree, measurement, skip_optics=False):
@@ -349,8 +368,9 @@ def nakresli(day, tree, measurement, skip_optics=False):
         # 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY',
         # 'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
         # 'F_horizontal_Rope', 'F_vertical_Rope',
-        # 'M_Rope', 'M_Pt_Rope', 'F_horizontal_PT', 'F_vertical_PT', 'M_PT',
-        # 'M_Pt_PT']
+        # 'M_Rope', 'M_Pt_Rope', 'M_Elasto_Rope'
+        # 'F_horizontal_Measure', 'F_vertical_Measure',
+        # 'M_Measure', 'M_Pt_Measure', 'M_Elasto_Measure']
         colors = ["blue","yellow"]
 
         df.loc[:,["blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"]
@@ -361,7 +381,6 @@ def nakresli(day, tree, measurement, skip_optics=False):
 
         df.plot(x="Force(100)", y=colors, ax=a[1], ylabel="Angle", xlabel="Force", style='.')
         a[1].legend(title="Inclinometers")
-
 
         a[3].plot(df["M_Measure"], df[colors], '.')
         a[3].set(
@@ -379,7 +398,7 @@ def nakresli(day, tree, measurement, skip_optics=False):
     return [fig] + figs
 
 def main_nakresli():
-    day,tree,measurement = "2021-03-22", "BK01", "M02"
+    day,tree,measurement = "2022-04-05", "BK16", "M02"
     tree=tree[-2:]
     measurement = measurement[-1]
     nakresli(day, tree, measurement)
@@ -388,7 +407,7 @@ def main_nakresli():
     subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
     lower, upper = get_interval_of_interest(subdf)
     subdf = subdf.loc[lower:upper,["M_Measure","blue","yellow"]]
-    get_regressions(subdf, "M_Measure")
+    get_regressions(subdf, "M_Measure",info = f"{day} BK{tree} M0{measurement}")
 
 def get_regressions_for_one_measurement(day, tree, measurement):
     data = process_data(day, tree, measurement)
@@ -402,21 +421,30 @@ def get_regressions_for_one_measurement(day, tree, measurement):
         # 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY',
         # 'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
         # 'F_horizontal_Rope', 'F_vertical_Rope',
-        # 'M_Rope', 'M_Pt_Rope', 'F_horizontal_PT', 'F_vertical_PT', 'M_PT',
-        # 'M_Pt_PT']        
+        # 'M_Rope', 'M_Pt_Rope']        
+        if measurement[-1] != "1":
+            pt_reg = [
+                ["M_Pt_Rope","Pt3", "Pt4"],
+                ["M_Pt_Measure","Pt3", "Pt4"],
+                ]
+        else:
+            pt_reg = []
+
         reg_df[pull_value] = get_regressions(subdf,
             [
-            ["M_PT","blue", "yellow", "Elasto-strain", "Force(100)", "F_horizontal_PT"],
-            ["M_Pt_PT","blue", "yellow", "Elasto-strain", "Force(100)", "F_horizontal_PT" ],
-            ["Elasto-strain","blue","yellow","M_PT","Force(100)","F_horizontal_PT"],
-            ]
+            ["M_Rope",   "blue", "yellow", "blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"],
+            ["M_Measure","blue", "yellow", "blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"],
+            ["M_Elasto_Rope", "Elasto-strain"],
+            ["M_Elasto_Measure", "Elasto-strain"],
+            ]+pt_reg,
+            info=f"{day} BK{tree} M0{measurement}"
             )
         reg_df[pull_value].loc[:,"pull"] = pull_value
     reg_df_sum = pd.concat(list(reg_df.values()))
     reg_df_sum.loc[:,["date","tree","measurement"]] = [day, tree, measurement]
     return reg_df_sum
 
-def get_regressions(df, collist):
+def get_regressions(df, collist, info=""):
     """
     Return regression in dataframe. If collist is not list but column name, this
     column is independent variable and other columns are dependenet variable. 
@@ -426,35 +454,54 @@ def get_regressions(df, collist):
     """
     df = df.astype(float)
     if not isinstance(collist, list):
-        return get_regressions_for_one_column(df, collist)
-    data = [get_regressions_for_one_column(df.loc[:,i], i[0]) for i in collist]
+        return get_regressions_for_one_column(df, collist, info=info)
+    data = [get_regressions_for_one_column(df.loc[:,i], i[0], info=info) for i in collist]
     return pd.concat(data)
 
-def get_regressions_for_one_column(df, independent):
+def get_regressions_for_one_column(df, independent, info=""):
     regrese = {}
     dependent = [_ for _ in df.columns if _ !=independent]
     for i in dependent:
-        reg = linregress(df[independent],df[i])
-        regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
-    df = pd.DataFrame(regrese, index=["Independent", "Dependent", "Slope", "Intercept", "R^2", "p-value", "stderr", "intercept_stderr"], columns=dependent).T
-    return df
+        # remove nan valules, if any
+        cleandf = df.loc[:,[independent,i]].dropna()
+        # do regresions without nan
+        try:
+            reg = linregress(cleandf[independent],cleandf[i])
+            regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
+        except:
+            pass
+            logger.error(f"Linear regression failed for {independent} versus {i}. Info: {info}")
+    ans_df = pd.DataFrame(regrese, index=["Independent", "Dependent", "Slope", "Intercept", "R^2", "p-value", "stderr", "intercept_stderr"], columns=dependent).T
+    return ans_df
 
 def main():
+    logger.setLevel(lib_dynatree.logging.INFO)
+    logger.info("========== INITIALIZATION OF static-pull.py  ============")
     df = get_all_measurements()
+    # drop missing optics
+    df = df[~((df["day"]=="2022-04-05")&(df["tree"]=="BK21")&(df["measurement"]=="M5"))]
     all_data = {}
     for i,row in df.iterrows():
         day = row['day']
         tree = row['tree']
         measurement = row['measurement']
-        print (f"Processing {day} {tree} {measurement}")
+        msg = f"Processing {day} {tree} {measurement}"
+        print (msg)
+        logger.info(msg)
+        all_data[i] = get_regressions_for_one_measurement(day, tree, measurement)
         try:
             all_data[i] = get_regressions_for_one_measurement(day, tree, measurement)
         except:
-            print(f"Failed. Day,tree,measurement : {day},{tree},{measurement}")
+            msg = f"Failed. Day,tree,measurement : {day},{tree},{measurement}"
+            print(msg)
+            logger.error(msg)
     df_all_data = pd.concat(all_data).reset_index(drop=True)
     return df_all_data
 
 if __name__ == "__main__":
-    # main_output = main()
-    # main_output.to_csv("csv_output/regresions_static.csv")
-    main_nakresli()
+    # day, tree, measurement = "2022-08-16", "BK11", "M03"
+    # get_static_pulling_data(day,tree, measurement, skip_optics=True)
+    # get_regressions_for_one_measurement(day, tree, measurement)
+    # main_nakresli()
+    main_output = main()
+    main_output.to_csv("csv_output/regresions_static.csv")
