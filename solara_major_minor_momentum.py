@@ -8,7 +8,7 @@ Created on Thu Aug 15 14:00:04 2024
 
 DATA_PATH = "../data"
 
-title = "Pulling, force, inclinometers, elastometer"
+title = "DYNATREE: pulling, force, inclinometers, extensometer, optics, ..."
 
 import solara
 from solara.lab import task
