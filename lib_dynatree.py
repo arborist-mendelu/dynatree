@@ -20,15 +20,30 @@ import logging
 from logging.handlers import RotatingFileHandler
 logFile = '/tmp/dynatree.log'
 
-logger = logging.getLogger("dynatree")
-file_handler = RotatingFileHandler(logFile, maxBytes=100000, backupCount=10)
-screen_handler = logging.StreamHandler()
-logging.basicConfig(
-    handlers=[file_handler, screen_handler],
-    level=logging.INFO,
-    format="[%(asctime)s] %(levelname)s | %(message)s",
+try:
+    logger = logging.getLogger("dynatree")
+    file_handler = RotatingFileHandler(logFile, maxBytes=100000, backupCount=10)
+    screen_handler = logging.StreamHandler()
+    logging.basicConfig(
+        handlers=[
+            file_handler,
+            screen_handler
+        ],
+        level=logging.ERROR,
+        format="[%(asctime)s] %(levelname)s | %(message)s",
     )
-
+except:
+    logger = logging.getLogger("dynatree")
+    screen_handler = logging.StreamHandler()
+    logging.basicConfig(
+        handlers=[
+            screen_handler
+        ],
+        level=logging.ERROR,
+        format="[%(asctime)s] %(levelname)s | %(message)s",
+    )
+    print ("Log file not available for writing. Logs are on screen only.")
+    
 # logger.setLevel(logging.WARNING)
 # logger.disabled = True
 
@@ -104,10 +119,18 @@ def get_data(date, tree, measurement):
     file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet"
     return read_data(file)
 
+
+def read_data_selected(file,
+                        probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]],
+                        # probes = ["Time", 'Pt0', 'Pt1', 'Pt3', 'Pt4', 'Pt8', 'Pt9', 'Pt10', 'Pt11', 'Pt12', 'Pt13']
+                        ):
+    # lru_cache vould complain TypeError: unhashable type: 'list'
+    return read_data_selected_doit(file, tuple(probes))
+
+
 @timeit
 @lru_cache(4)
-def read_data_selected(file,
-                        probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]]):
+def read_data_selected_doit(file, probes):
     """
 
     Parameters
