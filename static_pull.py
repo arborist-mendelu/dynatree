@@ -23,8 +23,7 @@ from lib_dynatree import read_data_inclinometers, read_data, timeit
 import lib_dynatree
 import re
 
-logger = lib_dynatree.logger
-
+import multi_handlers_logger as mhl
 
 DIRECTORY = "../data"
 
@@ -127,7 +126,7 @@ def process_inclinometers_major_minor(df_):
     
     Returns new dataframe with the corresponding columns
     """
-    df = pd.DataFrame(index=df_.index, columns=["blue","yellow"])
+    df = pd.DataFrame(index=df_.index, columns=["blue","yellow"], dtype=float)
     df[["blueX","blueY","yellowX","yellowY"]] = df_[["Inclino(80)X","Inclino(80)Y", "Inclino(81)X","Inclino(81)Y",]]
     for inclino in ["blue","yellow"]:
         df.loc[:,[inclino]] = arctand(
@@ -175,9 +174,7 @@ def read_tree_configuration():
              "height_of_elastometer"]
     
     return df
-# df_pt_notes = pd.read_csv("csv/PT_notes_with_pt.csv", sep=",")
-# df_pt_notes.index = df_pt_notes["tree"]
-df_pt_notes = read_tree_configuration()
+DF_PT_NOTES = read_tree_configuration()
 
 def process_forces(
         df_,
@@ -246,7 +243,7 @@ def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY, skip_op
     df["Elasto-strain"] = df["Elasto(90)"]/200000
     return {'times': times, 'dataframe': df}
 
-def get_computed_data(day,tree,measurement, out=None, skip_optics=False):
+def get_computed_data(day,tree,measurement, out=None, skip_optics=False, df_pt_notes=DF_PT_NOTES):
     """
     Gets the data from process_inclinometers_major_minor and from
     process_forces functions.
@@ -281,10 +278,11 @@ def get_computed_data(day,tree,measurement, out=None, skip_optics=False):
     answer = pd.concat([ans[i] for i in ans.keys()], axis=1)
     return answer
 
-def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.1):
+def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.3):
     """
     The input is the dataframe with one columns and maximal value at the end. 
     Return indices for values between given fraction of maximal value. 
+    Default is from 30% to 90% of Fmax
     
     Used to focus on the interval of interest when processing static pulling data.
     """
@@ -303,15 +301,18 @@ def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.1):
     # lower = mask[mask == True].dropna().index.max()
     return lower, upper
 
-# @timeit
+@timeit
 def process_data(day, tree, measurement, skip_optics=False):
     """
-    skip_optics False means ifgnore parquet files and read original TXT file.
+    skip_optics False means ignore parquet files where optics and pulling is synced 
+    and read original TXT file. 
+    
+    Toto také zahodí případnou informaci, na jakém intervalu je potřeba vynulovat
+    inklinometry.
     """
     # read data, either M02, 3, 4, etc or three pulls in M1
     # interpolate the missing data if necessary
     out = get_static_pulling_data(day, tree, measurement, skip_optics=skip_optics)
-    
     # remove nan in index if necessary before interpolation
     idxna = out['dataframe'].index.isna()
     out['dataframe'].iloc[~idxna,:]=out['dataframe'].iloc[~idxna,:].interpolate(method='index')
@@ -327,7 +328,11 @@ def process_data(day, tree, measurement, skip_optics=False):
         pt_3_4 = pd.DataFrame(index=dataframe.index,data={"Pt3": np.nan, "Pt4":np.nan})
     ans = get_computed_data(day, tree, measurement,out)
     
-    df = pd.concat([dataframe, ans,pt_3_4], axis=1)
+    df = pd.concat([
+        dataframe, 
+        ans,
+        pt_3_4
+        ], axis=1)
     return {'times': out['times'], 'dataframe': df}
 
 # @timeit
@@ -354,7 +359,7 @@ def nakresli(day, tree, measurement, skip_optics=False):
         # Find limits for given interval of forces
         lower, upper = get_interval_of_interest(subdf, maximal_fraction=0.9)
         subdf[lower:upper].plot(ax=ax, linewidth=4, legend=False)
-        ax.legend(["Síla","Náběh síly","Rozmezí 10 až 90\nprocent max."])
+        ax.legend(["Síla","Náběh síly","Rozmezí 30 až 90\nprocent max."])
 
         f,a = plt.subplots(2,2,
                            figsize=(12,9)
@@ -409,12 +414,18 @@ def main_nakresli():
     subdf = subdf.loc[lower:upper,["M_Measure","blue","yellow"]]
     get_regressions(subdf, "M_Measure",info = f"{day} BK{tree} M0{measurement}")
 
-def get_regressions_for_one_measurement(day, tree, measurement):
+def get_regressions_for_one_measurement(day, tree, measurement, minimal_fraction=0.3, maximal_fraction=0.9):
+    """
+    Get regressions for one measurment. 
+    
+    Minimal fraction if the bound (in percent of Fmax) where to cut out the
+    initial phase. The default is 0.3, i.e. 30%.
+    """
     data = process_data(day, tree, measurement)
     reg_df = {}
     for pull_value,times in enumerate(data['times']):
         subdf = data['dataframe'].loc[times['minimum']:times['maximum'],:]
-        lower, upper = get_interval_of_interest(subdf)
+        lower, upper = get_interval_of_interest(subdf, minimal_fraction=minimal_fraction)
         subdf = subdf.loc[lower:upper,:]
         # df columns: ['Force(100)', 'Elasto(90)', 'Elasto-strain', 'Inclino(80)X',
         # 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 'RopeAngle(100)',
@@ -441,7 +452,7 @@ def get_regressions_for_one_measurement(day, tree, measurement):
             )
         reg_df[pull_value].loc[:,"pull"] = pull_value
     reg_df_sum = pd.concat(list(reg_df.values()))
-    reg_df_sum.loc[:,["date","tree","measurement"]] = [day, tree, measurement]
+    reg_df_sum.loc[:,["date","tree","measurement","lower_bound","upper_bound"]] = [day, tree, measurement,minimal_fraction,maximal_fraction]
     return reg_df_sum
 
 def get_regressions(df, collist, info=""):
@@ -452,7 +463,6 @@ def get_regressions(df, collist, info=""):
     If colist is list, it is assumed that it is a list of lists. In each sublist, 
     the regression of the first item to the oter ones is evaluated.
     """
-    df = df.astype(float)
     if not isinstance(collist, list):
         return get_regressions_for_one_column(df, collist, info=info)
     data = [get_regressions_for_one_column(df.loc[:,i], i[0], info=info) for i in collist]
@@ -470,12 +480,12 @@ def get_regressions_for_one_column(df, independent, info=""):
             regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
         except:
             pass
-            logger.error(f"Linear regression failed for {independent} versus {i}. Info: {info}")
+            # logger.error(f"Linear regression failed for {independent} versus {i}. Info: {info}")
     ans_df = pd.DataFrame(regrese, index=["Independent", "Dependent", "Slope", "Intercept", "R^2", "p-value", "stderr", "intercept_stderr"], columns=dependent).T
     return ans_df
 
 def main():
-    logger.setLevel(lib_dynatree.logging.INFO)
+    logger = mhl.setup_logger(prefix="static_pull_")
     logger.info("========== INITIALIZATION OF static-pull.py  ============")
     df = get_all_measurements()
     # drop missing optics
@@ -486,22 +496,29 @@ def main():
         tree = row['tree']
         measurement = row['measurement']
         msg = f"Processing {day} {tree} {measurement}"
-        print (msg)
         logger.info(msg)
-        all_data[i] = get_regressions_for_one_measurement(day, tree, measurement)
         try:
-            all_data[i] = get_regressions_for_one_measurement(day, tree, measurement)
+            # get regressions for two cut-out values and merge
+            ans_10 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.1)
+            ans_30 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.3)
+            ans = pd.concat([ans_10,ans_30])            
+            all_data[i] = ans
         except:
             msg = f"Failed. Day,tree,measurement : {day},{tree},{measurement}"
-            print(msg)
             logger.error(msg)
     df_all_data = pd.concat(all_data).reset_index(drop=True)
     return df_all_data
 
 if __name__ == "__main__":
-    # day, tree, measurement = "2022-08-16", "BK11", "M03"
-    # get_static_pulling_data(day,tree, measurement, skip_optics=True)
-    # get_regressions_for_one_measurement(day, tree, measurement)
+    day, tree, measurement = "2022-08-16", "BK11", "M03"
+    day, tree, measurement = "2021-06-29", "BK08", "M04"
+    ans = process_data(day,tree, measurement, skip_optics=True)
+
+    # ans_10 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.1)
+    # ans_30 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.3)
+    # ans = pd.concat([ans_10,ans_30])
     # main_nakresli()
-    main_output = main()
-    main_output.to_csv("csv_output/regresions_static.csv")
+    
+    # These two lines are for production code to do final analysis
+    # main_output = main()
+    # main_output.to_csv("csv_output/regresions_static.csv")

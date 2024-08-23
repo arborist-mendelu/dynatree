@@ -32,6 +32,7 @@ try:
         level=logging.ERROR,
         format="[%(asctime)s] %(levelname)s | %(message)s",
     )
+    file_handler.setLevel(logging.INFO)
 except:
     logger = logging.getLogger("dynatree")
     screen_handler = logging.StreamHandler()
@@ -42,19 +43,7 @@ except:
         level=logging.ERROR,
         format="[%(asctime)s] %(levelname)s | %(message)s",
     )
-    print ("Log file not available for writing. Logs are on screen only.")
-    
-# logger.setLevel(logging.WARNING)
-# logger.disabled = True
-
-# file_handler.setLevel(logging.ERROR)
-# file_handler.disabled = True ## nefunguje
-# logger.removeHandler(file_handler)
-# logger.error("Chyba")
-# logger.warning("Varovani")
-# logger.info("Informace")
-# logger.debug("ladeni")
-
+    logger.error("Log file not available for writing. Logs are on screen only.")
 
 # from https://dev.to/kcdchennai/python-decorator-to-measure-execution-time-54hk
 def timeit(func):
@@ -65,12 +54,13 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         msg = f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds'
-        logger.info(msg)
-        # print(msg)
+        # logger.info(msg)
+        print(msg)
         return result
     return timeit_wrapper
 
 @timeit
+@lru_cache(3)
 def read_data(file, index_col="Time", usecols=None):
     """
     If file is parquet file, return the dataframe from this file.
@@ -148,6 +138,9 @@ def read_data_selected_doit(file, probes):
         df = pd.read_parquet(file)
         columns = [i for i in df.columns if i[0] in probes]
         df = df[columns]
+        # remove possible nan strings in column names
+        cols = [ (i[0],'' if i[1]=='nan' else i[1]) for i in df.columns]
+        df.columns = cols
         return df
     # find column numbers to read
     df_headers = pd.read_csv(file, 
@@ -168,6 +161,10 @@ def read_data_selected_doit(file, probes):
     df.columns = pd.MultiIndex.from_arrays(sloupce)
     if "Time" in probes:
         df.index = df["Time"].values.reshape(-1)
+
+    # remove possible nan strings in column names
+    cols = [ (i[0],'' if i[1]=='nan' else i[1]) for i in df.columns]
+    df.columns = cols
     return df
 
 def read_data_selected_by_polars(file,

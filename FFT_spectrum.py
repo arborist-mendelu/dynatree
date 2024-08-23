@@ -83,7 +83,10 @@ def load_data_for_FFT(
     Loads data for FFT. The time will be in the index. Only selected probes are included.
     """
     data = read_data_selected(file, probes = probes)
-    data = data.set_index("Time")
+    try:
+        data = data.set_index("Time")
+    except:
+        print("There is no Time column. Will suppose that the Time is in index.")
     idx = pd.isna(data.index)
     data = data[~idx]
     col = data.columns
