@@ -7,7 +7,7 @@ Created on Thu Aug 15 14:00:04 2024
 """
 
 DATA_PATH = "../data"
-DEBUG = False
+
 tightcols = {'gap':"0px"}
 regression_settings = {'color':'gray', 'alpha':0.5}
 
@@ -67,15 +67,6 @@ def nakresli(reset_measurements = False):
         measurement.set(measurements[0])
     return static_pull.nakresli(day.value, tree.value, measurement.value, ignore_optics_data.value)
     
-def optional(func,msg=""):
-    if DEBUG:
-        func()
-        return None    
-    try:
-        func()
-    except:
-        solara.Error(solara.Markdown(msg))
-
 
 @solara.component
 def Page():
@@ -86,17 +77,15 @@ def Page():
         Selection()
     with solara.lab.Tabs():
         with solara.lab.Tab("Grafy"):
-            Graphs()
+            with solara.Card():
+                Graphs()
         with solara.lab.Tab("Volba proměnných a regrese"):
-            optional(Detail, msg="""
-### Něco se nepovedlo. 
+            with solara.Card():
+                Detail()
                      
-* Možná není vybráno nic pro svislou osu. 
-* Možná je vybrána stejná veličina pro vodorovnou a svislou osu. 
-* Nebo je nějaký jiný problém. Možná mrkni nejprve na záložku Grafy."""
-                     )
         with solara.lab.Tab("Návod a komentáře"):
-            Help()        
+            with solara.Card():
+                Help()        
         
     # MainPage()
 
@@ -152,6 +141,14 @@ def Graphs():
         # data['dataframe']["Time"] = data['dataframe'].index
         # solara.DataFrame(data['dataframe'], items_per_page=20)
         # cols = data['dataframe'].columns
+
+msg="""
+### Něco se nepovedlo. 
+                     
+* Možná není vybráno nic pro svislou osu. 
+* Možná je vybrána stejná veličina pro vodorovnou a svislou osu. 
+* Nebo je nějaký jiný problém. Možná mrkni nejprve na záložku Grafy."""
+
 def Detail():
     data = static_pull.process_data(day.value, tree.value, measurement.value, ignore_optics_data.value)
     if nakresli.not_called:
@@ -162,139 +159,148 @@ def Detail():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
             solara.SpinnerSolara(size="100px")
             return
-    with solara.Card():
-        solara.Markdown("## Increasing part of the time-force diagram")
-        solara.Markdown("""
-                Pro výběr proměnných na vodorovnou a svislou osu otevři menu v sidebaru (tři čárky v horním panelu). Po výběru můžeš sidebar zavřít. Přednastavený je moment vypočítaný z pevného naměřeného úhlu lana na vodorovné ose a oba inlinometry na svislé ose.
-                """)
-        
-        with solara.Sidebar():
-            cols = ['Time','Pt3','Pt4','Force(100)', 'Elasto(90)', 'Elasto-strain',
-                    # 'Inclino(80)X', 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 
-            'RopeAngle(100)',
-            'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY', 
-            'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
-            'F_horizontal_Rope', 'F_vertical_Rope',
-            'M_Rope', 'M_Pt_Rope', 'M_Elasto_Rope',
-            'F_horizontal_Measure', 'F_vertical_Measure',
-            'M_Measure', 'M_Pt_Measure', 'M_Elasto_Measure',]
-            with solara.Card():
-                solara.Markdown("### Horizontal axis \n\n Choose one variable.")
-                solara.ToggleButtonsSingle(values=cols, value=xdata, dense=True)
-            with solara.Card():
-                solara.Markdown("### Vertical axis \n\n Choose one or more variables.")
-                solara.ToggleButtonsMultiple(values=cols[1:], value=ydata, dense=True)
-            with solara.Card():
-                solara.Markdown("### Second vertical axis \n\n Choose one variable for right vertical axis. (Only limited support in interactive plots. In interactive plots we plot rescaled data. The scale factor is determined from maxima.)")
+    # with solara.Card():
+    solara.Markdown("## Increasing part of the time-force diagram")
+    solara.Markdown("""
+            Pro výběr proměnných na vodorovnou a svislou osu otevři menu v sidebaru (tři čárky v horním panelu). Po výběru můžeš sidebar zavřít. Přednastavený je moment vypočítaný z pevného naměřeného úhlu lana na vodorovné ose a oba inlinometry na svislé ose.
+            """)
+    
+    with solara.Sidebar():
+        cols = ['Time','Pt3','Pt4','Force(100)', 'Elasto(90)', 'Elasto-strain',
+                # 'Inclino(80)X', 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 
+        'RopeAngle(100)',
+        'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY', 
+        'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
+        'F_horizontal_Rope', 'F_vertical_Rope',
+        'M_Rope', 'M_Pt_Rope', 'M_Elasto_Rope',
+        'F_horizontal_Measure', 'F_vertical_Measure',
+        'M_Measure', 'M_Pt_Measure', 'M_Elasto_Measure',]
+        with solara.Card():
+            solara.Markdown("### Horizontal axis \n\n Choose one variable.")
+            solara.ToggleButtonsSingle(values=cols, value=xdata, dense=True)
+        with solara.Card():
+            solara.Markdown("### Vertical axis \n\n Choose one or more variables. You cannot choose the same variable which has been used for horizontal axis.")
+            solara.ToggleButtonsMultiple(values=cols[1:], value=ydata, dense=True)
+        with solara.Card():
+            with solara.VBox():
+                with solara.Tooltip("Choose one variable for second vertical axis, shown on the right. (Only limited support in interactive plots. In interactive plots we plot rescaled data. The scale factor is determined from maxima.) You cannot choose the variable used for horizontal axis."):
+                    with solara.VBox():
+                        solara.Markdown("### Second vertical axis")
+                        solara.Text("(hover here for description)")
+            
                 solara.ToggleButtonsSingle(values=[None]+cols[1:], value=ydata2, dense=True)
-            pulls = list(range(len(data['times'])))
-        
-        with solara.Row():
-            if measurement.value == "M1":
-                with solara.Card():
-                    with solara.Column(**tightcols):
-                        solara.Markdown("Pull No. of M1:")
-                        solara.ToggleButtonsSingle(values=pulls, value=pull)
-                    pull_value = pull.value
+        pulls = list(range(len(data['times'])))
+    
+    with solara.Row():
+        if measurement.value == "M1":
+            with solara.Card():
+                with solara.Column(**tightcols):
+                    solara.Markdown("Pull No. of M1:")
+                    solara.ToggleButtonsSingle(values=pulls, value=pull)
+                pull_value = pull.value
+        else:
+            pull_value = 0
+        subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
+
+        with solara.Card():
+            with solara.Column(**tightcols):
+                solara.Markdown("Bounds to cut out boundaries in % of Fmax")
+                solara.ToggleButtonsSingle(values=data_possible_restrictions, value=restrict_data)
+        with solara.Card():
+            with solara.Column(**tightcols):
+                with solara.Tooltip("Umožní zobrazit graf pomocí knihovny Plotly. Bude možné zoomovat, odečítat hodnoty, klikáním na legendu skrývat a odkrývat proměnné apod. Nebudou zobrazeny regresní prímky."):
+                    solara.Switch(label="Interactive graph", value=interactive_graph)
+                with solara.Tooltip("Umožní zobrazit grafy veličin pro celý časový průběh."):
+                    solara.Switch(label="Ignore time restriction", value=all_data)
+        if restrict_data.value!=data_possible_restrictions[0]:
+            up = .90
+            if restrict_data.value == data_possible_restrictions[1]:
+                lb = .10
             else:
-                pull_value = 0
-            subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
+                lb = .30
+            lower, upper = static_pull.get_interval_of_interest(subdf, maximal_fraction=up, minimal_fraction=lb)        
+            subdf = subdf.loc[lower:upper,:]            
+        if all_data.value:
+            subdf = data['dataframe']
 
-            with solara.Card():
-                with solara.Column(**tightcols):
-                    solara.Markdown("Bounds to cut out boundaries in % of Fmax")
-                    solara.ToggleButtonsSingle(values=data_possible_restrictions, value=restrict_data)
-            with solara.Card():
-                with solara.Column(**tightcols):
-                    with solara.Tooltip("Umožní zobrazit graf pomocí knihovny Plotly. Bude možné zoomovat, odečítat hodnoty, klikáním na legendu skrývat a odkrývat proměnné apod. Nebudou zobrazeny regresní prímky."):
-                        solara.Switch(label="Interactive graph", value=interactive_graph)
-                    with solara.Tooltip("Umožní zobrazit grafy veličin pro celý časový průběh."):
-                        solara.Switch(label="Ignore time restriction", value=all_data)
-            if restrict_data.value!=data_possible_restrictions[0]:
-                up = .90
-                if restrict_data.value == data_possible_restrictions[1]:
-                    lb = .10
-                else:
-                    lb = .30
-                lower, upper = static_pull.get_interval_of_interest(subdf, maximal_fraction=up, minimal_fraction=lb)        
-                subdf = subdf.loc[lower:upper,:]            
-            if all_data.value:
-                subdf = data['dataframe']
+    try:
+        # find regresions
+        if xdata.value != "Time":
+            # subsubdf = subdf.loc[:,[xdata.value]+[i for i in ydata.value+[ydata2.value] if i!=xdata.value]]
+            ydata.value = [i for i in ydata.value if i!=xdata.value]
+            if xdata.value == ydata2.value:
+                ydata2.value = None
+            if ydata2.value is None:
+                target = ydata.value
+            else:
+                target = ydata.value + [ydata2.value]
+            reg_df = static_pull.get_regressions(
+                subdf,
+                [[xdata.value] + target]
+                )
+            solara.DataFrame(reg_df.iloc[:,:5])                
+    except:
+        solara.Error("Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
 
+    title = f"{day.value} {tree.value} {measurement.value} Pull {pull_value}"
+    if interactive_graph.value:
+        kwds = {"template":"plotly_white", "height":600, "title":title}
+        # kwds = {"height":600, "title":title}
         try:
-            # find regresions
-            if xdata.value != "Time":
-                # subsubdf = subdf.loc[:,[xdata.value]+[i for i in ydata.value+[ydata2.value] if i!=xdata.value]]
-                if ydata2.value is None:
-                    target = ydata.value
-                else:
-                    target = ydata.value + [ydata2.value]
-                reg_df = static_pull.get_regressions(
-                    subdf,
-                    [[xdata.value] + target]
-                    )
-                solara.DataFrame(reg_df.iloc[:,:5])                
+            if ydata2.value!=None: # Try to add rescaled column
+                maximum_target = np.nanmax(subdf[fix_input(ydata.value)].values)
+                maximum_ori = np.nanmax(subdf[ydata2.value].values)
+                # print (f"maxima jsou {maximum_target} a {maximum_ori}")
+                subdf.loc[:,f"{ydata2.value}_rescaled"] = subdf.loc[:,ydata2.value]/np.abs(maximum_ori/maximum_target)
+                extradata = [f"{ydata2.value}_rescaled"]
+            else:
+                extradata = []
+            cols_to_draw = fix_input(ydata.value + extradata)
+            if xdata.value == "Time":
+                px.scatter(subdf, y=cols_to_draw, **kwds)
+            else:
+                px.scatter(subdf, x=xdata.value, y=cols_to_draw, **kwds)
         except:
-            solara.Error("Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
-
-        title = f"{day.value} {tree.value} {measurement.value} Pull {pull_value}"
-        if interactive_graph.value:
-            kwds = {"template":"plotly_white", "height":600, "title":title}
-            # kwds = {"height":600, "title":title}
-            try:
-                if ydata2.value!=None: # Try to add rescaled column
-                    maximum_target = np.nanmax(subdf[fix_input(ydata.value)].values)
-                    maximum_ori = np.nanmax(subdf[ydata2.value].values)
-                    # print (f"maxima jsou {maximum_target} a {maximum_ori}")
-                    subdf.loc[:,f"{ydata2.value}_rescaled"] = subdf.loc[:,ydata2.value]/np.abs(maximum_ori/maximum_target)
-                    extradata = [f"{ydata2.value}_rescaled"]
-                else:
-                    extradata = []
-                cols_to_draw = fix_input(ydata.value + extradata)
-                if xdata.value == "Time":
-                    px.scatter(subdf, y=cols_to_draw, **kwds)
-                else:
-                    px.scatter(subdf, x=xdata.value, y=cols_to_draw, **kwds)
-            except:
-                solara.Error(solara.Markdown("""### Image failed. 
-                             
+            solara.Error(solara.Markdown("""### Image failed. 
+                         
 * Something is wrong. Switch to noninteractive plot or change variables setting. 
 * This error appears especially if you try to plot both forces and inclinometers on vertical axis.
 """
-                             ))
-        else:
-            fig, ax = plt.subplots()
-            if xdata.value == "Time":
-                subdf["Time"] = subdf.index
-            # print(xdata.value, ydata.value)
+                         ))
+    else:
+        fig, ax = plt.subplots()
+        if xdata.value == "Time":
+            subdf["Time"] = subdf.index
+        # print(xdata.value, ydata.value)
+        try:
             subdf.plot(x=xdata.value, y=ydata.value, style='.', ax=ax)
             t = np.linspace(*ax.get_xlim(),5)
-            try:
-                for y in ydata.value:
-                    if y not in reg_df["Dependent"]:
-                        continue
-                    d = reg_df[reg_df["Dependent"]==y].loc[:,["Slope","Intercept"]]
-                    # print(f"y:{y}\nvalues:{t*d.iat[0,0]+d.iat[0,1]}")
-                    ax.plot(t,t*d.iat[0,0]+d.iat[0,1], **regression_settings)
-            except:
-                # print("Neco je blbe")
-                # print(reg_df, ydata.value)                    
-                pass
-            if ydata2.value!=None:
-                ax2 = ax.twinx()
-                # see https://stackoverflow.com/questions/24280180/matplotlib-colororder-and-twinx
-                ax2._get_lines = ax._get_lines
-                subdf.plot(x=xdata.value, y=ydata2.value, style='.', ax=ax2)
-                # d = reg_df[reg_df["Dependent"]==ydata2.value].loc[:,["Slope","Intercept"]]
-                # ax2.plot(t,t*d.iat[0,0]+d.iat[0,1], **regression_settings)
-                # ask matplotlib for the plotted objects and their labels
-                lines, labels = ax.get_legend_handles_labels()
-                lines2, labels2 = ax2.get_legend_handles_labels()
-                ax.get_legend().remove()
-                ax2.legend(lines + lines2, labels + labels2)                    
-            ax.grid()
-            ax.set(title = title)
-            solara.FigureMatplotlib(fig)
+            for y in ydata.value:
+                if y not in reg_df["Dependent"]:
+                    continue
+                d = reg_df[reg_df["Dependent"]==y].loc[:,["Slope","Intercept"]]
+                # print(f"y:{y}\nvalues:{t*d.iat[0,0]+d.iat[0,1]}")
+                ax.plot(t,t*d.iat[0,0]+d.iat[0,1], **regression_settings)
+        except:
+            # print("Neco je blbe")
+            # print(reg_df, ydata.value)                    
+            return
+            pass
+        if ydata2.value!=None:
+            ax2 = ax.twinx()
+            # see https://stackoverflow.com/questions/24280180/matplotlib-colororder-and-twinx
+            ax2._get_lines = ax._get_lines
+            subdf.plot(x=xdata.value, y=ydata2.value, style='.', ax=ax2)
+            # d = reg_df[reg_df["Dependent"]==ydata2.value].loc[:,["Slope","Intercept"]]
+            # ax2.plot(t,t*d.iat[0,0]+d.iat[0,1], **regression_settings)
+            # ask matplotlib for the plotted objects and their labels
+            lines, labels = ax.get_legend_handles_labels()
+            lines2, labels2 = ax2.get_legend_handles_labels()
+            ax.get_legend().remove()
+            ax2.legend(lines + lines2, labels + labels2)                    
+        ax.grid()
+        ax.set(title = title)
+        solara.FigureMatplotlib(fig)
                 
 
 
