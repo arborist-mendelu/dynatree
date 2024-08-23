@@ -148,7 +148,7 @@ df_tail[0.3].tail(10).drop(to_drop, axis=1)
 
 
 # %% [markdown]
-# ## Co se dělo s úhlem tam, kde jsou nevjvětší rozíly v korelačním koeficinetu R^2?
+# ## Co se dělo s úhlem tam, kde jsou největší rozíly v korelačním koeficinetu R^2?
 
 # %%
 def bad2image(bad_corr,bound):
