@@ -7,7 +7,6 @@ Created on Sun Nov  5 07:56:28 2023
 """
 
 import pandas as pd
-import polars as pl
 import numpy as np
 from scipy import interpolate, signal
 from scipy.fft import fft, fftfreq
@@ -87,21 +86,6 @@ def read_data(file, index_col="Time", usecols=None):
         df.drop([("source","data")],axis=1,inplace=True)  
     df["Time"] = df.index  # pro pohodlí, aby se k času dalo přistupovat i jako data.Time
     return df
-
-def read_data_by_polars(file):
-    """
-    Alternative to read_data with default attributes, but using faster alternative
-    """
-    df_polars = pl.read_csv(file, skip_rows_after_header=1)   # read data
-    df_polars = df_polars.to_pandas()
-    df_polars_headers = pl.read_csv(file, has_header=False, n_rows=2).to_numpy() # read multiindex column names
-    df_polars_headers[1,1]="" # set the same index as in pandas reader
-    idx = pd.MultiIndex.from_arrays(df_polars_headers)
-    df_polars.index = df_polars["Time"] # set index
-    df_polars.columns = idx
-    if ("source","data") in df_polars.columns: # drop unenecessary column
-        df_polars = df_polars.drop([("source","data")], axis=1)
-    return df_polars
     
 def get_data(date, tree, measurement):
     """
@@ -168,32 +152,6 @@ def read_data_selected_doit(file, probes):
     df.columns = cols
     return df
 
-def read_data_selected_by_polars(file,
-                        probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]]):
-    """
-    Faster variant of read_data_selected. Makes use of polar library.
-    """
-    headers = pl.read_csv(
-        file, 
-        n_rows=2, has_header=False,
-        ).to_numpy()
-    first_row = headers[0]
-    sloupce = list(np.nonzero(np.isin(first_row,probes))[0])
-
-    # read csv file    
-    df = pl.read_csv(
-        file,
-        has_header=False,
-        skip_rows=2,
-        columns=[int(i) for i in sloupce]
-        ).to_pandas()
-
-    headers[1,1]=""
-    idx = pd.MultiIndex.from_arrays(headers[:,sloupce])
-    df = df.set_axis(idx, axis=1)
-    # if "Time" in probes:
-    df.index = df["Time"].values.reshape(-1)
-    return df
 
 #%%
 def directory2date(d):

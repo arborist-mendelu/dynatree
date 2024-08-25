@@ -8,7 +8,6 @@ jupyterlab
 scipy
 streamlit
 emd
-polars
 solara
 seaborn
 pywavelets

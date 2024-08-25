@@ -80,7 +80,7 @@ def get_all_measurements(method='optics', *args, **kwargs):
                 how='left')
     df = df[df["type"]=="normal"]  # jenom normal mereni
     df = df[df["tree"].str.contains("BK")]  # neuvazuji jedli
-    df["optics"] = df["optics"].fillna(False)
+    df["optics"] = df["optics"] == True
     df["day"] = df["date"]
     return df
 
@@ -148,12 +148,14 @@ def split_df_static_pulling(
         time = time + [t]
     return {'times':time, 'df_interpolated': df_interpolated}
 
-def find_intervals_to_split_measurements_from_csv(date, tree, csv="csv/intervals_split_M01.csv"):
+def find_intervals_to_split_measurements_from_csv(date, tree, measurement, csv="csv/intervals_split_M01.csv"):
     """
     Tries to find initial gues for separation of pulls in M1 measurement
     from csv file. If the measurement is not included (most cases), return None. 
     In this case the splitting is done automatically.
     """
+    if measurement != "1":
+        return None
     df = pd.read_csv(csv, index_col=[], dtype={"tree":str}, sep=";")
     select = df[(df["date"]==date) & (df["tree"]==tree)]
     if select.shape[0] == 0:
@@ -270,7 +272,7 @@ def arctand(value):
     """
     return np.rad2deg(np.arctan(value))
 
-def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY, skip_optics=False):
+def get_static_pulling_data(data_obj, directory=DIRECTORY, skip_optics=False):
     """
     Uniform method to find the data. The data ara obtained from pulling tests
     for M01 and from parquet files for the other measurements.
@@ -285,29 +287,43 @@ def get_static_pulling_data(day, tree, measurement, directory=DIRECTORY, skip_op
     recaluculated to the same time index as optics.
     
     """
+    day, tree, measurement = data_obj.day, data_obj.tree, data_obj.measurement
     measurement = measurement[-1]
     tree = tree[-2:]
-    if skip_optics or measurement == "1":
-        df = read_data_inclinometers(f"{directory}/pulling_tests/{day.replace('-','_')}/BK_{tree}_M{measurement}.TXT")
-        out = split_df_static_pulling(df, intervals = find_intervals_to_split_measurements_from_csv(day, tree))
-        times = out['times']
+    if tree == "18":
+        pref="JD"
     else:
-        df = read_data(f"{directory}/parquet/{day.replace('-','_')}/BK{tree}_M0{measurement}_pulling.parquet")
-        times = [{"minimum":0, "maximum": df["Force(100)"].idxmax().values[0]}]
+        pref="BK"
+    print()
+    if skip_optics or measurement == "1":
+        df = read_data_inclinometers(f"{directory}/parquet_pulling/{day.replace('-','_')}/normal_{pref}{tree}_M0{measurement}.parquet")
+        if measurement == "1":
+            intervals_ini = find_intervals_to_split_measurements_from_csv(day, tree, measurement)
+            out = split_df_static_pulling(
+                df, 
+                intervals = intervals_ini)
+            times = out['times']
+        else:
+            times = [{"minimum":0, "maximum": df["Force(100)"].idxmax()}]
+    else:
+        df = read_data(f"{directory}/parquet/{day.replace('-','_')}/{pref}{tree}_M0{measurement}_pulling.parquet")
+        times = [{"minimum":0, "maximum": df["Force(100)"].idxmax().iloc[0]}]
         df = df.drop([i for i in df.columns if i[1]!='nan'], axis=1)
         df.columns = [i[0] for i in df.columns]
     df["Elasto-strain"] = df["Elasto(90)"]/200000
     return {'times': times, 'dataframe': df}
 
-def get_computed_data(day,tree,measurement, out=None, skip_optics=False, df_pt_notes=DF_PT_NOTES):
+def get_computed_data(data_obj, out=None, skip_optics=False, df_pt_notes=DF_PT_NOTES):
     """
     Gets the data from process_inclinometers_major_minor and from
     process_forces functions.
     
-    out is the output of get_static_pulling_data(day, tree, measurement)
+    out is the output of get_static_pulling_data(data_obj)
     """
+    day, tree, measurement = data_obj.day, data_obj.tree, data_obj.measurement
+    tree = tree[-2:]
     if out is None:
-        out = get_static_pulling_data(day, tree, measurement,skip_optics=skip_optics)
+        out = get_static_pulling_data(data_obj,skip_optics=skip_optics)
 
     ans = {}
 
@@ -358,31 +374,35 @@ def get_interval_of_interest(df, maximal_fraction=0.9, minimal_fraction=0.3):
     return lower, upper
 
 @timeit
-def process_data(day, tree, measurement, skip_optics=False):
+def process_data(data_obj, skip_optics=False):
     """
-    skip_optics False means ignore parquet files where optics and pulling is synced 
-    and read original TXT file. 
+    skip_optics=False means ignore parquet files where optics and pulling is synced 
+    and read the original file. 
     
     Toto také zahodí případnou informaci, na jakém intervalu je potřeba vynulovat
     inklinometry.
     """
+    if (not skip_optics) & (not data_obj.is_optics_available):
+        print(f"Optics not available for {data_obj}, forcing skip_optics=True")
+        skip_optics = True
+    day, tree, measurement = data_obj.day, data_obj.tree, data_obj.measurement
     # read data, either M02, 3, 4, etc or three pulls in M1
     # interpolate the missing data if necessary
-    out = get_static_pulling_data(day, tree, measurement, skip_optics=skip_optics)
+    out = get_static_pulling_data(data_obj, skip_optics=skip_optics)
     # remove nan in index if necessary before interpolation
     idxna = out['dataframe'].index.isna()
     out['dataframe'].iloc[~idxna,:]=out['dataframe'].iloc[~idxna,:].interpolate(method='index')
     dataframe = out['dataframe']
     tree = tree[-2:]
     measurement = measurement[-1]
-    if measurement != '1':
+    if measurement != '1' and not skip_optics:
         pt_3_4 = lib_dynatree.read_data_selected(f"../data/parquet/{day.replace('-','_')}/BK{tree}_M0{measurement}.parquet")
         pt_3_4 = pt_3_4.loc[:,[("Pt3","Y0"),("Pt4","Y0")]]
         pt_3_4 = pt_3_4 - pt_3_4.iloc[0,:]
         pt_3_4.columns = ["Pt3","Pt4"]
     else:
         pt_3_4 = pd.DataFrame(index=dataframe.index,data={"Pt3": np.nan, "Pt4":np.nan})
-    ans = get_computed_data(day, tree, measurement,out)
+    ans = get_computed_data(data_obj,out)
     
     df = pd.concat([
         dataframe, 
@@ -391,8 +411,8 @@ def process_data(day, tree, measurement, skip_optics=False):
         ], axis=1)
     return {'times': out['times'], 'dataframe': df}
 
-# @timeit
-def nakresli(day, tree, measurement, skip_optics=False):
+@timeit
+def nakresli(data_object, skip_optics=False):
     """
     Plot the data as in the Solara app.
     
@@ -400,7 +420,8 @@ def nakresli(day, tree, measurement, skip_optics=False):
     Thus no synchrnonization with optical data and no reset of inclinometers.
     Probabably should be kept `False`.
     """
-    ans = process_data(day, tree, measurement, skip_optics=skip_optics)
+    day, tree, measurement = data_object.day, data_object.tree, data_object.measurement
+    ans = process_data(data_object, skip_optics=skip_optics)
     dataframe = ans['dataframe']
 
     fig, ax = plt.subplots()
@@ -462,22 +483,27 @@ def main_nakresli():
     day,tree,measurement = "2022-04-05", "BK16", "M02"
     tree=tree[-2:]
     measurement = measurement[-1]
-    nakresli(day, tree, measurement)
-    data = process_data(day, tree, measurement)
+    data_object = lib_dynatree.Dynatree_Measurement(day, tree, measurement)
+    nakresli(data_object)
+    data = process_data(data_object)
     pull_value=0
     subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
     lower, upper = get_interval_of_interest(subdf)
     subdf = subdf.loc[lower:upper,["M_Measure","blue","yellow"]]
     get_regressions(subdf, "M_Measure",info = f"{day} BK{tree} M0{measurement}")
 
-def get_regressions_for_one_measurement(day, tree, measurement, minimal_fraction=0.3, maximal_fraction=0.9):
+def get_regressions_for_one_measurement(data_obj, minimal_fraction=0.3, maximal_fraction=0.9, skip_optics=False):
     """
     Get regressions for one measurment. 
     
     Minimal fraction if the bound (in percent of Fmax) where to cut out the
     initial phase. The default is 0.3, i.e. 30%.
     """
-    data = process_data(day, tree, measurement)
+    if (not skip_optics) & (not data_obj.is_optics_available):
+        print(f"Optics not available for {data_obj}, forcing skip_optics=True")
+        skip_optics = True
+    data = process_data(data_obj, skip_optics=skip_optics)
+    day, tree, measurement = data_obj.day, data_obj.tree, data_obj.measurement
     reg_df = {}
     for pull_value,times in enumerate(data['times']):
         subdf = data['dataframe'].loc[times['minimum']:times['maximum'],:]
@@ -543,7 +569,8 @@ def get_regressions_for_one_column(df, independent, info=""):
 def main():
     logger = mhl.setup_logger(prefix="static_pull_")
     logger.info("========== INITIALIZATION OF static-pull.py  ============")
-    df = get_all_measurements()
+    df = get_all_measurements(how='pulling')
+    return df
     # drop missing optics
     df = df[~((df["day"]=="2022-04-05")&(df["tree"]=="BK21")&(df["measurement"]=="M5"))]
     all_data = {}
@@ -566,14 +593,16 @@ def main():
     return df_all_data
 
 if __name__ == "__main__":
-    day, tree, measurement = "2022-08-16", "BK11", "M03"
-    day, tree, measurement = "2021-06-29", "BK08", "M04"
-    ans = process_data(day,tree, measurement, skip_optics=True)
+    day, tree, measurement = "2022-08-16", "BK11", "M02"
+    day, tree, measurement = "2023-07-17", "BK01", "M02"
+    # day, tree, measurement = "2021-06-29", "BK08", "M04"
+    data_obj = lib_dynatree.Dynatree_Measurement(day, tree, measurement)
+    ans = process_data(data_obj, skip_optics=True)
 
-    # ans_10 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.1)
+    ans_10 = get_regressions_for_one_measurement(data_obj,minimal_fraction=0.1, skip_optics=False)
     # ans_30 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.3)
     # ans = pd.concat([ans_10,ans_30])
-    # main_nakresli()
+    main_nakresli()
     
     # These two lines are for production code to do final analysis
     # main_output = main()

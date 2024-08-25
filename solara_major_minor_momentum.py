@@ -19,15 +19,14 @@ import solara.lab
 import solara.express as px
 import glob
 import pandas as pd
-import static_pull
 import matplotlib.pyplot as plt
 import numpy as np
 import lib_dynatree
+import static_pull
 from static_pull import get_all_measurements, available_measurements
 
 
 df = get_all_measurements(method='all')
-df = df[(df["optics"])| (df["measurement"]=="M01")]
 days = df["date"].drop_duplicates().values
 trees = df["tree"].drop_duplicates().values
 measurements = df["measurement"].drop_duplicates().values
@@ -35,6 +34,7 @@ measurements = df["measurement"].drop_duplicates().values
 day = solara.reactive(days[0])
 tree = solara.reactive(trees[0])
 measurement = solara.reactive(measurements[0])
+
 
 data_possible_restrictions = ["0-100%","10%-90%","30%-90%"]
 
@@ -66,7 +66,8 @@ def fix_input(a):
 def nakresli(reset_measurements = False):
     if reset_measurements:
         measurement.set(measurements[0])
-    return static_pull.nakresli(day.value, tree.value, measurement.value, ignore_optics_data.value)
+    data_object = lib_dynatree.Dynatree_Measurement(day.value, tree.value, measurement.value,)
+    return static_pull.nakresli(data_object, skip_optics=True)
     
 
 @solara.component
@@ -96,6 +97,7 @@ def Page():
 #     static_pull.process_data.__dict__["__wrapped__"].cache_clear()
 
 def Selection():
+    data_obj = lib_dynatree.Dynatree_Measurement(day.value, tree.value, measurement.value,)
     with solara.Card():
         with solara.Column():
             solara.ToggleButtonsSingle(value=day, values=list(days), on_value=lambda x: nakresli(reset_measurements=True))
@@ -105,13 +107,22 @@ def Selection():
                                            values=available_measurements(df, day.value, tree.value),
                                            on_value=lambda x:nakresli()
                                            )
-                with solara.Tooltip("Umožní ignorovat preprocessing udělaný na tahovkách M2 a více. Tím bude stejná metodika jako pro M01 (tam se preprocessing nedělal), ale přijdeme o časovou synchronizaci s optikou a hlavně přijdeme o opravu vynulování inklinometrů."):
-                    solara.Switch(label="Ignore prepocessed files for M2 and higher", value=ignore_optics_data)
+                with solara.Tooltip("Umožní ignorovat preprocessing udělaný na tahovkách M02 a více. Tím bude stejná metodika jako pro M01 (tam se preprocessing nedělal), ale přijdeme o časovou synchronizaci s optikou a hlavně přijdeme o opravu vynulování inklinometrů."):
+                    solara.Switch(
+                        label="Ignore prepocessed files for M2 and higher",
+                        value=ignore_optics_data,
+                        disabled = not data_obj.is_optics_available
+                        )
         solara.Div(style={"margin-bottom": "10px"})
         with solara.Row():
             solara.Button("Run calculation", on_click=nakresli, color="primary")
             # solara.Button("Clear cache", on_click=clear(), color="primary")
-            solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}")   
+            solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}")
+        if data_obj.is_optics_available:
+            solara.Markdown(f"Optics is available for this measurement.")
+        else:            
+            solara.Markdown(f"Optics is **not** available for this measurement.")
+        
             
 def Graphs():            
     solara.ProgressLinear(nakresli.pending)    
@@ -139,6 +150,11 @@ def Graphs():
             for _ in f:
                 solara.FigureMatplotlib(_)
         plt.close('all')
+        solara.Markdown("""
+        * Data jsou ze souboru z tahovek. Sample rate cca 0.1 sec. Obrázky jsou jenom pro orientaci a pro kontrolu ořezu dat. Lepší detaily se dají zobrazit na vedlejší kartě s volbou proměnných a regresí.
+        * Pokud nevyšla detekce části našeho zájmu, zadej ručně meze, ve kterých hledat. Jsou v souboru `csv/intervals_split_M01.csv` (podadresář souboru se skripty). Potom nahrát na github a zpropagovat do všech zrcadel.
+        """
+        )        
         # data['dataframe']["Time"] = data['dataframe'].index
         # solara.DataFrame(data['dataframe'], items_per_page=20)
         # cols = data['dataframe'].columns
@@ -151,7 +167,8 @@ msg="""
 * Nebo je nějaký jiný problém. Možná mrkni nejprve na záložku Grafy."""
 
 def Detail():
-    data = static_pull.process_data(day.value, tree.value, measurement.value, ignore_optics_data.value)
+    data_obj = lib_dynatree.Dynatree_Measurement(day.value, tree.value, measurement.value,)
+    data = static_pull.process_data(data_obj, ignore_optics_data.value)
     if nakresli.not_called:
         solara.Info("Nejdřív nakresli graf v první záložce. Klikni na Run calculation v sidebaru.")        
         return
@@ -191,12 +208,12 @@ def Detail():
             
                 solara.ToggleButtonsSingle(values=[None]+cols[1:], value=ydata2, dense=True)
         pulls = list(range(len(data['times'])))
-    
+
     with solara.Row():
-        if measurement.value == "M1":
+        if measurement.value == "M01":
             with solara.Card():
                 with solara.Column(**tightcols):
-                    solara.Markdown("Pull No. of M1:")
+                    solara.Markdown("Pull No. of M01:")
                     solara.ToggleButtonsSingle(values=pulls, value=pull)
                 pull_value = pull.value
         else:
@@ -275,8 +292,8 @@ def Detail():
         # print(xdata.value, ydata.value)
         try:
             subdf.plot(x=xdata.value, y=ydata.value, style='.', ax=ax)
-            t = np.linspace(*ax.get_xlim(),5)
             if xdata.value != "Time":
+                t = np.linspace(*ax.get_xlim(),5)
                 for y in ydata.value:
                     if y not in reg_df["Dependent"]:
                         continue
@@ -314,7 +331,7 @@ def Help():
 ### Práce
 
 * **Pokud máš otevřeno v zápisníku Jupyteru, bude vhodnější maximalizovat aplikaci. V modrém pásu napravo je ikonka na maximalizaci uvnitř okna prohlížeče.**
-* Vyber datum, strom a měření. Pokud se obrázek neaktualizuje automaticky, klikni na tlačítko pro spuštění výpočtu. Výpočet se spustí kliknutím tlačítka nebo změnou volby měření. Pokud se mění strom nebo den a měření zůstává M1, je potřeba stisknout tlačítko.
+* Vyber datum, strom a měření. Pokud se obrázek neaktualizuje automaticky, klikni na tlačítko pro spuštění výpočtu. Výpočet se spustí kliknutím tlačítka nebo změnou volby měření. Pokud se mění strom nebo den a měření zůstává M01, je potřeba stisknout tlačítko.
 * Zobrazí se průběh experimentu, náběh (resp. tři náběhy) síly do maxima a zvýrazněná část pro analýzu. Ta je 30-90 procent, ale dá se nastavit i 10-90 procent nebo 0-100 procent.
 * Poté máš možnost si detailněji vybrat, co má být v dalším grafu na vodorovné a svislé ose. Tlačítka pro výběr se objeví v bočním panelu, aby se dala skrývat a nezavazela. Počítá se regrese mezi veličinou na vodorovné ose a každou z veličin na ose svislé. Regrese nejsou dostupné, pokud je vodorovně čas (nedávalo by smysl) a pokus je na vodorovné a svislé ose stejná veličina (taky by nedávalo smysl).
 
