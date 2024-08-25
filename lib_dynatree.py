@@ -12,6 +12,7 @@ import numpy as np
 from scipy import interpolate, signal
 from scipy.fft import fft, fftfreq
 import glob
+import os
 from functools import wraps, lru_cache
 import time
 
@@ -21,7 +22,7 @@ from logging.handlers import RotatingFileHandler
 logFile = '/tmp/dynatree.log'
 
 try:
-    logger = logging.getLogger("dynatree")
+    logger = logging.getLogger("lib_dynatree")
     file_handler = RotatingFileHandler(logFile, maxBytes=100000, backupCount=10)
     screen_handler = logging.StreamHandler()
     logging.basicConfig(
@@ -34,7 +35,7 @@ try:
     )
     file_handler.setLevel(logging.INFO)
 except:
-    logger = logging.getLogger("dynatree")
+    logger = logging.getLogger("lib_dynatree")
     screen_handler = logging.StreamHandler()
     logging.basicConfig(
         handlers=[
@@ -59,7 +60,7 @@ def timeit(func):
         return result
     return timeit_wrapper
 
-@timeit
+# @timeit
 @lru_cache(3)
 def read_data(file, index_col="Time", usecols=None):
     """
@@ -118,7 +119,7 @@ def read_data_selected(file,
     return read_data_selected_doit(file, tuple(probes))
 
 
-@timeit
+# @timeit
 @lru_cache(4)
 def read_data_selected_doit(file, probes):
     """
@@ -140,7 +141,7 @@ def read_data_selected_doit(file, probes):
         df = df[columns]
         # remove possible nan strings in column names
         cols = [ (i[0],'' if i[1]=='nan' else i[1]) for i in df.columns]
-        df.columns = cols
+        df.columns = pd.MultiIndex.from_tuples(cols)
         return df
     # find column numbers to read
     df_headers = pd.read_csv(file, 
@@ -186,7 +187,6 @@ def read_data_selected_by_polars(file,
         skip_rows=2,
         columns=[int(i) for i in sloupce]
         ).to_pandas()
-    #%%
 
     headers[1,1]=""
     idx = pd.MultiIndex.from_arrays(headers[:,sloupce])
@@ -195,6 +195,7 @@ def read_data_selected_by_polars(file,
     df.index = df["Time"].values.reshape(-1)
     return df
 
+#%%
 def directory2date(d):
     """
     Converts directory from the form '2021_03_22'
@@ -310,19 +311,14 @@ def read_data_inclinometers(file, release=None, delta_time=0):
     """
     Read data from pulling tests, restart Time from 0 and turn Time to index.
     If release is given, shift the Time and index columns so that the release 
-    is at the given time. In this case the original time in in the column Time_inclino
+    is at the given time. In this case the original time is in the column Time_inclino
+    
     """
-    df_pulling_tests = pd.read_csv(
-        file,
-        skiprows=55, 
-        decimal=",",
-        sep=r'\s+',    
-        skipinitialspace=True,
-        na_values="-"
-        )
+    df_pulling_tests = pd.read_parquet(file)
+    if "Time" not in df_pulling_tests.columns:
+        df_pulling_tests["Time"] = df_pulling_tests.index
     df_pulling_tests["Time"] = df_pulling_tests["Time"] - df_pulling_tests["Time"][0]
     df_pulling_tests.set_index("Time", inplace=True)
-    df_pulling_tests = df_pulling_tests.drop(['Nr', 'Year', 'Month', 'Day'], axis=1)
     # df_pulling_tests.interpolate(inplace=True, axis=1)
     if release is None:
         return df_pulling_tests
@@ -434,6 +430,8 @@ def get_all_measurements(cesta="../data", suffix="parquet", directory="parquet")
     """
     Get dataframe with all measurements. The dataframe has columns
     date, tree and measurement.
+    
+    Intended to find measurements from optics
     """
     files = glob.glob(cesta+f"/{directory}/*/BK*M??.{suffix}") 
     files += glob.glob(cesta+f"/{directory}/*/BK*M?.{suffix}")
@@ -443,9 +441,79 @@ def get_all_measurements(cesta="../data", suffix="parquet", directory="parquet")
     df = df.reset_index(drop=True)
     return df
 
+
+
 date2color = {
     '2022-04-05': "C0",
     '2022-08-16': "C1",
     '2021-03-22': "C0",
     '2021-06-29': "C1",
     }
+
+
+class Dynatree_Measurement:
+    def __init__(self, day, tree, measurement, measurement_type='normal', datapath="../data"):
+        if not isinstance(tree, str):
+            tree = f"{tree:02}"
+        if not isinstance(measurement, str):
+            measurement = f"{measurement}"
+        tree = tree[-2:]
+        if tree == "18":
+            tree = "JD"+tree
+        else:
+            tree = "BK"+tree
+        self.tree = tree
+        self.day = day.replace("_","-")
+        measurement = f"M0{measurement[-1]}"
+        self.measurement = measurement
+        self.measurement_type = measurement_type.lower()
+        self.datapath = datapath
+        self.date = self.day
+        
+    def __str__(self):
+        return (f"[Dynatree measurement {self.day} {self.tree} {self.measurement} {self.measurement_type}]")
+        
+    def __repr__(self):
+        return (f"[Dynatree measurement {self.day} {self.tree} {self.measurement} {self.measurement_type}]")
+        
+    @property
+    def file_pulling_name(self):
+        """
+        The name of the file with Force+Elasto+Inclino.
+        Raw data from the device converted from txt files to parquet.
+        """
+        return f"{self.datapath}/parquet_pulling/{self.day.replace('-','_')}/{self.measurement_type}_{self.tree}_{self.measurement}.parquet"
+    @property
+    def file_optics_name(self):
+        """
+        The name of the file with optics.
+        """
+        if self.measurement_type != "normal":
+            logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
+            return ""
+        return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}.parquet"
+    @property
+    def file_optics_extra_name(self):
+        """
+        Returns the file with Force, Elasto, Inclino. The file is 
+        interpolated to the same index as optics and both dataframes
+        can be concatenated.
+        """
+        if self.measurement_type != "normal":
+            logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
+            return ""
+        return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}_pulling.parquet"
+    
+    def read_data_pulling(self):
+        self.data_pulling = pd.read_parquet(self.file_pulling_name)
+    
+    def read_data_optics(self):
+        self.data_optics = pd.read_parquet(self.file_optics_name)
+        
+    def read_data_optics_extra(self):
+        self.data_optics_extra = pd.read_parquet(self.file_optics_extra_name)
+        
+    @property
+    def is_optics_available(self):
+        return os.path.isfile(self.file_optics_name)
+        

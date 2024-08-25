@@ -142,7 +142,7 @@ def plot_one_measurement(
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     release_time_optics = find_release_time_optics(df)
     df_pulling_tests = read_data_inclinometers(
-        f"{path}/pulling_tests/{date}/BK_{tree}_M{measurement}.TXT", 
+        f"{path}/parquet_pulling/{date}/normal_BK{tree}_M0{measurement}.parquet", 
         release=release_time_optics, 
         delta_time=delta_time
         )    

@@ -26,8 +26,9 @@ import lib_dynatree
 from static_pull import get_all_measurements, available_measurements
 
 
-df = get_all_measurements()
-days = df["day"].drop_duplicates().values
+df = get_all_measurements(method='all')
+df = df[(df["optics"])| (df["measurement"]=="M01")]
+days = df["date"].drop_duplicates().values
 trees = df["tree"].drop_duplicates().values
 measurements = df["measurement"].drop_duplicates().values
 
@@ -275,12 +276,13 @@ def Detail():
         try:
             subdf.plot(x=xdata.value, y=ydata.value, style='.', ax=ax)
             t = np.linspace(*ax.get_xlim(),5)
-            for y in ydata.value:
-                if y not in reg_df["Dependent"]:
-                    continue
-                d = reg_df[reg_df["Dependent"]==y].loc[:,["Slope","Intercept"]]
-                # print(f"y:{y}\nvalues:{t*d.iat[0,0]+d.iat[0,1]}")
-                ax.plot(t,t*d.iat[0,0]+d.iat[0,1], **regression_settings)
+            if xdata.value != "Time":
+                for y in ydata.value:
+                    if y not in reg_df["Dependent"]:
+                        continue
+                    d = reg_df[reg_df["Dependent"]==y].loc[:,["Slope","Intercept"]]
+                    # print(f"y:{y}\nvalues:{t*d.iat[0,0]+d.iat[0,1]}")
+                    ax.plot(t,t*d.iat[0,0]+d.iat[0,1], **regression_settings)
         except:
             # print("Neco je blbe")
             # print(reg_df, ydata.value)                    

@@ -23,15 +23,71 @@ from lib_dynatree import read_data_inclinometers, read_data, timeit
 import lib_dynatree
 import re
 
+import os
+import glob
+
 import multi_handlers_logger as mhl
 
 DIRECTORY = "../data"
 
-def get_all_measurements(cesta=DIRECTORY):
-    return lib_dynatree.get_all_measurements(cesta, suffix="TXT", directory="pulling_tests")
+def get_all_measurements_pulling(cesta=DIRECTORY, suffix='parquet', directory='parquet_pulling'):
+    """
+    Gets all static measurements.
+    """
+    files = glob.glob(cesta+f"/{directory}/*/*.{suffix}") 
+    files = [i.replace(cesta+f"/{directory}/","").replace(f".{suffix}","") for i in files]
+    s = pd.Series(files)
+    split = s.str.split('/', expand=True)
+    info = split.iloc[:,1].str.split('_', expand=True)
+    ans = {
+        'date': split.iloc[:,0].str.replace("_","-"),
+        'tree': info.iloc[:,1],
+        'measurement': info.iloc[:,2],
+        'type': info.iloc[:,0],
+        }
+    df = pd.DataFrame(ans).sort_values(by = ["date","tree","measurement"])
+    df = df.reset_index(drop=True)
+    return df
 
+def get_all_measurements_optics(cesta=DIRECTORY, suffix='parquet', directory='parquet'):
+    files = glob.glob(cesta+f"/{directory}/*/*.{suffix}") 
+    files = [i.replace(cesta+f"/{directory}/","").replace(f".{suffix}","") for i in files]
+    df = pd.DataFrame(files, columns=["full_path"])
+    df[["date","rest"]] = df['full_path'].str.split("/", expand=True)
+    df["date"] = df["date"].str.replace("_","-")
+    df["is_pulling"] = df["rest"].str.contains("pulling")
+    mask = df["is_pulling"]
+    dfA = df[np.logical_not(mask)].copy()
+    dfB = df[mask].copy()
+    dfA[["tree","measurement"]] = dfA["rest"].str.split("_", expand=True)
+    dfB[["tree","measurement","pulling"]] = dfB["rest"].str.split("_", expand=True)
+    dfA = dfA.loc[:,["date","tree","measurement"]].sort_values(by = ["date","tree","measurement"]).reset_index(drop=True)
+    dfB = dfB.loc[:,["date","tree","measurement"]].sort_values(by = ["date","tree","measurement"]).reset_index(drop=True)
+    if not dfA.equals(dfB):
+        print("Některé měření nemá synchronizaci optika versus tahovky.")
+    dfA["type"] = "normal"  # optika je vzdy normal
+    return dfA
+
+def get_all_measurements(method='optics', *args, **kwargs):
+    if method == 'optics':
+        return get_all_measurements_optics(*args, **kwargs)
+    
+    df_o = get_all_measurements_optics()
+    df_o["optics"] = True
+    df_p = get_all_measurements_pulling()
+    df = pd.merge(df_p, df_o, 
+                on=['date', 'tree', 'measurement', "type"], 
+                how='left')
+    df = df[df["type"]=="normal"]  # jenom normal mereni
+    df = df[df["tree"].str.contains("BK")]  # neuvazuji jedli
+    df["optics"] = df["optics"].fillna(False)
+    df["day"] = df["date"]
+    return df
+
+# df = df[df["measurement"] != "M01"]
+# df = df[df["optics"].isnull()]
 def available_measurements(df, day, tree):
-    select_rows = (df["day"]==day) & (df["tree"]==tree)
+    select_rows = (df["date"]==day) & (df["tree"]==tree)
     values = df[select_rows]["measurement"].values
     return list(values)
 

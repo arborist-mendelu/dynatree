@@ -95,7 +95,7 @@ def nakresli():
     else:
         plot_fixes = True
         plot_Pt4 = False
-    if end.value == 0:
+    if (end.value == 0) or (end.value <= start.value):
         endlim = None
     else:
         endlim = end.value
