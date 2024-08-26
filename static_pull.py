@@ -68,7 +68,15 @@ def get_all_measurements_optics(cesta=DIRECTORY, suffix='parquet', directory='pa
     dfA["type"] = "normal"  # optika je vzdy normal
     return dfA
 
-def get_all_measurements(method='optics', *args, **kwargs):
+def get_all_measurements(method='optics', type='normal', *args, **kwargs):
+    """
+    Find all measurements. If the type is optics, we look for the files from optics only. 
+    
+    For other types we look for both optics and pulling files and merge informations.
+    
+    If type is 'all' we return all date. Otherwise only the selected type 
+    is returned.
+    """
     if method == 'optics':
         return get_all_measurements_optics(*args, **kwargs)
     
@@ -78,11 +86,14 @@ def get_all_measurements(method='optics', *args, **kwargs):
     df = pd.merge(df_p, df_o, 
                 on=['date', 'tree', 'measurement', "type"], 
                 how='left')
-    df = df[df["type"]=="normal"]  # jenom normal mereni
+    if type != 'all':
+        df = df[df["type"]==type]  # jenom vybrany typ mereni
     df = df[df["tree"].str.contains("BK")]  # neuvazuji jedli
     df["optics"] = df["optics"] == True
     df["day"] = df["date"]
     return df
+
+# df = get_all_measurements(method='all', type=)
 
 # df = df[df["measurement"] != "M01"]
 # df = df[df["optics"].isnull()]
@@ -148,7 +159,7 @@ def split_df_static_pulling(
         time = time + [t]
     return {'times':time, 'df_interpolated': df_interpolated}
 
-def find_intervals_to_split_measurements_from_csv(date, tree, measurement, csv="csv/intervals_split_M01.csv"):
+def find_intervals_to_split_measurements_from_csv(date, tree, measurement, measurement_type, csv="csv/intervals_split_M01.csv"):
     """
     Tries to find initial gues for separation of pulls in M1 measurement
     from csv file. If the measurement is not included (most cases), return None. 
@@ -157,7 +168,7 @@ def find_intervals_to_split_measurements_from_csv(date, tree, measurement, csv="
     if measurement != "1":
         return None
     df = pd.read_csv(csv, index_col=[], dtype={"tree":str}, sep=";")
-    select = df[(df["date"]==date) & (df["tree"]==tree)]
+    select = df[(df["date"]==date) & (df["tree"]==tree) & (df["type"]==measurement_type)]
     if select.shape[0] == 0:
         return None
     elif select.shape[0] > 1:
@@ -288,17 +299,17 @@ def get_static_pulling_data(data_obj, directory=DIRECTORY, skip_optics=False):
     
     """
     day, tree, measurement = data_obj.day, data_obj.tree, data_obj.measurement
+    measurement_type = data_obj.measurement_type
     measurement = measurement[-1]
     tree = tree[-2:]
     if tree == "18":
         pref="JD"
     else:
         pref="BK"
-    print()
     if skip_optics or measurement == "1":
-        df = read_data_inclinometers(f"{directory}/parquet_pulling/{day.replace('-','_')}/normal_{pref}{tree}_M0{measurement}.parquet")
+        df = read_data_inclinometers(f"{directory}/parquet_pulling/{day.replace('-','_')}/{measurement_type}_{pref}{tree}_M0{measurement}.parquet")
         if measurement == "1":
-            intervals_ini = find_intervals_to_split_measurements_from_csv(day, tree, measurement)
+            intervals_ini = find_intervals_to_split_measurements_from_csv(day, tree, measurement, measurement_type)
             out = split_df_static_pulling(
                 df, 
                 intervals = intervals_ini)
@@ -421,12 +432,13 @@ def nakresli(data_object, skip_optics=False):
     Probabably should be kept `False`.
     """
     day, tree, measurement = data_object.day, data_object.tree, data_object.measurement
+    measurement_type = data_object.measurement_type
     ans = process_data(data_object, skip_optics=skip_optics)
     dataframe = ans['dataframe']
 
     fig, ax = plt.subplots()
     dataframe["Force(100)"].plot(ax=ax)
-    ax.set(title=f"Static {day} {tree} {measurement}", ylabel="Force")
+    ax.set(title=f"Static {day} {tree} {measurement} {measurement_type}", ylabel="Force")
 
     figs = []
     for i,_ in enumerate(ans['times']):
@@ -480,7 +492,8 @@ def nakresli(data_object, skip_optics=False):
     return [fig] + figs
 
 def main_nakresli():
-    day,tree,measurement = "2022-04-05", "BK16", "M02"
+    day,tree,measurement, mt  = "2022-04-05", "BK16", "M02", "normal"
+    day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
     tree=tree[-2:]
     measurement = measurement[-1]
     data_object = lib_dynatree.Dynatree_Measurement(day, tree, measurement)
@@ -593,10 +606,11 @@ def main():
     return df_all_data
 
 if __name__ == "__main__":
-    day, tree, measurement = "2022-08-16", "BK11", "M02"
-    day, tree, measurement = "2023-07-17", "BK01", "M02"
+    day, tree, measurement, mt = "2022-08-16", "BK11", "M02", "normal"
+    day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
+
     # day, tree, measurement = "2021-06-29", "BK08", "M04"
-    data_obj = lib_dynatree.Dynatree_Measurement(day, tree, measurement)
+    data_obj = lib_dynatree.Dynatree_Measurement(day, tree, measurement, measurement_type=mt)
     ans = process_data(data_obj, skip_optics=True)
 
     ans_10 = get_regressions_for_one_measurement(data_obj,minimal_fraction=0.1, skip_optics=False)
