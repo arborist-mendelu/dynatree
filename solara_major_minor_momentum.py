@@ -155,10 +155,10 @@ def Selection():
         solara.Markdown(
             f"**Selected**: {day.value}, {tree.value}, {measurement.value}")
         if data_object.is_optics_available:
-            solara.Markdown(f"Optics is available for this measurement.")
+            solara.Markdown(f"✅ Optics is available for this measurement.")
         else:
             solara.Markdown(
-                f"Optics is **not** available for this measurement.")
+                f"❎ Optics is **not** available for this measurement.")
 
 
 def Graphs():

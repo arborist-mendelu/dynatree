@@ -88,7 +88,7 @@ def get_all_measurements(method='optics', type='normal', *args, **kwargs):
                 how='left')
     if type != 'all':
         df = df[df["type"]==type]  # jenom vybrany typ mereni
-    df = df[df["tree"].str.contains("BK")]  # neuvazuji jedli
+    # df = df[df["tree"].str.contains("BK")]  # neuvazuji jedli
     df["optics"] = df["optics"] == True
     df["day"] = df["date"]
     return df
@@ -234,7 +234,7 @@ def read_tree_configuration():
         sheet_name=sheet_name,
         skiprows=[1],  # Vynechání druhého řádku
         index_col=0,   # Nastavení čtvrtého sloupce (D) jako index
-        nrows=13,       # Načtení 13 řádků s daty
+        nrows=14,       # Načtení 13 řádků s daty
         usecols="D,G,H,I,K,M",  # Načtení pouze sloupců D, G, H, K, L
     )
     
