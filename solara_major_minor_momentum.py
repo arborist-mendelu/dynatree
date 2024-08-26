@@ -49,7 +49,7 @@ day = solara.reactive(days[0])
 tree = solara.reactive(trees[0])
 measurement = solara.reactive(measurements[0])
 
-data_object = lib_dynatree.Dynatree_Measurement(
+data_object = lib_dynatree.DynatreeMeasurement(
     day.value, tree.value, measurement.value,measurement_type=method.value)
 
 data_possible_restrictions = ["0-100%", "10%-90%", "30%-90%"]
@@ -87,7 +87,7 @@ def resetuj_a_nakresli(reset_measurements=False):
 
 @task
 def nakresli(reset_measurements=False):
-    data_object = lib_dynatree.Dynatree_Measurement(
+    data_object = lib_dynatree.DynatreeMeasurement(
         day.value, tree.value, measurement.value,measurement_type=method.value)
     return static_pull.nakresli(data_object, skip_optics=True)
 
@@ -138,10 +138,10 @@ def Selection():
                                        on_value=resetuj_a_nakresli)
             solara.ToggleButtonsSingle(value=measurement,
                                        values=available_measurements(
-                                           df, day.value, tree.value),
+                                           df, day.value, tree.value, method.value),
                                        on_value=nakresli
                                        )
-        data_object = lib_dynatree.Dynatree_Measurement(
+        data_object = lib_dynatree.DynatreeMeasurement(
             day.value, tree.value, measurement.value,measurement_type=method.value)
         with solara.Tooltip("Umožní ignorovat preprocessing udělaný na tahovkách M02 a více. Tím bude stejná metodika jako pro M01 (tam se preprocessing nedělal), ale přijdeme o časovou synchronizaci s optikou a hlavně přijdeme o opravu vynulování inklinometrů."):
             solara.Switch(
@@ -163,9 +163,11 @@ def Selection():
 
 def Graphs():
     solara.ProgressLinear(nakresli.pending)
-    if measurement.value not in available_measurements(df, day.value, tree.value):
-        solara.Error(f"Measurement {
-                     measurement.value} not available for this tree.")
+    if measurement.value not in available_measurements(df, day.value, tree.value, method.value):
+        solara.Error(f"""
+                     Measurement {measurement.value} not available for tree {tree.value}
+                     day {day.value} measurment type {method.value}.
+                     """)
         return
 
     if nakresli.not_called:
@@ -211,7 +213,7 @@ msg = """
 
 
 def Detail():
-    data_object = lib_dynatree.Dynatree_Measurement(
+    data_object = lib_dynatree.DynatreeMeasurement(
         day.value, tree.value, measurement.value,measurement_type=method.value)
     data = static_pull.process_data(data_object, ignore_optics_data.value)
     if nakresli.not_called:
@@ -315,7 +317,7 @@ def Detail():
         solara.Error(
             "Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
 
-    title = f"{day.value} {tree.value} {measurement.value} Pull {pull_value}"
+    title = f"{day.value} {tree.value} {measurement.value} {method.value} Pull {pull_value}"
     if interactive_graph.value:
         kwds = {"template": "plotly_white", "height": 600, "title": title}
         # kwds = {"height":600, "title":title}

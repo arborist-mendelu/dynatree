@@ -409,7 +409,7 @@ date2color = {
     }
 
 
-class Dynatree_Measurement:
+class DynatreeMeasurement:
     def __init__(self, day, tree, measurement, measurement_type='normal', datapath="../data"):
         if not isinstance(tree, str):
             tree = f"{tree:02}"
@@ -427,6 +427,9 @@ class Dynatree_Measurement:
         self.measurement_type = measurement_type.lower()
         self.datapath = datapath
         self.date = self.day
+        self.data_optics_content = None
+        self.data_optics_extra_content = None
+        self.data_pulling_content = None
         
     def __str__(self):
         return (f"[Dynatree measurement {self.day} {self.tree} {self.measurement} {self.measurement_type}]")
@@ -462,14 +465,21 @@ class Dynatree_Measurement:
             return ""
         return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}_pulling.parquet"
     
-    def read_data_pulling(self):
-        self.data_pulling = pd.read_parquet(self.file_pulling_name)
+    @property
+    def data_pulling(self):
+        if self.data_pulling_content is None:
+            self.data_pulling_content = pd.read_parquet(self.file_pulling_name)
+        return self.data_pulling_content
     
-    def read_data_optics(self):
-        self.data_optics = pd.read_parquet(self.file_optics_name)
+    @property
+    def data_optics(self):
+        self.data_optics_content = pd.read_parquet(self.file_optics_name)
+        return self.data_optics_content
         
-    def read_data_optics_extra(self):
-        self.data_optics_extra = pd.read_parquet(self.file_optics_extra_name)
+    @property
+    def data_optics_extra(self):
+        self.data_optics_extra_content = pd.read_parquet(self.file_optics_extra_name)
+        return self.data_optics_extra_content
         
     @property
     def is_optics_available(self):

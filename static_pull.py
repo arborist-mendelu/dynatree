@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Aug 14 13:25:19 2024
 
@@ -32,7 +31,7 @@ DIRECTORY = "../data"
 
 def get_all_measurements_pulling(cesta=DIRECTORY, suffix='parquet', directory='parquet_pulling'):
     """
-    Gets all static measurements.
+    Gets all static measurements. Makes use of data from pulling experiments.
     """
     files = glob.glob(cesta+f"/{directory}/*/*.{suffix}") 
     files = [i.replace(cesta+f"/{directory}/","").replace(f".{suffix}","") for i in files]
@@ -50,6 +49,9 @@ def get_all_measurements_pulling(cesta=DIRECTORY, suffix='parquet', directory='p
     return df
 
 def get_all_measurements_optics(cesta=DIRECTORY, suffix='parquet', directory='parquet'):
+    """
+    Gets all measurements with optics.
+    """
     files = glob.glob(cesta+f"/{directory}/*/*.{suffix}") 
     files = [i.replace(cesta+f"/{directory}/","").replace(f".{suffix}","") for i in files]
     df = pd.DataFrame(files, columns=["full_path"])
@@ -97,132 +99,10 @@ def get_all_measurements(method='optics', type='normal', *args, **kwargs):
 
 # df = df[df["measurement"] != "M01"]
 # df = df[df["optics"].isnull()]
-def available_measurements(df, day, tree):
-    select_rows = (df["date"]==day) & (df["tree"]==tree)
+def available_measurements(df, day, tree, measurement_type):
+    select_rows = (df["date"]==day) & (df["tree"]==tree)  & (df["type"]==measurement_type)
     values = df[select_rows]["measurement"].values
     return list(values)
-
-def split_df_static_pulling(
-    df_ori,
-    intervals=None,
-    ):
-    """
-    Analyzes data in static tests, with three pulls. Inputs the dataframe, 
-    outputs the dictionary. 
-    
-    output['times'] contains the time intervals of increasing pulling force. 
-    output['df_interpolated'] return interpolated force values. 
-    
-    Initial estimate of subintervals can be provided in a file
-    csv/intervals_split_M01.csv. If not, the initial guess is created 
-    automatically. 
-    
-    Method description:
-        * drop nan values of force
-        * interpolate and smooth out
-        * find intervals where function is decreasing from top down
-        * find a maximum and then the minimum which preceeds this maximum    
-    
-    """
-    df= df_ori.copy()[["Force(100)"]].dropna()
-
-    # Interpolace a vyhlazeni
-    new_index = np.arange(df.index[0],df.index[-1],0.1)
-    window_length = 100
-    polyorder = 3
-    newdf = df[["Force(100)"]].dropna()
-    interpolation_function = interp1d(newdf.index, newdf["Force(100)"], kind='linear')
-    df_interpolated = pd.DataFrame(interpolation_function(new_index), index=new_index, columns=["Force(100)"])
-    df_interpolated['Force_smoothed'] = savgol_filter(df_interpolated['Force(100)'], window_length=window_length, polyorder=polyorder)
-
-    steps_down=None
-    if intervals is None:
-        # Divide domain into interval where force is large and small
-        maximum = df_interpolated["Force(100)"].max()
-        df_interpolated["Force_step"] = (df_interpolated["Force(100)"]>0.5*maximum).astype(int)
-
-        # identify jumps down
-        diff_d1 = df_interpolated["Force_step"].diff()
-        steps_down = list(diff_d1.index[diff_d1<0])
-        intervals = zip([0]+steps_down[:-1],steps_down)
-
-    time = []
-    for start,end in intervals:
-        df_subset = df.loc[(df.index > start) & (df.index < end),"Force(100)"]
-        maximum_idx = np.argmax(df_subset)
-        t = {'maximum': df_subset.index[maximum_idx]}
-
-        df_subset = df.loc[(df.index > start) & (df.index < t['maximum']),"Force(100)"]
-        idxmin = df_subset.idxmin()
-        t['minimum'] = idxmin
-
-        time = time + [t]
-    return {'times':time, 'df_interpolated': df_interpolated}
-
-def find_intervals_to_split_measurements_from_csv(date, tree, measurement, measurement_type, csv="csv/intervals_split_M01.csv"):
-    """
-    Tries to find initial gues for separation of pulls in M1 measurement
-    from csv file. If the measurement is not included (most cases), return None. 
-    In this case the splitting is done automatically.
-    """
-    if measurement != "1":
-        return None
-    df = pd.read_csv(csv, index_col=[], dtype={"tree":str}, sep=";")
-    select = df[(df["date"]==date) & (df["tree"]==tree) & (df["type"]==measurement_type)]
-    if select.shape[0] == 0:
-        return None
-    elif select.shape[0] > 1:
-        print (f"Warning, multiple pairs of date-tree in file {csv}")
-        select = select.iat[0,:]
-    return np.array([
-        int(i) for i in (
-            select["intervals"]
-                .values[0]
-                .replace("[","")
-                .replace("]","")
-                .split(",")
-                )
-        ]).reshape(-1,2)
-
-
-def process_inclinometers_major_minor(df_):
-    """
-    The input is dataframe loaded by pd.read_csv from pull_tests directory.
-    
-    * Converts Inclino(80) and Inclino(81) to blue and yellow respectively.
-    * Evaluates the total angle of inclination from X and Y part
-    * Adds the columns with Major and Minor axis.
-    
-    Returns new dataframe with the corresponding columns
-    """
-    df = pd.DataFrame(index=df_.index, columns=["blue","yellow"], dtype=float)
-    df[["blueX","blueY","yellowX","yellowY"]] = df_[["Inclino(80)X","Inclino(80)Y", "Inclino(81)X","Inclino(81)Y",]]
-    for inclino in ["blue","yellow"]:
-        df.loc[:,[inclino]] = arctand(
-            np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 )
-            )
-        # najde maximum bez ohledu na znamenko
-        maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
-        # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
-        if maxima[f"{inclino}X"]>maxima[f"{inclino}Y"]:
-            df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}X"]
-            df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}Y"]
-        else:
-            df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}Y"]
-            df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}X"]
-        # Najde pozici, kde je extremalni hodnota - nejkladnejsi nebo nejzapornejsi
-        idx = df[f"{inclino}_Maj"].abs().idxmax()
-        # promenna bude jednicka pokus je extremalni hodnota kladna a minus
-        # jednicka, pokud je extremalni hodnota zaporna
-        if pd.isna(idx):
-            znamenko = 1
-        else:
-            znamenko = np.sign(df[f"{inclino}_Maj"][idx])
-        # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
-        # blueM, blueV, yellowM, yellowV
-        for axis in ["_Maj", "_Min"]:
-            df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]
-    return df
 
 def read_tree_configuration():
     file_path = "../data/Popis_Babice_VSE_13082024.xlsx"
@@ -283,46 +163,6 @@ def arctand(value):
     """
     return np.rad2deg(np.arctan(value))
 
-def get_static_pulling_data(data_obj, directory=DIRECTORY, skip_optics=False):
-    """
-    Uniform method to find the data. The data ara obtained from pulling tests
-    for M01 and from parquet files for the other measurements.
-    
-    The data from M01 measurement are from the device output. 
-    
-    If skip_optics is true, the other measurements are handles in the same
-    way as M01. 
-    
-    If skip_optics is False, the data for M02 and higher are from 
-    parquet_add_inclino.py library. These data are synchronized with optics and
-    recaluculated to the same time index as optics.
-    
-    """
-    day, tree, measurement = data_obj.day, data_obj.tree, data_obj.measurement
-    measurement_type = data_obj.measurement_type
-    measurement = measurement[-1]
-    tree = tree[-2:]
-    if tree == "18":
-        pref="JD"
-    else:
-        pref="BK"
-    if skip_optics or measurement == "1":
-        df = read_data_inclinometers(f"{directory}/parquet_pulling/{day.replace('-','_')}/{measurement_type}_{pref}{tree}_M0{measurement}.parquet")
-        if measurement == "1":
-            intervals_ini = find_intervals_to_split_measurements_from_csv(day, tree, measurement, measurement_type)
-            out = split_df_static_pulling(
-                df, 
-                intervals = intervals_ini)
-            times = out['times']
-        else:
-            times = [{"minimum":0, "maximum": df["Force(100)"].idxmax()}]
-    else:
-        df = read_data(f"{directory}/parquet/{day.replace('-','_')}/{pref}{tree}_M0{measurement}_pulling.parquet")
-        times = [{"minimum":0, "maximum": df["Force(100)"].idxmax().iloc[0]}]
-        df = df.drop([i for i in df.columns if i[1]!='nan'], axis=1)
-        df.columns = [i[0] for i in df.columns]
-    df["Elasto-strain"] = df["Elasto(90)"]/200000
-    return {'times': times, 'dataframe': df}
 
 def get_computed_data(data_obj, out=None, skip_optics=False, df_pt_notes=DF_PT_NOTES):
     """
@@ -422,6 +262,45 @@ def process_data(data_obj, skip_optics=False):
         ], axis=1)
     return {'times': out['times'], 'dataframe': df}
 
+def process_inclinometers_major_minor(df_):
+    """
+    The input is dataframe loaded by pd.read_csv from pull_tests directory.
+    
+    * Converts Inclino(80) and Inclino(81) to blue and yellow respectively.
+    * Evaluates the total angle of inclination from X and Y part
+    * Adds the columns with Major and Minor axis.
+    
+    Returns new dataframe with the corresponding columns
+    """
+    df = pd.DataFrame(index=df_.index, columns=["blue","yellow"], dtype=float)
+    df[["blueX","blueY","yellowX","yellowY"]] = df_[["Inclino(80)X","Inclino(80)Y", "Inclino(81)X","Inclino(81)Y",]]
+    for inclino in ["blue","yellow"]:
+        df.loc[:,[inclino]] = arctand(
+            np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 )
+            )
+        # najde maximum bez ohledu na znamenko
+        maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
+        # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
+        if maxima[f"{inclino}X"]>maxima[f"{inclino}Y"]:
+            df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}X"]
+            df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}Y"]
+        else:
+            df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}Y"]
+            df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}X"]
+        # Najde pozici, kde je extremalni hodnota - nejkladnejsi nebo nejzapornejsi
+        idx = df[f"{inclino}_Maj"].abs().idxmax()
+        # promenna bude jednicka pokus je extremalni hodnota kladna a minus
+        # jednicka, pokud je extremalni hodnota zaporna
+        if pd.isna(idx):
+            znamenko = 1
+        else:
+            znamenko = np.sign(df[f"{inclino}_Maj"][idx])
+        # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
+        # blueM, blueV, yellowM, yellowV
+        for axis in ["_Maj", "_Min"]:
+            df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]
+    return df
+
 @timeit
 def nakresli(data_object, skip_optics=False):
     """
@@ -496,7 +375,7 @@ def main_nakresli():
     day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
     tree=tree[-2:]
     measurement = measurement[-1]
-    data_object = lib_dynatree.Dynatree_Measurement(day, tree, measurement)
+    data_object = lib_dynatree.DynatreeMeasurement(day, tree, measurement)
     nakresli(data_object)
     data = process_data(data_object)
     pull_value=0
@@ -582,16 +461,17 @@ def get_regressions_for_one_column(df, independent, info=""):
 def main():
     logger = mhl.setup_logger(prefix="static_pull_")
     logger.info("========== INITIALIZATION OF static-pull.py  ============")
-    df = get_all_measurements(how='pulling')
-    return df
+    df = get_all_measurements(method='all', type='all')
     # drop missing optics
-    df = df[~((df["day"]=="2022-04-05")&(df["tree"]=="BK21")&(df["measurement"]=="M5"))]
+    # df = df[~((df["day"]=="2022-04-05")&(df["tree"]=="BK21")&(df["measurement"]=="M5"))]
     all_data = {}
     for i,row in df.iterrows():
         day = row['day']
         tree = row['tree']
         measurement = row['measurement']
-        msg = f"Processing {day} {tree} {measurement}"
+        optics = row['optics']
+        measurement_type = row['type']
+        msg = f"Processing {day} {tree} {measurement}, {measurement_type}, optics availability is {optics}"
         logger.info(msg)
         try:
             # get regressions for two cut-out values and merge
@@ -606,18 +486,18 @@ def main():
     return df_all_data
 
 if __name__ == "__main__":
-    day, tree, measurement, mt = "2022-08-16", "BK11", "M02", "normal"
-    day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
+    # day, tree, measurement, mt = "2022-08-16", "BK11", "M02", "normal"
+    # day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
 
-    # day, tree, measurement = "2021-06-29", "BK08", "M04"
-    data_obj = lib_dynatree.Dynatree_Measurement(day, tree, measurement, measurement_type=mt)
-    ans = process_data(data_obj, skip_optics=True)
+    # # day, tree, measurement = "2021-06-29", "BK08", "M04"
+    # data_obj = lib_dynatree.DynatreeMeasurement(day, tree, measurement, measurement_type=mt)
+    # ans = process_data(data_obj, skip_optics=True)
 
-    ans_10 = get_regressions_for_one_measurement(data_obj,minimal_fraction=0.1, skip_optics=False)
+    # ans_10 = get_regressions_for_one_measurement(data_obj,minimal_fraction=0.1, skip_optics=False)
     # ans_30 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.3)
     # ans = pd.concat([ans_10,ans_30])
-    main_nakresli()
+    # main_nakresli()
     
     # These two lines are for production code to do final analysis
-    # main_output = main()
-    # main_output.to_csv("csv_output/regresions_static.csv")
+    main_output = main()
+    main_output.to_csv("csv_output/regresions_static.csv")
