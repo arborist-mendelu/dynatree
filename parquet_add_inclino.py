@@ -106,6 +106,7 @@ def fix_data_by_points_on_ground(df):
 # find_release_time_optics(df,probe="Pt3",coordinate="Y0")
 
 def resample_data_from_inclinometers(df_pulling_tests, df):
+    df_pulling_tests = df_pulling_tests.interpolate(method='index')
     cols = [i for i in df_pulling_tests.columns if "Inclino" in i or "Force" in i or "Elasto" in i or "Rope" in i]
     cols = pd.MultiIndex.from_product([cols,[None]], names=["Time", None])
     df_resampled = pd.DataFrame(index = df.index, columns=cols)

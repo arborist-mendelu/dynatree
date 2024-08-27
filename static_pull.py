@@ -141,6 +141,8 @@ class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
         super().__init__(**kwargs)
         # for optics in [True, False]:
         #     for lower_cut in [0.1,0.3]
+        # print("pull data", self._get_static_pulling_data(
+        #         optics=optics, restricted=restricted))
         self.pullings = [DynatreeStaticPulling(i, self.tree) 
                              for i in self._get_static_pulling_data(
                                      optics=optics, restricted=restricted)]
@@ -160,6 +162,8 @@ class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
             self.regressions.loc[:,["lower_bound","upper_bound"]] = restricted
         else:
             self.regressions = None
+        # print(f"DynatreeStaticMeasurment initialized {args} {kwargs}")
+        # print(f"pullings {self.pullings}")
 
     def _find_intervals_to_split_measurements_from_csv(self, csv="csv/intervals_split_M01.csv"):
         """
@@ -365,10 +369,10 @@ class DynatreeStaticPulling:
         self.regressions = self._get_regressions_for_one_pull()
     
     def __str__(self):
-        return f"Dynatree pulling, data shape {self.data.shape}"
+        return f"Dynatree static pulling, data shape {self.data.shape}"
     
     def __repr__(self):
-        return f"Dynatree pulling, data shape {self.data.shape}"
+        return f"Dynatree static pulling, data shape {self.data.shape}"
     
     def _process_inclinometers_major_minor(self):
         """

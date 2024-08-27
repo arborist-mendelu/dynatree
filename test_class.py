@@ -33,8 +33,8 @@ do = static_pull.DynatreeStaticMeasurment(
 # aa = DynatreeStaticPulling(a[0], m.tree)
 # # %%
 # aa.plot()
-# # %%
-# aa.regresions
+# %%
+do.data_optics
 # %%
 # m.measurement
 # a = {}

@@ -22,8 +22,9 @@ DATA_PATH = "../data"
 
 tightcols = {'gap': "0px"}
 regression_settings = {'color': 'gray', 'alpha': 0.5}
+kwds = {"template": "plotly_white", "height": 600}
 
-title = "DYNATREE: pulling, force, inclinometers, extensometer, optics, ..."
+title = "DYNATREE: vizualizace dat, se kterými se pracuje"
 
 
 methods = ['normal', 'den', 'noc', 'afterro', 'mraz']
@@ -45,97 +46,95 @@ def get_measuerements_list(x='all'):
 day = solara.reactive(days[0])
 tree = solara.reactive(trees[0])
 measurement = solara.reactive(measurements[0])
-use_optics = solara.reactive(False)
 
 data_object = lib_dynatree.DynatreeMeasurement(
     day.value, 
     tree.value, 
     measurement.value,
     measurement_type=method.value,
-    # use_optics=use_optics.value
     )
 
-data_possible_restrictions = ["0-100%", "10%-90%", "30%-90%"]
+dependent_pull = solara.reactive(["Force(100)"])
+dependent_pt34 = solara.reactive(["Pt3"])
+dependent_extra = solara.reactive(["Force(100)"])
 
-xdata = solara.reactive("M_Measure")
-ydata = solara.reactive(["blue", "yellow"])
-ydata2 = solara.reactive([])
-pull = solara.reactive(0)
-restrict_data = solara.reactive(data_possible_restrictions[-1])
-interactive_graph = solara.reactive(False)
-all_data = solara.reactive(False)
-force_interval = solara.reactive("None")
 
-def fix_input(a):
-    """
-    The input is a list. 
+def resetuj_a_nakresli(x=None):
+    pass
 
-    The output is ["Force(100)"] is the input is empty. If not empty, the 
-    input is copied to output.
+def nakresli(x=None):
+    pass
 
-    Used for drawing. If no value is selected for the graph, the Force(100) 
-    is plotted.
-    """
-    if len(a) == 0:
-        return ["Force(100)"]
-    return a
-
-def resetuj_a_nakresli(reset_measurements=False):
-    measurement.set(measurements[0])
-    return nakresli()
-
-def get_data_object():
-    data_object = static_pull.DynatreeStaticMeasurment(
-        day=day.value, tree=tree.value,
-        measurement=measurement.value,
-        measurement_type=method.value,
-        optics=False)
-    if data_object.is_optics_available and use_optics.value == True:
-        data_object = static_pull.DynatreeStaticMeasurment(
-            day=day.value, tree=tree.value,
-            measurement=measurement.value,
-            measurement_type=method.value,
-            optics=True)
-    return data_object
-
-@task
-def nakresli(reset_measurements=False):
-    data_object = get_data_object()
-    figs = [data_object.plot()] + [i.plot(n) for n,i in enumerate(data_object.pullings)]
-    return figs
-
+def investigate(df, var):
+    solara.ToggleButtonsMultiple(value=var, values=list(df.columns))
+    px.scatter(df, y=var.value, **kwds)
+    df["Time"] = df.index
+    solara.DataFrame(df)
+    
 @solara.component
 def Page():
+    data_object = lib_dynatree.DynatreeMeasurement(
+        day.value, 
+        tree.value, 
+        measurement.value,
+        measurement_type=method.value,
+        )
     solara.Title(title)
     solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
     with solara.Sidebar():
         # solara.Markdown("Výběr proměnných pro záložku \"Volba proměnných a regrese\".")
         Selection()
     # solara.Markdown("# Under construction")
-    # return
     with solara.lab.Tabs():
-        with solara.lab.Tab("Grafy"):
-            with solara.Card():
-                # try:
-                    Graphs()
-                # except:
-                    # pass
-        with solara.lab.Tab("Volba proměnných a regrese"):
-            with solara.Card():
-                # try:
-                    Detail()
-                # except:
-                    # pass
-        with solara.lab.Tab("Statistiky"):
+        with solara.lab.Tab("Tahovky"):
             with solara.Card():
                 try:
-                    Statistics()
+                    df = data_object.data_pulling
+                    investigate(df, dependent_pull)
+                # try:
+                    # Graphs()
                 except:
                     pass
-
-        with solara.lab.Tab("Návod a komentáře"):
+        with solara.lab.Tab("Optika Pt3 a Pt4"):
             with solara.Card():
-                Help()
+                try:
+                    if data_object.is_optics_available:
+                        df2 = data_object.data_optics_pt34
+                        df2 = df2-df2.iloc[0,:]
+                        df2.columns = [i[0] for i in df2.columns]
+                        df2 = df2[[i for i in df2.columns if "Time" not in i]]
+                        investigate(df2, dependent_pt34)
+                        pass
+                    else:
+                        solara.Markdown("## Optika pro toto měření není nebo není zpracovaná.")
+                # try:
+                    # Detail()
+                except:
+                    pass
+        with solara.lab.Tab("Tahovky interpolovane na optiku"):
+            with solara.Card():
+                try:
+                    if data_object.is_optics_available:
+                        df3 = data_object.data_optics_extra
+                        df3 = df3-df3.iloc[0,:]
+                        df3.columns = [i[0] for i in df3.columns]
+                        df3 = df3[[i for i in df3.columns if "fixed" not in i]]
+                        investigate(df3, dependent_extra)
+                        pass
+                    else:
+                        solara.Markdown("## Optika pro toto měření není nebo není zpracovaná.")
+                # try:
+                    # Detail()
+                except:
+                    pass
+                # try:
+                    # Statistics()
+                # except:
+                    # pass
+
+        # with solara.lab.Tab("Návod a komentáře"):
+        #     with solara.Card():
+        #         Help()
 
     # MainPage()
 
@@ -160,16 +159,6 @@ def Selection():
                                        )
         data_object = lib_dynatree.DynatreeMeasurement(
             day.value, tree.value, measurement.value,measurement_type=method.value)
-        with solara.Tooltip("Umožní použít preprocessing udělaný na tahovkách M02 a více. Tím sice nebude stejná metodika jako pro M01 (tam se preprocessing nedělal), ale máme časovou synchronizaci s optikou, o opravu vynulování inklinometrů a pohyb bodů Pt3 a Pt4."):
-            solara.Switch(
-                label="Use optics data, if possible",
-                value=use_optics,
-                disabled=not data_object.is_optics_available,
-                on_value=nakresli
-            )
-        # solara.Div(style={"margin-bottom": "10px"})
-        solara.Button("Run calculation", on_click=nakresli, color="primary")
-        # solara.Button("Clear cache", on_click=clear(), color="primary")
         solara.Markdown(
             f"**Selected**: {day.value}, {tree.value}, {measurement.value}")
         if data_object.is_optics_available:
@@ -180,11 +169,7 @@ def Selection():
 
 def Statistics():
     data_object = get_data_object()
-    if data_object.is_optics_available:
-        l = [data_object.data_optics_extra, data_object.data_pulling]
-    else:
-        l = [data_object.data_pulling]
-    for df in l:
+    for df in [data_object.data_optics_extra, data_object.data_pulling]:
         df = df[[i for i in df.columns if "fixed" not in i[0]]]
         nans = pd.DataFrame(df.isna().sum())
         nans.loc[:,"name"] = df.columns
@@ -295,7 +280,7 @@ def Detail():
                         day=day.value, tree=tree.value,
                         measurement=measurement.value, measurement_type=method.value,
                         optics=False)
-                    # print(f"Creating data object {data_object} with pullings {data_object.pullings}")
+                    print(f"Creating data object {data_object} with pullings {data_object.pullings}")
                     pulls = list(range(len(data_object.pullings)))
                     solara.ToggleButtonsSingle(values=pulls, value=pull)
                 pull_value = pull.value
