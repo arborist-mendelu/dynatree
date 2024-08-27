@@ -53,11 +53,22 @@ def timeit(func):
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         total_time = end_time - start_time
-        msg = f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds'
+        msg = f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f}s.'
         # logger.info(msg)
-        print(msg)
+        logger.info(msg)
         return result
     return timeit_wrapper
+
+# Property timer, https://stackoverflow.com/questions/64589914/how-to-decorate-a-property-to-measure-the-time-it-executes
+def timer(method):
+    import time
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = method(*args, **kwargs)  # note the function call!
+        end = time.time()
+        logger.info(f'Elapsed time for {method.__name__} is {(end-start):.4f}s.')
+        return result
+    return wrapper
 
 # @timeit
 @lru_cache(3)
@@ -152,8 +163,6 @@ def read_data_selected_doit(file, probes):
     df.columns = cols
     return df
 
-
-#%%
 def directory2date(d):
     """
     Converts directory from the form '2021_03_22'
@@ -427,9 +436,12 @@ class DynatreeMeasurement:
         self.measurement_type = measurement_type.lower()
         self.datapath = datapath
         self.date = self.day
+        
         self.data_optics_content = None
         self.data_optics_extra_content = None
         self.data_pulling_content = None
+        self.data_pulling_interpolated_content = None
+        self.data_optics_pt34_content = None
         
     def __str__(self):
         return (f"[Dynatree measurement {self.day} {self.tree} {self.measurement} {self.measurement_type}]")
@@ -468,17 +480,39 @@ class DynatreeMeasurement:
     @property
     def data_pulling(self):
         if self.data_pulling_content is None:
+            logger.debug("loading pulling data")
             self.data_pulling_content = pd.read_parquet(self.file_pulling_name)
         return self.data_pulling_content
     
     @property
+    def data_pulling_interpolated(self):
+        if self.data_pulling_interpolated_content is None:
+            logger.debug("interpolating pulling data")
+            df = self.data_pulling
+            self.data_pulling_interpolated_content = df.interpolate(method='index')
+        return self.data_pulling_interpolated_content
+
+    @property
     def data_optics(self):
-        self.data_optics_content = pd.read_parquet(self.file_optics_name)
+        if self.data_optics_content is None:
+            logger.debug("loading optics data")
+            self.data_optics_content = pd.read_parquet(self.file_optics_name)
         return self.data_optics_content
+
+    @property
+    @timer
+    def data_optics_pt34(self):
+        if self.data_optics_pt34_content is None:
+            logger.debug("loading optics data Pt3 and Pt4")
+            self.data_optics_pt34_content = pd.read_parquet(
+                self.file_optics_name, columns=["('Pt3', 'Y0')", "('Pt4', 'Y0')", "('Time', '')"])
+        return self.data_optics_pt34_content
         
     @property
     def data_optics_extra(self):
-        self.data_optics_extra_content = pd.read_parquet(self.file_optics_extra_name)
+        if self.data_optics_extra_content is None:
+            logger.debug("loading optics extra")
+            self.data_optics_extra_content = pd.read_parquet(self.file_optics_extra_name)
         return self.data_optics_extra_content
         
     @property
