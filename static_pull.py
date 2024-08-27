@@ -17,12 +17,10 @@ import numpy as np
 from scipy.signal import savgol_filter
 from scipy.stats import linregress
 from scipy.interpolate import interp1d
-from lib_dynatree import read_data_inclinometers, read_data, timeit
+from lib_dynatree import timeit
 # from functools import lru_cache
 import lib_dynatree
-import re
 
-import os
 import glob
 
 import multi_handlers_logger as mhl
@@ -95,96 +93,362 @@ def get_all_measurements(method='optics', type='normal', *args, **kwargs):
     df["day"] = df["date"]
     return df
 
-# df = get_all_measurements(method='all', type=)
-
-# df = df[df["measurement"] != "M01"]
-# df = df[df["optics"].isnull()]
 def available_measurements(df, day, tree, measurement_type):
     select_rows = (df["date"]==day) & (df["tree"]==tree)  & (df["type"]==measurement_type)
     values = df[select_rows]["measurement"].values
     return list(values)
 
-@timeit
-def process_data(data_obj, skip_optics=False):
-    """
-    skip_optics=False means ignore parquet files where optics and pulling is synced 
-    and read the original file. 
+
+
+def read_tree_configuration():
+    file_path = "../data/Popis_Babice_VSE_13082024.xlsx"
+    sheet_name = "Prehledova tabulka_zakludaje"
     
-    Toto také zahodí případnou informaci, na jakém intervalu je potřeba vynulovat
-    inklinometry.
-    """
-    if (not skip_optics) & (not data_obj.is_optics_available):
-        print(f"Optics not available for {data_obj}, forcing skip_optics=True")
-        skip_optics = True
-    day, tree, measurement = data_obj.day, data_obj.tree, data_obj.measurement
-    # read data, either M02, 3, 4, etc or three pulls in M1
-    # interpolate the missing data if necessary
-    out = get_static_pulling_data(data_obj, skip_optics=skip_optics)
-    # remove nan in index if necessary before interpolation
-    idxna = out['dataframe'].index.isna()
-    out['dataframe'].iloc[~idxna,:]=out['dataframe'].iloc[~idxna,:].interpolate(method='index')
-    dataframe = out['dataframe']
-    tree = tree[-2:]
-    measurement = measurement[-1]
-    if measurement != '1' and not skip_optics:
-        pt_3_4 = lib_dynatree.read_data_selected(f"../data/parquet/{day.replace('-','_')}/BK{tree}_M0{measurement}.parquet")
-        pt_3_4 = pt_3_4.loc[:,[("Pt3","Y0"),("Pt4","Y0")]]
-        pt_3_4 = pt_3_4 - pt_3_4.iloc[0,:]
-        pt_3_4.columns = ["Pt3","Pt4"]
-    else:
-        pt_3_4 = pd.DataFrame(index=dataframe.index,data={"Pt3": np.nan, "Pt4":np.nan})
-    ans = get_computed_data(data_obj,out)
+    # Načtení dat s vynecháním druhého řádku a nastavením sloupce D jako index
+    df = pd.read_excel(
+        file_path,
+        sheet_name=sheet_name,
+        skiprows=[1],  # Vynechání druhého řádku
+        index_col=0,   # Nastavení čtvrtého sloupce (D) jako index
+        nrows=14,       # Načtení 13 řádků s daty
+        usecols="D,G,H,I,K,M",  # Načtení pouze sloupců D, G, H, K, L
+    )
     
-    df = pd.concat([
-        dataframe, 
-        ans,
-        pt_3_4
-        ], axis=1)
-    return {'times': out['times'], 'dataframe': df}
-
-
-@timeit
-def nakresli(data_object, skip_optics=False):
-    """
-    Plot the data as in the Solara app.
+    df.columns=["angle_of_anchorage", "distance_of_anchorage",
+             "height_of_anchorage", "height_of_pt",
+             "height_of_elastometer"]
     
-    `skip_optics` means that the data from optics are not considered. 
-    Thus no synchrnonization with optical data and no reset of inclinometers.
-    Probabably should be kept `False`.
+    return df
+DF_PT_NOTES = read_tree_configuration()
+
+def tand(angle):
     """
-    day, tree, measurement = data_object.day, data_object.tree, data_object.measurement
-    measurement_type = data_object.measurement_type
-    ans = process_data(data_object, skip_optics=skip_optics)
-    dataframe = ans['dataframe']
+    Evaluates tangens of the angle. The angli is in degrees.
+    """
+    return np.tan(np.deg2rad(angle))
 
-    fig, ax = plt.subplots()
-    dataframe["Force(100)"].plot(ax=ax)
-    ax.set(title=f"Static {day} {tree} {measurement} {measurement_type}", ylabel="Force")
+def arctand(value):
+    """
+    Evaluates arctan. Return the angle in degrees.
+    """
+    return np.rad2deg(np.arctan(value))    
 
-    figs = []
-    for i,_ in enumerate(ans['times']):
-        subdf = dataframe.loc[_['minimum']:_['maximum'],["Force(100)"]]
-        subdf.plot(ax=ax, legend=False)
 
-        # Find limits for given interval of forces
-        lower, upper = get_interval_of_interest(subdf, maximal_fraction=0.9)
-        subdf[lower:upper].plot(ax=ax, linewidth=4, legend=False)
+class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
 
+    @lib_dynatree.timeit
+    def __init__(self, *args, restricted=(0.3,0.9), optics=True, **kwargs):
+        super().__init__(**kwargs)
+        # for optics in [True, False]:
+        #     for lower_cut in [0.1,0.3]
+        self.pullings = [DynatreeStaticPulling(i, self.tree) 
+                             for i in self._get_static_pulling_data(
+                                     optics=optics, restricted=restricted)]
+        if self.is_optics_available:
+            self.regressions = pd.concat(
+                [
+                    pd.concat(
+                        [i.regressions,
+                         pd.DataFrame(
+                             index=i.regressions.index, 
+                             data=np.full_like(i.regressions.index, n), 
+                             columns=["pull"], dtype=int)
+                         ], axis=1)
+                    for n, i in enumerate(self.pullings)
+                ])
+            self.regressions.loc[:,"optics"] = optics
+            self.regressions.loc[:,["lower_bound","upper_bound"]] = restricted
+        else:
+            self.regressions = None
+
+    def _find_intervals_to_split_measurements_from_csv(self, csv="csv/intervals_split_M01.csv"):
+        """
+        Tries to find initial gues for separation of pulls in M1 measurement
+        from csv file. If the measurement is not included (most cases), return None. 
+        In this case the splitting is done automatically.
+        """
+        if self.measurement != "M01":
+            return None
+        df = pd.read_csv(csv, index_col=[], dtype={"tree": str}, sep=";")
+        select = df[(df["date"] == self.date) & (
+            df["tree"] == self.tree[-2:]) & (df["type"] == self.measurement_type)]
+        if select.shape[0] == 0:
+            return None
+        elif select.shape[0] > 1:
+            print(f"Warning, multiple pairs of date-tree in file {csv}")
+            select = select.iat[0, :]
+        return np.array([
+            int(i) for i in (
+                select["intervals"]
+                .values[0]
+                .replace("[", "")
+                .replace("]", "")
+                .split(",")
+            )
+        ]).reshape(-1, 2)
+
+    def _split_df_static_pulling(self, intervals='auto'):
+        """
+        Analyzes data in static tests, with three pulls. Inputs the dataframe, 
+        outputs the dictionary. 
+        
+        output['times'] contains the time intervals of increasing pulling force. 
+        output['df_interpolated'] return interpolated force values. 
+        
+        Initial estimate of subintervals can be provided in a file
+        csv/intervals_split_M01.csv. If not, the initial guess is created 
+        automatically. 
+        
+        Method description:
+            * drop nan values of force
+            * interpolate and smooth out
+            * find intervals where function is decreasing from top down
+            * find a maximum and then the minimum which preceeds this maximum    
+        
+        """
+        if intervals == 'auto':
+            intervals = self._find_intervals_to_split_measurements_from_csv()
+        df= self.data_pulling
+        df = df[["Force(100)"]].dropna()
+
+        # Interpolace a vyhlazeni
+        new_index = np.arange(df.index[0],df.index[-1],0.1)
+        window_length = 100
+        polyorder = 3
+        newdf = df[["Force(100)"]].dropna()
+        interpolation_function = interp1d(newdf.index, newdf["Force(100)"], kind='linear')
+        df_interpolated = pd.DataFrame(interpolation_function(new_index), index=new_index, columns=["Force(100)"])
+        df_interpolated['Force_smoothed'] = savgol_filter(df_interpolated['Force(100)'], window_length=window_length, polyorder=polyorder)
+
+        steps_down=None
+        if intervals is None:
+            # Divide domain into interval where force is large and small
+            maximum = df_interpolated["Force(100)"].max()
+            df_interpolated["Force_step"] = (df_interpolated["Force(100)"]>0.5*maximum).astype(int)
+
+            # identify jumps down
+            diff_d1 = df_interpolated["Force_step"].diff()
+            steps_down = list(diff_d1.index[diff_d1<0])
+            intervals = zip([0]+steps_down[:-1],steps_down)
+
+        time = []
+        for start,end in intervals:
+            df_subset = df.loc[(df.index > start) & (df.index < end),"Force(100)"]
+            maximum_idx = np.argmax(df_subset)
+            t = {'maximum': df_subset.index[maximum_idx]}
+
+            df_subset = df.loc[(df.index > start) & (df.index < t['maximum']),"Force(100)"]
+            idxmin = df_subset.idxmin()
+            t['minimum'] = idxmin
+
+            time = time + [t]
+        return time
+
+    @staticmethod
+    def _restrict_dataframe(df, column="Force(100)", restricted=(0.3,0.9)):
+        """
+        Restcts dataframe according to the values in given column.
+        
+        restricted is a tuple of two numbers.
+        It is intended as lower and upper limit for data cut.
+        If no restriction is required, use None.
+        Default is from 30% to 90% of Fmax
+        Used to focus on the interval of interest when processing static pulling data.         
+        """
+        if restricted == None:
+            return df.index[0],df.index[-1]
+        minimal_fraction, maximal_fraction = restricted
+        maximum = df[column].iat[-1]
+        minimum = df[column].iat[0]
+        if np.isnan(minimum):
+            minimum = 0
+        mask = df[column] > maximal_fraction*(maximum-minimum)+minimum
+        upper = mask.idxmax()
+        subdf = df.loc[:upper, :]
+        mask = subdf[column] < minimal_fraction*(maximum-minimum)+minimum
+        lower = mask.iloc[::-1].idxmax()
+        return lower,upper
+
+    @lib_dynatree.timeit
+    def _get_static_pulling_data(self, optics=False, restricted=(0.3,0.9)):
+        """
+        Uniform method to extract the data. The data are obtained 
+        from parquet files for the other measurements.
+        
+        The data from M01 measurement are from the device output. 
+        
+        If optics is True, the other measurements are taken from the 
+        data interpolated to the optics times. 
+        
+        If optics is True, the data for M02 and higher are from 
+        parquet_add_inclino.py library. These data are synchronized 
+        with optics and recaluculated to the same time index 
+        as optics. In this case (Pt3,Y0)
+        and (Pt4,Y0) are added as two additional dolumns of the
+        dataframe.
+        
+        restricted is a tuple of two numbers.
+        It is intended as lower and upper limit for data cut.
+        If no restriction is required, use None.
+        Default is from 30% to 90% of Fmax
+        Used to focus on the interval of interest when processing static pulling data.         
+        """
+        if optics and not self.is_optics_available:
+            lib_dynatree.logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement}")
+            return []
+        if  (not optics) or (self.measurement == "M01"):
+            df = self.data_pulling_interpolated
+            if self.measurement == "M01":
+                times = self._split_df_static_pulling()
+            else:
+                times = [{"minimum":0, "maximum": self.data_pulling["Force(100)"].idxmax()}]                
+        else:
+            dfA = self.data_optics_extra
+            dfB = self.data_optics_pt34.loc[:,[("Pt3","Y0"),("Pt4","Y0")]].copy()
+            dfB = dfB - dfB.iloc[0,:]
+            df = pd.concat([dfA,dfB], axis=1)
+            times = [{"minimum":0, "maximum": df["Force(100)"].idxmax().iloc[0]}]
+            df = df.drop([i for i in df.columns if i[1]=='X0'], axis=1)
+            df.columns = [i[0] for i in df.columns]
+        df["Elasto-strain"] = df["Elasto(90)"]/200000
+        df_list = [df.loc[t['minimum']:t['maximum'],:] for t in times]
+        if restricted is None:
+            return df_list
+        for i,df in enumerate(df_list):
+            lower, upper = DynatreeStaticMeasurment._restrict_dataframe(df, column="Force(100)", restricted=restricted)
+            df_list[i] = df.loc[lower:upper,:]
+        return df_list
+    
+    def plot(self):
+        fig, ax = plt.subplots()
+        df = self.data_pulling_interpolated
+        ax.plot(df["Force(100)"])
+        for i, j in zip(
+                self._get_static_pulling_data(restricted=None),
+                self._get_static_pulling_data()
+                ):
+            ax.plot(i["Force(100)"])
+            ax.plot(j["Force(100)"], lw=4)
+        ax.legend(["Síla", "Náběh síly", "Rozmezí 30 až 90\nprocent max."])
+        ax.set(xlabel="Time", ylabel="Force",
+               title=f"Static {self.day} {self.tree} {
+                   self.measurement} {self.measurement_type}"
+               )
+        return fig
+    
+class DynatreeStaticPulling:
+    """
+    One pulling phase of the experiment. The data are already restricted
+    the the phase we are interested in. The variables under consideration 
+    are evaluated during initilaization. Also regressions are evaluated 
+    automatically.
+    
+    The plot method plots the data and the regression, if available.
+    """
+    def __init__(self, data, tree):
+        treeNo = int(tree[-2:])
+        self.data = data
+        self._process_inclinometers_major_minor()
+        self._process_forces(
+            height_of_anchorage= DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
+            height_of_pt= DF_PT_NOTES.at[treeNo,'height_of_pt'],
+            rope_angle= DF_PT_NOTES.at[treeNo,'angle_of_anchorage'],
+            height_of_elastometer= DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
+            suffix = "Measure"
+            )
+        self._process_forces(
+            height_of_anchorage= DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
+            height_of_pt= DF_PT_NOTES.at[treeNo,'height_of_pt'],
+            height_of_elastometer= DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
+            suffix = "Rope"
+            )
+        self.regressions = self._get_regressions_for_one_pull()
+    
+    def __str__(self):
+        return f"Dynatree pulling, data shape {self.data.shape}"
+    
+    def __repr__(self):
+        return f"Dynatree pulling, data shape {self.data.shape}"
+    
+    def _process_inclinometers_major_minor(self):
+        """
+        The input is dataframe loaded by pd.read_csv from pull_tests directory.
+        
+        * Converts Inclino(80) and Inclino(81) to blue and yellow respectively.
+        * Evaluates the total angle of inclination from X and Y part
+        * Adds the columns with Major and Minor axis.
+        
+        Returns new dataframe with the corresponding columns
+        """
+        df = pd.DataFrame(index=self.data.index, columns=["blue","yellow"], dtype=float)
+        df[["blueX","blueY","yellowX","yellowY"]] = self.data[["Inclino(80)X","Inclino(80)Y", "Inclino(81)X","Inclino(81)Y",]]
+        for inclino in ["blue","yellow"]:
+            df.loc[:,[inclino]] = arctand(
+                np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 )
+                )
+            # najde maximum bez ohledu na znamenko
+            maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
+            # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
+            if maxima[f"{inclino}X"]>maxima[f"{inclino}Y"]:
+                df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}X"]
+                df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}Y"]
+            else:
+                df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}Y"]
+                df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}X"]
+            # Najde pozici, kde je extremalni hodnota - nejkladnejsi nebo nejzapornejsi
+            idx = df[f"{inclino}_Maj"].abs().idxmax()
+            # promenna bude jednicka pokus je extremalni hodnota kladna a minus
+            # jednicka, pokud je extremalni hodnota zaporna
+            if pd.isna(idx):
+                znamenko = 1
+            else:
+                znamenko = np.sign(df[f"{inclino}_Maj"][idx])
+            # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
+            # blueM, blueV, yellowM, yellowV
+            for axis in ["_Maj", "_Min"]:
+                df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]
+        self.data = pd.concat([self.data, df], axis=1)
+        return self.data
+
+    def _process_forces(
+            self,
+            height_of_anchorage=None,
+            rope_angle=None,
+            height_of_pt=None, 
+            height_of_elastometer=None,
+            suffix = ""
+            ):
+        """
+        Input is a dataframe with Force(100) column. Evaluates horizontal and vertical 
+        component of the force and moments of force
+        """
+        df = pd.DataFrame(index=self.data.index)
+        # evaluate the horizontal and vertical component
+        if rope_angle is None:
+            # If rope angle is not given, use the data from the table
+            rope_angle = self.data['RopeAngle(100)']
+        # evaluate horizontal and vertical force components and moment
+        # obrat s values je potreba, protoze data maji MultiIndex
+        # shorter names
+        df.loc[:,['F_horizontal']] = (self.data['Force(100)'] * np.cos(np.deg2rad(rope_angle))).values
+        df.loc[:,['F_vertical']] = (self.data['Force(100)'] * np.sin(np.deg2rad(rope_angle))).values
+        df.loc[:,['M']] = df['F_horizontal'] * height_of_anchorage
+        df.loc[:,['M_Pt']] = df['F_horizontal'] * ( height_of_anchorage - height_of_pt )
+        df.loc[:,['M_Elasto']] = df['F_horizontal'] * ( 
+                    height_of_anchorage - height_of_elastometer )
+        df.loc[:,["Angle"]] = rope_angle
+        df.columns = [f"{i}_{suffix}" for i in df.columns]
+        self.data = pd.concat([self.data, df], axis=1)
+        return self.data
+    
+    def plot(self, pullNo=None):
         f,a = plt.subplots(2,2,
                            figsize=(12,9)
                            )
         a = a.reshape(-1)
-        df = dataframe.loc[lower:upper,:]
+        df = self.data
 
         df.loc[:,["Force(100)"]].plot(ax=a[0], legend=False, xlabel="Time", ylabel="Force", style='.')
-        # df columns: ['Force(100)', 'Elasto(90)', 'Elasto-strain', 'Inclino(80)X',
-        # 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 'RopeAngle(100)',
-        # 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY',
-        # 'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
-        # 'F_horizontal_Rope', 'F_vertical_Rope',
-        # 'M_Rope', 'M_Pt_Rope', 'M_Elasto_Rope'
-        # 'F_horizontal_Measure', 'F_vertical_Measure',
-        # 'M_Measure', 'M_Pt_Measure', 'M_Elasto_Measure']
         colors = ["blue","yellow"]
 
         df.loc[:,["blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"]
@@ -206,98 +470,63 @@ def nakresli(data_object, skip_optics=False):
         for _ in [a[0],a[1],a[3]]:
             _.set(ylim=(0,None))
             _.grid()
-        f.suptitle(f"Detail, pull {i}")
+        if pullNo != None:
+            f.suptitle(f"Detail, pull {pullNo}")
         plt.tight_layout()
-        figs = figs + [f]
-    return [fig] + figs
+        return f
 
-def main_nakresli():
-    day,tree,measurement, mt  = "2022-04-05", "BK16", "M02", "normal"
-    day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
-    tree=tree[-2:]
-    measurement = measurement[-1]
-    data_object = lib_dynatree.DynatreeMeasurement(day, tree, measurement)
-    nakresli(data_object)
-    data = process_data(data_object)
-    pull_value=0
-    subdf = data['dataframe'].loc[data['times'][pull_value]['minimum']:data['times'][pull_value]['maximum'],:]
-    lower, upper = get_interval_of_interest(subdf)
-    subdf = subdf.loc[lower:upper,["M_Measure","blue","yellow"]]
-    get_regressions(subdf, "M_Measure",info = f"{day} BK{tree} M0{measurement}")
-
-def get_regressions_for_one_measurement(data_obj, minimal_fraction=0.3, maximal_fraction=0.9, skip_optics=False):
-    """
-    Get regressions for one measurment. 
     
-    Minimal fraction if the bound (in percent of Fmax) where to cut out the
-    initial phase. The default is 0.3, i.e. 30%.
-    """
-    if (not skip_optics) & (not data_obj.is_optics_available):
-        print(f"Optics not available for {data_obj}, forcing skip_optics=True")
-        skip_optics = True
-    data = process_data(data_obj, skip_optics=skip_optics)
-    day, tree, measurement = data_obj.day, data_obj.tree, data_obj.measurement
-    reg_df = {}
-    for pull_value,times in enumerate(data['times']):
-        subdf = data['dataframe'].loc[times['minimum']:times['maximum'],:]
-        lower, upper = get_interval_of_interest(subdf, minimal_fraction=minimal_fraction)
-        subdf = subdf.loc[lower:upper,:]
-        # df columns: ['Force(100)', 'Elasto(90)', 'Elasto-strain', 'Inclino(80)X',
-        # 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y', 'RopeAngle(100)',
-        # 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY',
-        # 'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
-        # 'F_horizontal_Rope', 'F_vertical_Rope',
-        # 'M_Rope', 'M_Pt_Rope']        
-        if measurement[-1] != "1":
+    def _get_regressions_for_one_pull(self):
+        """
+        Get regressions for one measurment. 
+        """
+        if "Pt3" in self.data.columns:
             pt_reg = [
                 ["M_Pt_Rope","Pt3", "Pt4"],
                 ["M_Pt_Measure","Pt3", "Pt4"],
                 ]
         else:
             pt_reg = []
-
-        reg_df[pull_value] = get_regressions(subdf,
+        reg = DynatreeStaticPulling._get_regressions(self.data,
             [
             ["M_Rope",   "blue", "yellow", "blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"],
             ["M_Measure","blue", "yellow", "blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"],
             ["M_Elasto_Rope", "Elasto-strain"],
             ["M_Elasto_Measure", "Elasto-strain"],
-            ]+pt_reg,
-            info=f"{day} BK{tree} M0{measurement}"
+            ]+pt_reg
             )
-        reg_df[pull_value].loc[:,"pull"] = pull_value
-    reg_df_sum = pd.concat(list(reg_df.values()))
-    reg_df_sum.loc[:,["date","tree","measurement","lower_bound","upper_bound"]] = [day, tree, measurement,minimal_fraction,maximal_fraction]
-    return reg_df_sum
-
-def get_regressions(df, collist, info=""):
-    """
-    Return regression in dataframe. If collist is not list but column name, this
-    column is independent variable and other columns are dependenet variable. 
+        return reg
     
-    If colist is list, it is assumed that it is a list of lists. In each sublist, 
-    the regression of the first item to the oter ones is evaluated.
-    """
-    if not isinstance(collist, list):
-        return get_regressions_for_one_column(df, collist, info=info)
-    data = [get_regressions_for_one_column(df.loc[:,i], i[0], info=info) for i in collist]
-    return pd.concat(data)
+    @staticmethod
+    def _get_regressions(df, collist):
+        """
+        Return regression in dataframe. 
+        
+        The variable colist is list is assumed to be list of lists. In each sublist, 
+        the regression of the first item to the oter ones is evaluated.
+        """
+        data = [DynatreeStaticPulling._get_regressions_for_one_column(
+            df.loc[:, i], i[0]) for i in collist]
+        return pd.concat(data)
+    
+    @staticmethod
+    def _get_regressions_for_one_column(df, independent):
+        regrese = {}
+        dependent = [_ for _ in df.columns if _ !=independent]
+        for i in dependent:
+            # remove nan valules, if any
+            cleandf = df.loc[:,[independent,i]].dropna()
+            # do regresions without nan
+            try:
+                reg = linregress(cleandf[independent],cleandf[i])
+                regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
+            except:
+                lib_dynatree.logger.error(f"Linear regression failed for {independent} versus {i}.")
+                pass
 
-def get_regressions_for_one_column(df, independent, info=""):
-    regrese = {}
-    dependent = [_ for _ in df.columns if _ !=independent]
-    for i in dependent:
-        # remove nan valules, if any
-        cleandf = df.loc[:,[independent,i]].dropna()
-        # do regresions without nan
-        try:
-            reg = linregress(cleandf[independent],cleandf[i])
-            regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
-        except:
-            pass
-            # logger.error(f"Linear regression failed for {independent} versus {i}. Info: {info}")
-    ans_df = pd.DataFrame(regrese, index=["Independent", "Dependent", "Slope", "Intercept", "R^2", "p-value", "stderr", "intercept_stderr"], columns=dependent).T
-    return ans_df
+        ans_df = pd.DataFrame(regrese, index=["Independent", "Dependent", "Slope", "Intercept", "R^2", "p-value", "stderr", "intercept_stderr"], columns=dependent).T
+        return ans_df    
+   
 
 def main():
     logger = mhl.setup_logger(prefix="static_pull_")
@@ -327,11 +556,15 @@ def main():
     return df_all_data
 
 if __name__ == "__main__":
-    # day, tree, measurement, mt = "2022-08-16", "BK11", "M02", "normal"
+    day, tree, measurement, mt = "2022-08-16", "BK11", "M02", "normal"
     # day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
 
     # # day, tree, measurement = "2021-06-29", "BK08", "M04"
-    # data_obj = lib_dynatree.DynatreeMeasurement(day, tree, measurement, measurement_type=mt)
+    m = DynatreeStaticMeasurment(
+        day=day, tree=tree, measurement=measurement, measurement_type=mt)
+    m.plot()
+    for n,i in enumerate(m.pullings):
+        i.plot(n)
     # ans = process_data(data_obj, skip_optics=True)
 
     # ans_10 = get_regressions_for_one_measurement(data_obj,minimal_fraction=0.1, skip_optics=False)
@@ -340,5 +573,5 @@ if __name__ == "__main__":
     # main_nakresli()
     
     # These two lines are for production code to do final analysis
-    main_output = main()
-    main_output.to_csv("csv_output/regresions_static.csv")
+    # main_output = main()
+    # main_output.to_csv("csv_output/regresions_static.csv")
