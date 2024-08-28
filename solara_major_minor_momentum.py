@@ -37,20 +37,23 @@ measurements = df["measurement"].drop_duplicates().values
 
 def get_measuerements_list(x='all'):
     global df, days, trees, measurements
-    print(f"METHOD {x}, time {time.time()}")
     df = get_all_measurements(method='all', type=x)
-    print (df)
     days = df["date"].drop_duplicates().values
     trees = df["tree"].drop_duplicates().values
     measurements = df["measurement"].drop_duplicates().values
 
-
 day = solara.reactive(days[0])
 tree = solara.reactive(trees[0])
 measurement = solara.reactive(measurements[0])
+use_optics = solara.reactive(False)
 
-data_object = lib_dynatree.Dynatree_Measurement(
-    day.value, tree.value, measurement.value,measurement_type=method.value)
+data_object = lib_dynatree.DynatreeMeasurement(
+    day.value, 
+    tree.value, 
+    measurement.value,
+    measurement_type=method.value,
+    # use_optics=use_optics.value
+    )
 
 data_possible_restrictions = ["0-100%", "10%-90%", "30%-90%"]
 
@@ -60,10 +63,8 @@ ydata2 = solara.reactive([])
 pull = solara.reactive(0)
 restrict_data = solara.reactive(data_possible_restrictions[-1])
 interactive_graph = solara.reactive(False)
-ignore_optics_data = solara.reactive(False)
 all_data = solara.reactive(False)
 force_interval = solara.reactive("None")
-
 
 def fix_input(a):
     """
@@ -79,18 +80,29 @@ def fix_input(a):
         return ["Force(100)"]
     return a
 
-
 def resetuj_a_nakresli(reset_measurements=False):
     measurement.set(measurements[0])
     return nakresli()
 
+def get_data_object():
+    data_object = static_pull.DynatreeStaticMeasurement(
+        day=day.value, tree=tree.value,
+        measurement=measurement.value,
+        measurement_type=method.value,
+        optics=False)
+    if data_object.is_optics_available and use_optics.value == True:
+        data_object = static_pull.DynatreeStaticMeasurement(
+            day=day.value, tree=tree.value,
+            measurement=measurement.value,
+            measurement_type=method.value,
+            optics=True)
+    return data_object
 
 @task
 def nakresli(reset_measurements=False):
-    data_object = lib_dynatree.Dynatree_Measurement(
-        day.value, tree.value, measurement.value,measurement_type=method.value)
-    return static_pull.nakresli(data_object, skip_optics=True)
-
+    data_object = get_data_object()
+    figs = [data_object.plot()] + [i.plot(n) for n,i in enumerate(data_object.pullings)]
+    return figs
 
 @solara.component
 def Page():
@@ -104,19 +116,25 @@ def Page():
     with solara.lab.Tabs():
         with solara.lab.Tab("Grafy"):
             with solara.Card():
-                try:
+                # try:
                     Graphs()
-                except:
-                    pass
+                # except:
+                    # pass
         with solara.lab.Tab("Volba proměnných a regrese"):
-            with solara.Card():
+            with solara.Card(title="Increasing part of the time-force diagram"):
                 try:
                     Detail()
                 except:
                     pass
+        with solara.lab.Tab("Statistiky"):
+            with solara.Card():
+                try:
+                    Statistics()
+                except:
+                    pass
 
         with solara.lab.Tab("Návod a komentáře"):
-            with solara.Card():
+            with solara.Card(title="Návod"):
                 Help()
 
     # MainPage()
@@ -126,9 +144,8 @@ def Page():
 #     static_pull.nakresli.__dict__["__wrapped__"].cache_clear()
 #     static_pull.process_data.__dict__["__wrapped__"].cache_clear()
 
-
 def Selection():
-    with solara.Card():
+    with solara.Card(title="Measurement set"):
         with solara.Column():
             solara.ToggleButtonsSingle(value=method, values=list(methods),
                                        on_value=get_measuerements_list)
@@ -138,16 +155,17 @@ def Selection():
                                        on_value=resetuj_a_nakresli)
             solara.ToggleButtonsSingle(value=measurement,
                                        values=available_measurements(
-                                           df, day.value, tree.value),
+                                           df, day.value, tree.value, method.value),
                                        on_value=nakresli
                                        )
-        data_object = lib_dynatree.Dynatree_Measurement(
+        data_object = lib_dynatree.DynatreeMeasurement(
             day.value, tree.value, measurement.value,measurement_type=method.value)
-        with solara.Tooltip("Umožní ignorovat preprocessing udělaný na tahovkách M02 a více. Tím bude stejná metodika jako pro M01 (tam se preprocessing nedělal), ale přijdeme o časovou synchronizaci s optikou a hlavně přijdeme o opravu vynulování inklinometrů."):
+        with solara.Tooltip("Umožní použít preprocessing udělaný na tahovkách M02 a více. Tím sice nebude stejná metodika jako pro M01 (tam se preprocessing nedělal), ale máme časovou synchronizaci s optikou, o opravu vynulování inklinometrů a pohyb bodů Pt3 a Pt4."):
             solara.Switch(
-                label="Ignore prepocessed files for M2 and higher",
-                value=ignore_optics_data,
-                disabled=not data_object.is_optics_available
+                label="Use optics data, if possible",
+                value=use_optics,
+                disabled=not data_object.is_optics_available,
+                on_value=nakresli
             )
         # solara.Div(style={"margin-bottom": "10px"})
         solara.Button("Run calculation", on_click=nakresli, color="primary")
@@ -155,17 +173,37 @@ def Selection():
         solara.Markdown(
             f"**Selected**: {day.value}, {tree.value}, {measurement.value}")
         if data_object.is_optics_available:
-            solara.Markdown(f"✅ Optics is available for this measurement.")
+            solara.Markdown("✅ Optics is available for this measurement.")
         else:
             solara.Markdown(
-                f"❎ Optics is **not** available for this measurement.")
+                "❎ Optics is **not** available for this measurement.")
 
+def Statistics():
+    data_object = get_data_object()
+    if data_object.is_optics_available:
+        l = [data_object.data_optics_extra, data_object.data_pulling]
+    else:
+        l = [data_object.data_pulling]
+    for df in l:
+        df = df[[i for i in df.columns if "fixed" not in i[0]]]
+        nans = pd.DataFrame(df.isna().sum())
+        nans.loc[:,"name"] = df.columns
+        nans.columns = ["#nan", "name"]
+        nans = nans[["name","#nan"]]
+        solara.Markdown(f"Shape: {df.shape}")
+        solara.DataFrame(nans)
+    # try:
+    #     solara.DataFrame(pd.concat([pd.DataFrame(subdf.index),subdf], axis=1))
+    # except:
+    #     pass
 
 def Graphs():
     solara.ProgressLinear(nakresli.pending)
-    if measurement.value not in available_measurements(df, day.value, tree.value):
-        solara.Error(f"Measurement {
-                     measurement.value} not available for this tree.")
+    if measurement.value not in available_measurements(df, day.value, tree.value, method.value):
+        solara.Error(f"""
+                     Measurement {measurement.value} not available for tree {tree.value}
+                     day {day.value} measurment type {method.value}.
+                     """)
         return
 
     if nakresli.not_called:
@@ -201,7 +239,6 @@ def Graphs():
         # solara.DataFrame(data['dataframe'], items_per_page=20)
         # cols = data['dataframe'].columns
 
-
 msg = """
 ### Něco se nepovedlo. 
                      
@@ -209,11 +246,8 @@ msg = """
 * Možná je vybrána stejná veličina pro vodorovnou a svislou osu. 
 * Nebo je nějaký jiný problém. Možná mrkni nejprve na záložku Grafy."""
 
-
 def Detail():
-    data_object = lib_dynatree.Dynatree_Measurement(
-        day.value, tree.value, measurement.value,measurement_type=method.value)
-    data = static_pull.process_data(data_object, ignore_optics_data.value)
+    global subdf
     if nakresli.not_called:
         solara.Info(
             "Nejdřív nakresli graf v první záložce. Klikni na Run calculation v sidebaru.")
@@ -223,8 +257,6 @@ def Detail():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
             solara.SpinnerSolara(size="100px")
             return
-    # with solara.Card():
-    solara.Markdown("## Increasing part of the time-force diagram")
     solara.Markdown("""
             Pro výběr proměnných na vodorovnou a svislou osu otevři menu v sidebaru (tři čárky v horním panelu). Po výběru můžeš sidebar zavřít. Přednastavený je moment vypočítaný z pevného naměřeného úhlu lana na vodorovné ose a oba inlinometry na svislé ose.
             """)
@@ -239,40 +271,54 @@ def Detail():
                 'M_Rope', 'M_Pt_Rope', 'M_Elasto_Rope',
                 'F_horizontal_Measure', 'F_vertical_Measure',
                 'M_Measure', 'M_Pt_Measure', 'M_Elasto_Measure',]
-        with solara.Card():
-            solara.Markdown("### Horizontal axis \n\n Choose one variable.")
+        with solara.Card(title="Horizontal axis"):
+            solara.Markdown("Choose one variable.")
             solara.ToggleButtonsSingle(values=cols, value=xdata, dense=True)
-        with solara.Card():
+        with solara.Card(title="Vertical axis"):
             solara.Markdown(
-                "### Vertical axis \n\n Choose one or more variables. You cannot choose the same variable which has been used for horizontal axis.")
+                "Choose one or more variables. You cannot choose the same variable which has been used for horizontal axis.")
             solara.ToggleButtonsMultiple(
                 values=cols[1:], value=ydata, dense=True)
-        with solara.Card():
+        with solara.Card(title="Second vertical axis"):
             with solara.VBox():
                 with solara.Tooltip("Choose one variable for second vertical axis, shown on the right. (Only limited support in interactive plots. In interactive plots we plot rescaled data. The scale factor is determined from maxima.) You cannot choose the variable used for horizontal axis."):
                     with solara.VBox():
-                        solara.Markdown("### Second vertical axis")
                         solara.Text("(hover here for description)")
 
                 solara.ToggleButtonsSingle(
                     values=[None]+cols[1:], value=ydata2, dense=True)
-        pulls = list(range(len(data['times'])))
-
     with solara.Row():
+
+        if not use_optics.value:
+            if ydata2.value in ["Pt3", "Pt4"]:
+                ydata2.value = None
+                return
+            if xdata.value in ["Pt3", "Pt4"]:
+                xdata.value = "Time"
+                return
+            new = [i for i in ydata.value if i not in ["Pt3", "Pt4"]]
+            if new != ydata.value:
+                ydata.value = new
+                return
+        
+        data_object = static_pull.DynatreeStaticMeasurement(
+            day=day.value, tree=tree.value,
+            measurement=measurement.value, measurement_type=method.value,
+            optics=False)
         if measurement.value == "M01":
-            with solara.Card():
+            with solara.Card(title="Pull No. of M01:"):
                 with solara.Column(**tightcols):
-                    solara.Markdown("Pull No. of M01:")
+                    pulls = list(range(len(data_object.pullings)))
                     solara.ToggleButtonsSingle(values=pulls, value=pull)
                 pull_value = pull.value
         else:
             pull_value = 0
-        subdf = data['dataframe'].loc[data['times'][pull_value]
-                                      ['minimum']:data['times'][pull_value]['maximum'], :]
+        if (use_optics.value) and (not data_object.is_optics_available):
+            use_optics.value = False
+            return
 
-        with solara.Card():
+        with solara.Card(title="Bounds to cut out boundaries in % of Fmax"):
             with solara.Column(**tightcols):
-                solara.Markdown("Bounds to cut out boundaries in % of Fmax")
                 solara.ToggleButtonsSingle(
                     values=data_possible_restrictions, value=restrict_data)
         with solara.Card():
@@ -283,21 +329,31 @@ def Detail():
                 with solara.Tooltip("Umožní zobrazit grafy veličin pro celý časový průběh."):
                     solara.Switch(
                         label="Ignore time restriction", value=all_data)
-        if restrict_data.value != data_possible_restrictions[0]:
-            up = .90
-            if restrict_data.value == data_possible_restrictions[1]:
-                lb = .10
-            else:
-                lb = .30
-            lower, upper = static_pull.get_interval_of_interest(
-                subdf, maximal_fraction=up, minimal_fraction=lb)
-            subdf = subdf.loc[lower:upper, :]
-        if all_data.value:
-            subdf = data['dataframe']
+                    
+    if restrict_data.value == data_possible_restrictions[0]:
+        restricted = None
+    elif restrict_data.value == data_possible_restrictions[1]:
+        restricted = (0.1, 0.9)
+    else:
+        restricted = (0.3, 0.9)
 
+    d_obj = static_pull.DynatreeStaticMeasurement(
+        day=day.value, tree=tree.value,
+        measurement=measurement.value, 
+        measurement_type=method.value,
+        optics=use_optics.value, 
+        restricted=restricted)
+    dataset = d_obj.pullings[pull_value]
+    subdf = dataset.data
+    if all_data.value:
+        _ = d_obj._get_static_pulling_data(optics=use_optics.value, restricted='get_all')
+        _["Time"] = _.index
+        subdf = static_pull.DynatreeStaticPulling(_, tree=tree.value)
+        subdf = subdf.data
+    
     try:
         # find regresions
-        if xdata.value != "Time":
+        if (xdata.value != "Time") and not all_data.value:
             # subsubdf = subdf.loc[:,[xdata.value]+[i for i in ydata.value+[ydata2.value] if i!=xdata.value]]
             ydata.value = [i for i in ydata.value if i != xdata.value]
             if xdata.value == ydata2.value:
@@ -306,26 +362,22 @@ def Detail():
                 target = ydata.value
             else:
                 target = ydata.value + [ydata2.value]
-            reg_df = static_pull.get_regressions(
-                subdf,
-                [[xdata.value] + target]
-            )
+            reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value]+target])
             solara.DataFrame(reg_df.iloc[:, :5])
     except:
         solara.Error(
             "Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
 
-    title = f"{day.value} {tree.value} {measurement.value} Pull {pull_value}"
+    title = f"{day.value} {tree.value} {measurement.value} {method.value} Pull {pull_value}"
     if interactive_graph.value:
         kwds = {"template": "plotly_white", "height": 600, "title": title}
-        # kwds = {"height":600, "title":title}
         try:
             if ydata2.value != None:  # Try to add rescaled column
                 maximum_target = np.nanmax(
                     subdf[fix_input(ydata.value)].values)
                 maximum_ori = np.nanmax(subdf[ydata2.value].values)
                 subdf.loc[:, f"{ydata2.value}_rescaled"] = subdf.loc[:,
-                                                                     ydata2.value]/np.abs(maximum_ori/maximum_target)
+                                                                      ydata2.value]/np.abs(maximum_ori/maximum_target)
                 extradata = [f"{ydata2.value}_rescaled"]
             else:
                 extradata = []
@@ -335,12 +387,13 @@ def Detail():
             else:
                 px.scatter(subdf, x=xdata.value, y=cols_to_draw, **kwds)
         except:
-            solara.Error(solara.Markdown("""### Image failed. 
+            solara.Error(solara.Markdown(
+                """### Image failed. 
                          
-* Something is wrong. Switch to noninteractive plot or change variables setting. 
-* This error appears especially if you try to plot both forces and inclinometers on vertical axis.
-"""
-                                         ))
+                * Something is wrong. Switch to noninteractive plot or change variables setting. 
+                * This error appears especially if you try to plot both forces and inclinometers on vertical axis.
+                """))
+        pass
     else:
         fig, ax = plt.subplots()
         if xdata.value == "Time":
@@ -373,14 +426,15 @@ def Detail():
             ax2.legend(lines + lines2, labels + labels2)
         ax.grid()
         ax.set(title=title)
-        solara.FigureMatplotlib(fig)
+        with solara.Card(
+                style={"max-width": "600px"}
+                ):
+            solara.FigureMatplotlib(fig)
 
 
 def Help():
     solara.Markdown(
         """
-## Návod
-
 ### Práce
 
 * **Pokud máš otevřeno v zápisníku Jupyteru, bude vhodnější maximalizovat aplikaci. V modrém pásu napravo je ikonka na maximalizaci uvnitř okna prohlížeče.**
@@ -426,7 +480,7 @@ Dá se snadno přepnout na to, aby se všechna data brala z TXT souborů (volba 
 |2022-08-16 BK16 M01| Po zatáhnutí zůstávala velká deformace. Ale zpracování OK.|
 |2022-04-05 BK21 M05| Vůbec není v optice. Zatím vyhozeno. TODO: brát jako statiku, viz níže.|
 
-Pokud chceš dynamické měření brát jako statiku, přepni přepínač "Ignore prepocessed files for M2 and higher" (vedle sezamu dostupných měření.)
+Pokud chceš dynamické měření brát jako statiku, použij přepínač "Use optics data, if possible" (pod seznamem dostupných měření.)
 
 ### Historie
 
@@ -434,5 +488,6 @@ Pokud chceš dynamické měření brát jako statiku, přepni přepínač "Ignor
 * 2024-08-23: je možné volit ořez dat v procentech Fmax mezi 0-100%, 10%-90% a 30%-90%, zobrazuje se regresní přímka. TODO: najít v datech, kde se to nejvíce liši a nechat info zde.
 * 2024-08-25: zobrazují se i data, ke kterým není nebo zatím není optika, vylepšení ovládání, většinou se výpočet spouští automaticky při změně parametrů
 * 2024-08-26: bereme do úvahy i den/noc/afterro/mraz
+* 2024-08-28: přepsáno pomocí tříd a OOP, mírná blbuvzdornost při volbě proměnných na osy s detailním grafem, kontrola dosupnosti optiky se promítá i do přepínačů
 """
     )
