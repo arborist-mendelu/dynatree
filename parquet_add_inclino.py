@@ -9,15 +9,15 @@ Načte inklinoměry, sílu a elastometr, přeškáluje čas na stejné časy
 jako v optice, synchronizuje okamžiky vypuštění podle maxima síly a
 maxima Pt3.
 
-Čte následující data:
+Čte následující data ve fromatu parquet:
 
-* data z optiky v {measurement_day}/csv/
-* data z adresáře {measurement_day}/pulling_tests/
+* data z optiky 
+* data z tahovek
 
 Zapisuje následující data:
 
-* data z inklinoměrů sesynchronizovaná na optiku do
-  {measurement_day}/csv_extended/*csv
+* data z inklinoměrů sesynchronizovaná na optiku do stejneho adresare
+  jako data z optiky
 
 Provádí následující činnost:
 
@@ -26,19 +26,14 @@ Provádí následující činnost:
 * Snaží se sesynchronizovat obě datové sady.
 * Přepočítá sílu, strain a inklinoměry pro stejné časy, jako jsou v
   tabulce s optikou.
-* Nové informace zapíše do csv souboru v adresáři
-  {measurement_day}/csv_extended/. Z důvodu šetření místem a výkonem
-  se tabulky s daty z optiky a s daty získanými v tomto skriptu nespojují do 
-  jedné. Při načtení dat je potřeba načíst dva soubory a případně je spojit
-  pomocí pd.concat s volbou axis=1 (přidávají se sloupce).
+* Nové informace zapíše do parquet souboru v adresáři
 * Synchronizaci a hodnoty inklinometru je možno doladit pomocí souboru 
   csv/synchronization_finetune_inclinometers_fix.csv 
   Tady je možno opravit synchronizaci a definovat intervaly pro inklinomery, podle
   kterych se ma nastavit nulova hodnota inklinometru.
   
-  
 Pokud není naměřená síla, je výstup prázdný (neberou se v úvahu ani 
-inklinometry).  
+inklinometry).   --- pozn: toto uz asi neplati
 
 @author: marik
 """
@@ -181,8 +176,8 @@ def extend_one_file(
 
       
 def main(path="../data"):
-    # answer = input("The file will create csv files with data from inclinometers.\nOlder data (if any) will be replaced.\nConfirm y or yes to continue.")
-    answer = "y"
+    answer = input("The file will create parquet files with data from inclinometers.\nOlder data (if any) will be replaced.\nConfirm y or yes to continue.")
+    # answer = "y"
     if answer.upper() in ["Y", "YES"]:
         pass
     else:

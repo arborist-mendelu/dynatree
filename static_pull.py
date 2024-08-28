@@ -137,12 +137,8 @@ def arctand(value):
 class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
 
     @lib_dynatree.timeit
-    def __init__(self, *args, restricted=(0.3,0.9), optics=True, **kwargs):
+    def __init__(self, *args, restricted=(0.3,0.9), optics=False, **kwargs):
         super().__init__(**kwargs)
-        # for optics in [True, False]:
-        #     for lower_cut in [0.1,0.3]
-        # print("pull data", self._get_static_pulling_data(
-        #         optics=optics, restricted=restricted))
         self.pullings = [DynatreeStaticPulling(i, self.tree) 
                              for i in self._get_static_pulling_data(
                                      optics=optics, restricted=restricted)]
@@ -162,8 +158,6 @@ class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
             self.regressions.loc[:,["lower_bound","upper_bound"]] = restricted
         else:
             self.regressions = None
-        # print(f"DynatreeStaticMeasurment initialized {args} {kwargs}")
-        # print(f"pullings {self.pullings}")
 
     def _find_intervals_to_split_measurements_from_csv(self, csv="csv/intervals_split_M01.csv"):
         """
@@ -197,7 +191,6 @@ class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
         outputs the dictionary. 
         
         output['times'] contains the time intervals of increasing pulling force. 
-        output['df_interpolated'] return interpolated force values. 
         
         Initial estimate of subintervals can be provided in a file
         csv/intervals_split_M01.csv. If not, the initial guess is created 
@@ -296,6 +289,8 @@ class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
         If no restriction is required, use None.
         Default is from 30% to 90% of Fmax
         Used to focus on the interval of interest when processing static pulling data.         
+        
+        If restricted is get_all, return the whole dataset.
         """
         if optics and not self.is_optics_available:
             lib_dynatree.logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement}")
@@ -315,6 +310,8 @@ class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
             df = df.drop([i for i in df.columns if i[1]=='X0'], axis=1)
             df.columns = [i[0] for i in df.columns]
         df["Elasto-strain"] = df["Elasto(90)"]/200000
+        if restricted == 'get_all':
+            return df
         df_list = [df.loc[t['minimum']:t['maximum'],:] for t in times]
         if restricted is None:
             return df_list
@@ -506,8 +503,9 @@ class DynatreeStaticPulling:
         """
         Return regression in dataframe. 
         
-        The variable colist is list is assumed to be list of lists. In each sublist, 
-        the regression of the first item to the oter ones is evaluated.
+        The variable colist is list. This variable is assumed to be list of lists. 
+        In each sublist, the regression of the first item to the other ones is 
+        evaluated.
         """
         data = [DynatreeStaticPulling._get_regressions_for_one_column(
             df.loc[:, i], i[0]) for i in collist]

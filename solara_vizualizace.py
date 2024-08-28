@@ -22,7 +22,7 @@ title = "DYNATREE: vizualizace dat, se kterými se pracuje"
 
 methods = ['normal', 'den', 'noc', 'afterro', 'mraz']
 method = solara.reactive('normal')
-widths = [800,1000,1200,1400,1600]
+widths = [800,1000,1200,1400,1600,1800]
 width = solara.reactive(1200)
 heights = [400,600,800,1000,1200,1400]
 height = solara.reactive(600)
@@ -61,9 +61,12 @@ def resetuj_a_nakresli(x=None):
 def nakresli(x=None):
     pass
 
-def investigate(df, var):
-    solara.ToggleButtonsMultiple(value=var, values=list(df.columns))
+def investigate(df_, var, msg=None):
+    df = df_.copy()
+    solara.ToggleButtonsMultiple(value=var, values=list(df.columns))    
     px.scatter(df, y=var.value,  height = height.value, width=width.value, **kwds)
+    if msg is not None:
+        msg
     df["Time"] = df.index
     solara.DataFrame(df)
 
@@ -102,10 +105,10 @@ def Page():
                         df2 = df2-df2.iloc[0,:]
                         df2.columns = [i[0] for i in df2.columns]
                         df2 = df2[[i for i in df2.columns if "Time" not in i]]
-                        investigate(df2, dependent_pt34)
+                        investigate(df2, dependent_pt34, msg=solara.Info(solara.Markdown("The data are shifted to start from zero.")))                        
                         pass
                     else:
-                        solara.Markdown("## Optika pro toto měření není nebo není zpracovaná.")
+                        solara.Warning(solara.Markdown("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná."))
                 # try:
                     # Detail()
                 except:
@@ -115,13 +118,13 @@ def Page():
                 try:
                     if data_object.is_optics_available:
                         df3 = data_object.data_optics_extra
-                        df3 = df3-df3.iloc[0,:]
+                        # df3 = df3-df3.iloc[0,:]
                         df3.columns = [i[0] for i in df3.columns]
                         df3 = df3[[i for i in df3.columns if "fixed" not in i]]
                         investigate(df3, dependent_extra)
                         pass
                     else:
-                        solara.Markdown("## Optika pro toto měření není nebo není zpracovaná.")
+                        solara.Warning(solara.Markdown("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná."))
                 # try:
                     # Detail()
                 except:
