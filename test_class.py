@@ -19,7 +19,7 @@ import static_pull
 
 lib_dynatree.logger.setLevel(logging.DEBUG)
 
-do = static_pull.DynatreeStaticMeasurment(
+do = static_pull.DynatreeStaticMeasurement(
     day="2022-04-05", 
     tree="BK04", 
     measurement="M02", 

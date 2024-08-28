@@ -134,7 +134,7 @@ def arctand(value):
     return np.rad2deg(np.arctan(value))    
 
 
-class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
+class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
 
     @lib_dynatree.timeit
     def __init__(self, *args, restricted=(0.3,0.9), optics=False, **kwargs):
@@ -316,7 +316,7 @@ class DynatreeStaticMeasurment(lib_dynatree.DynatreeMeasurement):
         if restricted is None:
             return df_list
         for i,df in enumerate(df_list):
-            lower, upper = DynatreeStaticMeasurment._restrict_dataframe(df, column="Force(100)", restricted=restricted)
+            lower, upper = DynatreeStaticMeasurement._restrict_dataframe(df, column="Force(100)", restricted=restricted)
             df_list[i] = df.loc[lower:upper,:]
         return df_list
     
@@ -562,7 +562,7 @@ if __name__ == "__main__":
     # day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
 
     # # day, tree, measurement = "2021-06-29", "BK08", "M04"
-    m = DynatreeStaticMeasurment(
+    m = DynatreeStaticMeasurement(
         day=day, tree=tree, measurement=measurement, measurement_type=mt)
     m.plot()
     for n,i in enumerate(m.pullings):

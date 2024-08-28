@@ -85,13 +85,13 @@ def resetuj_a_nakresli(reset_measurements=False):
     return nakresli()
 
 def get_data_object():
-    data_object = static_pull.DynatreeStaticMeasurment(
+    data_object = static_pull.DynatreeStaticMeasurement(
         day=day.value, tree=tree.value,
         measurement=measurement.value,
         measurement_type=method.value,
         optics=False)
     if data_object.is_optics_available and use_optics.value == True:
-        data_object = static_pull.DynatreeStaticMeasurment(
+        data_object = static_pull.DynatreeStaticMeasurement(
             day=day.value, tree=tree.value,
             measurement=measurement.value,
             measurement_type=method.value,
@@ -121,7 +121,7 @@ def Page():
                 # except:
                     # pass
         with solara.lab.Tab("Volba proměnných a regrese"):
-            with solara.Card():
+            with solara.Card(title="Increasing part of the time-force diagram"):
                 try:
                     Detail()
                 except:
@@ -134,7 +134,7 @@ def Page():
                     pass
 
         with solara.lab.Tab("Návod a komentáře"):
-            with solara.Card():
+            with solara.Card(title="Návod"):
                 Help()
 
     # MainPage()
@@ -145,7 +145,7 @@ def Page():
 #     static_pull.process_data.__dict__["__wrapped__"].cache_clear()
 
 def Selection():
-    with solara.Card():
+    with solara.Card(title="Measurement set"):
         with solara.Column():
             solara.ToggleButtonsSingle(value=method, values=list(methods),
                                        on_value=get_measuerements_list)
@@ -257,8 +257,6 @@ def Detail():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
             solara.SpinnerSolara(size="100px")
             return
-    # with solara.Card():
-    solara.Markdown("## Increasing part of the time-force diagram")
     solara.Markdown("""
             Pro výběr proměnných na vodorovnou a svislou osu otevři menu v sidebaru (tři čárky v horním panelu). Po výběru můžeš sidebar zavřít. Přednastavený je moment vypočítaný z pevného naměřeného úhlu lana na vodorovné ose a oba inlinometry na svislé ose.
             """)
@@ -273,19 +271,18 @@ def Detail():
                 'M_Rope', 'M_Pt_Rope', 'M_Elasto_Rope',
                 'F_horizontal_Measure', 'F_vertical_Measure',
                 'M_Measure', 'M_Pt_Measure', 'M_Elasto_Measure',]
-        with solara.Card():
-            solara.Markdown("### Horizontal axis \n\n Choose one variable.")
+        with solara.Card(title="Horizontal axis"):
+            solara.Markdown("Choose one variable.")
             solara.ToggleButtonsSingle(values=cols, value=xdata, dense=True)
-        with solara.Card():
+        with solara.Card(title="Vertical axis"):
             solara.Markdown(
-                "### Vertical axis \n\n Choose one or more variables. You cannot choose the same variable which has been used for horizontal axis.")
+                "Choose one or more variables. You cannot choose the same variable which has been used for horizontal axis.")
             solara.ToggleButtonsMultiple(
                 values=cols[1:], value=ydata, dense=True)
-        with solara.Card():
+        with solara.Card(title="Second vertical axis"):
             with solara.VBox():
                 with solara.Tooltip("Choose one variable for second vertical axis, shown on the right. (Only limited support in interactive plots. In interactive plots we plot rescaled data. The scale factor is determined from maxima.) You cannot choose the variable used for horizontal axis."):
                     with solara.VBox():
-                        solara.Markdown("### Second vertical axis")
                         solara.Text("(hover here for description)")
 
                 solara.ToggleButtonsSingle(
@@ -304,15 +301,13 @@ def Detail():
                 ydata.value = new
                 return
         
-        data_object = static_pull.DynatreeStaticMeasurment(
+        data_object = static_pull.DynatreeStaticMeasurement(
             day=day.value, tree=tree.value,
             measurement=measurement.value, measurement_type=method.value,
             optics=False)
         if measurement.value == "M01":
-            with solara.Card():
+            with solara.Card(title="Pull No. of M01:"):
                 with solara.Column(**tightcols):
-                    solara.Markdown("Pull No. of M01:")
-                    # print(f"Creating data object {data_object} with pullings {data_object.pullings}")
                     pulls = list(range(len(data_object.pullings)))
                     solara.ToggleButtonsSingle(values=pulls, value=pull)
                 pull_value = pull.value
@@ -322,9 +317,8 @@ def Detail():
             use_optics.value = False
             return
 
-        with solara.Card():
+        with solara.Card(title="Bounds to cut out boundaries in % of Fmax"):
             with solara.Column(**tightcols):
-                solara.Markdown("Bounds to cut out boundaries in % of Fmax")
                 solara.ToggleButtonsSingle(
                     values=data_possible_restrictions, value=restrict_data)
         with solara.Card():
@@ -343,7 +337,7 @@ def Detail():
     else:
         restricted = (0.3, 0.9)
 
-    d_obj = static_pull.DynatreeStaticMeasurment(
+    d_obj = static_pull.DynatreeStaticMeasurement(
         day=day.value, tree=tree.value,
         measurement=measurement.value, 
         measurement_type=method.value,
@@ -432,14 +426,15 @@ def Detail():
             ax2.legend(lines + lines2, labels + labels2)
         ax.grid()
         ax.set(title=title)
-        solara.FigureMatplotlib(fig)
+        with solara.Card(
+                style={"max-width": "600px"}
+                ):
+            solara.FigureMatplotlib(fig)
 
 
 def Help():
     solara.Markdown(
         """
-## Návod
-
 ### Práce
 
 * **Pokud máš otevřeno v zápisníku Jupyteru, bude vhodnější maximalizovat aplikaci. V modrém pásu napravo je ikonka na maximalizaci uvnitř okna prohlížeče.**
