@@ -485,7 +485,7 @@ Dá se snadno přepnout na to, aby se všechna data brala z TXT souborů (volba 
 |2022-08-16 BK16 M01| Po zatáhnutí zůstávala velká deformace. Ale zpracování OK.|
 |2022-04-05 BK21 M05| Vůbec není v optice. Zatím vyhozeno. TODO: brát jako statiku, viz níže.|
 
-Pokud chceš dynamické měření brát jako statiku, přepni přepínač "Ignore prepocessed files for M2 and higher" (vedle sezamu dostupných měření.)
+Pokud chceš dynamické měření brát jako statiku, použij přepínač "Use optics data, if possible" (pod seznamem dostupných měření.)
 
 ### Historie
 
@@ -493,5 +493,6 @@ Pokud chceš dynamické měření brát jako statiku, přepni přepínač "Ignor
 * 2024-08-23: je možné volit ořez dat v procentech Fmax mezi 0-100%, 10%-90% a 30%-90%, zobrazuje se regresní přímka. TODO: najít v datech, kde se to nejvíce liši a nechat info zde.
 * 2024-08-25: zobrazují se i data, ke kterým není nebo zatím není optika, vylepšení ovládání, většinou se výpočet spouští automaticky při změně parametrů
 * 2024-08-26: bereme do úvahy i den/noc/afterro/mraz
+* 2024-08-28: přepsáno pomocí tříd a OOP, mírná blbuvzdornost při volbě proměnných na osy s detailním grafem, kontrola dosupnosti optiky se promítá i do přepínačů
 """
     )
