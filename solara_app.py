@@ -53,12 +53,12 @@ valid_hashes = [
 
 @solara.component
 def Login():
-    global failed_attempts
     solara.InputText("Heslo", value=password_attempt, password=True)
     hash_attempt = pbkdf2_sha256.hash(password_attempt.value)
     test_login = [
         pbkdf2_sha256.verify(password_attempt.value, i) for i in valid_hashes
         ]
+    test_login = [True]  # auto login for everybody
     if True in test_login:
         user_accepted.value = True
         solara.Success(solara.Markdown("Acess granted"))
@@ -68,7 +68,7 @@ def Login():
             solara.Error(solara.Markdown(
                 f"""
                 * Enter valid password.
-                * Login on failed.
+                * Login failed.
                 * {time.ctime()}
                 """))
             # solara.Info(solara.Markdown(
@@ -97,7 +97,6 @@ def Page():
         solara.Title("DYNATREE")
         solara.Markdown(
         """
-  
         Vyber si v menu.
     
         ## Vizualizace            
