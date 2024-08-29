@@ -135,16 +135,30 @@ def arctand(value):
 
 
 class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
+    """
+    
+    pulings: list of objects DynatreeStaticPulling. This list contains the data
+    of the required part of the experiment. Length typically 3 for M01 and 1 for 
+    other measurements.
+    """
+    
 
     @lib_dynatree.timeit
     def __init__(self, *args, restricted=(0.3,0.9), optics=False, **kwargs):
         super().__init__(**kwargs)
+        self.optics = optics
+        self.restricted = restricted
         self.pullings = [DynatreeStaticPulling(i, self.tree) 
                              for i in self._get_static_pulling_data(
                                      optics=optics, restricted=restricted)]
-        if self.is_optics_available:
+        if self.optics and not self.is_optics_available:
+            lib_dynatree.logger.error(f"{self.date} {self.tree} {self.measurement}: Optics used but optics is not available.")
+            self.regressions = None
+        else:
             self.regressions = pd.concat(
                 [
+                    # Do regressions and add columns 
+                    # pull, optics, lower_bound, upper_bound
                     pd.concat(
                         [i.regressions,
                          pd.DataFrame(
@@ -156,8 +170,16 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
                 ])
             self.regressions.loc[:,"optics"] = optics
             self.regressions.loc[:,["lower_bound","upper_bound"]] = restricted
-        else:
-            self.regressions = None
+
+    def __str__(self):
+        ans = super(DynatreeStaticMeasurement,self).__str__()
+        ans = ans + f"\nStatic options: optics={self.optics}, restricted={self.restricted}"
+        ans = ans + f"\nOptics availability: {self.is_optics_available}"
+        return ans
+    
+    __repr__ = __str__
+
+
 
     def _find_intervals_to_split_measurements_from_csv(self, csv="csv/intervals_split_M01.csv"):
         """
@@ -345,25 +367,31 @@ class DynatreeStaticPulling:
     automatically.
     
     The plot method plots the data and the regression, if available.
+    
+    If ini_forces or ini_regress are False, do not evaluate the forces
+    and regressions. In this case the variable tree is not important.
     """
-    def __init__(self, data, tree):
-        treeNo = int(tree[-2:])
+    def __init__(self, data, tree=None, ini_forces=True, ini_regress=True):
+        if tree is not None:
+            treeNo = int(tree[-2:])
         self.data = data
         self._process_inclinometers_major_minor()
-        self._process_forces(
-            height_of_anchorage= DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
-            height_of_pt= DF_PT_NOTES.at[treeNo,'height_of_pt'],
-            rope_angle= DF_PT_NOTES.at[treeNo,'angle_of_anchorage'],
-            height_of_elastometer= DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
-            suffix = "Measure"
-            )
-        self._process_forces(
-            height_of_anchorage= DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
-            height_of_pt= DF_PT_NOTES.at[treeNo,'height_of_pt'],
-            height_of_elastometer= DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
-            suffix = "Rope"
-            )
-        self.regressions = self._get_regressions_for_one_pull()
+        if ini_forces:
+            self._process_forces(
+                height_of_anchorage= DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
+                height_of_pt= DF_PT_NOTES.at[treeNo,'height_of_pt'],
+                rope_angle= DF_PT_NOTES.at[treeNo,'angle_of_anchorage'],
+                height_of_elastometer= DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
+                suffix = "Measure"
+                )
+            self._process_forces(
+                height_of_anchorage= DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
+                height_of_pt= DF_PT_NOTES.at[treeNo,'height_of_pt'],
+                height_of_elastometer= DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
+                suffix = "Rope"
+                )
+        if ini_regress:
+            self.regressions = self._get_regressions_for_one_pull()
     
     def __str__(self):
         return f"Dynatree static pulling, data shape {self.data.shape}"
@@ -519,6 +547,7 @@ class DynatreeStaticPulling:
             # remove nan valules, if any
             cleandf = df.loc[:,[independent,i]].dropna()
             # do regresions without nan
+            lib_dynatree.logger.debug(f"Regressions on dataframe of shape {df.shape}")
             try:
                 reg = linregress(cleandf[independent],cleandf[i])
                 regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
@@ -545,15 +574,19 @@ def main():
         measurement_type = row['type']
         msg = f"Processing {day} {tree} {measurement}, {measurement_type}, optics availability is {optics}"
         logger.info(msg)
-        try:
-            # get regressions for two cut-out values and merge
-            ans_10 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.1)
-            ans_30 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.3)
-            ans = pd.concat([ans_10,ans_30])            
-            all_data[i] = ans
-        except:
-            msg = f"Failed. Day,tree,measurement : {day},{tree},{measurement}"
-            logger.error(msg)
+        ans_data = {}
+        for cut in [10,30]:
+            try:
+                # get regressions for two cut-out values and merge
+                data_obj = DynatreeStaticMeasurement(tree)
+                ans_10 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.1)
+                ans_30 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.3)
+                ans = pd.concat([ans_10,ans_30])            
+                all_data[i] = ans
+                # ans_data[cut] = 
+            except:
+                msg = f"Failed. Day,tree,measurement : {day},{tree},{measurement}"
+                logger.error(msg)
     df_all_data = pd.concat(all_data).reset_index(drop=True)
     return df_all_data
 
@@ -562,11 +595,13 @@ if __name__ == "__main__":
     # day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
 
     # # day, tree, measurement = "2021-06-29", "BK08", "M04"
-    m = DynatreeStaticMeasurement(
-        day=day, tree=tree, measurement=measurement, measurement_type=mt)
-    m.plot()
-    for n,i in enumerate(m.pullings):
-        i.plot(n)
+    # m = DynatreeStaticMeasurement(
+    #     day=day, tree=tree, measurement=measurement, measurement_type=mt)
+    # m.plot()
+    # for n,i in enumerate(m.pullings):
+    #     i.plot(n)
+        
+        
     # ans = process_data(data_obj, skip_optics=True)
 
     # ans_10 = get_regressions_for_one_measurement(data_obj,minimal_fraction=0.1, skip_optics=False)
@@ -575,5 +610,5 @@ if __name__ == "__main__":
     # main_nakresli()
     
     # These two lines are for production code to do final analysis
-    # main_output = main()
-    # main_output.to_csv("csv_output/regresions_static.csv")
+    main_output = main()
+    main_output.to_csv("csv_output/regresions_static.csv")

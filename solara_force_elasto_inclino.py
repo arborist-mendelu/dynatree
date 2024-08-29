@@ -19,17 +19,15 @@ navod = """
 
 """
 
-import sys
 import glob
 import matplotlib.pyplot as plt
-import lib_dynatree as lt
 import pandas as pd
-import numpy as np
 import solara
 from solara.lab import task
 from parquet_add_inclino import extend_one_file
 from plot_probes_inclino_force import plot_one_measurement
 from lib_dynatree import read_data
+from lib_dynatree import timeit
 
 def split_path(file):
     data = file.split("/")
@@ -84,7 +82,9 @@ else:
     plot_fixes = True
     plot_Pt4 = False
 
+
 @task
+@timeit
 def nakresli():
     if measurement.value not in available_measurements(df, day.value, tree.value):
         fig, ax = plt.subplots()
@@ -100,6 +100,9 @@ def nakresli():
     else:
         endlim = end.value
     file = f"{DATA_PATH}/parquet/{day.value.replace('-','_')}/{tree.value}_{measurement.value}.parquet"
+    if not nakresli.is_current():
+        print("Interrupting non current function nakresli")
+        return None
     DF = read_data(file)
     df_ext = extend_one_file(date=day.value, 
             tree=tree.value, 
@@ -108,6 +111,9 @@ def nakresli():
             write_file=False,
             df=DF
             )        
+    if not nakresli.is_current():
+        print("Interrupting non current function nakresli")
+        return None
     fig = plot_one_measurement(
             date=day.value,
             tree=tree.value, 
@@ -119,35 +125,47 @@ def nakresli():
             df_extra=df_ext,
             df=DF,
             return_figure=True,
-            major_minor=major_minor
+            major_minor=major_minor.value
             )    
     return fig
     
 @solara.component
 def Page():
     solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
-    
-    solara.Title("Oscillation: optics, inclinometers, elastometer, force synchro")
+    solara.Title("DYNATREE: optics, inclinometers, elastometer, force synchro")
+    Sidebar()
+    with solara.lab.Tabs():
+        with solara.lab.Tab("Graf"):
+            Grafy()
+        with solara.lab.Tab("Návod"):
+            solara.Markdown(navod)
+
+@solara.component
+def Sidebar():
     with solara.Sidebar():
-        solara.Markdown(navod)
-    with solara.Card():
-        with solara.Column():
-            solara.ToggleButtonsSingle(value=day, values=list(days), on_value=reset_measurement)
-            solara.ToggleButtonsSingle(value=tree, values=list(trees), on_value=reset_measurement)
+        with solara.Card(title="Measurement choice"):
+            with solara.Column():
+                solara.ToggleButtonsSingle(value=day, values=list(days), on_value=reset_measurement)
+                solara.ToggleButtonsSingle(value=tree, values=list(trees), on_value=reset_measurement)
+                with solara.Column():
+                    solara.ToggleButtonsSingle(value=measurement, 
+                                               values=available_measurements(df, day.value, tree.value),
+                                               on_value=reset_limits)
+        with solara.Card(title="Image setting"):
+            solara.ToggleButtonsSingle(value=probe, values=probes)
+            with solara.Tooltip("Plot Major and Minor rather than X and Y. Also rename inclinometers to blue/yellow and make the maximal value positive."):
+                solara.Switch(label="Label as Major/Minor", value=major_minor)
+            solara.InputFloat("Start", value=start, continuous_update=False)   
+            with solara.Tooltip("End of the plot. If 0, then the end of the plot is the end of the data."):             
+                solara.InputFloat("End", value=end, continuous_update=False)                
+            solara.Div(style={"margin-bottom": "10px"})
             with solara.Row():
-                solara.ToggleButtonsSingle(value=measurement, 
-                                           values=available_measurements(df, day.value, tree.value),
-                                           on_value=reset_limits)
-                solara.ToggleButtonsSingle(value=probe, values=probes)
-                with solara.Tooltip("{Plot Major and Minor rather than X and Y. Also rename inclinometers to blue/yellow and make the maximal value positive."):
-                    solara.Switch(label="Label as Major/Minor", value=major_minor)
-                solara.InputFloat("Start", value=start, continuous_update=False)   
-                with solara.Tooltip("End of the plot. If 0, then the end of the plot is the end of the data."):             
-                    solara.InputFloat("End", value=end, continuous_update=False)                
-        solara.Div(style={"margin-bottom": "10px"})
-        with solara.Row():
-            solara.Button("Run calculation", on_click=nakresli, color="primary")
-            solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}, {probe.value}")
+                solara.Button("Run calculation", on_click=nakresli, color="primary")
+                solara.Markdown(f"**Selected**: {day.value}, {tree.value}, {measurement.value}, {probe.value}")
+    
+
+@solara.component
+def Grafy():    
     solara.ProgressLinear(nakresli.pending)    
     if measurement.value not in available_measurements(df, day.value, tree.value):
         solara.Error(f"Measurement {measurement.value} not available for this tree.")
@@ -156,7 +174,14 @@ def Page():
     if nakresli.finished:
         solara.FigureMatplotlib(nakresli.value)
     elif nakresli.not_called:
-        solara.Text("Vyber měření a stiskni tlačítko Run calculation")
+        with solara.Card(title="Instrukce"):
+            solara.Markdown(
+                """
+                * V bočním panelu vyber měření a stiskni tlačítko Run calculation. 
+                * Výpočet je drahý na čas a nespouští se automaticky při změně parametrů. Tlačítko  "Run calculation" použij po každé změně vstupních údajů. 
+                * U některých položek je nápověda, která se objeví při najetí myší.
+                * Popis co se kreslí a na co se dívat je na kartě Návod.
+                """)
     else:
         with solara.Row():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")

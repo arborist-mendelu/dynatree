@@ -15,3 +15,4 @@ emd
 sphinx 
 sphinx_rtd_theme 
 openpyxl
+conda-forge::passlib

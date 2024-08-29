@@ -12,12 +12,12 @@ import lib_dynatree
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import glob
+# import glob
 import solara.express as px
 import solara.lab
 from solara.lab import task
 import solara
-import time
+# import time
 DATA_PATH = "../data"
 
 tightcols = {'gap': "0px"}
@@ -37,6 +37,7 @@ measurements = df["measurement"].drop_duplicates().values
 
 def get_measuerements_list(x='all'):
     global df, days, trees, measurements
+    print("get measurements list")
     df = get_all_measurements(method='all', type=x)
     days = df["date"].drop_duplicates().values
     trees = df["tree"].drop_duplicates().values
@@ -100,14 +101,27 @@ def get_data_object():
 
 @task
 def nakresli(reset_measurements=False):
+    print(f"Is nakresli current? {nakresli.is_current()}")
+    if not nakresli.is_current():
+        print("Interrupting non current function nakresli")
+        nakresli.cancel()
+        return None
     data_object = get_data_object()
     figs = [data_object.plot()] + [i.plot(n) for n,i in enumerate(data_object.pullings)]
     return figs
 
+styles_css = """
+        .widget-image{width:100%;} 
+        .v-btn-toggle{display:inline;}  
+        .v-btn {display:inline; text-transform: none;} 
+        .vuetify-styles .v-btn-toggle {display:inline;} 
+        .v-btn__content { text-transform: none;}
+        """
+
 @solara.component
 def Page():
     solara.Title(title)
-    solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
+    solara.Style(styles_css)
     with solara.Sidebar():
         # solara.Markdown("Výběr proměnných pro záložku \"Volba proměnných a regrese\".")
         Selection()
@@ -116,10 +130,10 @@ def Page():
     with solara.lab.Tabs():
         with solara.lab.Tab("Grafy"):
             with solara.Card():
-                # try:
+                try:
                     Graphs()
-                # except:
-                    # pass
+                except:
+                    pass
         with solara.lab.Tab("Volba proměnných a regrese"):
             with solara.Card(title="Increasing part of the time-force diagram"):
                 try:
@@ -145,7 +159,7 @@ def Page():
 #     static_pull.process_data.__dict__["__wrapped__"].cache_clear()
 
 def Selection():
-    with solara.Card(title="Measurement set"):
+    with solara.Card(title="Measurement choice"):
         with solara.Column():
             solara.ToggleButtonsSingle(value=method, values=list(methods),
                                        on_value=get_measuerements_list)
@@ -198,6 +212,7 @@ def Statistics():
     #     pass
 
 def Graphs():
+    print("G")
     solara.ProgressLinear(nakresli.pending)
     if measurement.value not in available_measurements(df, day.value, tree.value, method.value):
         solara.Error(f"""
@@ -214,8 +229,8 @@ def Graphs():
 * Při změně vstupů se většinou obrázek aktualizuje, ale ne vždy. Pokud nadpis na obrázku nesouhlasí s vybranými hodnotami, spusť výpočet tlačítkem \"Run calculation\".
 
                                     """))
-        solara.Warning(
-            "Pokud pracuješ v prostředí JupyterHub, asi bude lepší aplikaci maximalizovat. Tlačítko je v modrém pásu úplně napravo.")
+        # solara.Warning(
+        #     "Pokud pracuješ v prostředí JupyterHub, asi bude lepší aplikaci maximalizovat. Tlačítko je v modrém pásu úplně napravo.")
     elif not nakresli.finished:
         with solara.Row():
             solara.Markdown("""
@@ -283,7 +298,7 @@ def Detail():
             with solara.VBox():
                 with solara.Tooltip("Choose one variable for second vertical axis, shown on the right. (Only limited support in interactive plots. In interactive plots we plot rescaled data. The scale factor is determined from maxima.) You cannot choose the variable used for horizontal axis."):
                     with solara.VBox():
-                        solara.Text("(hover here for description)")
+                        solara.Text("🛈 (hover here for description)")
 
                 solara.ToggleButtonsSingle(
                     values=[None]+cols[1:], value=ydata2, dense=True)
@@ -306,7 +321,8 @@ def Detail():
             measurement=measurement.value, measurement_type=method.value,
             optics=False)
         if measurement.value == "M01":
-            with solara.Card(title="Pull No. of M01:"):
+            with solara.Card():
+                solara.Markdown("**Pull No. of M01:**")
                 with solara.Column(**tightcols):
                     pulls = list(range(len(data_object.pullings)))
                     solara.ToggleButtonsSingle(values=pulls, value=pull)
@@ -317,7 +333,8 @@ def Detail():
             use_optics.value = False
             return
 
-        with solara.Card(title="Bounds to cut out boundaries in % of Fmax"):
+        with solara.Card():
+            solara.Markdown("**Bounds to cut out boundaries in % of Fmax**")
             with solara.Column(**tightcols):
                 solara.ToggleButtonsSingle(
                     values=data_possible_restrictions, value=restrict_data)
@@ -364,6 +381,12 @@ def Detail():
                 target = ydata.value + [ydata2.value]
             reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value]+target])
             solara.DataFrame(reg_df.iloc[:, :5])
+        else:
+            solara.Info(
+                """
+                No regressions if independent variable is Time or if all
+                data are considered. (Put "Ignore time restriction off and select another independent variable.")
+                """)
     except:
         solara.Error(
             "Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
@@ -398,8 +421,8 @@ def Detail():
         fig, ax = plt.subplots()
         if xdata.value == "Time":
             subdf["Time"] = subdf.index
+        subdf.plot(x=xdata.value, y=ydata.value, style='.', ax=ax)
         try:
-            subdf.plot(x=xdata.value, y=ydata.value, style='.', ax=ax)
             if xdata.value != "Time":
                 t = np.linspace(*ax.get_xlim(), 5)
                 for y in ydata.value:
@@ -410,7 +433,6 @@ def Detail():
                     ax.plot(t, t*d.iat[0, 0]+d.iat[0, 1],
                             **regression_settings)
         except:
-            return
             pass
         if ydata2.value != None:
             ax2 = ax.twinx()
@@ -427,7 +449,7 @@ def Detail():
         ax.grid()
         ax.set(title=title)
         with solara.Card(
-                style={"max-width": "600px"}
+                style={"max-width": "1000px"}
                 ):
             solara.FigureMatplotlib(fig)
 

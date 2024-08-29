@@ -34,6 +34,7 @@ plot_one_measurement(
         # xlim=(0,50),
         # df_extra=df_ext,
         # df=DF
-        return_figure=True
+        return_figure=True, 
+        major_minor=True
         ) 
 

@@ -26,6 +26,7 @@ widths = [800,1000,1200,1400,1600,1800]
 width = solara.reactive(1200)
 heights = [400,600,800,1000,1200,1400]
 height = solara.reactive(600)
+show_data = solara.reactive(False)
 
 df = get_all_measurements(method=method.value)
 days = df["date"].drop_duplicates().values
@@ -67,8 +68,9 @@ def investigate(df_, var, msg=None):
     px.scatter(df, y=var.value,  height = height.value, width=width.value, **kwds)
     if msg is not None:
         msg
-    df["Time"] = df.index
-    solara.DataFrame(df)
+    if show_data.value:
+        df["Time"] = df.index
+        solara.DataFrame(df)
 
 def redraw(x=None):
     pass
@@ -131,7 +133,7 @@ def Page():
                     pass
 
 def Selection():
-    with solara.Card():
+    with solara.Card(title="Measurment choice"):
         with solara.Column():
             solara.ToggleButtonsSingle(value=method, values=list(methods),
                                        on_value=get_measuerements_list)
@@ -153,6 +155,13 @@ def Selection():
         else:
             solara.Markdown(
                 "❎ Optics is **not** available for this measurement.")
+        with solara.Tooltip("Allows to see the data table. Default is off, i.e. save the bandwidth."):
+            solara.Switch(
+                label="Show data table",
+                value=show_data,
+            )            
+            
+    with solara.Card("Image setting"):
         with solara.Column():
             solara.Markdown("Image width")
             solara.ToggleButtonsSingle(value=width, values=widths)
