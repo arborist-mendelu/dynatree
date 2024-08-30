@@ -22,6 +22,8 @@ from lib_dynatree import timeit
 import lib_dynatree
 
 import glob
+import logging
+lib_dynatree.logger.setLevel(logging.INFO)
 
 import multi_handlers_logger as mhl
 
@@ -177,9 +179,6 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         ans = ans + f"\nOptics availability: {self.is_optics_available}"
         return ans
     
-    __repr__ = __str__
-
-
 
     def _find_intervals_to_split_measurements_from_csv(self, csv="csv/intervals_split_M01.csv"):
         """
@@ -565,7 +564,7 @@ def main():
     df = get_all_measurements(method='all', type='all')
     # drop missing optics
     # df = df[~((df["day"]=="2022-04-05")&(df["tree"]=="BK21")&(df["measurement"]=="M5"))]
-    all_data = {}
+    ans_data = {}
     for i,row in df.iterrows():
         day = row['day']
         tree = row['tree']
@@ -574,24 +573,35 @@ def main():
         measurement_type = row['type']
         msg = f"Processing {day} {tree} {measurement}, {measurement_type}, optics availability is {optics}"
         logger.info(msg)
-        ans_data = {}
-        for cut in [10,30]:
-            try:
-                # get regressions for two cut-out values and merge
-                data_obj = DynatreeStaticMeasurement(tree)
-                ans_10 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.1)
-                ans_30 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.3)
-                ans = pd.concat([ans_10,ans_30])            
-                all_data[i] = ans
-                # ans_data[cut] = 
-            except:
-                msg = f"Failed. Day,tree,measurement : {day},{tree},{measurement}"
-                logger.error(msg)
-    df_all_data = pd.concat(all_data).reset_index(drop=True)
+        for cut in [.10,.30]:
+            for use_optics in [True, False]:
+                # try:
+                    # get regressions for two cut-out values and merge
+                data_obj = DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type, optics=use_optics, restricted=(cut,0.9))
+                for i,pull in enumerate(data_obj.pullings):
+                    regressions = pull.regressions
+                    regressions["optics"] = use_optics
+                    regressions["lower_cut"] = cut
+                    regressions["upper_cut"] = 0.9
+                    regressions["day"] = day
+                    regressions["tree"] = tree
+                    regressions["measurement"] = measurement
+                    regressions["type"] = measurement_type
+                    regressions["pullNo"] = i
+                    ans_data[(use_optics,cut,i, day, tree, measurement, measurement_type)] = regressions
+                    # ans_10 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.1)
+                    # ans_30 = get_regressions_for_one_measurement(day, tree, measurement,minimal_fraction=0.3)
+                    # ans = pd.concat([ans_10,ans_30])            
+                    # all_data[i] = ans
+                    # # ans_data[cut] = 
+                # except:
+                #     msg = f"Failed. Day,tree,measurement : {day},{tree},{measurement}"
+                #     logger.error(msg)
+    df_all_data = pd.concat(ans_data).reset_index(drop=True)
     return df_all_data
 
 if __name__ == "__main__":
-    day, tree, measurement, mt = "2022-08-16", "BK11", "M02", "normal"
+    # day, tree, measurement, mt = "2022-08-16", "BK11", "M02", "normal"
     # day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
 
     # # day, tree, measurement = "2021-06-29", "BK08", "M04"
