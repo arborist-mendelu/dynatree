@@ -17,7 +17,7 @@ def Naloguj_se():
     solara.Title("DYNATREE")
     solara.Warning(solara.Markdown(
         """
-        ##Naloguj se. 
+        ## Naloguj se v bočním menu 
         
         * Tato část webu není veřejná
         * Heslo je obvyklé. Pokud nevíš, zeptej se někoho kolem sebe.
@@ -53,6 +53,7 @@ valid_hashes = [
 
 @solara.component
 def Login():
+    solara.Text("Zadej heslo")
     solara.InputText("Heslo", value=password_attempt, password=True)
     hash_attempt = pbkdf2_sha256.hash(password_attempt.value)
     test_login = [

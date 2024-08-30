@@ -381,6 +381,7 @@ def Detail():
                 target = ydata.value + [ydata2.value]
             reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value]+target])
             solara.DataFrame(reg_df.iloc[:, :5])
+            df_subj_reg = subdf[[xdata.value]+target]
         else:
             solara.Info(
                 """
@@ -452,6 +453,12 @@ def Detail():
                 style={"max-width": "1000px"}
                 ):
             solara.FigureMatplotlib(fig)
+    try:
+        with solara.Card():
+            solara.Text("Data used for the regressions")
+            solara.DataFrame(df_subj_reg)
+    except:
+        pass
 
 
 def Help():
