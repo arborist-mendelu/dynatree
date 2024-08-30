@@ -217,7 +217,7 @@ def Graphs():
     if measurement.value not in available_measurements(df, day.value, tree.value, method.value):
         solara.Error(f"""
                      Measurement {measurement.value} not available for tree {tree.value}
-                     day {day.value} measurment type {method.value}.
+                     day {day.value} measurement type {method.value}.
                      """)
         return
 

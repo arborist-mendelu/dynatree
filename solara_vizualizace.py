@@ -11,6 +11,7 @@ import lib_dynatree
 import solara.express as px
 import solara.lab
 import solara
+import pandas as pd
 DATA_PATH = "../data"
 
 tightcols = {'gap': "0px"}
@@ -65,9 +66,18 @@ def nakresli(x=None):
 def investigate(df_, var, msg=None):
     df = df_.copy()
     solara.ToggleButtonsMultiple(value=var, values=list(df.columns))    
-    px.scatter(df, y=var.value,  height = height.value, width=width.value, **kwds)
+    px.scatter(df, y=var.value,  height = height.value, width=width.value, **kwds)    
     if msg is not None:
         msg
+    number_nans = df.isna().sum()
+    is_nan = number_nans.sum() == 0
+    number_nans = pd.DataFrame(number_nans).T
+    number_nans.index = ["# of Nan values"]
+    with solara.Info():
+        if is_nan:
+            solara.Text("There are no undefined values in the dataframe.")
+        else:
+            solara.display(number_nans)
     if show_data.value:
         df["Time"] = df.index
         solara.DataFrame(df)
@@ -133,7 +143,7 @@ def Page():
                     pass
 
 def Selection():
-    with solara.Card(title="Measurment choice"):
+    with solara.Card(title="Measurement choice"):
         with solara.Column():
             solara.ToggleButtonsSingle(value=method, values=list(methods),
                                        on_value=get_measuerements_list)
@@ -168,15 +178,4 @@ def Selection():
             solara.Markdown("Image height")
             solara.ToggleButtonsSingle(value=height, values=heights)
       
-# def Statistics():
-#     data_object = get_data_object()
-#     for df in [data_object.data_optics_extra, data_object.data_pulling]:
-#         df = df[[i for i in df.columns if "fixed" not in i[0]]]
-#         nans = pd.DataFrame(df.isna().sum())
-#         nans.loc[:,"name"] = df.columns
-#         nans.columns = ["#nan", "name"]
-#         nans = nans[["name","#nan"]]
-#         solara.Markdown(f"Shape: {df.shape}")
-#         solara.DataFrame(nans)
-
 

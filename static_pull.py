@@ -506,7 +506,7 @@ class DynatreeStaticPulling:
     
     def _get_regressions_for_one_pull(self):
         """
-        Get regressions for one measurment. 
+        Get regressions for one measurement. 
         """
         if "Pt3" in self.data.columns:
             pt_reg = [
