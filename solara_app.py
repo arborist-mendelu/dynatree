@@ -49,13 +49,13 @@ password_attempt = solara.reactive("")
 valid_hashes = [
  "$pbkdf2-sha256$29000$rbU2prR2jhGidK4VgnAu5Q$e.CvUxgiY3uImVIuUTrKYFWRh/eak5oNVS.WMbBt3mI", 
  "$pbkdf2-sha256$29000$/F9LSYkx5rx3TmlNiZGSUg$YO/PMhUB9imJjjqoZC48OGLn3UOYq8GmnxhMDdEi9eo",
+ "$pbkdf2-sha256$29000$vTem1BojhJCS0vo/B.D8fw$F/XHKhni22p9.kfiRB/c9WqgLMg.NkhgLBr/eTnPmsU",
    ]
 
 @solara.component
 def Login():
     solara.Text("Zadej heslo")
     solara.InputText("Heslo", value=password_attempt, password=True)
-    hash_attempt = pbkdf2_sha256.hash(password_attempt.value)
     test_login = [
         pbkdf2_sha256.verify(password_attempt.value, i) for i in valid_hashes
         ]

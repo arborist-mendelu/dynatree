@@ -351,8 +351,8 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         df = self.data_pulling_interpolated
         ax.plot(df["Force(100)"])
         for i, j in zip(
-                self._get_static_pulling_data(restricted=None),
-                self._get_static_pulling_data()
+                self._get_static_pulling_data(restricted=None, optics=self.optics),
+                self._get_static_pulling_data(optics=self.optics)
                 ):
             ax.plot(i["Force(100)"])
             ax.plot(j["Force(100)"], lw=4)

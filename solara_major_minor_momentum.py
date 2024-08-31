@@ -25,9 +25,9 @@ regression_settings = {'color': 'gray', 'alpha': 0.5}
 
 title = "DYNATREE: pulling, force, inclinometers, extensometer, optics, ..."
 
-
 methods = ['normal', 'den', 'noc', 'afterro', 'mraz']
 method = solara.reactive('normal')
+
 
 df = get_all_measurements(method=method.value)
 days = df["date"].drop_duplicates().values
@@ -68,7 +68,8 @@ restrict_data = solara.reactive(data_possible_restrictions[-1])
 interactive_graph = solara.reactive(False)
 all_data = solara.reactive(False)
 force_interval = solara.reactive("None")
-
+# data_from_url = solara.reactive(False)
+# 
 def fix_input(a):
     """
     The input is a list. 
@@ -134,8 +135,31 @@ styles_css = """
         .v-btn__content { text-transform: none;}
         """
 
+# first_pass = True
+# http://localhost:8765/tahovky?tree=BK04&method=normal&measurement=M02&use_optics=True&day=2022-08-16
+# http://localhost:8765/tahovky?tree=BK08&method=den&measurement=M03&use_optics=False&day=2022-08-16
+
 @solara.component
 def Page():
+    # global first_pass
+    
+    # # if first_pass:
+    # #     first_pass = False
+    # if data_from_url.value:
+    #     args =  solara.use_router().search
+    #     if len(str(args))>0:
+    #         parsed = str(args).split("&")
+    #         params = {}
+    #         for i in parsed:
+    #             _,__ = i.split("=")
+    #             params[_] = __
+    #         solara.Text(str(params))
+    #         tree.value = params['tree']
+    #         day.value = params['day']
+    #         method.value = params['method']
+    #         measurement.value  =params['measurement']
+    #         use_optics.value = params['use_optics']=="True"
+        
     solara.Title(title)
     solara.Style(styles_css)
     with solara.Sidebar():
@@ -187,6 +211,7 @@ def Page():
 def Selection():
     with solara.Card(title="Measurement choice"):
         with solara.Column():
+            # solara.Switch(label="Use data from URL", value=data_from_url)
             solara.ToggleButtonsSingle(value=method, values=list(methods),
                                        on_value=get_measuerements_list)
             solara.ToggleButtonsSingle(value=day, values=list(days),
