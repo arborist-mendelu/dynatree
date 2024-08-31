@@ -25,27 +25,25 @@ regression_settings = {'color': 'gray', 'alpha': 0.5}
 
 title = "DYNATREE: pulling, force, inclinometers, extensometer, optics, ..."
 
-methods = ['normal', 'den', 'noc', 'afterro', 'mraz']
-method = solara.reactive('normal')
+methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'mraz'])
+method = solara.reactive(methods.value[0])
 
 
-df = get_all_measurements(method=method.value)
-days = df["date"].drop_duplicates().values
-trees = df["tree"].drop_duplicates().values
-measurements = df["measurement"].drop_duplicates().values
+df = solara.reactive(get_all_measurements(method=method.value))
+days = solara.reactive(df.value["date"].drop_duplicates().values)
+trees = solara.reactive(df.value["tree"].drop_duplicates().values)
+measurements = solara.reactive(df.value["measurement"].drop_duplicates().values)
 
 
 def get_measuerements_list(x='all'):
-    global df, days, trees, measurements
-    # print("get measurements list")
-    df = get_all_measurements(method='all', type=x)
-    days = df["date"].drop_duplicates().values
-    trees = df["tree"].drop_duplicates().values
-    measurements = df["measurement"].drop_duplicates().values
+    df.value = get_all_measurements(method='all', type=x)
+    days.value = df.value["date"].drop_duplicates().values
+    trees.value = df.value["tree"].drop_duplicates().values
+    measurements.value = df.value["measurement"].drop_duplicates().values
 
-day = solara.reactive(days[0])
-tree = solara.reactive(trees[0])
-measurement = solara.reactive(measurements[0])
+day = solara.reactive(days.value[0])
+tree = solara.reactive(trees.value[0])
+measurement = solara.reactive(measurements.value[0])
 use_optics = solara.reactive(False)
 include_details = solara.reactive(False)
 
@@ -85,7 +83,7 @@ def fix_input(a):
     return a
 
 def resetuj_a_nakresli(reset_measurements=False):
-    measurement.set(measurements[0])
+    measurement.set(measurements.value[0])
     return nakresli()
 
 # def get_data_object(day, tree, measuemrent, measurement_type, optics):
@@ -208,19 +206,20 @@ def Page():
 #     static_pull.nakresli.__dict__["__wrapped__"].cache_clear()
 #     static_pull.process_data.__dict__["__wrapped__"].cache_clear()
 
+@solara.component
 def Selection():
     with solara.Card(title="Measurement choice"):
         with solara.Column():
             # solara.Switch(label="Use data from URL", value=data_from_url)
-            solara.ToggleButtonsSingle(value=method, values=list(methods),
+            solara.ToggleButtonsSingle(value=method, values=list(methods.value),
                                        on_value=get_measuerements_list)
-            solara.ToggleButtonsSingle(value=day, values=list(days),
+            solara.ToggleButtonsSingle(value=day, values=list(days.value),
                                        on_value=resetuj_a_nakresli)
-            solara.ToggleButtonsSingle(value=tree, values=list(trees),
+            solara.ToggleButtonsSingle(value=tree, values=list(trees.value),
                                        on_value=resetuj_a_nakresli)
             solara.ToggleButtonsSingle(value=measurement,
                                        values=available_measurements(
-                                           df, day.value, tree.value, method.value),
+                                           df.value, day.value, tree.value, method.value),
                                        on_value=nakresli
                                        )
         data_object = lib_dynatree.DynatreeMeasurement(
@@ -267,9 +266,10 @@ def Statistics():
     # except:
     #     pass
 
+@solara.component
 def Graphs():
     solara.ProgressLinear(nakresli.pending)
-    if measurement.value not in available_measurements(df, day.value, tree.value, method.value):
+    if measurement.value not in available_measurements(df.value, day.value, tree.value, method.value):
         with solara.Error():
             solara.Markdown(
                 f"""

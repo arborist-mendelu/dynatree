@@ -21,7 +21,7 @@ regression_settings = {'color': 'gray', 'alpha': 0.5}
 title = "DYNATREE: vizualizace dat, se kterými se pracuje"
 
 
-methods = ['normal', 'den', 'noc', 'afterro', 'mraz']
+methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'mraz'])
 method = solara.reactive('normal')
 widths = [800,1000,1200,1400,1600,1800]
 width = solara.reactive(1200)
@@ -29,22 +29,21 @@ heights = [400,600,800,1000,1200,1400]
 height = solara.reactive(600)
 show_data = solara.reactive(False)
 
-df = get_all_measurements(method=method.value)
-days = df["date"].drop_duplicates().values
-trees = df["tree"].drop_duplicates().values
-measurements = df["measurement"].drop_duplicates().values
+df = solara.reactive(get_all_measurements(method=method.value))
+days = solara.reactive(df.value["date"].drop_duplicates().values)
+trees = solara.reactive(df.value["tree"].drop_duplicates().values)
+measurements = solara.reactive(df.value["measurement"].drop_duplicates().values)
 
 
 def get_measuerements_list(x='all'):
-    global df, days, trees, measurements
-    df = get_all_measurements(method='all', type=x)
-    days = df["date"].drop_duplicates().values
-    trees = df["tree"].drop_duplicates().values
-    measurements = df["measurement"].drop_duplicates().values
+    df.value = get_all_measurements(method='all', type=x)
+    days.value = df.value["date"].drop_duplicates().values
+    trees.value = df.value["tree"].drop_duplicates().values
+    measurements.value = df.value["measurement"].drop_duplicates().values
 
-day = solara.reactive(days[0])
-tree = solara.reactive(trees[0])
-measurement = solara.reactive(measurements[0])
+day = solara.reactive(days.value[0])
+tree = solara.reactive(trees.value[0])
+measurement = solara.reactive(measurements.value[0])
 
 data_object = lib_dynatree.DynatreeMeasurement(
     day.value, 
@@ -145,15 +144,15 @@ def Page():
 def Selection():
     with solara.Card(title="Measurement choice"):
         with solara.Column():
-            solara.ToggleButtonsSingle(value=method, values=list(methods),
+            solara.ToggleButtonsSingle(value=method, values=list(methods.value),
                                        on_value=get_measuerements_list)
-            solara.ToggleButtonsSingle(value=day, values=list(days),
+            solara.ToggleButtonsSingle(value=day, values=list(days.value),
                                        on_value=resetuj_a_nakresli)
-            solara.ToggleButtonsSingle(value=tree, values=list(trees),
+            solara.ToggleButtonsSingle(value=tree, values=list(trees.value),
                                        on_value=resetuj_a_nakresli)
             solara.ToggleButtonsSingle(value=measurement,
                                        values=available_measurements(
-                                           df, day.value, tree.value, method.value),
+                                           df.value, day.value, tree.value, method.value),
                                        on_value=nakresli
                                        )
         data_object = lib_dynatree.DynatreeMeasurement(
