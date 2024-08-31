@@ -18,7 +18,7 @@ from scipy.signal import savgol_filter
 from scipy.stats import linregress
 from scipy.interpolate import interp1d
 from lib_dynatree import timeit
-# from functools import lru_cache
+from functools import lru_cache, cached_property
 import lib_dynatree
 
 import glob
@@ -138,40 +138,45 @@ def arctand(value):
 
 class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
     """
+    Like DynatreeMeasurement, adds more properties and methods.
     
     pulings: list of objects DynatreeStaticPulling. This list contains the data
     of the required part of the experiment. Length typically 3 for M01 and 1 for 
     other measurements.
     """
     
-
-    @lib_dynatree.timeit
     def __init__(self, *args, restricted=(0.3,0.9), optics=False, **kwargs):
         super().__init__(**kwargs)
         self.optics = optics
         self.restricted = restricted
-        self.pullings = [DynatreeStaticPulling(i, self.tree) 
+
+    @cached_property    
+    def pullings(self): 
+        return [DynatreeStaticPulling(i, self.tree) 
                              for i in self._get_static_pulling_data(
-                                     optics=optics, restricted=restricted)]
+                                     optics=self.optics, restricted=self.restricted)]
+    @cached_property
+    def regresions(self):
+        lib_dynatree.logger.debug("Calculating regressionsfor static measurement")
         if self.optics and not self.is_optics_available:
             lib_dynatree.logger.error(f"{self.date} {self.tree} {self.measurement}: Optics used but optics is not available.")
-            self.regressions = None
-        else:
-            self.regressions = pd.concat(
-                [
-                    # Do regressions and add columns 
-                    # pull, optics, lower_bound, upper_bound
-                    pd.concat(
-                        [i.regressions,
-                         pd.DataFrame(
-                             index=i.regressions.index, 
-                             data=np.full_like(i.regressions.index, n), 
-                             columns=["pull"], dtype=int)
-                         ], axis=1)
-                    for n, i in enumerate(self.pullings)
-                ])
-            self.regressions.loc[:,"optics"] = optics
-            self.regressions.loc[:,["lower_bound","upper_bound"]] = restricted
+            return None
+        ans = pd.concat(
+            [
+                # Do regressions and add columns 
+                # pull, optics, lower_bound, upper_bound
+                pd.concat(
+                    [i.regressions,
+                     pd.DataFrame(
+                         index=i.regressions.index, 
+                         data=np.full_like(i.regressions.index, n), 
+                         columns=["pull"], dtype=int)
+                     ], axis=1)
+                for n, i in enumerate(self.pullings)
+            ])
+        ans.loc[:,"optics"] = self.optics
+        ans.loc[:,["lower_bound","upper_bound"]] = self.restricted
+        return ans
 
     def __str__(self):
         ans = super(DynatreeStaticMeasurement,self).__str__()
@@ -287,7 +292,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         lower = mask.iloc[::-1].idxmax()
         return lower,upper
 
-    @lib_dynatree.timeit
+    # @lib_dynatree.timeit
     def _get_static_pulling_data(self, optics=False, restricted=(0.3,0.9)):
         """
         Uniform method to extract the data. The data are obtained 
@@ -542,11 +547,12 @@ class DynatreeStaticPulling:
     def _get_regressions_for_one_column(df, independent):
         regrese = {}
         dependent = [_ for _ in df.columns if _ !=independent]
+        lib_dynatree.logger.debug(f"Regressions on dataframe of shape {df.shape}\n    independent {independent}, dependent {dependent}")        
         for i in dependent:
             # remove nan valules, if any
             cleandf = df.loc[:,[independent,i]].dropna()
             # do regresions without nan
-            lib_dynatree.logger.debug(f"Regressions on dataframe of shape {df.shape}")
+
             try:
                 reg = linregress(cleandf[independent],cleandf[i])
                 regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]

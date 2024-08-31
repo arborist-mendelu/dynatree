@@ -12,7 +12,7 @@ from scipy import interpolate, signal
 from scipy.fft import fft, fftfreq
 import glob
 import os
-from functools import wraps, lru_cache
+from functools import wraps, lru_cache, cached_property
 import time
 
 # 
@@ -435,13 +435,7 @@ class DynatreeMeasurement:
         self.measurement_type = measurement_type.lower()
         self.datapath = datapath
         self.date = self.day
-        
-        self.data_optics_content = None
-        self.data_optics_extra_content = None
-        self.data_pulling_content = None
-        self.data_pulling_interpolated_content = None
-        self.data_optics_pt34_content = None
-        
+            
     def __str__(self):
         return (f"[Dynatree measurement {self.day} {self.tree} {self.measurement} {self.measurement_type}]")
         
@@ -464,6 +458,7 @@ class DynatreeMeasurement:
             logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
             return ""
         return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}.parquet"
+    
     @property
     def file_optics_extra_name(self):
         """
@@ -476,45 +471,35 @@ class DynatreeMeasurement:
             return ""
         return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}_pulling.parquet"
     
-    @property
+    @cached_property
     def data_pulling(self):
-        if self.data_pulling_content is None:
-            logger.debug("loading pulling data")
-            self.data_pulling_content = pd.read_parquet(self.file_pulling_name)
-        return self.data_pulling_content
+        logger.debug("loading pulling data")
+        return pd.read_parquet(self.file_pulling_name)
     
-    @property
+    @cached_property
     def data_pulling_interpolated(self):
-        if self.data_pulling_interpolated_content is None:
-            logger.debug("interpolating pulling data")
-            df = self.data_pulling
-            self.data_pulling_interpolated_content = df.interpolate(method='index')
-        return self.data_pulling_interpolated_content
+        logger.debug("interpolating pulling data")
+        df = self.data_pulling
+        ans = df.interpolate(method='index')
+        return  ans
 
-    @property
+    @cached_property
     def data_optics(self):
-        if self.data_optics_content is None:
-            logger.debug("loading optics data")
-            self.data_optics_content = pd.read_parquet(self.file_optics_name)
-        return self.data_optics_content
+        logger.debug("loading optics data")
+        return pd.read_parquet(self.file_optics_name)
 
-    @property
-    @timer
+    @cached_property
     def data_optics_pt34(self):
-        if self.data_optics_pt34_content is None:
-            logger.debug("loading optics data Pt3 and Pt4")
-            self.data_optics_pt34_content = pd.read_parquet(
-                self.file_optics_name, columns=["('Pt3', 'Y0')", "('Pt4', 'Y0')", "('Time', '')"])
-        return self.data_optics_pt34_content
+        logger.debug("loading optics data Pt3 and Pt4")
+        ans = pd.read_parquet(
+              self.file_optics_name, columns=["('Pt3', 'Y0')", "('Pt4', 'Y0')", "('Time', '')"])
+        return ans
         
-    @property
+    @cached_property
     def data_optics_extra(self):
-        if self.data_optics_extra_content is None:
-            logger.debug("loading optics extra")
-            self.data_optics_extra_content = pd.read_parquet(self.file_optics_extra_name)
-        return self.data_optics_extra_content
+        logger.debug("loading optics extra")
+        return pd.read_parquet(self.file_optics_extra_name)
         
     @property
     def is_optics_available(self):
         return os.path.isfile(self.file_optics_name)
-        
