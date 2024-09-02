@@ -60,7 +60,7 @@ def Login():
     test_login = [
         pbkdf2_sha256.verify(password_attempt.value, i) for i in valid_hashes
         ]
-    test_login = [True]  # auto login for everybody
+    # test_login = [True]  # auto login for everybody
     if True in test_login:
         user_accepted.value = True
         solara.Success(solara.Markdown("Acess granted"))
@@ -95,45 +95,75 @@ def Page():
             Login()
         else:
             solara.Success("Acess granted.")
-    with solara.Card(title = "Dynatree data"): 
+    # with solara.Column(): 
+    if True:
         solara.Title("DYNATREE")
         solara.Markdown(
         """
-        Vyber si v menu, co chceš dělat.
-    
-        ## Vizualizace            
-        
-        * Grafy z dat pro jednotlivá měření.
-        * Obsahuje 
-            * optiku Pt3 a Pt4, 
-            * tahovky, 
-            * tahovky dointerpolované na data z optiky.
-        * U každého druhu dat si můžeš vybrat veličiny na svislou osu, grafy zoomovat apod.
-        * Použití: vykreslení jedné nebo několika položek, kontrola (např. vynulování u přistrojů, které se nulují), hledání peaků, hledání intervalů zájmu (dají se vybrat data nástrojem a souřadnice výběru uložit pro pozdější použití).
-    
-        ## Tahovky
-        
-        * Obsahuje data z tahových zkoušek ze všech měření. 
-        * Je zpracovávána jedna nebo tři napínací fáze.
-        * Záložky obsahují základní přehled, možnost zobrazit si detail s vybranými
-           veličinami na vodorovné a svislé ose a jsou vypočteny regresní koeficienty.
-        * Použití: vyexportujeme si všechny regrese, ale bude jich hodně. Záložka umožní kouknout se na data, která nás zajímají, protože vyšla například nějak divně. Případně k vizuální kontrole, jestli dostáváme to co chceme. 
-        
-        # Synchronizace
-        
-        * Obsahuje spojení dat z tahovek a optiky
-        * Používá se ke kontrole vynulování inklinometrů a ke kontrole synchronizace.
-        * Předpočítaná data se ignorují a zohledňují se data z csv souboru v podadreáři csv. Sem je možné ručně připsat potřebné opravy. Poté se data projedou skriptem, který vytvoří data synchroniozvaná s optikou a tato data se potom používají všude jinde.
-        * Obrázky se dají vyexportovat skriptem `plot_probes_inclino_force.py` k vizuální kontrole jako pdf nebo png.
-        * Použití: Aby se daly společně vyhodnocovat data z optiky, je potřeba je mít seskupitelná dohromady.
-        
-        # FFT
-        
-        * Umožní udělat FFT na zvolelných datech. Obsahuje optiku (Pt3, Pt4, konce BL) a tahovky (Elasto).
-        * Data se interpolují s krokem 0.01s.
-          
+        Vyber si v menu v barevném panelu nahoře, co chceš dělat. Ve svislém menu níže je stručný popis.
         """
-          )
+        ) 
+        with solara.lab.Tabs(vertical=True, background_color=None, dark=False):
+            with solara.lab.Tab("Obecné info"):
+                    
+                solara.Markdown(
+                """
+                ## Obecné info
+                
+                * Někdy se po přepnutí aplikací neaktualizuje menu v levém sidebaru. 
+                  To je možné opravit kliknutím na jinou položku v typu měření (normal/den/noc/...)
+                * Někdy se objeví chynová hláška, ale hned zmizí, to je neškodné. 
+                * U aplikací, které se spouští automaticky výběrem dne/stromu/měření může při rychlém klikání beh skončit chybou. Zatím není pořešeno odstřelování neaktuálních procesů.
+                """)
+            with solara.lab.Tab("Vizualizace"):
+                    
+                solara.Markdown(
+                """
+                ## Vizualizace            
+                
+                * Grafy z dat pro jednotlivá měření.
+                * Obsahuje 
+                    * optiku Pt3 a Pt4, 
+                    * tahovky, 
+                    * tahovky dointerpolované na data z optiky.
+                * U každého druhu dat si můžeš vybrat veličiny na svislou osu, grafy zoomovat apod.
+                * Použití: vykreslení jedné nebo několika položek, kontrola (např. vynulování u přistrojů, které se nulují), hledání peaků, hledání intervalů zájmu (dají se vybrat data nástrojem a souřadnice výběru uložit pro pozdější použití).
+                """
+                )    
+            with solara.lab.Tab("Tahovky"):
+                solara.Markdown(
+                """
+                ## Tahovky
+                
+                * Obsahuje data z tahových zkoušek ze všech měření. 
+                * Je zpracovávána jedna nebo tři napínací fáze.
+                * Záložky obsahují základní přehled, možnost zobrazit si detail s vybranými
+                   veličinami na vodorovné a svislé ose a jsou vypočteny regresní koeficienty.
+                * Použití: vyexportujeme si všechny regrese, ale bude jich hodně. Záložka umožní kouknout se na data, která nás zajímají, protože vyšla například nějak divně. Případně k vizuální kontrole, jestli dostáváme to co chceme. 
+                """
+                )    
+            with solara.lab.Tab("Synchronizace"):
+                solara.Markdown(
+                """
+                ## Synchronizace
+                
+                * Obsahuje spojení dat z tahovek a optiky
+                * Používá se ke kontrole vynulování inklinometrů a ke kontrole synchronizace.
+                * Předpočítaná data se ignorují a zohledňují se data z csv souboru v podadreáři csv. Sem je možné ručně připsat potřebné opravy. Poté se data projedou skriptem, který vytvoří data synchroniozvaná s optikou a tato data se potom používají všude jinde.
+                * Obrázky se dají vyexportovat skriptem `plot_probes_inclino_force.py` k vizuální kontrole jako pdf nebo png.
+                * Použití: Aby se daly společně vyhodnocovat data z optiky a tahovek, je potřeba je mít seskupitelná dohromady.
+                """
+                )    
+            with solara.lab.Tab("FFT"):
+                solara.Markdown(
+                """
+                ## FFT
+                
+                * Umožní udělat FFT na zvolelných datech. Obsahuje optiku (Pt3, Pt4, konce BL) a tahovky (Elasto).
+                * Data se interpolují s krokem 0.01s.
+                  
+                """
+                  )
 
 routes = [
     solara.Route(path="/", component=Page, label="home"),

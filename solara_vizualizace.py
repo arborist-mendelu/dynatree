@@ -68,7 +68,7 @@ def first_drop():
 list_selected = solara.reactive(pd.DataFrame())
 auto_add = solara.reactive(False)
 
-# @solara.component
+@solara.component
 def investigate(df_, var, msg=None):
     selection_data, set_selection_data = solara.use_state(None)
     

@@ -148,14 +148,15 @@ def Navod():
 
 * Klikáním na tlačítka vyber zdroj dat a která data chceš zkoumat. Volba Elasto nuluje
   všecny ostatní případné volby.
-* Nastav časový interval na kterém chceš dělat FFT zapsáním hodnot do políček nebo klinutím na bod v grafu (koncový bod se shiftem).
+* Nastav časový interval na kterém chceš dělat FFT zapsáním hodnot do políček nebo kliknutím na bod v grafu (koncový bod se shiftem).
 
 **Postup**
 
-* Měření vyber v levém panelu. V horním menu vyber sledované veličiny. 
+* Měření vyber v levém panelu. V horním menu vyber sledované veličiny.
+* Pokud není k dispozici optika, použije se vždy "Elasto", extenzometr. 
 * Pokud vybereš "Elasto", použijí se data z extenzometru a další volby se ignorují. Jinak
   se zpracovává podle optiky vše zatržené.
-* Pokud není optika k dispoici, bere se pro FFT automaticky extenzometr, tj. Elasto.
+* Pokud není optika k dispozici, bere se pro FFT automaticky extenzometr, tj. Elasto.
 * Vše se interpoluje na 0.01s, to je v souladu se vzorkovaci frekvenci optiky.
 * Podle grafu můžeš vybrat rozsah pro FFT. Začátek a konec se zapisuje do políček pod grafem. 
 * Nulová horní mez znamená rozsah až do konce.

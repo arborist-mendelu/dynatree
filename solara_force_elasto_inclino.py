@@ -11,7 +11,7 @@ navod = """
 * Pokud síla a výchylka nejsou zarovnány okamžikem vypuštění, můžeš doladit v souboru 
   `csv/synchronization_finetune_inclinometers_fix.csv`
 * Po ukončení je potřeba zohlednit změny v csv souboru. 
-  Je proto potřeba spustit  skript `parquet_add_inclino.py` pro pro začlenění informací do datovych souboru,
+  Je proto potřeba spustit  skript `parquet_add_inclino.py` pro začlenění informací do datových souboru,
   dále `extract_release_data.py` pro opravená data před vypuštěním a případně 
   `plot_probes_inclino_force.py` pro obrázky jaké jsou zde.
 * Zadáním hodnot si můžeš změnit rozsah na ose x, aby šla dobře vidět kvalita nebo nekvalita
