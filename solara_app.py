@@ -13,6 +13,7 @@ import solara_force_elasto_inclino
 import solara_FFT
 from passlib.hash import pbkdf2_sha256
 import time
+import os
 
 def Naloguj_se():
     solara.Title("DYNATREE")
@@ -60,7 +61,11 @@ def Login():
     test_login = [
         pbkdf2_sha256.verify(password_attempt.value, i) for i in valid_hashes
         ]
-    # test_login = [True]  # auto login for everybody
+    try:
+        if os.environ['SERVER_NAME'] == "localhost":
+            test_login = [True]  # auto login for everybody on local host
+    except:
+        pass
     if True in test_login:
         user_accepted.value = True
         solara.Success(solara.Markdown("Acess granted"))
@@ -82,6 +87,10 @@ def Login():
 def Logout():
     with solara.AppBar():
         if user_accepted.value:
+            try:
+                solara.Text(f"Solara on {os.environ['SERVER_NAME']}")
+            except:
+                pass
             with solara.Tooltip("Logout"):
                 solara.Button(icon_name="mdi-logout", 
                               icon=True, on_click=lambda: user_accepted.set(False))    
