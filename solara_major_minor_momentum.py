@@ -6,7 +6,7 @@ Created on Thu Aug 15 14:00:04 2024
 @author: marik
 """
 
-from static_pull import get_all_measurements, available_measurements
+from lib_find_measurements import get_all_measurements, available_measurements
 import static_pull
 import lib_dynatree
 import numpy as np
@@ -35,7 +35,7 @@ trees = solara.reactive(df.value["tree"].drop_duplicates().values)
 measurements = solara.reactive(df.value["measurement"].drop_duplicates().values)
 
 
-def get_measuerements_list(x='all'):
+def get_measurements_list(x='all'):
     df.value = get_all_measurements(method='all', type=x)
     days.value = df.value["date"].drop_duplicates().values
     trees.value = df.value["tree"].drop_duplicates().values
@@ -212,7 +212,7 @@ def Selection():
         with solara.Column():
             # solara.Switch(label="Use data from URL", value=data_from_url)
             solara.ToggleButtonsSingle(value=method, values=list(methods.value),
-                                       on_value=get_measuerements_list)
+                                       on_value=get_measurements_list)
             solara.ToggleButtonsSingle(value=day, values=list(days.value),
                                        on_value=resetuj_a_nakresli)
             solara.ToggleButtonsSingle(value=tree, values=list(trees.value),

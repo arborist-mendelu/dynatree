@@ -10,6 +10,7 @@ import solara
 import solara_major_minor_momentum
 import solara_vizualizace
 import solara_force_elasto_inclino
+import solara_FFT
 from passlib.hash import pbkdf2_sha256
 import time
 
@@ -108,7 +109,7 @@ def Page():
             * tahovky, 
             * tahovky dointerpolované na data z optiky.
         * U každého druhu dat si můžeš vybrat veličiny na svislou osu, grafy zoomovat apod.
-        * Použití: vykreslení jedné nebo několika položek, kontrola (např. vynulování u přistrojů, které se nulují), hledání peaků.
+        * Použití: vykreslení jedné nebo několika položek, kontrola (např. vynulování u přistrojů, které se nulují), hledání peaků, hledání intervalů zájmu (dají se vybrat data nástrojem a souřadnice výběru uložit pro pozdější použití).
     
         ## Tahovky
         
@@ -134,4 +135,5 @@ routes = [
     solara.Route(path="vizualizace", component=Ochrana(solara_vizualizace.Page), label="vizualizace"),
     solara.Route(path="tahovky", component=Ochrana(solara_major_minor_momentum.Page), label="tahovky"),
     solara.Route(path="synchronizace", component=Ochrana(solara_force_elasto_inclino.Page), label="synchronizace"),
+    solara.Route(path="FFT", component=Ochrana(solara_FFT.Page), label="FFT"),
 ]
