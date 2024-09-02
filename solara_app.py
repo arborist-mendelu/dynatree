@@ -99,7 +99,7 @@ def Page():
         solara.Title("DYNATREE")
         solara.Markdown(
         """
-        Vyber si v menu.
+        Vyber si v menu, co chceš dělat.
     
         ## Vizualizace            
         
@@ -127,6 +127,11 @@ def Page():
         * Obrázky se dají vyexportovat skriptem `plot_probes_inclino_force.py` k vizuální kontrole jako pdf nebo png.
         * Použití: Aby se daly společně vyhodnocovat data z optiky, je potřeba je mít seskupitelná dohromady.
         
+        # FFT
+        
+        * Umožní udělat FFT na zvolelných datech. Obsahuje optiku (Pt3, Pt4, konce BL) a tahovky (Elasto).
+        * Data se interpolují s krokem 0.01s.
+          
         """
           )
 
