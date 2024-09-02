@@ -91,6 +91,22 @@ def ChooseProbe():
     solara.ToggleButtonsMultiple(value=probe, values=probes)    
     return data_obj
 
+df_limits = solara.reactive(pd.DataFrame())
+
+def save_limits():
+    ans = {
+            'measurement_type': [s.method.value],
+            'day':[s.day.value], 
+            'tree':[s.tree.value], 
+            'measurement':[s.measurement.value], 
+            'probe':[probe.value[0]],
+            'from':[t_from.value],
+            'to':[t_to.value],
+        }
+    ans = pd.DataFrame(ans)
+    df_limits.value = pd.concat([ans,df_limits.value]).reset_index(drop=True)
+    
+
 def DoFFT():
     data_obj = ChooseProbe()
     if "Elasto" in probe.value:
@@ -102,12 +118,14 @@ def DoFFT():
                 solara.Markdown("**Limits for FFTⓘ:**")
         solara.InputFloat("From",value=t_from)
         solara.InputFloat("To",value=t_to)
+        solara.Button(label="Save to table", on_click=save_limits)
     if (t_to.value == 0) or (t_to.value < t_from.value): 
         subdf = df.interpolate(method='index').loc[t_from.value:,:]
     else:
         t_final = t_to.value
         subdf = df.interpolate(method='index').loc[t_from.value:t_final,:]
 
+    # Find new dataframe, resampled and restricted
     oldindex = subdf.index
     newindex = np.arange(oldindex[0],oldindex[-1], DT)
     newdf = pd.DataFrame(index=newindex, columns=subdf.columns)
@@ -115,12 +133,11 @@ def DoFFT():
         newdf[i] = np.interp(newindex, oldindex, subdf[i].values)
     # solara.display(newdf.head())
     fig = px.scatter(newdf, height = s.height.value, width=s.width.value,
-                          title=f"Dataset detail, resampled with dt={DT}",
+                          title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Detail from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f} resampled with dt={DT}",
                           **kwds)
     solara.FigurePlotly(fig)    
 
-
-    
+    # get FFT output
     time_fft = newdf.index.values    
     N = time_fft.shape[0]  # get the number of points
     xf_r = fftfreq(N, DT)[:N//2]
@@ -139,6 +156,14 @@ def DoFFT():
     fig.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
     solara.FigurePlotly(fig)    
 
+    # show saved data    
+    solara.display(df_limits.value)
+    with solara.Row():
+        solara.Button(label="Drop the first row", on_click=first_drop)
+        solara.FileDownload(df_limits.value.to_csv(), filename=f"limits_for_FFT.csv", label="Download as csv")
+
+def first_drop():
+    df_limits.value = df_limits.value.iloc[1:,:].reset_index(drop=True)
    
 @solara.component
 def Navod():
@@ -146,8 +171,9 @@ def Navod():
 """
 **TL;DR**
 
-* Klikáním na tlačítka vyber zdroj dat a která data chceš zkoumat. Volba Elasto nuluje
-  všecny ostatní případné volby.
+* Klikáním na tlačítka vyber zdroj dat a která data chceš zkoumat. 
+* Je možné vybrat více voleb. 
+* Volba Elasto eliminuje všecny ostatní případné volby.
 * Nastav časový interval na kterém chceš dělat FFT zapsáním hodnot do políček nebo kliknutím na bod v grafu (koncový bod se shiftem).
 
 **Postup**
@@ -170,94 +196,3 @@ def Navod():
 """
         )
 
-
-# import numpy as np # linear algebra
-# import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-# import streamlit as st
-# from lib_dynatree import date2color
-# from FFT_spectrum import df_remarks, load_data_for_FFT, do_fft_for_one_column, create_fft_image, extend_series_with_zeros
-# import lib_streamlit as stl
-
-# st.set_page_config(layout="wide")
-
-
-# #%%
-# cs = st.columns(2)
-
-# with cs[0]:
-
-#     day, tree, measurement = stl.get_measurement()
-#     tree = tree[-2:]
-#     measurement = measurement[-1]
-    
-#     preprocessing_function = st.radio("Preprocessing signal function",["None", "Zeros around, 2 sec", "Zeros around, 4 sec"])
-#     preprocessing = lambda x:x
-#     if preprocessing_function == "Zeros around, 2 sec":
-#         preprocessing = lambda x:extend_series_with_zeros(x,tail=2)
-#     if preprocessing_function == "Zeros around, 4 sec":
-#         preprocessing = lambda x:extend_series_with_zeros(x,tail=4)
-    
-#     probe = st.radio("Probe",["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)] + ["Elasto"], horizontal=True)
-    
-#     "Middle BL is 44-51, side BL are 52-59 (compression) and 60-67 (tension)."
-
-#     if probe[0] == "P":
-#         probe = (probe,"Y0")
-#     elif probe[0] == "E":
-#         probe = ("Elasto(90)","")
-#     else:
-#         probe = (probe,"Pt0AY")
-#     date = day
-    
-#     bounds_for_fft = df_remarks.loc[[(date,f"BK{tree}",f"M0{measurement}")],:]
-#     start = bounds_for_fft[['start']].iat[0,0]
-#     end = bounds_for_fft[['end']].iat[0,0]
-#     if end == np.inf:
-#         end = 1000
-#     if pd.isna(end):
-#         end = 1000
-#     if pd.isna(start):
-#         start = 0
-#     new_start = st.number_input("Signal start",value=start)
-#     new_end = st.number_input("Signal end",value=end)
-#     start = new_start
-#     end = new_end
-
-# bounds_for_fft
-# start,end
-
-
-#     # if pd.isna(start):
-#     #     print("Start not defined")
-#     #     continue
-#     # if start < .1:
-#     #     print("Start is not set")
-#     #     continue
-# st.write(f"{date} BK{tree} M0{measurement} from {start} to {end}, ")        
-# if probe[0][0]=="E":
-#     file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}_pulling.parquet"
-#     data = load_data_for_FFT(
-#         file=file,
-#         start=start,end=end, 
-#         filter_cols=False, 
-#         probes=["Time", "Elasto(90)"])
-# else:
-#     file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet"
-#     data = load_data_for_FFT(
-#         file=file,
-#         start=start,end=end)
-
-# # print(", ",round(data.index[-1]-data.index[0],1)," sec.")
-
-# output = do_fft_for_one_column(
-#     data, 
-#     probe, 
-#     preprocessing=preprocessing
-#     )
-# if output is None:
-#     print(f"Probe {probe} failed")
-# fig = create_fft_image(**output, color=date2color[date])
-    
-# with cs[1]:
-#     st.write(probe, round(output['peak_position'],6), "±",np.round(output['delta_f'],6))
-#     st.pyplot(fig)

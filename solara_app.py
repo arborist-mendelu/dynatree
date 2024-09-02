@@ -170,7 +170,7 @@ def Page():
                 
                 * Umožní udělat FFT na zvolelných datech. Obsahuje optiku (Pt3, Pt4, konce BL) a tahovky (Elasto).
                 * Data se interpolují s krokem 0.01s.
-                  
+                * Použití: rychlé zobrazení spekter, vizuální porovnání, zjištění důvodů, proč se některá spektra liší (například kvůli krátkému sigálu, narušení oscilací apod.) 
                 """
                   )
 
