@@ -19,7 +19,7 @@ logger = logging.getLogger("Solara_FFT")
 logger.setLevel(logging.ERROR)
 
 DT = 0.01
-
+pd.set_option('display.max_rows', 500)
 
 def set_click_data(x=None):
     if x['device_state']['shift']:
@@ -30,7 +30,10 @@ def set_click_data(x=None):
 def save_freq_on_click(x=None):
     logger.debug(f"FFT clicked. Event: {x}")
     logger.debug(f"Previous value: {fft_freq.value}")
-    fft_freq.set(fft_freq.value + f" {x['points']['xs'][0]:.4f}")
+    if pd.isna(fft_freq.value):
+        fft_freq.set(f" {x['points']['xs'][0]:.4f}")
+    else:
+        fft_freq.set(fft_freq.value + f" {x['points']['xs'][0]:.4f}")
     logger.debug(f"Current value: {fft_freq.value}")
 
 def plot():
@@ -162,6 +165,10 @@ def DoFFT():
     df = plot()
 
     FFT_parameters()
+    if pd.isna(t_to.value):
+        t_to.value = 0
+    if pd.isna(t_from.value):
+        t_from.value = 0
     if (t_to.value == 0) or (t_to.value < t_from.value): 
         subdf = df.interpolate(method='index').loc[t_from.value:,:]
     else:
@@ -170,6 +177,9 @@ def DoFFT():
     
     # Find new dataframe, resampled and restricted
     oldindex = subdf.index
+    if len(oldindex) < 1:
+        return
+    # breakpoint()
     newindex = np.arange(oldindex[0],oldindex[-1], DT)
     newdf = pd.DataFrame(index=newindex, columns=subdf.columns)
     for i in subdf.columns:
@@ -211,11 +221,25 @@ def ShowFFTdata():
 def smazat_fft(x=None):
     fft_freq.value = ""
     
-    
+# filter_method = solara.reactive(False)
+# filter_day = solara.reactive(False)
+# filter_tree = solara.reactive(False)
+# filter_probe = solara.reactive(False)
+
 @solara.component
 def ShowSavedData():
     # show saved data    
+    # solara.Switch(label=f"Restrict to {s.day.value} day", value=filter_day)    
+    # solara.Switch(label=f"Restrict to {probe.value[0]} probe", value=filter_probe)    
     logger.debug(f"ShowSavedData entered")
+    # tempdf = df_limits.value
+    # if filter_day.value:
+    #     tempdf = tempdf.loc[
+    #         (slice(None), s.day.value,slice(None),slice(None),slice(None)), :]
+    # if filter_probe.value:
+    #     tempdf = tempdf.loc[
+    #         (slice(None), slice(None),slice(None),slice(None),probe.value[0]), :]
+    # df_limits.value = tempdf
     solara.display(df_limits.value)
     with solara.Row():
         solara.Button(label="Save current to table", on_click=save_limits)
