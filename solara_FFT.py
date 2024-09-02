@@ -16,7 +16,15 @@ from scipy.fft import fft, fftfreq
 
 DT = 0.01
 
+def set_click_data(x=None):
+    if x['device_state']['shift']:
+        t_to.value = x['points']['xs'][0]
+    else:
+        t_from.value = x['points']['xs'][0]
+
 def plot():
+    # click_data, set_click_data = solara.use_state(None)
+    # click_data = None
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
     
@@ -32,9 +40,10 @@ def plot():
         df = df[probe.value]
     # solara.DataFrame(df)
     fig = px.scatter(df, height = s.height.value, width=s.width.value,
-                          title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
+                          title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",  
                           **kwds)
-    solara.FigurePlotly(fig)
+    solara.FigurePlotly(fig, on_click=set_click_data)
+
     return df
 
 kwds = {"template": "plotly_white", 
@@ -61,7 +70,14 @@ def Page():
             try:
                 DoFFT()
             except:
-                solara.Error("Bohužel nastala nějaká chyba. Zkus nahlásit při jaké činnosti a při jaké volbě měření a sledovaných veličin.")
+                with solara.Error():
+                    solara.Markdown(
+"""
+**Bohužel nastala nějaká chyba.**
+
+* Zkus nahlásit při jaké činnosti a při jaké volbě měření a sledovaných veličin. 
+* Možná jsou špatné meze.
+""")
         with solara.lab.Tab("Návod"):
             Navod()
 
@@ -81,7 +97,9 @@ def DoFFT():
         probe.value = ["Elasto"]
     df = plot()
     with solara.Row():
-        solara.Markdown("**Limits for FFT:**")
+        with solara.Tooltip("Hodnoty je možné zadat číslem do políčka nebo kliknutím na bod v grafu výše. Se shiftem se nastavuje konec časového intervalu."):
+            with solara.Column():
+                solara.Markdown("**Limits for FFTⓘ:**")
         solara.InputFloat("From",value=t_from)
         solara.InputFloat("To",value=t_to)
     if (t_to.value == 0) or (t_to.value < t_from.value): 
@@ -130,7 +148,7 @@ def Navod():
 
 * Klikáním na tlačítka vyber zdroj dat a která data chceš zkoumat. Volba Elasto nuluje
   všecny ostatní případné volby.
-* Nastav časový interval na kterém chceš dělat FFT zapsáním hodnot do políček.
+* Nastav časový interval na kterém chceš dělat FFT zapsáním hodnot do políček nebo klinutím na bod v grafu (koncový bod se shiftem).
 
 **Postup**
 
