@@ -84,40 +84,45 @@ normal,2021-03-22,BK24,M03,Elasto,93.46499999999652,138.16700000000128, 0.3355 0
 normal,2021-03-22,BK24,M03,Pt3,93.97,0.0, 0.3310,Pěkné kmity
 normal,2021-03-22,BK24,M04,Elasto,91.79099999999744,142.82800000000134, 0.3331 0.9796,"Výrazný jeden peak, málo výrazný druhý, pěkné oscilace."
 normal,2021-03-22,BK24,M04,Pt3,91.82,143.28, 0.3307,Pěkné kmity
-normal,2021-06-29,BK01,M02,Pt3,49.28,64.48,,"Použitelné jenom tři periody, třetí je navíc divná"
-normal,2021-06-29,BK01,M03,Pt3,51.7,0.0,,"Mezery v datech při oscilaci, jinak pěkné ale málo period"
-normal,2021-06-29,BK01,M04,Pt3,55.04,80.7,,"Hrbatý náběh, oscilace mají zvláštní tvar, kousek chybí"
-normal,2021-06-29,BK01,M05,Pt3,57.92,80.7,,Konec roztřepený
-normal,2021-06-29,BK04,M02,Pt3,46.63,77.12,,Nekmitá okolo rovnovážné polohy
-normal,2021-06-29,BK04,M03,Pt3,36.83,68.07,,"Málo period, rychle utlumené, ale asi použitelné"
-normal,2021-06-29,BK04,M04,Pt3,34.66,76.8,,"Pěkné oscilace, dostatek period, interpolovatelné mezery, krásné obloučky"
-normal,2021-06-29,BK07,M02,Pt3,79.09,111.38,,"Pěkné oscilace, při natahování nějaké rozkolísání, ale jinak OK"
-normal,2021-06-29,BK07,M03,Pt3,70.54,105.05,,"Pěkné kmity, konec horší"
-normal,2021-06-29,BK07,M04,Pt3,84.4,96.76,,"Zubaté napínání, divné kmity, s mezerou"
-normal,2021-06-29,BK07,M05,Pt3,65.47,96.47,,"Zubaté už od náběhu, interpolovatelné mezery v datech, konec divný ale pro jiný probe možná bude OK"
-normal,2021-06-29,BK08,M02,Pt3,53.07,68.28,,"Roztřepená křivka při napínání, oscilace relativně OK, ale je jich málo"
-normal,2021-06-29,BK08,M03,Pt3,33.2,58.04,,"Zubaté napínání, ale kmity pěkné a hladké"
-normal,2021-06-29,BK08,M04,Pt3,65.06,86.76,,"Roztřepaná křivka při natahování, zmatek na konci odříznut"
-normal,2021-06-29,BK08,M05,Pt3,57.46,81.13,,"Zubaté napínání, řídká data, ale asi použitelné"
-normal,2021-06-29,BK09,M02,Pt3,36.0,70.74,,"Lehce roztřepené oscilace, ale použitelné"
-normal,2021-06-29,BK09,M03,Pt3,60.03,90.32,,"Zubaté, ale použitelné"
-normal,2021-06-29,BK09,M04,Pt3,64.81,96.76,,"Hodně roztřepené, i při napínání"
-normal,2021-06-29,BK10,M02,Pt3,39.3,69.85,,"Zubatý náběh, pěkné kmity s interpolovatelnými mezerami"
-normal,2021-06-29,BK10,M03,Pt3,49.9,79.83,,"Zubatý náběh, interpolovatelné mezery v datech"
-normal,2021-06-29,BK10,M04,Pt3,46.53,80.9,,"Pěkné kmity s mezerou (snad se dá dointerpolovat), zubaté napínání"
-normal,2021-06-29,BK11,M02,Pt3,59.54,100.26,,"Pěkné kmity, dostatek period, interpolovatelné mezery"
+normal,2021-06-29,BK01,M02,Elasto,49.171000000002095,77.2280000000028, 0.2495,
+normal,2021-06-29,BK01,M02,Pt3,49.28,64.48, 0.2633,"Použitelné jenom tři periody, třetí je navíc divná"
+normal,2021-06-29,BK01,M03,Elasto,49.5,70.12900000000081, 0.2424,
+normal,2021-06-29,BK01,M03,Pt3,51.7,0.0, 0.2625,"Mezery v datech při oscilaci, jinak pěkné ale málo period"
+normal,2021-06-29,BK01,M04,Elasto,55.13199999999779,81.04999999999927, 0.2701,
+normal,2021-06-29,BK01,M04,Pt3,55.04,80.7, 0.2729,"Hrbatý náběh, oscilace mají zvláštní tvar, kousek chybí"
+normal,2021-06-29,BK01,M05,Elasto,58.16899999999805,84.99499999999898, 0.2609,Na konci jde strední hodnota nahoru
+normal,2021-06-29,BK01,M05,Pt3,57.92,80.7, 0.2635,Konec roztřepený
+normal,2021-06-29,BK04,M02,Pt3,46.63,77.12, 0.1969,"Nekmitá okolo rovnovážné polohy, peak nevýrazný"
+normal,2021-06-29,BK04,M03,Pt3,36.83,68.07, 0.2244,"Málo period, rychle utlumené, ale asi použitelné"
+normal,2021-06-29,BK04,M04,Pt3,34.66,76.8, 0.2136 0.6646,"Pěkné oscilace, dostatek period, interpolovatelné mezery, krásné obloučky, výrazný jeden peak."
+normal,2021-06-29,BK07,M02,Pt3,79.09,111.38, 0.2851,"Pěkné oscilace, při natahování nějaké rozkolísání, ale jinak OK"
+normal,2021-06-29,BK07,M03,Pt3,70.54,105.05, 0.2900,"Pěkné kmity, konec horší"
+normal,2021-06-29,BK07,M04,Pt3,84.4,96.76, 0.3236,"Zubaté napínání, divné kmity, s mezerou, málo period a proto nejasný peak."
+normal,2021-06-29,BK07,M05,Pt3,65.47,96.47, 0.2903,"Zubaté už od náběhu, interpolovatelné mezery v datech, konec divný ale pro jiný probe možná bude OK"
+normal,2021-06-29,BK08,M02,Pt3,53.07,68.28, 0.3292,"Roztřepená křivka při napínání, oscilace relativně OK, ale je jich málo"
+normal,2021-06-29,BK08,M03,Pt3,33.2,58.04, 0.3225,"Zubaté napínání, ale kmity pěkné a hladké"
+normal,2021-06-29,BK08,M04,Pt3,65.06,86.76, 0.3226,"Roztřepaná křivka při natahování, zmatek na konci odříznut"
+normal,2021-06-29,BK08,M05,Pt3,57.46,81.13, 0.3429,"Zubaté napínání, řídká data, ale asi použitelné"
+normal,2021-06-29,BK09,M02,Pt3,36.0,70.74, 0.2303 0.8062,"Lehce roztřepené oscilace, ale použitelné"
+normal,2021-06-29,BK09,M03,Pt3,60.03,90.32, 0.2312,"Zubaté, ale použitelné"
+normal,2021-06-29,BK09,M04,Pt3,64.81,96.76, 0.2191,"Hodně roztřepené, i při napínání"
+normal,2021-06-29,BK10,M02,Pt3,39.3,69.85, 0.2965,"Zubatý náběh, pěkné kmity s interpolovatelnými mezerami"
+normal,2021-06-29,BK10,M03,Pt3,49.9,79.83, 0.3008,"Zubatý náběh, interpolovatelné mezery v datech"
+normal,2021-06-29,BK10,M04,Pt3,46.53,80.9, 0.2910,"Pěkné kmity s mezerou (snad se dá dointerpolovat), zubaté napínání"
+normal,2021-06-29,BK11,M02,Pt3,59.54,100.26, 0.2948,"Pěkné kmity, dostatek period, interpolovatelné mezery"
 normal,2021-06-29,BK11,M03,Pt3,0.0,0.0,,Co to je?
-normal,2021-06-29,BK11,M04,Pt3,73.82,104.85,,"Oscilace OK, ale asi neinterpolovatelné mezery v datech"
-normal,2021-06-29,BK11,M05,Pt3,51.62,89.26,,Na konci dlouhá mezera
-normal,2021-06-29,BK12,M02,Pt3,44.84,74.28,,"Oscilace při napínání, interpolovatenléné mezery, nekmitá okolo rovnovážné polohy"
-normal,2021-06-29,BK12,M03,Pt3,,,,Úplně nepovedené
-normal,2021-06-29,BK12,M04,Pt3,49.68,82.72,,"Oscilace pěkné, ale kus chybí, snad by se dalo dointerpolovat, zuby při napínání"
-normal,2021-06-29,BK12,M05,Pt3,61.36,106.26,,"Oscilace na začátku, zuby při napínání, interpolovatelné mezery v datech, "
-normal,2021-06-29,BK12,M06,Pt3,38.0,73.49,,"Divný průběh napínání, oscilace pěkné, kus chybí, ale mohlo by se dorovnat interpolací"
-normal,2021-06-29,BK13,M02,Pt3,91.74,123.73,,"Oscilace při natahování, relativně pěkné oscilace"
-normal,2021-06-29,BK13,M03,Pt3,86.82,121.33,,"Oscilace při napínání, dva kusy uprostřed chybí"
+normal,2021-06-29,BK11,M04,Pt3,73.82,104.85, 0.2900,"Oscilace OK, ale asi neinterpolovatelné mezery v datech"
+normal,2021-06-29,BK11,M05,Pt3,51.62,89.26, 0.3189,Na konci dlouhá mezera
+normal,2021-06-29,BK12,M02,Pt3,44.84,74.28, 0.2042,"Oscilace při napínání, interpolovatenléné mezery, nekmitá okolo rovnovážné polohy, málo kmitů"
+normal,2021-06-29,BK12,M03,Pt3,0.0,0.0,,Úplně nepovedené
+normal,2021-06-29,BK12,M04,Pt3,49.68,82.72, 0.1818 0.5758,"Oscilace pěkné, ale kus chybí, snad by se dalo dointerpolovat, zuby při napínání"
+normal,2021-06-29,BK12,M05,Pt3,61.36,106.26, 0.2004 0.5791,"Oscilace na začátku, zuby při napínání, interpolovatelné mezery v datech, "
+normal,2021-06-29,BK12,M06,Pt3,38.0,73.49, 0.1973 0.5919,"Divný průběh napínání, oscilace pěkné, kus chybí, ale mohlo by se dorovnat interpolací"
+normal,2021-06-29,BK13,M02,Pt3,91.74,123.73, 0.2189,"Oscilace při natahování, relativně pěkné oscilace"
+normal,2021-06-29,BK13,M03,Pt3,86.82,121.33, 0.2320 0.6671,"Oscilace při napínání, dva kusy uprostřed chybí"
 normal,2021-06-29,BK13,M04,Pt3,75.11,113.45,,"Velmi divoký průběh celého experimentu od začátku do konce, ASI NEPOUŽITELNÉ"
-normal,2021-06-29,BK13,M05,Pt3,94.72,132.43,,"Oscilace při natahování, dlouhé neinterpolovatelné mezery v datech"
+normal,2021-06-29,BK13,M05,Elasto,94.62299999999959,131.55199999999968, 0.2166,
+normal,2021-06-29,BK13,M05,Pt3,94.72,132.43, 0.2122,"Oscilace při natahování, dlouhé neinterpolovatelné mezery v datech"
 normal,2021-06-29,BK14,M02,Pt3,88.52,112.64,,"Zubaté napínání, řídká data"
 normal,2021-06-29,BK14,M03,Pt3,,,,"Vůbec nevím, co to je"
 normal,2021-06-29,BK14,M04,Pt3,71.17,99.08,,Zhoupnuti po pruchodu rovnovaznou polohou

@@ -16,7 +16,7 @@ from scipy.fft import fft, fftfreq
 
 import logging
 logger = logging.getLogger("Solara_FFT")
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 
 DT = 0.01
 pd.set_option('display.max_rows', 500)
@@ -222,28 +222,38 @@ def smazat_fft(x=None):
     fft_freq.value = ""
     
 # filter_method = solara.reactive(False)
-# filter_day = solara.reactive(False)
-# filter_tree = solara.reactive(False)
-# filter_probe = solara.reactive(False)
+filter_day = solara.reactive(False)
+filter_tree = solara.reactive(False)
+filter_probe = solara.reactive(False)
+# filtered_df = solara.reactive(pd.DataFrame())
 
 @solara.component
 def ShowSavedData():
     # show saved data    
-    # solara.Switch(label=f"Restrict to {s.day.value} day", value=filter_day)    
-    # solara.Switch(label=f"Restrict to {probe.value[0]} probe", value=filter_probe)    
-    logger.debug(f"ShowSavedData entered")
-    # tempdf = df_limits.value
-    # if filter_day.value:
-    #     tempdf = tempdf.loc[
-    #         (slice(None), s.day.value,slice(None),slice(None),slice(None)), :]
-    # if filter_probe.value:
-    #     tempdf = tempdf.loc[
-    #         (slice(None), slice(None),slice(None),slice(None),probe.value[0]), :]
-    # df_limits.value = tempdf
-    solara.display(df_limits.value)
-    with solara.Row():
-        solara.Button(label="Save current to table", on_click=save_limits)
-        solara.FileDownload(df_limits.value.to_csv(), filename=f"limits_for_FFT.csv", label="Download as csv")
+    with solara.Card():
+        solara.Markdown("**Table with data**")
+        with solara.Card():
+            solara.Markdown("**Data restrictions**")
+            with solara.Row():
+                solara.Switch(label=f"Day {s.day.value}", value=filter_day)    
+                solara.Switch(label=f"Tree {s.tree.value}", value=filter_tree)    
+                solara.Switch(label=f"Probe {probe.value[0]}", value=filter_probe)    
+        logger.debug(f"ShowSavedData entered {filter_day.value} {filter_tree.value} {filter_probe.value}")
+        filtered_df = df_limits.value.copy()
+        if filter_day.value:
+            filtered_df = filtered_df.loc[
+                (slice(None), s.day.value,slice(None),slice(None),slice(None)), :]
+        if filter_tree.value:
+            filtered_df = filtered_df.loc[
+                (slice(None), slice(None), s.tree.value,slice(None),slice(None)), :]
+        if filter_probe.value:
+            filtered_df = filtered_df.loc[
+                (slice(None), slice(None),slice(None),slice(None),probe.value[0]), :]
+        # df_limits.value = tempdf
+        solara.display(filtered_df)
+        with solara.Row():
+            solara.Button(label="Save current to table", on_click=save_limits)
+            solara.FileDownload(df_limits.value.to_csv(), filename=f"limits_for_FFT.csv", label="Download as csv")
 
 @solara.component
 def Navod():
