@@ -11,78 +11,79 @@ normal,2021-03-22,BK04,M03,Elasto,40.56899999999587,89.47999999999593, 0.2453 0.
 normal,2021-03-22,BK04,M03,Pt3,40.63,90.9, 0.2389 0.8758,Pěkné oscilace
 normal,2021-03-22,BK04,M04,Elasto,39.95100000000093,97.83699999999952, 0.2423,"Divné kmity, amplituda nejde k nule, střed se vlní, jeden peak."
 normal,2021-03-22,BK04,M04,Pt3,40.36,51.4084140479999, 0.2715,"Kmity neslábnou, jeden peak rozsypaný, Pt3 končí moc brzo (použít jiný probe)"
+normal,2021-03-22,BK04,M04,Pt4,40.3466036159998,98.3360946479997, 0.2414,Pt4 je spolehlivější než Pt3
 normal,2021-03-22,BK07,M02,Elasto,120.16400000000432,183.20700000000213, 0.3184 0.8757,"Pěkné oscilace, dva peaky"
-normal,2021-03-22,BK07,M02,Pt3,119.91,183.49,,"Hodně kmitů, zřetelný exponenciální pokles amplitudy, řídká snad interpolovatelná data"
+normal,2021-03-22,BK07,M02,Pt3,119.91,183.49, 0.3146 0.8809,"Hodně kmitů, zřetelný exponenciální pokles amplitudy, řídká snad interpolovatelná data"
 normal,2021-03-22,BK07,M03,Elasto,62.59599999999773,113.27599999999802, 0.3156 0.8877,"Pěkné oscilace, dva peaky"
-normal,2021-03-22,BK07,M03,Pt3,62.66,113.7,,Pěkné oscilace
+normal,2021-03-22,BK07,M03,Pt3,62.66,113.7, 0.3135 0.8817,Pěkné oscilace
 normal,2021-03-22,BK07,M04,Elasto,42.01400000000285,83.28500000000349, 0.3149 0.8963,"Oscilace s divným průběhem amplitudy, druhý peak nejistý"
-normal,2021-03-22,BK07,M04,Pt3,42.25,77.6,,"Hrbaté natahování, odříznutý divný konec, kmity moc neslábnou"
+normal,2021-03-22,BK07,M04,Pt3,42.25,77.6, 0.3113 0.9055,"Hrbaté natahování, odříznutý divný konec, kmity moc neslábnou, druhy peak plochy."
 normal,2021-03-22,BK07,M05,Elasto,66.76599999999598,117.76699999999984, 0.3333 0.8822,"Pěkné oscilace, dva peaky"
-normal,2021-03-22,BK07,M05,Pt3,66.58,117.8,,Pěkné oscilace na dlouhém intervalu
+normal,2021-03-22,BK07,M05,Pt3,66.58,117.8, 0.3319 0.8786,Pěkné oscilace na dlouhém intervalu
 normal,2021-03-22,BK08,M02,Elasto,29.213999999999945,60.549000000006345, 0.3523 1.0250,"Pěkné oscilace, dva peaky"
-normal,2021-03-22,BK08,M02,Pt3,29.24,61.09,,Na konci roste amplituda
+normal,2021-03-22,BK08,M02,Pt3,29.24,61.09, 0.3459 1.0377,"Na konci roste amplituda, druhy peak plochy."
 normal,2021-03-22,BK08,M03,Elasto,63.02399999999761,96.07600000000092, 0.3630 1.0587,"Pěkné oscilace, dva peaky"
-normal,2021-03-22,BK08,M03,Pt3,63.22,0.0,,Relativně pěkná křivka
+normal,2021-03-22,BK08,M03,Pt3,63.22,0.0, 0.3548 1.0645,Relativně pěkná křivka
 normal,2021-03-22,BK08,M04,Elasto,59.65600000000268,100.41799999999785, 0.3679 1.0547,"Pěkné oscilace, ale střední hodnota padá a amplituda neklesá"
-normal,2021-03-22,BK08,M04,Pt3,60.05,100.34,,"Pěkné kmity, jenom trochu chlupaté"
+normal,2021-03-22,BK08,M04,Pt3,60.05,100.34, 0.3724 1.0427,"Pěkné kmity, jenom trochu chlupaté"
 normal,2021-03-22,BK08,M05,Elasto,47.20799999999872,83.65400000000227, 0.3567 1.0700,"Dva peaky, pěkné oscilace, lineární pokles amplitudy"
-normal,2021-03-22,BK08,M05,Pt3,47.44,0.0,,"Chlupato-zubaté napínání, kmity OK s ocasem na konci, zřetelný exp. pokles amplitudy"
+normal,2021-03-22,BK08,M05,Pt3,47.44,0.0, 0.3785 1.0543,"Chlupato-zubaté napínání, kmity OK s ocasem na konci, zřetelný exp. pokles amplitudy"
 normal,2021-03-22,BK08,M06,Elasto,33.432999999997264,68.82399999999325, 0.3672 1.0734,"Pěkné oscilace, dva peaky, konec se netlumí na nulu."
-normal,2021-03-22,BK08,M06,Pt3,33.01,0.0,,Patrné oscilace při natahování
+normal,2021-03-22,BK08,M06,Pt3,33.01,0.0, 0.3560 1.0679,Patrné oscilace při natahování
 normal,2021-03-22,BK09,M02,Elasto,33.424999999995634,57.87199999999575, 0.2454 0.8589,"Dva peaky, krátký signál a divný tvar peaků"
-normal,2021-03-22,BK09,M02,Pt3,33.07,56.45,,"Zašumněné natahování i konec, zvláštní tvar peaků"
+normal,2021-03-22,BK09,M02,Pt3,33.07,56.45, 0.2139 0.8558,"Zašumněné natahování i konec, zvláštní tvar peaků"
 normal,2021-03-22,BK09,M03,Elasto,39.88699999999517,73.98799999999756, 0.2345 0.8502,"Dva peaky, ale divný tvar amplitud"
-normal,2021-03-22,BK09,M03,Pt3,39.1,68.92,,"Oscilace OK, divný tvar peaků, konec odřezaný kvůli roztřesení, peaky během natahování a před vypuštěním"
+normal,2021-03-22,BK09,M03,Pt3,39.1,68.92, 0.2351 0.8395,"Oscilace OK, divný tvar peaků, konec odřezaný kvůli roztřesení, peaky během natahování a před vypuštěním"
 normal,2021-03-22,BK09,M04,Elasto,41.72000000000117,71.20700000000215, 0.2374 0.8477,"Dva peaky, divný tvar amplitud"
-normal,2021-03-22,BK09,M04,Pt3,41.85,71.47,,"Zašumněné natahování, divný tvar prvních peaků"
+normal,2021-03-22,BK09,M04,Pt3,41.85,71.47, 0.2369 0.8460,"Zašumněné natahování, divný tvar prvních peaků"
 normal,2021-03-22,BK10,M02,Elasto,45.25,77.69300000000658, 0.3084 1.0176,"Divný tvar amplitud, ale jinak pěkné kmity a dva peaky"
-normal,2021-03-22,BK10,M02,Pt3,45.33,0.0,,"Pěkné oscilace, kousek přerušení, zvláštní tvar peaků"
+normal,2021-03-22,BK10,M02,Pt3,45.33,0.0, 0.3343 1.0030,"Pěkné oscilace, kousek přerušení, zvláštní tvar peaků"
 normal,2021-03-22,BK10,M03,Elasto,43.903,70.28100000000268, 0.3046 1.0282,"Divný tvar amplitud, dva peaky"
-normal,2021-03-22,BK10,M03,Pt3,43.88,70.07,,"Roztřesené natahování, velmi zvláštní tvar peaků"
+normal,2021-03-22,BK10,M03,Pt3,43.88,70.07, 0.3058 0.9939,"Roztřesené natahování, velmi zvláštní tvar peaků"
 normal,2021-03-22,BK10,M04,Elasto,46.24100000000181,69.49599999999919, 0.3439 1.0318,"Krátké, dva peaky, ale neostré (dvě tečky vedle sebe pro oba peaky)"
-normal,2021-03-22,BK10,M04,Pt3,46.18,69.3,,"Zašumněné natahování, lehce divný tvar prvních peaků"
+normal,2021-03-22,BK10,M04,Pt3,46.18,69.3, 0.3029 0.9952,"Zašumněné natahování, lehce divný tvar prvních peaků"
 normal,2021-03-22,BK11,M02,Elasto,42.16500000000087,90.15299999999844, 0.3334 1.1044,"Pěkné oscilace, dva peaky"
-normal,2021-03-22,BK11,M02,Pt3,41.82,0.0,,"Hodně period, ale řídká interpolovatelná data, amplituda klesá spíš lineárně"
+normal,2021-03-22,BK11,M02,Pt3,41.82,0.0, 0.3311,"Hodně period, ale řídká interpolovatelná data, amplituda klesá spíš lineárně"
 normal,2021-03-22,BK11,M03,Elasto,50.4230000000025,77.6160000000018, 0.3309 1.0662,"Krátký signál, dva peaky, ale druhý málo výrazný"
-normal,2021-03-22,BK11,M03,Pt3,49.97,76.98,,Patrné oscilace při natahování
+normal,2021-03-22,BK11,M03,Pt3,49.97,76.98, 0.3335 1.0745,Patrné oscilace při natahování
 normal,2021-03-22,BK11,M04,Elasto,57.333999999995285,93.42699999999604, 0.3324 1.1080,"Pěkné kmity, dva peaky"
-normal,2021-03-22,BK11,M04,Pt3,57.07,93.16,,Pěkné oscilace
+normal,2021-03-22,BK11,M04,Pt3,57.07,93.16, 0.3337 1.0845,"Pěkné oscilace, druhy peak plochy"
 normal,2021-03-22,BK12,M02,Elasto,50.70100000000093,85.08899999999994, 0.2326 0.7560,"Kmity mají divoký tvat, dva peaky"
-normal,2021-03-22,BK12,M02,Pt3,50.56,0.0, 0.2296 0.7747,"Experiment OK, ale neobvyklé tvary peaků"
+normal,2021-03-22,BK12,M02,Pt3,50.56,0.0, 0.2296 0.7747 0.2296 0.7747,"Experiment OK, ale neobvyklé tvary peaků"
 normal,2021-03-22,BK12,M03,Elasto,38.56499999999505,59.80500000000029, 0.2353 0.7529,"Hrbaté amplitudy, dva peaky, ale kvůli krátkému signálu málo zřetelné."
 normal,2021-03-22,BK12,M03,Pt3,0.0,0.0,,"Dost nepovedené, divný tvar kmitů a jenom několik zakmitnutí"
 normal,2021-03-22,BK12,M04,Elasto,23.256999999997788,51.80299999999989, 0.2452 0.7706,Velice kostrbatý tvat amplitud.
-normal,2021-03-22,BK12,M04,Pt3,23.9,50.2,,"Divný tvar kmitů, divné vypuštění, krátká fáze natahování"
+normal,2021-03-22,BK12,M04,Pt3,23.9,50.2, 0.2283 0.7610,"Divný tvar kmitů, divné vypuštění, krátká fáze natahování"
 normal,2021-03-22,BK13,M02,Elasto,59.82400000000053,89.87399999999616, 0.2329 0.7654 1.4309,"Hrbaté amplitudy, tři peaky"
-normal,2021-03-22,BK13,M02,Pt3,59.43,0.0,,"Pěkné kmity, divný tvar maxim a minim"
+normal,2021-03-22,BK13,M02,Pt3,59.43,0.0, 0.2345 0.7705 1.4405,"Pěkné kmity, divný tvar maxim a minim"
 normal,2021-03-22,BK13,M03,Elasto,73.7100000000064,117.14199999999984, 0.2532 0.7597 1.4503,Tři peaky
-normal,2021-03-22,BK13,M03,Pt3,74.34,117.71,,"Divné vypuštění, zvláštní tvar peaků, na konci roste amplituda"
+normal,2021-03-22,BK13,M03,Pt3,74.34,117.71, 0.2537 0.7612 1.4533,"Divné vypuštění, zvláštní tvar peaků, na konci roste amplituda"
 normal,2021-03-22,BK13,M04,Elasto,86.03699999999662,121.13299999999435, 0.2564 0.7692 1.4530,Tři peaky
-normal,2021-03-22,BK13,M04,Pt3,86.31,119.98,,"Interpolovatelné mezery, změna tvaru peaků."
+normal,2021-03-22,BK13,M04,Pt3,86.31,119.98, 0.2377 0.7724 1.4557,"Interpolovatelné mezery, změna tvaru peaků."
 normal,2021-03-22,BK14,M02,Elasto,39.38799999999901,83.45999999999913, 0.2949,"Pěkné oscilace, místo druhého peaku propad."
-normal,2021-03-22,BK14,M02,Pt3,39.17,0.0,,"Chlupaté ale použitelné, zřetelný exp. pokled amplitudy"
+normal,2021-03-22,BK14,M02,Pt3,39.17,0.0, 0.2945,"Chlupaté ale použitelné, zřetelný exp. pokled amplitudy, místo druhého peaku propad"
 normal,2021-03-22,BK14,M03,Elasto,52.68000000000029,80.2599999999984, 0.2901,"Pěkné oscilace, místo druhého peaku propad."
-normal,2021-03-22,BK14,M03,Pt3,53.24,80.12,,Zašumněné natahování i vypuštění
+normal,2021-03-22,BK14,M03,Pt3,53.24,80.12, 0.2980,"Zašumněné natahování i vypuštění, místo druhého peaku propad."
 normal,2021-03-22,BK14,M04,Elasto,54.27999999999884,80.04999999999563, 0.3104,"Pěkné oscilace, místo druhého peaku propad."
-normal,2021-03-22,BK14,M04,Pt3,54.84,80.21,,"Zježený náběh, ale použitelné"
+normal,2021-03-22,BK14,M04,Pt3,54.84,80.21, 0.2761,"Zježený náběh, ale použitelné"
 normal,2021-03-22,BK16,M02,Elasto,32.257999999994354,63.3949999999968, 0.2569 0.2890 0.8992 1.0597 1.7020,"Čtyři peaky, druhý a třetí velmi blízko sebe."
-normal,2021-03-22,BK16,M02,Pt3,32.18,63.16,,"Pěkné kmity, jenom divný tvar prvního peaku"
+normal,2021-03-22,BK16,M02,Pt3,32.18,63.16, 0.2585,"Pěkné kmity, jenom divný tvar prvního peaku"
 normal,2021-03-22,BK16,M03,Elasto,47.73800000000483,72.19800000000396, 0.2862 0.8994 1.0630 1.6762,"Čtyři peaky, druhý a třetí velmi blízko sebe."
-normal,2021-03-22,BK16,M03,Pt3,47.73,71.61,,"Chlupaté napínání ale OK, divný tvar prvního peaku"
+normal,2021-03-22,BK16,M03,Pt3,47.73,71.61, 0.2516 1.0482 1.6771,"Chlupaté napínání ale OK, divný tvar prvního peaku"
 normal,2021-03-22,BK16,M04,Elasto,49.03600000000006,80.12100000000646, 0.2573 0.9006 1.0614 1.7047,"Čtyři peaky, druhý a třetí velmi blízko sebe."
-normal,2021-03-22,BK16,M04,Pt3,50.61,80.33,,Divné chování na začátku a hned po vypuštění odfiltrováno
+normal,2021-03-22,BK16,M04,Pt3,50.61,80.33, 0.2693,Divné chování na začátku a hned po vypuštění odfiltrováno
 normal,2021-03-22,BK21,M02,Elasto,50.37199999999575,104.52799999999844, 0.3323,"Výrazný jeden peak, pěkné oscilace."
-normal,2021-03-22,BK21,M02,Pt3,71.81,0.0,,Pěkné oscilace
+normal,2021-03-22,BK21,M02,Pt3,71.81,0.0, 0.3363,Pěkné oscilace
 normal,2021-03-22,BK21,M03,Elasto,64.63799999999901,113.55199999999604, 0.3271,"Výrazný jeden peak, pěkné oscilace."
-normal,2021-03-22,BK21,M03,Pt3,64.89,113.63,,"Pěkný experiment, hodně period, hladká křivka, mezery vypadají interpolovatelně"
+normal,2021-03-22,BK21,M03,Pt3,64.89,113.63, 0.3299,"Pěkný experiment, hodně period, hladká křivka, mezery vypadají interpolovatelně"
 normal,2021-03-22,BK21,M04,Elasto,71.77799999999843,124.8179999999993, 0.3393,"Výrazný jeden peak, pěkné oscilace."
-normal,2021-03-22,BK21,M04,Pt3,72.3,124.8,,"Velice pěkné kmity, dlouhý vzorek"
+normal,2021-03-22,BK21,M04,Pt3,72.3,124.8, 0.3239,"Velice pěkné kmity, dlouhý vzorek"
 normal,2021-03-22,BK24,M02,Elasto,117.1030000000028,165.42200000000594, 0.3311 0.9727,"Výrazný jeden peak a málo výrazný druhý, pěkné oscilace."
-normal,2021-03-22,BK24,M02,Pt3,117.54,0.0,,"Pěkná křivka, interpolovatelné mezery, zřetelný exp. pokles amplitudy"
+normal,2021-03-22,BK24,M02,Pt3,117.54,0.0, 0.3220,"Pěkná křivka, interpolovatelné mezery, zřetelný exp. pokles amplitudy"
 normal,2021-03-22,BK24,M03,Elasto,93.46499999999652,138.16700000000128, 0.3355 0.9841,"Výrazný jeden peak, málo výrazný druhý, pěkné oscilace."
-normal,2021-03-22,BK24,M03,Pt3,93.97,0.0,,Pěkné kmity
+normal,2021-03-22,BK24,M03,Pt3,93.97,0.0, 0.3310,Pěkné kmity
 normal,2021-03-22,BK24,M04,Elasto,91.79099999999744,142.82800000000134, 0.3331 0.9796,"Výrazný jeden peak, málo výrazný druhý, pěkné oscilace."
-normal,2021-03-22,BK24,M04,Pt3,91.82,143.28,,Pěkné kmity
+normal,2021-03-22,BK24,M04,Pt3,91.82,143.28, 0.3307,Pěkné kmity
 normal,2021-06-29,BK01,M02,Pt3,49.28,64.48,,"Použitelné jenom tři periody, třetí je navíc divná"
 normal,2021-06-29,BK01,M03,Pt3,51.7,0.0,,"Mezery v datech při oscilaci, jinak pěkné ale málo period"
 normal,2021-06-29,BK01,M04,Pt3,55.04,80.7,,"Hrbatý náběh, oscilace mají zvláštní tvar, kousek chybí"
@@ -154,7 +155,7 @@ normal,2022-04-05,BK11,M02,Pt3,68.3,119.44,,"Hodně pěkných kmitů, na konci a
 normal,2022-04-05,BK11,M03,Pt3,56.26,107.2,,"Zubaté napínání, interpolovatelné mezery, ke konci amplituda neklesá, ale vypadá použitelně"
 normal,2022-04-05,BK11,M04,Pt3,60.21,93.44,,"Amplituda klesá pomalu, napravidelnosti při natahování, asi vítr Máchale"
 normal,2022-04-05,BK12,M02,Pt3,41.54,91.5,,"Druhá polovina je poměrně chaotická, asi vítr, dekrement nepočítat"
-normal,2022-04-05,BK12,M03,Pt3,,,,"Osciluje už napínání, divné tvaru peaků, neosciluje okolo rovnovážné polohy, rozsypaný čaj ve druhé periodě, dekrement nepočítat"
+normal,2022-04-05,BK12,M03,Pt3,0.0,0.0,,"Osciluje už napínání, divné tvaru peaků, neosciluje okolo rovnovážné polohy, rozsypaný čaj ve druhé periodě, dekrement nepočítat"
 normal,2022-04-05,BK12,M04,Pt3,59.83,108.08,,"Osciluje už náběh, po vypuštění divné tvarz peaků, amplituda neklesá, neosciluje okolo rovnovážného stavu"
 normal,2022-04-05,BK13,M02,Pt3,118.3,160.95,,"Pravidelné oscilace při napínání, na konci zvýšení amplitudy - část ponechána a část odřezána"
 normal,2022-04-05,BK13,M03,Pt3,86.74,135.81,,"Oscilace při natahování, ke konci kmity neslábnou"
@@ -163,7 +164,7 @@ normal,2022-04-05,BK14,M02,Pt3,79.0,127.65,,"Kmitá i během natahování, hodn�
 normal,2022-04-05,BK14,M03,Pt3,44.32,93.8,,"Velke kmity i v pocatecni fazi i na konci, asi velky vitr"
 normal,2022-04-05,BK14,M04,Pt3,49.86,98.2,,"Kmity během napínání, nepravidelnosti na konci"
 normal,2022-04-05,BK14,M05,Pt3,65.62,115.18,,"Velke kmity na konci, vitr?"
-normal,2022-04-05,BK16,M02,Pt3,,,,"Osciluje už napínání, po vypuštění divné kmity"
+normal,2022-04-05,BK16,M02,Pt3,0.0,0.0,,"Osciluje už napínání, po vypuštění divné kmity"
 normal,2022-04-05,BK16,M03,Pt3,56.74,106.24,,"Kmity během natahování, nepravidelnosti v amplitudě, asi vítr"
 normal,2022-04-05,BK16,M04,Pt3,50.39,100.78,,"Velké kmity, neklesá amplituda, zřetelné kmity i při napínání, asi vítr"
 normal,2022-04-05,BK21,M02,Pt3,98.26,158.25,,Krasné dlouhé kmity
@@ -209,6 +210,6 @@ normal,2022-08-16,BK16,M04,Pt3,65.8,0.0,,Konec s ocáskem.
 normal,2022-08-16,BK21,M02,Pt3,144.1,0.0,,"Krásné kmity, rychle utlumené."
 normal,2022-08-16,BK21,M03,Pt3,84.37,0.0,,Krásné kmity
 normal,2022-08-16,BK21,M04,Pt3,78.11,0.0,,"Krásné kmity, interpolovatelné mezery"
-normal,2022-08-16,BK24,M02,Pt3,77.94,0.0,,
-normal,2022-08-16,BK24,M03,Pt3,110.2,0.0,,"Krásné kmity, rychle utlumené."
-normal,2022-08-16,BK24,M04,Pt3,113.73,139.33,,"Krásné kmity, rychle utlumené."
+normal,2022-08-16,BK24,M02,Pt3,77.94,0.0, 0.3014,
+normal,2022-08-16,BK24,M03,Pt3,110.2,0.0, 0.3132,"Krásné kmity, rychle utlumené."
+normal,2022-08-16,BK24,M04,Pt3,113.73,139.33, 0.3145,"Krásné kmity, rychle utlumené."
