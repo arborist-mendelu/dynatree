@@ -471,11 +471,29 @@ class DynatreeMeasurement:
             return ""
         return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}_pulling.parquet"
     
+    @property
+    def file_acc_name(self):
+        """
+        Returns the file with ACC data. The file is 
+        interpolated to the frequency 100Hz.
+        Renames columns and adds time to index.
+        """
+        return f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}.parquet"
+
     @cached_property
     def data_pulling(self):
         logger.debug("loading pulling data")
         return pd.read_parquet(self.file_pulling_name)
     
+    @cached_property
+    def data_acc(self):
+        logger.debug("loading acc data")
+        df = pd.read_parquet(self.file_acc_name)
+        df.columns = [i.replace("Data1_","").replace("ACC","A0").replace("_axis","").lower() for i in df.columns]
+        df = df.reindex(columns=sorted(df.columns))
+        df.index = np.array(range(len(df.index)))/100
+        return df 
+
     @cached_property
     def data_pulling_interpolated(self):
         logger.debug("interpolating pulling data")

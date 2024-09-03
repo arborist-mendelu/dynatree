@@ -16,7 +16,7 @@ from scipy.fft import fft, fftfreq
 
 import logging
 logger = logging.getLogger("Solara_FFT")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 DT = 0.01
 pd.set_option('display.max_rows', 500)
@@ -40,11 +40,18 @@ def save_freq_on_click(x=None):
 def plot():
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
-    
+    if len(probe.value) == 0:
+        probe.value = ["Elasto"]
     if "Elasto" in probe.value:
+        logger.debug("Using Dataframe for pulling")
         df = data_obj.data_pulling
         df = df[["Elasto(90)"]]
+    elif str(probe.value[0])[0] == 'a':
+        logger.debug("Using Dataframe for ACC")
+        df = data_obj.data_acc        
+        df = df[probe.value]
     else: 
+        logger.debug("Using Dataframe with optics")
         df = data_obj.data_optics
         mask = [i for i in df.columns if "Y0" in i[1]]
         df = df.loc[:,mask]
@@ -62,7 +69,10 @@ def plot():
 kwds = {"template": "plotly_white", 
         }
 
-probe = solara.reactive("Elasto")
+probe = solara.reactive(["Elasto"])
+probe_inclino = solara.reactive(["Elasto"])
+probe_optics = solara.reactive(["Pt3"])
+probe_acc = solara.reactive(["a01_x"])
 choices_disabled = solara.reactive(False)
 t_from = solara.reactive(0)
 t_to = solara.reactive(0)
@@ -101,11 +111,25 @@ def Page():
 def ChooseProbe():
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
-    probes = ["Elasto"] + ["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)] 
-    if not data_obj.is_optics_available:
-        probe.value = ["Elasto"]
-    # solara.Text(str(probe.value))
-    solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
+    probes_inclino = ["Elasto"]
+    probes_optics = ["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)]
+    probes_acc = ['a01_x', 'a01_y', 'a01_z', 'a02_x', 'a02_y', 'a02_z', 
+                  'a03_x', 'a03_y', 'a03_z', 'a04_x', 'a04_y', 'a04_z']
+    probes =  probes_inclino + probes_optics + probes_acc 
+    with solara.Column():
+        solara.ToggleButtonsMultiple(value=probe_inclino, values=probes_inclino)
+        solara.ToggleButtonsMultiple(value=probe_optics, values=probes_optics)
+        solara.ToggleButtonsMultiple(value=probe_acc, values=probes_acc)
+        if len(probe_inclino.value) != 0:
+            probe.value = probe_inclino.value
+        elif len(probe_optics.value) != 0:
+            probe.value = probe_optics.value
+        elif len(probe_acc.value) != 0:
+            probe.value = probe_acc.value
+        else:
+            probe.value = ["Elasto"]
+        solara.Info(f"Active probes: {probe.value}")
+    # solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
     if not data_obj.is_optics_available:
         solara.Warning(f"Optika není k dispozici pro {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value}. Používám Elasto.")
     return data_obj
@@ -230,7 +254,7 @@ def ShowFFTdata():
         solara.Markdown(f"**FFT freq**: {fft_freq.value}")
         solara.Button(label="Erase", on_click=smazat_fft)
         solara.Button(label="Save to table", on_click=save_limits)
-        solara.Text("The first value (blue) is saved.")
+        solara.Text("The first variable (blue) is considered as a label when saved.")
 
 def smazat_fft(x=None):
     fft_freq.value = ""
@@ -270,8 +294,12 @@ def ShowSavedData():
         except:
             logger.error(f"ShowSavedData failed")
         with solara.Row():
-            solara.FileDownload(df_limits.value.to_csv(), filename=f"solara_FFT.csv", label="Download as csv")
-            solara.Text(f"({df_limits.value.shape[0]} rows)")
+            solara.FileDownload(df_limits.value.to_csv(), filename=f"solara_FFT.csv", 
+                                label=f"Download as csv ({df_limits.value.shape[0]} rows)")
+            solara.Button(label="Drop all rows", on_click=drop_rows)
+
+def drop_rows():
+    df_limits.value = df_limits.value.head(0)
 
 @solara.component
 def Navod():
@@ -279,7 +307,8 @@ def Navod():
 """
 **TL;DR**
 
-* Klikáním na tlačítka vyber zdroj dat a která data chceš zkoumat. 
+* Klikáním na tlačítka vyber zdroj dat a která data chceš zkoumat. Uvažují se jenom veličiny z prvního 
+  neprázdného menu.
 * Je možné vybrat více voleb. 
 * Volba Elasto eliminuje všecny ostatní případné volby.
 * Nastav časový interval na kterém chceš dělat FFT zapsáním hodnot do políček nebo kliknutím na bod v grafu (koncový bod se shiftem).
@@ -287,10 +316,9 @@ def Navod():
 **Postup**
 
 * Měření vyber v levém panelu. V horním menu vyber sledované veličiny.
-* Pokud není k dispozici optika, použije se vždy "Elasto", extenzometr. 
 * Pokud vybereš "Elasto", použijí se data z extenzometru a další volby se ignorují. Jinak
-  se zpracovává podle optiky vše zatržené.
-* Pokud není optika k dispozici, bere se pro FFT automaticky extenzometr, tj. Elasto.
+  se zpracovává podle optiky vše zatržené. Pokud není nic zatržené z optiky, zpracovávají se data
+  z akcelerometru. Pokud není zatrhnuté vůbec nic, zpracovává se extenzometr.
 * Vše se interpoluje na 0.01s, to je v souladu se vzorkovaci frekvenci optiky.
 * Podle grafu můžeš vybrat rozsah pro FFT. Začátek a konec se zapisuje do políček pod grafem. 
 * Nulová horní mez znamená rozsah až do konce.

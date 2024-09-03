@@ -25,7 +25,7 @@ title = "DYNATREE: vizualizace dat, se kterými se pracuje"
 methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'mraz'])
 method = solara.reactive('normal')
 widths = [800,1000,1200,1400,1600,1800]
-width = solara.reactive(1200)
+width = solara.reactive(1000)
 heights = [400,600,800,1000,1200,1400]
 height = solara.reactive(600)
 show_data = solara.reactive(False)
@@ -57,6 +57,7 @@ dependent_pull = solara.reactive(["Force(100)"])
 dependent_pt34 = solara.reactive(["Pt3"])
 dependent_bl = solara.reactive(["BL44"])
 dependent_extra = solara.reactive(["Force(100)"])
+dependent_acc = solara.reactive(["a01_x"])
 
 def list_drop():
     list_selected.value = pd.DataFrame()
@@ -244,6 +245,33 @@ def Page():
                 except:
                     pass
 
+
+        with solara.lab.Tab("ACC"):
+            with solara.Card():
+                try:
+                    if (tab_index.value==4):
+                        df4 = data_object.data_acc
+                        plot(df4, dependent_acc)                        
+                        investigate(df4, dependent_acc)                        
+                    else:
+                        solara.Warning(solara.Markdown("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná."))
+                except:
+                    pass
+
+        with solara.lab.Tab("Popis"):
+            with solara.Card():
+                solara.Markdown(navod)
+
+navod = """
+
+## Akcelerometry
+
+* Akcelerometry byly az na vyjimky davany v logickem poradi 4,1,3,2. Kdyztak v poznamakach/nakresu na disku to najdes.
+* Osa ve které se tahá je Z, pak je zajímavá Y. Osa X je po vyssce kmene.
+* Cas je absolutni a automaticky v Matlab formatu. Ale kdybys chtel, tak tech cca 7e-5 je datum a cas a dostanes ho tusim pres timeformat. Jen si musis pohlidat, ze nezamenis mesic za den. 
+* A pak se nenech zmast tim, ze (ted jen tusim, mozna je to prohozene)  acc2 x. a acc4 x,y,z jsou nahravany na jiny notas, nez zbytek akcelerometru, takze absolutni cas je kvuli tomu stejne na prd a nepresne jsme to synchronizovali (nebo chteli) podle tech tuku na zacatku zaznamu.
+
+"""
 
 def resetuj_a_nakresli(x=None):
     auto_add.value = False
