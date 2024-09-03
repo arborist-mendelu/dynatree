@@ -486,20 +486,25 @@ class DynatreeMeasurement:
     @cached_property
     def data_optics(self):
         logger.debug("loading optics data")
-        return pd.read_parquet(self.file_optics_name)
+        ans = pd.read_parquet(self.file_optics_name)
+        ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
+        return ans
 
     @cached_property
     def data_optics_pt34(self):
         logger.debug("loading optics data Pt3 and Pt4")
         ans = pd.read_parquet(
               self.file_optics_name, columns=["('Pt3', 'Y0')", "('Pt4', 'Y0')", "('Time', '')"])
+        ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
         return ans
         
     @cached_property
     def data_optics_extra(self):
         logger.debug("loading optics extra")
-        return pd.read_parquet(self.file_optics_extra_name)
-        
+        ans = pd.read_parquet(self.file_optics_extra_name)
+        ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
+        return ans
+      
     @property
     def is_optics_available(self):
         return os.path.isfile(self.file_optics_name)

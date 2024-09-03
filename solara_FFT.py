@@ -36,6 +36,7 @@ def save_freq_on_click(x=None):
         fft_freq.set(fft_freq.value + f" {x['points']['xs'][0]:.4f}")
     logger.debug(f"Current value: {fft_freq.value}")
 
+@lib_dynatree.timeit
 def plot():
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
@@ -85,7 +86,6 @@ def Page():
         with solara.lab.Tab("FFT"):
             try:
                 DoFFT()
-                ShowSavedData()
             except:
                 with solara.Error():
                     solara.Markdown(
@@ -105,10 +105,13 @@ def ChooseProbe():
     if not data_obj.is_optics_available:
         probe.value = ["Elasto"]
     # solara.Text(str(probe.value))
-    solara.ToggleButtonsMultiple(value=probe, values=probes)    
+    solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
+    if not data_obj.is_optics_available:
+        solara.Warning(f"Optika není k dispozici pro {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value}. Používám Elasto.")
     return data_obj
 
 df_limits = solara.reactive(pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}))
+df_limits.value = df_limits.value.sort_index()
 
 def save_limits():
     if len(probe.value) == 0:
@@ -122,7 +125,7 @@ def save_limits():
     
 def preload_data():
     logger.debug("preload data started")
-    logger.debug(f"looking for {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value} {probe.value[0]}")
+    logger.debug(f"looking for {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value} {probe.value}")
     coordinates = (s.method.value, s.day.value, s.tree.value, s.measurement.value,probe.value[0])
     # breakpoint()
     test = coordinates in df_limits.value.index
@@ -144,72 +147,81 @@ def preload_data():
 
 @solara.component
 def FFT_parameters():
-    with solara.Card():
-        with solara.Row():
-            with solara.Tooltip("Hodnoty je možné zadat číslem do políčka nebo kliknutím na bod v grafu výše. Se shiftem se nastavuje konec časového intervalu."):
-                with solara.Column():
-                    solara.Markdown("**Limits for FFTⓘ:**")
-            solara.InputFloat("From",value=t_from)
-            solara.InputFloat("To",value=t_to)
-        with solara.Row():
-            solara.InputText("Remark", value=remark)
-            solara.Button(label="Save to table", on_click=save_limits)
-
-
-@solara.component
-def DoFFT():
-    logger.debug("DoFFT entered")
-    data_obj = ChooseProbe()
-    if "Elasto" in probe.value:
-        probe.value = ["Elasto"]
-    df = plot()
-
-    FFT_parameters()
+    with solara.Row():
+        with solara.Tooltip("Hodnoty je možné zadat číslem do políčka nebo kliknutím na bod v grafu výše. Se shiftem se nastavuje konec časového intervalu."):
+            with solara.Column():
+                solara.Markdown("**Limits for FFTⓘ:**")
+        solara.InputFloat("From",value=t_from)
+        solara.InputFloat("To",value=t_to)
+    with solara.Row():
+        solara.InputText("Remark", value=remark)
+        solara.Button(label="Save to table", on_click=save_limits)
     if pd.isna(t_to.value):
         t_to.value = 0
     if pd.isna(t_from.value):
         t_from.value = 0
-    if (t_to.value == 0) or (t_to.value < t_from.value): 
-        subdf = df.interpolate(method='index').loc[t_from.value:,:]
-    else:
-        t_final = t_to.value
-        subdf = df.interpolate(method='index').loc[t_from.value:t_final,:]
-    
-    # Find new dataframe, resampled and restricted
-    oldindex = subdf.index
-    if len(oldindex) < 1:
-        return
-    # breakpoint()
-    newindex = np.arange(oldindex[0],oldindex[-1], DT)
-    newdf = pd.DataFrame(index=newindex, columns=subdf.columns)
-    for i in subdf.columns:
-        newdf[i] = np.interp(newindex, oldindex, subdf[i].values)
-    # solara.display(newdf.head())
-    fig = px.scatter(newdf, height = s.height.value, width=s.width.value,
-                          title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Detail from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f} resampled with dt={DT}",
-                          **kwds)
-    solara.FigurePlotly(fig)    
 
-    ShowFFTdata()
+
+@solara.component
+@lib_dynatree.timeit
+def DoFFT():
+    logger.debug(f"DoFFT entered {s.day.value} {s.tree.value} {s.measurement.value}" )
+    with solara.ColumnsResponsive(xlarge=[6,6]):
+        with solara.Column():
+            with solara.Card():
+                data_obj = ChooseProbe()
+                if "Elasto" in probe.value:
+                    probe.value = ["Elasto"]
+                df = plot()
         
-    # get FFT output
-    time_fft = newdf.index.values    
-    N = time_fft.shape[0]  # get the number of points
-    xf_r = fftfreq(N, DT)[:N//2]
-    df_fft = pd.DataFrame(index=xf_r, columns=newdf.columns)
-    for col in newdf.columns:
-        signal_fft = newdf[col].values
-        time_fft = time_fft - time_fft[0]
-        signal_fft = signal_fft - np.nanmean(signal_fft) # mean value to zero
-        yf = fft(signal_fft)  # preform FFT analysis
-        yf_r = 2.0/N * np.abs(yf[0:N//2])
-        df_fft[col] = yf_r
+            with solara.Card():
+                FFT_parameters()
+                if (t_to.value == 0) or (t_to.value < t_from.value): 
+                    subdf = df.interpolate(method='index').loc[t_from.value:,:]
+                else:
+                    t_final = t_to.value
+                    subdf = df.interpolate(method='index').loc[t_from.value:t_final,:]
+                
+                # Find new dataframe, resampled and restricted
+                oldindex = subdf.index
+                if len(oldindex) < 1:
+                    return
+                # breakpoint()
+                newindex = np.arange(oldindex[0],oldindex[-1], DT)
+                newdf = pd.DataFrame(index=newindex, columns=subdf.columns)
+                for i in subdf.columns:
+                    newdf[i] = np.interp(newindex, oldindex, subdf[i].values)
+                # solara.display(newdf.head())
+                fig = px.scatter(newdf, height = s.height.value, width=s.width.value,
+                                      title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Detail from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f} resampled with dt={DT}",
+                                      **kwds)
+                solara.FigurePlotly(fig)    
 
-    figFFT = px.scatter(df_fft, height = s.height.value, width=s.width.value,
-                          title=f"FFT spectrum for {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Limits: from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f}", range_x=[0,3], log_y=True, range_y=[0.001,100],  
-                          **kwds)
-    figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
-    solara.FigurePlotly(figFFT, on_click=save_freq_on_click)    
+        with solara.Column():    
+            with solara.Card():
+                ShowFFTdata()
+                    
+                # get FFT output
+                time_fft = newdf.index.values    
+                N = time_fft.shape[0]  # get the number of points
+                xf_r = fftfreq(N, DT)[:N//2]
+                df_fft = pd.DataFrame(index=xf_r, columns=newdf.columns)
+                for col in newdf.columns:
+                    signal_fft = newdf[col].values
+                    time_fft = time_fft - time_fft[0]
+                    signal_fft = signal_fft - np.nanmean(signal_fft) # mean value to zero
+                    yf = fft(signal_fft)  # preform FFT analysis
+                    yf_r = 2.0/N * np.abs(yf[0:N//2])
+                    df_fft[col] = yf_r
+            
+                figFFT = px.scatter(df_fft, height = s.height.value, width=s.width.value,
+                                      title=f"FFT spectrum for {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Limits: from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f}", range_x=[0,3], log_y=True, range_y=[0.001,100],  
+                                      **kwds)
+                figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
+                solara.FigurePlotly(figFFT, on_click=save_freq_on_click)    
+            
+            ShowSavedData()
+
 
 @solara.component
 def ShowFFTdata():
@@ -218,7 +230,7 @@ def ShowFFTdata():
         solara.Markdown(f"**FFT freq**: {fft_freq.value}")
         solara.Button(label="Erase", on_click=smazat_fft)
         solara.Button(label="Save to table", on_click=save_limits)
-
+        solara.Text("The first value (blue) is saved.")
 
 def smazat_fft(x=None):
     fft_freq.value = ""
@@ -230,6 +242,7 @@ filter_probe = solara.reactive(False)
 # filtered_df = solara.reactive(pd.DataFrame())
 
 @solara.component
+@lib_dynatree.timeit
 def ShowSavedData():
     # show saved data    
     with solara.Card():
@@ -257,8 +270,8 @@ def ShowSavedData():
         except:
             logger.error(f"ShowSavedData failed")
         with solara.Row():
-            solara.Button(label="Save current to table", on_click=save_limits)
-            solara.FileDownload(df_limits.value.to_csv(), filename=f"limits_for_FFT.csv", label="Download as csv")
+            solara.FileDownload(df_limits.value.to_csv(), filename=f"solara_FFT.csv", label="Download as csv")
+            solara.Text(f"({df_limits.value.shape[0]} rows)")
 
 @solara.component
 def Navod():
