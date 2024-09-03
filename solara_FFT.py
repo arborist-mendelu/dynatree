@@ -239,18 +239,21 @@ def ShowSavedData():
                 solara.Switch(label=f"Tree {s.tree.value}", value=filter_tree)    
                 solara.Switch(label=f"Probe {probe.value[0]}", value=filter_probe)    
         logger.debug(f"ShowSavedData entered {filter_day.value} {filter_tree.value} {filter_probe.value}")
-        filtered_df = df_limits.value.copy()
-        if filter_day.value:
-            filtered_df = filtered_df.loc[
-                (slice(None), s.day.value,slice(None),slice(None),slice(None)), :]
-        if filter_tree.value:
-            filtered_df = filtered_df.loc[
-                (slice(None), slice(None), s.tree.value,slice(None),slice(None)), :]
-        if filter_probe.value:
-            filtered_df = filtered_df.loc[
-                (slice(None), slice(None),slice(None),slice(None),probe.value[0]), :]
-        # df_limits.value = tempdf
-        solara.display(filtered_df)
+        try:
+            filtered_df = df_limits.value.copy()
+            if filter_day.value:
+                filtered_df = filtered_df.loc[
+                    (slice(None), s.day.value,slice(None),slice(None),slice(None)), :]
+            if filter_tree.value:
+                filtered_df = filtered_df.loc[
+                    (slice(None), slice(None), s.tree.value,slice(None),slice(None)), :]
+            if filter_probe.value:
+                filtered_df = filtered_df.loc[
+                    (slice(None), slice(None),slice(None),slice(None),probe.value[0]), :]
+            # df_limits.value = tempdf
+            solara.display(filtered_df)
+        except:
+            logger.error(f"ShowSavedData failed")
         with solara.Row():
             solara.Button(label="Save current to table", on_click=save_limits)
             solara.FileDownload(df_limits.value.to_csv(), filename=f"limits_for_FFT.csv", label="Download as csv")
