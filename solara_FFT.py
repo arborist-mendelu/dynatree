@@ -217,6 +217,8 @@ def ShowFFTdata():
     with solara.Row():
         solara.Markdown(f"**FFT freq**: {fft_freq.value}")
         solara.Button(label="Erase", on_click=smazat_fft)
+        solara.Button(label="Save to table", on_click=save_limits)
+
 
 def smazat_fft(x=None):
     fft_freq.value = ""
