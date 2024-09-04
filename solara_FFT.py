@@ -16,7 +16,7 @@ from scipy.fft import fft, fftfreq
 
 import logging
 logger = logging.getLogger("Solara_FFT")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 DT = 0.01
 pd.set_option('display.max_rows', 500)
@@ -40,23 +40,21 @@ def save_freq_on_click(x=None):
 def plot():
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
-    if len(probe.value) == 0:
-        probe.value = ["Elasto"]
-    if "Elasto" in probe.value:
+    if len(probe_inclino.value)>0:
         logger.debug("Using Dataframe for pulling")
         df = data_obj.data_pulling
         df = df[["Elasto(90)"]]
-    elif str(probe.value[0])[0] == 'a':
-        logger.debug("Using Dataframe for ACC")
-        df = data_obj.data_acc        
-        df = df[probe.value]
-    else: 
+    elif len(probe_acc.optics)>0:
         logger.debug("Using Dataframe with optics")
         df = data_obj.data_optics
         mask = [i for i in df.columns if "Y0" in i[1]]
         df = df.loc[:,mask]
         df.columns = [i[0] for i in df.columns]
         df = df - df.iloc[0,:]
+        df = df[probe.value]
+    else: 
+        logger.debug("Using Dataframe for ACC")
+        df = data_obj.data_acc        
         df = df[probe.value]
 
     fig = px.scatter(df, height = s.height.value, width=s.width.value,
@@ -118,7 +116,7 @@ def ChooseProbe():
             solara.Markdown("**Probesⓘ**")
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
-    probes_inclino = ["Elasto"]
+    probes_inclino = ["Elasto(90)","Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     probes_optics = ["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)]
     probes_acc = ['a01_x', 'a01_y', 'a01_z', 'a02_x', 'a02_y', 'a02_z', 
                   'a03_x', 'a03_y', 'a03_z', 'a04_x', 'a04_y', 'a04_z']
