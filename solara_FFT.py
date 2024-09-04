@@ -43,8 +43,8 @@ def plot():
     if len(probe_inclino.value)>0:
         logger.debug("Using Dataframe for pulling")
         df = data_obj.data_pulling
-        df = df[["Elasto(90)"]]
-    elif len(probe_acc.optics)>0:
+        df = df[probe.value]
+    elif len(probe_optics.value)>0:
         logger.debug("Using Dataframe with optics")
         df = data_obj.data_optics
         mask = [i for i in df.columns if "Y0" in i[1]]
@@ -110,7 +110,8 @@ def ChooseProbe():
     with solara.Tooltip(solara.Markdown(
             """
             * The probes are divided to three groups according to the device. The topmost choice is active. 
-            * In particular, to see optics probes, uncheck Elasto. To see ACC, uncheck all optics probes and Elasto.
+            * In particular, to see optics probes, nether Elasto nor Inclino should be checked. To see ACC, neither optics probe nor Elasto or Inclino should be checked.
+            * The most interesting axis for acc is z axis.
             """, style={'color':'white'})):
         with solara.Column():
             solara.Markdown("**Probesⓘ**")
@@ -137,14 +138,14 @@ def ChooseProbe():
         solara.Info(f"Active probes: {probe.value}")
     # solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
     if not data_obj.is_optics_available:
-        solara.Warning(f"Optika není k dispozici pro {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value}. Používám Elasto.")
+        solara.Warning(f"Optika není k dispozici pro {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value}.")
     return data_obj
 
-df_limits = solara.reactive(pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}))
+df_limits = solara.reactive(pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}).fillna(""))
 df_limits.value = df_limits.value.sort_index()
 
 def reload_csv():
-    df_limits.value = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str})
+    df_limits.value = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}).fillna("")
     df_limits.value = df_limits.value.sort_index()
 
 def save_limits():
@@ -184,6 +185,7 @@ def preload_data():
 
 @solara.component
 def FFT_parameters():
+    logger.debug("Inside FFT prameters")
     with solara.Row():
         with solara.Tooltip("Hodnoty je možné zadat číslem do políčka nebo kliknutím na bod v grafu výše. Se shiftem se nastavuje konec časového intervalu."):
             with solara.Column():
@@ -210,10 +212,16 @@ def DoFFT():
                 if data_obj is None:
                     # stop if no probe is selected
                     return None
-                df = plot()
-        
+                try:
+                    df = plot()
+                except:
+                    solara.Warning("Nepovedlo se nakreslit graf. Možná nejsou zdrojová data?")
+                    return
+
             with solara.Card():
+                logger.debug("Will call FFT parameteres")
                 FFT_parameters()
+                logger.debug("After call of FFT parameteres")
                 if (t_to.value == 0) or (t_to.value < t_from.value): 
                     subdf = df.interpolate(method='index').loc[t_from.value:,:]
                 else:
@@ -223,6 +231,9 @@ def DoFFT():
                 # Find new dataframe, resampled and restricted
                 oldindex = subdf.index
                 if len(oldindex) < 1:
+                    logger.debug("Empty oldindex")
+                    with solara.Warning():
+                        solara.Markdown("Something unusual happened. The limits are probably not related to the signal.")
                     return
                 # breakpoint()
                 newindex = np.arange(oldindex[0],oldindex[-1], DT)
@@ -230,6 +241,7 @@ def DoFFT():
                 for i in subdf.columns:
                     newdf[i] = np.interp(newindex, oldindex, subdf[i].values)
                 # solara.display(newdf.head())
+                logger.debug("Will plot the detail.")
                 fig = px.scatter(newdf, height = s.height.value, width=s.width.value,
                                       title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Detail from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f} resampled with dt={DT}",
                                       **kwds)
