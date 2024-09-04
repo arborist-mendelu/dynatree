@@ -1,8 +1,19 @@
 measurement_type,day,tree,measurement,probe,from,to,peaks,remark
 normal,2021-03-22,BK01,M02,Elasto,63.7809999999954,101.2390000000014, 0.2936 0.7475,"Pěkné oscilace, dva peaky."
+normal,2021-03-22,BK01,M02,Inclino(80)X,64.35199999999895,101.00099999999657, 0.3001,
+normal,2021-03-22,BK01,M02,Inclino(81)X,63.92399999999907,101.2390000000014, 0.2947,
 normal,2021-03-22,BK01,M02,Pt3,63.4,70.54, 0.2801,"Jenom dvě periody, ale pěkné zakolísání po vypuštění"
+normal,2021-03-22,BK01,M02,a01_z,65.63,101.47, 0.3068 0.7810,
+normal,2021-03-22,BK01,M02,a02_z,64.39,101.47, 0.2967 0.7551,
+normal,2021-03-22,BK01,M02,a03_z,66.0,101.47, 0.2957,
+normal,2021-03-22,BK01,M02,a04_z,63.19,101.33, 0.3408,Nevýrazné peaky.
 normal,2021-03-22,BK01,M03,Elasto,50.807999999997264,105.36499999999796, 0.2933 0.7515,"Pěkné oscilace, dva peaky"
+normal,2021-03-22,BK01,M03,Inclino(80)X,51.64600000000064,105.84199999999691, 0.2952,"Na inklino jenom jeden peak, na ostatnich pristrojich dva"
+normal,2021-03-22,BK01,M03,Inclino(81)X,51.52699999999459,105.84199999999691, 0.2946,"Na inklino jenom jeden peak, na ostatnich pristrojich dva"
 normal,2021-03-22,BK01,M03,Pt3,50.83,105.59, 0.2922 0.7489,"Krásné kmity, dlouhý vzorek"
+normal,2021-03-22,BK01,M03,a01_z,51.6,106.55, 0.2912 0.7461,
+normal,2021-03-22,BK01,M03,a02_z,51.87,106.55, 0.2926 0.7498,
+normal,2021-03-22,BK01,M03,a03_z,51.59,106.55, 0.2911 0.7460,
 normal,2021-03-22,BK01,M04,Elasto,45.0940000000046,97.71100000000295, 0.2857 0.7429,"Pěkné oscilace, dva peaky, druhý neostrý"
 normal,2021-03-22,BK01,M04,Pt3,44.34,97.42, 0.3018 0.7356,Pěkné kmity
 normal,2021-03-22,BK04,M02,Elasto,51.28799999999319,99.72599999999512, 0.2477 0.8671,"Pěkné oscilace, dva peaky, druhý nejasný"
@@ -14,12 +25,16 @@ normal,2021-03-22,BK04,M04,Pt3,40.36,51.4084140479999, 0.2715,"Kmity neslábnou,
 normal,2021-03-22,BK04,M04,Pt4,40.3466036159998,98.3360946479997, 0.2414,Pt4 je spolehlivější než Pt3
 normal,2021-03-22,BK07,M02,Elasto,120.16400000000432,183.20700000000213, 0.3184 0.8757,"Pěkné oscilace, dva peaky"
 normal,2021-03-22,BK07,M02,Pt3,119.91,183.49, 0.3146 0.8809,"Hodně kmitů, zřetelný exponenciální pokles amplitudy, řídká snad interpolovatelná data"
+normal,2021-03-22,BK07,M02,a04_z,121.49,183.09, 0.3246 0.8765,Dva výrazné peaky. To se u ACC4 stává málokdy! Většinou je rozsypaný čaj.
 normal,2021-03-22,BK07,M03,Elasto,62.59599999999773,113.27599999999802, 0.3156 0.8877,"Pěkné oscilace, dva peaky"
 normal,2021-03-22,BK07,M03,Pt3,62.66,113.7, 0.3135 0.8817,Pěkné oscilace
+normal,2021-03-22,BK07,M03,a04_z,63.35,113.59, 0.3185 0.8758,Dva výrazné peaky. To se u ACC4 stává málokdy! Většinou je rozsypaný čaj.
 normal,2021-03-22,BK07,M04,Elasto,42.01400000000285,83.28500000000349, 0.3149 0.8963,"Oscilace s divným průběhem amplitudy, druhý peak nejistý"
 normal,2021-03-22,BK07,M04,Pt3,42.25,77.6, 0.3113 0.9055,"Hrbaté natahování, odříznutý divný konec, kmity moc neslábnou, druhy peak plochy."
+normal,2021-03-22,BK07,M04,a04_z,42.7,82.94, 0.3231 0.8946,Dva výrazné peaky. To se u ACC4 stává málokdy! Většinou je rozsypaný čaj.
 normal,2021-03-22,BK07,M05,Elasto,66.76599999999598,117.76699999999984, 0.3333 0.8822,"Pěkné oscilace, dva peaky"
 normal,2021-03-22,BK07,M05,Pt3,66.58,117.8, 0.3319 0.8786,Pěkné oscilace na dlouhém intervalu
+normal,2021-03-22,BK07,M05,a04_z,67.83,117.94, 0.3193 0.8781,Dva výrazné peaky. To se u ACC4 stává málokdy! Většinou je rozsypaný čaj.
 normal,2021-03-22,BK08,M02,Elasto,29.213999999999945,60.549000000006345, 0.3523 1.0250,"Pěkné oscilace, dva peaky"
 normal,2021-03-22,BK08,M02,Pt3,29.24,61.09, 0.3459 1.0377,"Na konci roste amplituda, druhy peak plochy."
 normal,2021-03-22,BK08,M03,Elasto,63.02399999999761,96.07600000000092, 0.3630 1.0587,"Pěkné oscilace, dva peaky"
@@ -274,7 +289,7 @@ normal,2022-08-16,BK04,M03,Elasto,100.80500000000028,153.80399999999645, 0.1887,
 normal,2022-08-16,BK04,M03,Pt3,100.8,153.2, 0.1909,"interpolovatelné mezery, na konci chybí půlperioda."
 normal,2022-08-16,BK04,M04,Elasto,70.74599999999919,121.72499999999854, 0.1962,
 normal,2022-08-16,BK04,M04,Pt3,70.2,121.25984676, 0.1959,"pěkné kmity, pěkný exponenciální pokles amplitudy"
-normal,2022-08-16,BK07,M02,Elasto,135.58400000000256,204.08899999999997, 0.2773,
+normal,2022-08-16,BK07,M02,Elasto,135.58400000000256,204.089, 0.2773,
 normal,2022-08-16,BK07,M02,Pt3,135.7,204.703504328, 0.2753,"dlouhé kmity, pokles amplitudy, interpolovatelné mezery"
 normal,2022-08-16,BK07,M03,Elasto,87.14400000000023,146.16999999999825, 0.2710,
 normal,2022-08-16,BK07,M03,Pt3,86.7,145.99389532, 0.2761,"Zvlnněná střední hodnota, místy hodně mezer, asi interpolovatelné"

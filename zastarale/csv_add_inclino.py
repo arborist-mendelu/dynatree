@@ -3,6 +3,7 @@
 """
 Created on Tue Nov  7 12:52:38 2023
 
+POZN: Po 09-2024 neaktualni, data jsou parquet soubory.
 POZN: 8.8.2024 byly upraveny cesty pro nove ulozeni souboru. 
 
 Načte inklinoměry, sílu a elastometr, přeškáluje čas na stejné časy

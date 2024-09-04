@@ -16,7 +16,7 @@ from scipy.fft import fft, fftfreq
 
 import logging
 logger = logging.getLogger("Solara_FFT")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 DT = 0.01
 pd.set_option('display.max_rows', 500)
@@ -40,23 +40,21 @@ def save_freq_on_click(x=None):
 def plot():
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
-    if len(probe.value) == 0:
-        probe.value = ["Elasto"]
-    if "Elasto" in probe.value:
+    if len(probe_inclino.value)>0:
         logger.debug("Using Dataframe for pulling")
         df = data_obj.data_pulling
-        df = df[["Elasto(90)"]]
-    elif str(probe.value[0])[0] == 'a':
-        logger.debug("Using Dataframe for ACC")
-        df = data_obj.data_acc        
         df = df[probe.value]
-    else: 
+    elif len(probe_optics.value)>0:
         logger.debug("Using Dataframe with optics")
         df = data_obj.data_optics
         mask = [i for i in df.columns if "Y0" in i[1]]
         df = df.loc[:,mask]
         df.columns = [i[0] for i in df.columns]
         df = df - df.iloc[0,:]
+        df = df[probe.value]
+    else: 
+        logger.debug("Using Dataframe for ACC")
+        df = data_obj.data_acc        
         df = df[probe.value]
 
     fig = px.scatter(df, height = s.height.value, width=s.width.value,
@@ -69,10 +67,10 @@ def plot():
 kwds = {"template": "plotly_white", 
         }
 
-probe = solara.reactive(["Elasto"])
-probe_inclino = solara.reactive(["Elasto"])
-probe_optics = solara.reactive(["Pt3"])
-probe_acc = solara.reactive(["a01_x"])
+probe = solara.reactive([])
+probe_inclino = solara.reactive([])
+probe_optics = solara.reactive([])
+probe_acc = solara.reactive([])
 choices_disabled = solara.reactive(False)
 t_from = solara.reactive(0)
 t_to = solara.reactive(0)
@@ -91,7 +89,7 @@ def Page():
     if s.measurement.value not in s.available_measurements(s.df.value, s.day.value, s.tree.value, s.method.value, exclude_M01=True):
         print(f"Mereni {s.measurement.value} neni k dispozici, koncim")
         return
-    preload_data()
+    out = preload_data()
     with solara.lab.Tabs():
         with solara.lab.Tab("FFT"):
             try:
@@ -112,13 +110,14 @@ def ChooseProbe():
     with solara.Tooltip(solara.Markdown(
             """
             * The probes are divided to three groups according to the device. The topmost choice is active. 
-            * In particular, to see optics probes, uncheck Elasto. To see ACC, uncheck all optics probes and Elasto.
+            * In particular, to see optics probes, nether Elasto nor Inclino should be checked. To see ACC, neither optics probe nor Elasto or Inclino should be checked.
+            * The most interesting axis for acc is z axis.
             """, style={'color':'white'})):
         with solara.Column():
             solara.Markdown("**Probesⓘ**")
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
-    probes_inclino = ["Elasto"]
+    probes_inclino = ["Elasto(90)","Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     probes_optics = ["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)]
     probes_acc = ['a01_x', 'a01_y', 'a01_z', 'a02_x', 'a02_y', 'a02_z', 
                   'a03_x', 'a03_y', 'a03_z', 'a04_x', 'a04_y', 'a04_z']
@@ -134,18 +133,19 @@ def ChooseProbe():
         elif len(probe_acc.value) != 0:
             probe.value = probe_acc.value
         else:
-            probe.value = ["Elasto"]
+            solara.Info("Vyber probe")
+            return None
         solara.Info(f"Active probes: {probe.value}")
     # solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
     if not data_obj.is_optics_available:
-        solara.Warning(f"Optika není k dispozici pro {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value}. Používám Elasto.")
+        solara.Warning(f"Optika není k dispozici pro {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value}.")
     return data_obj
 
-df_limits = solara.reactive(pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}))
+df_limits = solara.reactive(pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}).fillna(""))
 df_limits.value = df_limits.value.sort_index()
 
 def reload_csv():
-    df_limits.value = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str})
+    df_limits.value = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}).fillna("")
     df_limits.value = df_limits.value.sort_index()
 
 def save_limits():
@@ -161,6 +161,9 @@ def save_limits():
 def preload_data():
     logger.debug("preload data started")
     logger.debug(f"looking for {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value} {probe.value}")
+    if len(probe.value) == 0:
+        logger.debug("Nothing selected, finish")
+        return None
     coordinates = (s.method.value, s.day.value, s.tree.value, s.measurement.value,probe.value[0])
     # breakpoint()
     test = coordinates in df_limits.value.index
@@ -182,6 +185,7 @@ def preload_data():
 
 @solara.component
 def FFT_parameters():
+    logger.debug("Inside FFT prameters")
     with solara.Row():
         with solara.Tooltip("Hodnoty je možné zadat číslem do políčka nebo kliknutím na bod v grafu výše. Se shiftem se nastavuje konec časového intervalu."):
             with solara.Column():
@@ -205,12 +209,19 @@ def DoFFT():
         with solara.Column():
             with solara.Card():
                 data_obj = ChooseProbe()
-                if "Elasto" in probe.value:
-                    probe.value = ["Elasto"]
-                df = plot()
-        
+                if data_obj is None:
+                    # stop if no probe is selected
+                    return None
+                try:
+                    df = plot()
+                except:
+                    solara.Warning("Nepovedlo se nakreslit graf. Možná nejsou zdrojová data?")
+                    return
+
             with solara.Card():
+                logger.debug("Will call FFT parameteres")
                 FFT_parameters()
+                logger.debug("After call of FFT parameteres")
                 if (t_to.value == 0) or (t_to.value < t_from.value): 
                     subdf = df.interpolate(method='index').loc[t_from.value:,:]
                 else:
@@ -220,6 +231,9 @@ def DoFFT():
                 # Find new dataframe, resampled and restricted
                 oldindex = subdf.index
                 if len(oldindex) < 1:
+                    logger.debug("Empty oldindex")
+                    with solara.Warning():
+                        solara.Markdown("Something unusual happened. The limits are probably not related to the signal.")
                     return
                 # breakpoint()
                 newindex = np.arange(oldindex[0],oldindex[-1], DT)
@@ -227,6 +241,7 @@ def DoFFT():
                 for i in subdf.columns:
                     newdf[i] = np.interp(newindex, oldindex, subdf[i].values)
                 # solara.display(newdf.head())
+                logger.debug("Will plot the detail.")
                 fig = px.scatter(newdf, height = s.height.value, width=s.width.value,
                                       title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Detail from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f} resampled with dt={DT}",
                                       **kwds)
