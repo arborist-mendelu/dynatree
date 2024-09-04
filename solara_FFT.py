@@ -137,6 +137,10 @@ def ChooseProbe():
 df_limits = solara.reactive(pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}))
 df_limits.value = df_limits.value.sort_index()
 
+def reload_csv():
+    df_limits.value = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str})
+    df_limits.value = df_limits.value.sort_index()
+
 def save_limits():
     if len(probe.value) == 0:
         solara.lab.ConfirmationDialog(True, content="Select at least one variable.")
@@ -230,6 +234,7 @@ def DoFFT():
                 N = time_fft.shape[0]  # get the number of points
                 xf_r = fftfreq(N, DT)[:N//2]
                 df_fft = pd.DataFrame(index=xf_r, columns=newdf.columns)
+                upper_b=1
                 for col in newdf.columns:
                     signal_fft = newdf[col].values
                     time_fft = time_fft - time_fft[0]
@@ -237,9 +242,11 @@ def DoFFT():
                     yf = fft(signal_fft)  # preform FFT analysis
                     yf_r = 2.0/N * np.abs(yf[0:N//2])
                     df_fft[col] = yf_r
+                    upper_b = max(upper_b,10**(np.trunc(np.log10(np.max(yf_r)))+1))
             
+                lower_b = upper_b/100000
                 figFFT = px.scatter(df_fft, height = s.height.value, width=s.width.value,
-                                      title=f"FFT spectrum for {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Limits: from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f}", range_x=[0,3], log_y=True, range_y=[0.001,100],  
+                                      title=f"FFT spectrum for {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Limits: from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f}", range_x=[0,3], log_y=True, range_y=[lower_b,upper_b],  
                                       **kwds)
                 figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
                 solara.FigurePlotly(figFFT, on_click=save_freq_on_click)    
@@ -261,7 +268,7 @@ def smazat_fft(x=None):
     
 # filter_method = solara.reactive(False)
 filter_day = solara.reactive(False)
-filter_tree = solara.reactive(False)
+filter_tree = solara.reactive(True)
 filter_probe = solara.reactive(False)
 # filtered_df = solara.reactive(pd.DataFrame())
 
@@ -297,6 +304,8 @@ def ShowSavedData():
             solara.FileDownload(df_limits.value.to_csv(), filename=f"solara_FFT.csv", 
                                 label=f"Download as csv ({df_limits.value.shape[0]} rows)")
             solara.Button(label="Drop all rows", on_click=drop_rows)
+            solara.Button(label="Reload from server", on_click=reload_csv)
+            
 
 def drop_rows():
     df_limits.value = df_limits.value.head(0)
