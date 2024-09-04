@@ -261,15 +261,19 @@ def Page():
         with solara.lab.Tab("Popis"):
             with solara.Card():
                 solara.Markdown(navod)
+                solara.Image("img/acc_positions.png", width="400px")
 
 navod = """
 
 ## Akcelerometry
 
 * Akcelerometry byly az na vyjimky davany v logickem poradi 4,1,3,2. Kdyztak v poznamakach/nakresu na disku to najdes.
-* Osa ve které se tahá je Z, pak je zajímavá Y. Osa X je po vyssce kmene.
+* Osa ve které se tahá je Z, pak je zajímavá Y. Osa X je po vysce kmene.
 * Cas je absolutni a automaticky v Matlab formatu. Ale kdybys chtel, tak tech cca 7e-5 je datum a cas a dostanes ho tusim pres timeformat. Jen si musis pohlidat, ze nezamenis mesic za den. 
 * A pak se nenech zmast tim, ze (ted jen tusim, mozna je to prohozene)  acc2 x. a acc4 x,y,z jsou nahravany na jiny notas, nez zbytek akcelerometru, takze absolutni cas je kvuli tomu stejne na prd a nepresne jsme to synchronizovali (nebo chteli) podle tech tuku na zacatku zaznamu.
+
+
+![](img/acc_positions.png)
 
 """
 

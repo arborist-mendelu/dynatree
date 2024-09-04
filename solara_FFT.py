@@ -109,6 +109,13 @@ def Page():
             Navod()
 
 def ChooseProbe():
+    with solara.Tooltip(solara.Markdown(
+            """
+            * The probes are divided to three groups according to the device. The topmost choice is active. 
+            * In particular, to see optics probes, uncheck Elasto. To see ACC, uncheck all optics probes and Elasto.
+            """)):
+        with solara.Column():
+            solara.Markdown("**Probesⓘ**")
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
     probes_inclino = ["Elasto"]
@@ -277,7 +284,14 @@ filter_probe = solara.reactive(False)
 def ShowSavedData():
     # show saved data    
     with solara.Card():
-        solara.Markdown("**Table with data**")
+        with solara.Tooltip(solara.Markdown(
+                """
+                * The data are from csv/solara_fft.csv.
+                * If you change the data, download the file and someone has to merge the data
+                  with the file on server.
+                """)):
+            with solara.Column():
+                solara.Markdown("**Table with dataⓘ**")
         with solara.Card():
             solara.Markdown("**Data restrictions**")
             with solara.Row():
@@ -336,8 +350,9 @@ def Navod():
 
 **Poznámky**
 
-* Extenzometr se bere přímo z měření. Není tedy synchronizován s optikou a pokud jsou 
-  k dispozici oba údaje, mohou se časy maličko lišit posunutím.
+* Každý přístroj se bere přímo z měření. Není proto ACC nebo exenozmetr 
+  synchronizován s optikou. Pokud jsou k dispozici všechny údaje, mohou se 
+  časy maličko lišit posunutím.
 """
         )
 
