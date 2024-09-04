@@ -69,10 +69,10 @@ def plot():
 kwds = {"template": "plotly_white", 
         }
 
-probe = solara.reactive(["Elasto"])
-probe_inclino = solara.reactive(["Elasto"])
-probe_optics = solara.reactive(["Pt3"])
-probe_acc = solara.reactive(["a01_x"])
+probe = solara.reactive([])
+probe_inclino = solara.reactive([])
+probe_optics = solara.reactive([])
+probe_acc = solara.reactive([])
 choices_disabled = solara.reactive(False)
 t_from = solara.reactive(0)
 t_to = solara.reactive(0)
@@ -91,7 +91,7 @@ def Page():
     if s.measurement.value not in s.available_measurements(s.df.value, s.day.value, s.tree.value, s.method.value, exclude_M01=True):
         print(f"Mereni {s.measurement.value} neni k dispozici, koncim")
         return
-    preload_data()
+    out = preload_data()
     with solara.lab.Tabs():
         with solara.lab.Tab("FFT"):
             try:
@@ -134,7 +134,8 @@ def ChooseProbe():
         elif len(probe_acc.value) != 0:
             probe.value = probe_acc.value
         else:
-            probe.value = ["Elasto"]
+            solara.Info("Vyber probe")
+            return None
         solara.Info(f"Active probes: {probe.value}")
     # solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
     if not data_obj.is_optics_available:
@@ -161,6 +162,9 @@ def save_limits():
 def preload_data():
     logger.debug("preload data started")
     logger.debug(f"looking for {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value} {probe.value}")
+    if len(probe.value) == 0:
+        logger.debug("Nothing selected, finish")
+        return None
     coordinates = (s.method.value, s.day.value, s.tree.value, s.measurement.value,probe.value[0])
     # breakpoint()
     test = coordinates in df_limits.value.index
@@ -205,8 +209,9 @@ def DoFFT():
         with solara.Column():
             with solara.Card():
                 data_obj = ChooseProbe()
-                if "Elasto" in probe.value:
-                    probe.value = ["Elasto"]
+                if data_obj is None:
+                    # stop if no probe is selected
+                    return None
                 df = plot()
         
             with solara.Card():

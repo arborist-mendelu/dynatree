@@ -4,8 +4,11 @@ rule fft_optics_boxplot:
     The probe Pt3 is assumed.
     """
     input:
-        "results/fft.csv", "plot_fft.py"
+        data = "results/fft.csv",
+        script = "plot_fft.py"
     output:
         "../outputs/fft_optics_boxplot.pdf"
     shell:
-        "python plot_fft.py"
+        """
+        python {input.script}
+        """

@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import statsmodels.api as sm
 import scipy
+import sys
+
+print("*** FFT for Pt3 probe ***")
 
 probe = "Pt3"
 df = pd.read_csv("results/fft.csv", dtype = {'tree': str, 'date': str})
@@ -67,8 +70,12 @@ axs[1].set(ylim=(0.17,0.38))
 
 # ax.set(title=f"Základní frekvence (dvě měření s listy a dvě bez listů) {probe}")
 # ax.set(ylim=(0,14))
-plt.savefig("outputs/boxplot.pdf")
+plt.savefig("../outputs/fft_optics_boxplot.pdf")
 
+
+#%%
+
+sys.exit(0)
 
 #%%
 
@@ -90,8 +97,8 @@ for tree in trees:
 
 #%%
 
-sm.qqplot(df[''], line='45', fit = True) 
-plt.show()
+# sm.qqplot(df[''], line='45', fit = True) 
+# plt.show()
 
 #%%
 

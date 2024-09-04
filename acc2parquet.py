@@ -15,13 +15,15 @@ import pandas as pd
 import scipy.io
 import logging
 logger = logging.getLogger("prevod")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 from scipy.signal import savgol_filter
 
 source_dir = "/mnt/ERC/ERC"
 
 adresar = source_dir+'/Mereni_Babice'
+
+logger.debug("Starting to search directory")
 
 matching_dirs = glob.glob(os.path.join(adresar, '**/ACC'), recursive=True)
 
@@ -40,14 +42,15 @@ df = pd.DataFrame(upraveny_seznam, columns=["date","kind","tree","directory"])
 for i,row in df.iterrows():
     files = glob.glob(os.path.join(row['directory'], '*.mat'))
     for soubor in files:
+        print(soubor)
         measurement = soubor.split("/")[-1].split(".")[-2]
         mat = scipy.io.loadmat(soubor)
-        logging.info(f"File {soubor} loaded")
+        logger.info(f"File {soubor} loaded")
         data = {k:mat[k].T[0] for k in mat.keys() if "Data1_A" in k}
         smoothed_data = {k: savgol_filter(data[k], window_length=1000, polyorder=2)[::50] for k in data.keys()}  # Změna hodnot window_length a polyorder může ovlivnit úroveň vyhlazení
         newdf = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in smoothed_data.items()]))
         target = f"../data/parquet_acc/{row['kind'].lower()}_{row['date']}_{row['tree']}_{measurement}.parquet"
         newdf.to_parquet(target)
-        logging.info(f"File {soubor} processed")        
+        logger.info(f"File {soubor} processed")        
 
 logging.info("Finished")
