@@ -113,7 +113,7 @@ def ChooseProbe():
             """
             * The probes are divided to three groups according to the device. The topmost choice is active. 
             * In particular, to see optics probes, uncheck Elasto. To see ACC, uncheck all optics probes and Elasto.
-            """)):
+            """, style={'color':'white'})):
         with solara.Column():
             solara.Markdown("**Probesⓘ**")
     data_obj = lib_dynatree.DynatreeMeasurement(
@@ -289,7 +289,7 @@ def ShowSavedData():
                 * The data are from csv/solara_fft.csv.
                 * If you change the data, download the file and someone has to merge the data
                   with the file on server.
-                """)):
+                """, style={'color':'white'})):
             with solara.Column():
                 solara.Markdown("**Table with dataⓘ**")
         with solara.Card():
