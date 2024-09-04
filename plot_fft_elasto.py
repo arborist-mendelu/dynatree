@@ -13,16 +13,22 @@ import numpy as np
 import statsmodels.api as sm
 import scipy
 
-probe = "Pt3"
-df = pd.read_csv("results/fft.csv", dtype = {'tree': str, 'date': str})
-df = df[df["probe"].str.contains(probe)]
+
+df = pd.read_csv("csv/solara_FFT.csv")
+df = df[df["probe"]=='Elasto']
+df["peak"] = df["peaks"].str.split(" ", expand=True).iloc[:,1]
+df["date"] = df["day"]
+df = df[["date","tree","measurement","peak"]]
+#%%
 df["leaves"] = False
-idx = (df["date"] == "2021-06-29") | (df["date"] == "2022-08-16")
+idx = (df["date"] == "2021-06-29") | (df["date"] == "2022-08-16") | (df["date"] == "2023-07-17")
 df.loc[idx,"leaves"] = True
+df["freq"] = df[["peak"]].astype(float)
+#%%
 df = df.dropna()
 #%%
 
-
+probe = "Elasto"
 fig, axs = plt.subplots(2,1,figsize=(14,10), sharex=True, sharey=True)
 
 ax = axs[0]
@@ -30,7 +36,7 @@ ax = axs[0]
 f_min = 0.1
 delta_f_min = 0.05
 sns.swarmplot(
-    data=df[(df["freq"]>f_min) & (df["err"]<delta_f_min)], 
+    data=df, #[(df["freq"]>f_min) & (df["err"]<delta_f_min)], 
     x="tree", 
     y="freq", 
     hue="date",
@@ -62,8 +68,8 @@ sns.boxplot(
 ax.legend(loc=2, title="Leaves")
 ax.grid(alpha=0.4)
 
-axs[0].set(ylim=(0.17,0.38))
-axs[1].set(ylim=(0.17,0.38))
+axs[0].set(ylim=(0.1,0.5))
+axs[1].set(ylim=(0.1,0.5))
 
 # ax.set(title=f"Základní frekvence (dvě měření s listy a dvě bez listů) {probe}")
 # ax.set(ylim=(0,14))
