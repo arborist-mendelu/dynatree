@@ -502,6 +502,13 @@ class DynatreeMeasurement:
         return  ans
 
     @cached_property
+    def data_acc_interpolated(self):
+        logger.debug("interpolating acc data")
+        df = self.data_acc
+        ans = df.interpolate(method='index')
+        return  ans
+
+    @cached_property
     def data_optics(self):
         logger.debug("loading optics data")
         ans = pd.read_parquet(self.file_optics_name)
