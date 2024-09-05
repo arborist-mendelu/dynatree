@@ -13,6 +13,7 @@ import lib_dynatree
 import pandas as pd
 import numpy as np
 from scipy.fft import fft, fftfreq
+import lib_plot_spectra_for_probe
 
 import logging
 logger = logging.getLogger("Solara_FFT")
@@ -80,6 +81,8 @@ remark = solara.reactive("")
 fft_freq = solara.reactive("")
 save_button_color = solara.reactive("none")
 
+tab_index = solara.reactive(0)
+
 @solara.component
 def Page():
     solara.Title("DYNATREE: FFT")
@@ -92,7 +95,7 @@ def Page():
         print(f"Mereni {s.measurement.value} neni k dispozici, koncim")
         return
     out = preload_data()
-    with solara.lab.Tabs():
+    with solara.lab.Tabs(value=tab_index):
         with solara.lab.Tab("FFT"):
             try:
                 DoFFT()
@@ -105,6 +108,30 @@ def Page():
 * Zkus nahlásit při jaké činnosti a při jaké volbě měření a sledovaných veličin. 
 * Možná jsou špatné meze. Je určitě dolní mez menší než horní?
 """)
+        with solara.lab.Tab("Srovnání"):
+            solara.Info("Tady by měly být pro vybraný experiment zpracovaná FFT, tj. ta, kde je ručně potvrzen aspoň jeden peak, nebo je vypsána poznámka.")
+            try:
+                if tab_index.value == 1:
+                    logger.debug("Zalozka Srovnani")
+                    ans = lib_plot_spectra_for_probe.plot_spectra_for_all_probes(
+                        measurement_type=s.method.value, 
+                        day=s.day.value, 
+                        tree=s.tree.value,
+                        measurement=s.measurement.value
+                        )
+                    if ans == None:
+                        solara.Error("Mhm, data not available")
+                    else:
+                        with solara.ColumnsResponsive(large=[4,4,4], xlarge=[4,4,4]):
+                            for i in ans:
+                                with solara.Card(title=i, style={'background-color':"#FFF"}):
+                                    with solara.VBox():
+                                        solara.FigureMatplotlib(ans[i]['fig'])
+                                        solara.Text(f"Peaks:{ans[i]['peaks']}")
+                                        solara.Text(ans[i]['remark'])
+            except:
+                solara.Error("Něco se nepovedlo. Možná není žádné meření zpracované")
+
         with solara.lab.Tab("Návod"):
             Navod()
 
@@ -375,6 +402,12 @@ def Navod():
 * Podle grafu můžeš vybrat rozsah pro FFT. Začátek a konec se zapisuje do políček pod grafem. 
 * Nulová horní mez znamená rozsah až do konce.
 * BL jsou konce probů typu BendLine. Všechny výchylky jsou brány v ose y a je uvažována změna oproti výchozímu stavu, tj. uvažujeme posunutí, ne absolutní souřadnice v prostoru.
+
+**Co je to za data**
+
+* Data z optiky, tahovek, acc, interpolovana (aby se odstranily nan) a presamplovana na 0.01s.
+* Intervaly pro optiku a komentare byly rucne stanoveny drive, ted pretazeno, nekdy upraveno, napr doplneny druhy peak.
+* Inervaly pro elasto naklikany rucne, potom se stejna data prekopirovala na inklinometry a peaky pro elasto a inklino byly naklikany rucne.
 
 
 **Poznámky**
