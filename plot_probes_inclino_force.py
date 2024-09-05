@@ -16,7 +16,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import ticker
-
+import matplotlib
+import argparse
 from lib_dynatree import read_data, read_data_selected, find_release_time_optics, find_release_time_interval
 from lib_dynatree import find_finetune_synchro, read_data_inclinometers
 from static_pull import DynatreeStaticPulling
@@ -65,7 +66,6 @@ def plot_one_measurement(
     measurement = measurement[-1]
     # accept both BK04 and 04 as a tree number
     tree = tree[-2:]
-    # accepts all "22032021", "2021-03-22" and "01_Mereni_Babice_22032021_optika_zpracovani" as measurement_day
     date = date.replace("-","_")
     
     if df is None:
@@ -134,7 +134,6 @@ def plot_one_measurement(
     ax.axvspan(lower_bound, upper_bound, alpha=0.5, color="gray")
         
     # plot inclinometers
-
     ax = axes[1]    
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     delta_time = find_finetune_synchro(date, tree,measurement) 
@@ -216,15 +215,15 @@ def plot_one_measurement(
     axes[2].set(ylim=(0,None))
     fig.tight_layout()
     if save_figure:
-        pathlib.Path(f"{path}/../vystupy/png_with_inclino/").mkdir(parents=True, exist_ok=True)
+        pathlib.Path(f"{path}/../temp/optics_with_inclino/").mkdir(parents=True, exist_ok=True)
         fig.savefig(
-            f"{path}/../vystupy/png_with_inclino/{date}_BK{tree}_M0{measurement}.png", dpi=100)
+            f"{path}/../temp/optics_with_inclino/{date}_BK{tree}_M0{measurement}.pdf")
     if return_figure:
         return fig
     else:
         plt.close(fig)
 
-def plot_one_day(date="2021-03-22", path="../data"):
+def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
     
     files =  glob.glob(f"../data/parquet/{date.replace('-','_')}/BK??_M??.parquet")
     files.sort()
@@ -240,18 +239,25 @@ def plot_one_day(date="2021-03-22", path="../data"):
             save_figure=True, 
             return_figure=False, 
             major_minor=True, 
-            release_detail=True
+            release_detail=release_detail
             )
     print()    
     print(f"Konec zpracování pro {date}")
     
 def main():
-    answer = input("The file will create png files with Pt3 movement, inclinometers, force and elastometer.\nOlder data (if any) will be replaced.\nConfirm y or yes to continue.")
-    if answer.upper() in ["Y", "YES"]:
-        pass
-    else:
-        print("File processing skipped.")
-        return None    
+    # answer = input("The file will create png files with Pt3 movement, inclinometers, force and elastometer.\nOlder data (if any) will be replaced.\nConfirm y or yes to continue.")
+    # if answer.upper() in ["Y", "YES"]:
+    #     pass
+    # else:
+    #     print("File processing skipped.")
+    #     return None    
+    
+    matplotlib.use('TkAgg') # https://stackoverflow.com/questions/39270988/ice-default-io-error-handler-doing-an-exit-pid-errno-32-when-running
+    parser = argparse.ArgumentParser(description="Explore quality of synchronization between optics and extenso/inclinometers.")
+    # Přidání argumentu s volbou True/False
+    parser.add_argument('--release_detail', action='store_true', help='Kreslí detail okolo vypuštění (True/False)')
+    # Parsování argumentů
+    args = parser.parse_args()
     for i in [
             "2021-03-22", 
             "2021-06-29", 
@@ -260,7 +266,7 @@ def main():
                     ]:
         print(i)
         print("=====================================================")
-        plot_one_day(date=i)
+        plot_one_day(date=i, release_detail=args.release_detail)
 
 if __name__ == "__main__":
     main()

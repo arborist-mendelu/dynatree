@@ -15,7 +15,7 @@ import scipy
 
 
 df = pd.read_csv("csv/solara_FFT.csv")
-df = df[df["probe"]=='Elasto']
+df = df[df["probe"]=='Elasto(90)']
 df["peak"] = df["peaks"].str.split(" ", expand=True).iloc[:,1]
 df["date"] = df["day"]
 df = df[["date","tree","measurement","peak"]]
@@ -73,69 +73,69 @@ axs[1].set(ylim=(0.1,0.5))
 
 # ax.set(title=f"Základní frekvence (dvě měření s listy a dvě bez listů) {probe}")
 # ax.set(ylim=(0,14))
-plt.savefig("outputs/boxplot.pdf")
+plt.savefig("../outputs/fft_elasto_boxplot.pdf")
 
 
-#%%
+# #%%
 
-df = df.reset_index(drop=True)
+# df = df.reset_index(drop=True)
 
-#%%
+# #%%
 
-# ANOVA, t-test
-#
-# We start with transformation, since each tree has its own frequency.
+# # ANOVA, t-test
+# #
+# # We start with transformation, since each tree has its own frequency.
 
-trees = df['tree'].pipe(np.unique)
+# trees = df['tree'].pipe(np.unique)
 
-for tree in trees:
-    idx = df["tree"]==tree
-    mean = df.loc[idx,["freq"]].mean().values
-    std = df.loc[idx,["freq"]].std().values
-    df.loc[idx,["freq_diff_from_mean_rescaled"]] = (df.loc[idx,"freq"] - mean) / std
+# for tree in trees:
+#     idx = df["tree"]==tree
+#     mean = df.loc[idx,["freq"]].mean().values
+#     std = df.loc[idx,["freq"]].std().values
+#     df.loc[idx,["freq_diff_from_mean_rescaled"]] = (df.loc[idx,"freq"] - mean) / std
 
-#%%
+# #%%
 
-sm.qqplot(df[''], line='45', fit = True) 
-plt.show()
+# sm.qqplot(df[''], line='45', fit = True) 
+# plt.show()
 
-#%%
+# #%%
 
-# https://gist.github.com/robert-marik/635affe37158d3fae1ef4f5bf3798dd8
-skupiny = [df.loc[i,'freq_diff_from_mean_rescaled'] for i in df.groupby(by='leaves').groups.values()]
-#print(skupiny) # kontrola prvku ve skupine
-#print(len(skupiny)) # kontrola poctu skupin
-for i in skupiny:
-    print(np.mean(i), np.std(i))
+# # https://gist.github.com/robert-marik/635affe37158d3fae1ef4f5bf3798dd8
+# skupiny = [df.loc[i,'freq_diff_from_mean_rescaled'] for i in df.groupby(by='leaves').groups.values()]
+# #print(skupiny) # kontrola prvku ve skupine
+# #print(len(skupiny)) # kontrola poctu skupin
+# for i in skupiny:
+#     print(np.mean(i), np.std(i))
 
-print("ANOVA: ", scipy.stats.f_oneway(*skupiny))
-print("t-test: ", scipy.stats.ttest_ind(*skupiny, equal_var=True))
+# print("ANOVA: ", scipy.stats.f_oneway(*skupiny))
+# print("t-test: ", scipy.stats.ttest_ind(*skupiny, equal_var=True))
 
-#%%
+# #%%
 
 
-for leaves in df['leaves'].unique():
-  sm.qqplot(df[df['leaves']==leaves].loc[:,'freq_diff_from_mean_rescaled'], line='45', fit = True)
-  ax = plt.gca()
-  ax.set_title(f"Leaves {leaves}")
-
-#%%
-# for tree in df['tree'].unique():
-#   sm.qqplot(df[df['tree']==tree].loc[:,'freq_diff_from_mean_rescaled'], line='45', fit = True)
+# for leaves in df['leaves'].unique():
+#   sm.qqplot(df[df['leaves']==leaves].loc[:,'freq_diff_from_mean_rescaled'], line='45', fit = True)
 #   ax = plt.gca()
-#   ax.set_title(f"Tree {tree}")
+#   ax.set_title(f"Leaves {leaves}")
 
-#%%
+# #%%
+# # for tree in df['tree'].unique():
+# #   sm.qqplot(df[df['tree']==tree].loc[:,'freq_diff_from_mean_rescaled'], line='45', fit = True)
+# #   ax = plt.gca()
+# #   ax.set_title(f"Tree {tree}")
 
-skupiny = [df.loc[i,'freq_diff_from_mean_rescaled'] for i in df.groupby(by='tree').groups.values()]
-#print(skupiny) # kontrola prvku ve skupine
-#print(len(skupiny)) # kontrola poctu skupin
-print("ANOVA: ", scipy.stats.f_oneway(*skupiny))
+# #%%
 
-#%%
-sns.boxplot(df, x="leaves", y="freq_diff_from_mean_rescaled")
+# skupiny = [df.loc[i,'freq_diff_from_mean_rescaled'] for i in df.groupby(by='tree').groups.values()]
+# #print(skupiny) # kontrola prvku ve skupine
+# #print(len(skupiny)) # kontrola poctu skupin
+# print("ANOVA: ", scipy.stats.f_oneway(*skupiny))
 
-#%%
-sns.boxplot(df, x="tree", y="freq_diff_from_mean_rescaled")
+# #%%
+# sns.boxplot(df, x="leaves", y="freq_diff_from_mean_rescaled")
+
+# #%%
+# sns.boxplot(df, x="tree", y="freq_diff_from_mean_rescaled")
 
 #%%

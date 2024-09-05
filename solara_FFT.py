@@ -243,9 +243,9 @@ def DoFFT():
                 # solara.display(newdf.head())
                 logger.debug("Will plot the detail.")
                 fig = px.scatter(newdf, height = s.height.value, width=s.width.value,
-                                      title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Detail from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f} resampled with dt={DT}",
+                                      title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Detail from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f} resampled with dt={DT}", 
                                       **kwds)
-                solara.FigurePlotly(fig)    
+                solara.FigurePlotly(fig, on_click=set_click_data)    
 
         with solara.Column():    
             with solara.Card():
@@ -331,10 +331,17 @@ def ShowSavedData():
             logger.error(f"ShowSavedData failed")
         with solara.Row():
             solara.FileDownload(df_limits.value.to_csv(), filename=f"solara_FFT.csv", 
-                                label=f"Download as csv ({df_limits.value.shape[0]} rows)")
+                                label=f"Download as csv")
             solara.Button(label="Drop all rows", on_click=drop_rows)
             solara.Button(label="Reload from server", on_click=reload_csv)
-            
+        solara.Markdown(
+        f"""
+        rows in csv: {df_limits.value.shape[0]}
+                      
+        rows with peak or remark filled: {df_limits.value[(df_limits.value['peaks'].notna()) & (df_limits.value['peaks'] != '') | 
+                        (df_limits.value['remark'].notna()) & (df_limits.value['remark'] != '')].shape[0]}              
+        """
+            )
 
 def drop_rows():
     df_limits.value = df_limits.value.head(0)
