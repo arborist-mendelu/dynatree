@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 from scipy.fft import fft, fftfreq
 import lib_plot_spectra_for_probe
+from solara.lab import task
 
 import logging
 logger = logging.getLogger("Solara_FFT")
@@ -83,6 +84,42 @@ save_button_color = solara.reactive("none")
 
 tab_index = solara.reactive(0)
 
+
+@task
+def prepare_images_for_comparison(): 
+    logger.debug("prepare_images_for_comparison started")
+    ans = lib_plot_spectra_for_probe.plot_spectra_for_all_probes(
+    measurement_type=s.method.value, 
+    day=s.day.value, 
+    tree=s.tree.value,
+    measurement=s.measurement.value
+    )
+    logger.debug("prepare_images_for_comparison finished")
+    return ans
+
+
+
+@solara.component
+def Srovnani():
+    logger.debug("Srovnani entered")
+    if not prepare_images_for_comparison.finished:
+        with solara.Row():
+            solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
+            solara.SpinnerSolara(size="100px")
+            return    
+    ans = prepare_images_for_comparison.value
+    if ans == None:
+        solara.Error("Mhm, data not available")
+    else:
+        with solara.ColumnsResponsive(large=[4,4,4], xlarge=[4,4,4]):
+            for i in ans:
+                with solara.Card(title=i, style={'background-color':"#FFF"}):
+                    with solara.VBox():
+                        solara.FigureMatplotlib(ans[i]['fig'])
+                        solara.Text(f"Peaks:{ans[i]['peaks']}")
+                        solara.Text(ans[i]['remark'])
+    
+
 @solara.component
 def Page():
     solara.Title("DYNATREE: FFT")
@@ -97,38 +134,25 @@ def Page():
     out = preload_data()
     with solara.lab.Tabs(value=tab_index):
         with solara.lab.Tab("FFT"):
-            try:
-                DoFFT()
-            except:
-                with solara.Error():
-                    solara.Markdown(
-"""
-**Bohužel nastala nějaká chyba.**
-
-* Zkus nahlásit při jaké činnosti a při jaké volbě měření a sledovaných veličin. 
-* Možná jsou špatné meze. Je určitě dolní mez menší než horní?
-""")
+            if tab_index.value == 0:
+                try:
+                    DoFFT()
+                except:
+                    with solara.Error():
+                        solara.Markdown(
+    """
+    **Bohužel nastala nějaká chyba.**
+    
+    * Zkus nahlásit při jaké činnosti a při jaké volbě měření a sledovaných veličin. 
+    * Možná jsou špatné meze. Je určitě dolní mez menší než horní?
+    """)
         with solara.lab.Tab("Srovnání"):
             solara.Info("Tady by měly být pro vybraný experiment zpracovaná FFT, tj. ta, kde je ručně potvrzen aspoň jeden peak, nebo je vypsána poznámka.")
             try:
                 if tab_index.value == 1:
                     logger.debug("Zalozka Srovnani")
-                    ans = lib_plot_spectra_for_probe.plot_spectra_for_all_probes(
-                        measurement_type=s.method.value, 
-                        day=s.day.value, 
-                        tree=s.tree.value,
-                        measurement=s.measurement.value
-                        )
-                    if ans == None:
-                        solara.Error("Mhm, data not available")
-                    else:
-                        with solara.ColumnsResponsive(large=[4,4,4], xlarge=[4,4,4]):
-                            for i in ans:
-                                with solara.Card(title=i, style={'background-color':"#FFF"}):
-                                    with solara.VBox():
-                                        solara.FigureMatplotlib(ans[i]['fig'])
-                                        solara.Text(f"Peaks:{ans[i]['peaks']}")
-                                        solara.Text(ans[i]['remark'])
+                    prepare_images_for_comparison()
+                    Srovnani()
             except:
                 solara.Error("Něco se nepovedlo. Možná není žádné meření zpracované")
 
