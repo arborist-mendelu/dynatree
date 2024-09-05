@@ -35,6 +35,7 @@ def save_freq_on_click(x=None):
     else:
         fft_freq.set(fft_freq.value + f" {x['points']['xs'][0]:.4f}")
     logger.debug(f"Current value: {fft_freq.value}")
+    save_button_color.value = "red"
 
 @lib_dynatree.timeit
 def plot():
@@ -77,6 +78,7 @@ t_to = solara.reactive(0)
 remark = solara.reactive("")
 # peaks = solara.reactive("")
 fft_freq = solara.reactive("")
+save_button_color = solara.reactive("none")
 
 @solara.component
 def Page():
@@ -148,15 +150,6 @@ def reload_csv():
     df_limits.value = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}).fillna("")
     df_limits.value = df_limits.value.sort_index()
 
-def save_limits():
-    if len(probe.value) == 0:
-        solara.lab.ConfirmationDialog(True, content="Select at least one variable.")
-        return
-    df_limits.value.loc[(
-        s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value[0]),:
-        ] = [t_from.value, t_to.value, fft_freq.value, remark.value]
-    df_limits.value = df_limits.value.sort_index()
-    # print(df_limits.value)
     
 def preload_data():
     logger.debug("preload data started")
@@ -194,12 +187,25 @@ def FFT_parameters():
         solara.InputFloat("To",value=t_to)
     with solara.Row():
         solara.InputText("Remark", value=remark)
-        solara.Button(label="Save to table", on_click=save_limits)
+        SaveButton()
     if pd.isna(t_to.value):
         t_to.value = 0
     if pd.isna(t_from.value):
         t_from.value = 0
 
+@solara.component
+def SaveButton():
+    solara.Button(label="Save to table", on_click=save_limits, color=save_button_color.value)
+    
+def save_limits():
+    if len(probe.value) == 0:
+        solara.lab.ConfirmationDialog(True, content="Select at least one variable.")
+        return
+    df_limits.value.loc[(
+        s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value[0]),:
+        ] = [t_from.value, t_to.value, fft_freq.value, remark.value]
+    df_limits.value = df_limits.value.sort_index()
+    save_button_color.value = "none"
 
 @solara.component
 @lib_dynatree.timeit
@@ -282,11 +288,12 @@ def ShowFFTdata():
     with solara.Row():
         solara.Markdown(f"**FFT freq**: {fft_freq.value}")
         solara.Button(label="Erase", on_click=smazat_fft)
-        solara.Button(label="Save to table", on_click=save_limits)
+        SaveButton()
         solara.Text("The first variable (blue) is considered as a label when saved.")
 
 def smazat_fft(x=None):
     fft_freq.value = ""
+    save_button_color.value = "red"
     
 # filter_method = solara.reactive(False)
 filter_day = solara.reactive(False)
