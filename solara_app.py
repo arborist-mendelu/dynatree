@@ -123,7 +123,7 @@ def Page():
                 
                 * Někdy se po přepnutí aplikací neaktualizuje menu v levém sidebaru. 
                   To je možné opravit kliknutím na jinou položku v typu měření (normal/den/noc/...)
-                * Někdy se objeví chynová hláška, ale hned zmizí, to je neškodné. 
+                * Někdy se objeví chybová hláška, ale hned zmizí, to je neškodné. 
                 * U aplikací, které se spouští automaticky výběrem dne/stromu/měření může při rychlém klikání beh skončit chybou. Zatím není pořešeno odstřelování neaktuálních procesů.
                 """)
             with solara.lab.Tab("Vizualizace"):

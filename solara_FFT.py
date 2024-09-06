@@ -15,13 +15,23 @@ import numpy as np
 from scipy.fft import fft, fftfreq
 import lib_plot_spectra_for_probe
 from solara.lab import task
-
+import matplotlib.pyplot as plt
+import os
 import logging
+from io import BytesIO
 logger = logging.getLogger("Solara_FFT")
 logger.setLevel(logging.DEBUG)
 
+filelogger = logging.getLogger("FFT Rotating Log")
+filelogger.setLevel(logging.INFO)
+filehandler = logging.handlers.RotatingFileHandler(f"{os.path.expanduser('~')}/solara_log/solara_FFT.log", maxBytes=10000000, backupCount=10)
+log_format = logging.Formatter("[%(asctime)s] %(levelname)s | %(message)s")
+filehandler.setFormatter(log_format)
+filelogger.addHandler(filehandler)
+
+
 DT = 0.01
-pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_rows', 5000)
 
 def set_click_data(x=None):
     if x['device_state']['shift']:
@@ -39,7 +49,6 @@ def save_freq_on_click(x=None):
     logger.debug(f"Current value: {fft_freq.value}")
     save_button_color.value = "red"
 
-@lib_dynatree.timeit
 def plot():
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
@@ -84,7 +93,6 @@ save_button_color = solara.reactive("none")
 
 tab_index = solara.reactive(0)
 
-
 @task
 def prepare_images_for_comparison(): 
     logger.debug("prepare_images_for_comparison started")
@@ -92,16 +100,24 @@ def prepare_images_for_comparison():
     measurement_type=s.method.value, 
     day=s.day.value, 
     tree=s.tree.value,
-    measurement=s.measurement.value
+    measurement=s.measurement.value, 
+    fft_results=df_limits.value
     )
     logger.debug("prepare_images_for_comparison finished")
     return ans
 
-
+# filetype = solara.reactive("png")
 
 @solara.component
-def Srovnani():
+def Srovnani(resetuj=False):
     logger.debug("Srovnani entered")
+    if prepare_images_for_comparison.not_called or resetuj:
+        logger.info("Comparison available on buton click.")
+        solara.Info("Run the computation by clicking the Start button.")
+        solara.Button(label="Start", on_click=prepare_images_for_comparison)
+        return
+    # with solara.Row():
+        # solara.ToggleButtonsSingle(value=filetype, values=["png","svg"], mandatory=True)
     if not prepare_images_for_comparison.finished:
         with solara.Row():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
@@ -111,27 +127,50 @@ def Srovnani():
     if ans == None:
         solara.Error("Mhm, data not available")
     else:
-        with solara.ColumnsResponsive(large=[4,4,4], xlarge=[4,4,4]):
+        with solara.Row():
+            solara.Markdown(f"**Experiment {s.method.value}, {s.day.value}, {s.tree.value},  {s.measurement.value}**")
+            solara.Button(label="Redraw", on_click=prepare_images_for_comparison)
+            solara.Text("(Use if the images do not match the selection on the left panel)")
+        with solara.ColumnsResponsive([6,6], large=[4,4,4], xlarge=[4,4,4]):
             for i in ans:
                 with solara.Card(title=i, style={'background-color':"#FFF"}):
                     with solara.VBox():
-                        solara.FigureMatplotlib(ans[i]['fig'])
+                        solara.FigureMatplotlib(ans[i]['fig'], 
+                                                # format=filetype.value
+                                                )
                         solara.Text(f"Peaks:{ans[i]['peaks']}")
                         solara.Text(ans[i]['remark'])
+    plt.close('all')
     
+def resetuj(x=None):
+    Srovnani(resetuj=True)
+    s.measurement.set(s.measurements.value[0])
+    generuj_obrazky()
+    
+def generuj_obrazky(x=None):
+    if tab_index.value == 1:
+        prepare_images_for_comparison()
+    elif tab_index.value == 0:
+        DoFFT()
+        logger.info("Funkce RESETUJ")
+        
 
 @solara.component
 def Page():
     solara.Title("DYNATREE: FFT")
     solara.Style(s.styles_css)
     with solara.Sidebar():
-        s.Selection(exclude_M01=True, optics_switch=False)
+        s.Selection(exclude_M01=True, 
+                    optics_switch=False,       
+                    day_action = resetuj,
+                    tree_action = resetuj,
+                    measurement_action = generuj_obrazky)
         s.ImageSizes()
 
     if s.measurement.value not in s.available_measurements(s.df.value, s.day.value, s.tree.value, s.method.value, exclude_M01=True):
         print(f"Mereni {s.measurement.value} neni k dispozici, koncim")
         return
-    out = preload_data()
+    preload_data()
     with solara.lab.Tabs(value=tab_index):
         with solara.lab.Tab("FFT"):
             if tab_index.value == 0:
@@ -147,11 +186,20 @@ def Page():
     * Možná jsou špatné meze. Je určitě dolní mez menší než horní?
     """)
         with solara.lab.Tab("Srovnání"):
-            solara.Info("Tady by měly být pro vybraný experiment zpracovaná FFT, tj. ta, kde je ručně potvrzen aspoň jeden peak, nebo je vypsána poznámka.")
+            with solara.Tooltip(                
+                solara.Markdown(
+                    """
+                    
+                    * Tady by měly být pro vybraný experiment zpracovaná FFT, tj. ta, kde je ručně potvrzen aspoň jeden peak, nebo je vypsána poznámka.
+                    * Exntenzometr a inkinometry maji nakopirovane stejne zacatky a konce. Pokud to nekdo 
+                    rucne nezmenil, tak to muze vest k tomu, ze je presna shoda v peacich.
+                    
+                    """,style={'color':'white'})):
+                    with solara.Column():
+                        solara.Markdown("**Srovnání probůⓘ.**")
             try:
                 if tab_index.value == 1:
                     logger.debug("Zalozka Srovnani")
-                    prepare_images_for_comparison()
                     Srovnani()
             except:
                 solara.Error("Něco se nepovedlo. Možná není žádné meření zpracované")
@@ -186,7 +234,7 @@ def ChooseProbe():
         elif len(probe_acc.value) != 0:
             probe.value = probe_acc.value
         else:
-            solara.Info("Vyber probe")
+            solara.Info("Vyber probe. Stránka se bude automaticky aktualizovat při výběru probu nebo změně stromu, dne čí měření.")
             return None
         solara.Info(f"Active probes: {probe.value}")
     # solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
@@ -200,11 +248,25 @@ df_limits.value = df_limits.value.sort_index()
 def reload_csv():
     df_limits.value = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4], dtype={'probe':str}).fillna("")
     df_limits.value = df_limits.value.sort_index()
+    
+def on_file(f):
+    try:
+        df_limits.value = pd.read_csv(BytesIO(f['data']), index_col=[0,1,2,3,4], dtype={'probe':str}).fillna("")
+        df_limits.value = df_limits.value.sort_index()
+    except:
+        solara.Error("Load failed. Reloading server data.")
+        reload_csv()
 
     
 def preload_data():
     logger.debug("preload data started")
     logger.debug(f"looking for {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value} {probe.value}")
+    if len(probe_inclino.value) != 0:
+        probe.value = probe_inclino.value
+    elif len(probe_optics.value) != 0:
+        probe.value = probe_optics.value
+    elif len(probe_acc.value) != 0:
+        probe.value = probe_acc.value    
     if len(probe.value) == 0:
         logger.debug("Nothing selected, finish")
         return None
@@ -226,6 +288,8 @@ def preload_data():
         remark.value = ""
         fft_freq.value = ""
         logger.debug("preload data have NOT been used, using defaults")
+    logger.debug("preload data finished")
+
 
 @solara.component
 def FFT_parameters():
@@ -257,9 +321,9 @@ def save_limits():
         ] = [t_from.value, t_to.value, fft_freq.value, remark.value]
     df_limits.value = df_limits.value.sort_index()
     save_button_color.value = "none"
+    filelogger.info(f"Saved {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{ probe.value[0]},{t_from.value},{t_to.value},{fft_freq.value},{remark.value}")
 
 @solara.component
-@lib_dynatree.timeit
 def DoFFT():
     logger.debug(f"DoFFT entered {s.day.value} {s.tree.value} {s.measurement.value}" )
     with solara.ColumnsResponsive(xlarge=[6,6]):
@@ -278,6 +342,7 @@ def DoFFT():
             with solara.Card():
                 logger.debug("Will call FFT parameteres")
                 FFT_parameters()
+                # breakpoint()
                 logger.debug("After call of FFT parameteres")
                 if (t_to.value == 0) or (t_to.value < t_from.value): 
                     subdf = df.interpolate(method='index').loc[t_from.value:,:]
@@ -347,13 +412,12 @@ def smazat_fft(x=None):
     save_button_color.value = "red"
     
 # filter_method = solara.reactive(False)
-filter_day = solara.reactive(False)
+filter_day = solara.reactive(True)
 filter_tree = solara.reactive(True)
 filter_probe = solara.reactive(False)
 # filtered_df = solara.reactive(pd.DataFrame())
 
 @solara.component
-@lib_dynatree.timeit
 def ShowSavedData():
     # show saved data    
     with solara.Card():
@@ -366,7 +430,7 @@ def ShowSavedData():
             with solara.Column():
                 solara.Markdown("**Table with dataⓘ**")
         with solara.Card():
-            solara.Markdown("**Data restrictions**")
+            solara.Markdown("**Data restrictions** (The data table is long and you probably do not want to see all the data here.)")
             with solara.Row():
                 solara.Switch(label=f"Day {s.day.value}", value=filter_day)    
                 solara.Switch(label=f"Tree {s.tree.value}", value=filter_tree)    
@@ -392,6 +456,7 @@ def ShowSavedData():
                                 label=f"Download as csv")
             solara.Button(label="Drop all rows", on_click=drop_rows)
             solara.Button(label="Reload from server", on_click=reload_csv)
+            solara.FileDrop(label="You may upload your own csv here. Drag the file to this area.", on_file = on_file, lazy=False)
         solara.Markdown(
         f"""
         rows in csv: {df_limits.value.shape[0]}

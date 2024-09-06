@@ -14,17 +14,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft, fftfreq
 
-
 def plot_spectra_for_all_probes(
     measurement_type = "normal",
     day = "2021-03-22",
     tree = "BK11",
     measurement = "M02",
+    fft_results = None,
     DT = 0.01):
 
     data = lib_dynatree.DynatreeMeasurement(day, tree, measurement, measurement_type=measurement_type)
     
-    fft_results = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4])
+    if fft_results is None:
+        fft_results = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4])
     
     try:
         subset_fft_results = fft_results.loc[(measurement_type, day, tree, measurement, slice(None)),:]
