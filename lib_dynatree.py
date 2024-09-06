@@ -54,6 +54,8 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         msg = f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f}s.'
+        if len (msg)>400:
+            msg = f'Function {func.__name__} Took {total_time:.4f}s.'
         logger.info(msg)
         return result
     return timeit_wrapper

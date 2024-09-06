@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft, fftfreq
 
+@lib_dynatree.timeit
 def plot_spectra_for_all_probes(
     measurement_type = "normal",
     day = "2021-03-22",
