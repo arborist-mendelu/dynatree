@@ -20,7 +20,7 @@ import os
 import logging
 from io import BytesIO
 logger = logging.getLogger("Solara_FFT")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 filelogger = logging.getLogger("FFT Rotating Log")
 filelogger.setLevel(logging.INFO)
@@ -152,7 +152,7 @@ def generuj_obrazky(x=None):
         prepare_images_for_comparison()
     elif tab_index.value == 0:
         DoFFT()
-        logger.info("Funkce RESETUJ")
+        logger.debug("Funkce RESETUJ")
         
 
 @solara.component
