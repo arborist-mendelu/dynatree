@@ -20,7 +20,7 @@ import os
 import logging
 from io import BytesIO
 logger = logging.getLogger("Solara_FFT")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 filelogger = logging.getLogger("FFT Rotating Log")
 filelogger.setLevel(logging.INFO)
@@ -95,26 +95,32 @@ tab_index = solara.reactive(0)
 
 @task
 def prepare_images_for_comparison(): 
-    logger.debug("prepare_images_for_comparison started")
+    logger.debug(f"prepare_images_for_comparison started, experiment_changed.value is {experiment_changed.value}")
     ans = lib_plot_spectra_for_probe.plot_spectra_for_all_probes(
-    measurement_type=s.method.value, 
-    day=s.day.value, 
-    tree=s.tree.value,
-    measurement=s.measurement.value, 
-    fft_results=df_limits.value
-    )
+        measurement_type=s.method.value, 
+        day=s.day.value, 
+        tree=s.tree.value,
+        measurement=s.measurement.value, 
+        fft_results=df_limits.value
+        )
+    plt.close('all')
     logger.debug("prepare_images_for_comparison finished")
     return ans
 
 # filetype = solara.reactive("png")
 
+def SrovnaniReset():
+    experiment_changed.value = False
+    prepare_images_for_comparison()
+
 @solara.component
-def Srovnani(resetuj=False):
-    logger.debug("Srovnani entered")
-    if prepare_images_for_comparison.not_called or resetuj:
-        logger.info("Comparison available on buton click.")
-        solara.Info("Run the computation by clicking the Start button.")
-        solara.Button(label="Start", on_click=prepare_images_for_comparison)
+def Srovnani():
+    logger.debug(f"******** Srovnani entered, resetuj is {resetuj}, experiment_changed.value is {experiment_changed.value}")
+    if prepare_images_for_comparison.not_called or experiment_changed.value:
+        logger.info(f"Comparison available on buton click. experiment_changed.value is {experiment_changed.value}")
+        solara.Info("The computation for this tab has not been started yet or it does not fit the current data. (The tree or date or something like this has been changed.) Run the computation manualy by clicking the Start button.")
+        with solara.Row():
+            solara.Button(label="Start", on_click=SrovnaniReset)
         return
     # with solara.Row():
         # solara.ToggleButtonsSingle(value=filetype, values=["png","svg"], mandatory=True)
@@ -130,7 +136,7 @@ def Srovnani(resetuj=False):
         with solara.Row():
             solara.Markdown(f"**Experiment {s.method.value}, {s.day.value}, {s.tree.value},  {s.measurement.value}**")
             solara.Button(label="Redraw", on_click=prepare_images_for_comparison)
-            solara.Text("(Use if the images do not match the selection on the left panel)")
+            solara.Text("(Use if the images do not match the selection on the left panel. The need for this should not appear, however.)")
         with solara.ColumnsResponsive([6,6], large=[4,4,4], xlarge=[4,4,4]):
             for i in ans:
                 with solara.Card(title=i, style={'background-color':"#FFF"}):
@@ -143,16 +149,23 @@ def Srovnani(resetuj=False):
     plt.close('all')
     
 def resetuj(x=None):
-    Srovnani(resetuj=True)
+    # Srovnani(resetuj=True)
     s.measurement.set(s.measurements.value[0])
     generuj_obrazky()
+    
+# The following is true if day or tree or something changes outside tab 1.
+# In this acase we should remove the images created there.    
+experiment_changed = solara.reactive(False)
     
 def generuj_obrazky(x=None):
     if tab_index.value == 1:
         prepare_images_for_comparison()
     elif tab_index.value == 0:
+        experiment_changed.value=True
         DoFFT()
         logger.debug("Funkce RESETUJ")
+    else:
+        experiment_changed.value=True
         
 
 @solara.component
@@ -198,9 +211,10 @@ def Page():
                     with solara.Column():
                         solara.Markdown("**Srovnání probůⓘ.**")
             try:
+                logger.debug("Zalozka Srovnani")  
+                # If another tab is selected, do not run the computation, but delete the old one here.
                 if tab_index.value == 1:
-                    logger.debug("Zalozka Srovnani")
-                    Srovnani()
+                    Srovnani()                    
             except:
                 solara.Error("Něco se nepovedlo. Možná není žádné meření zpracované")
 
@@ -488,9 +502,12 @@ def Navod():
   se zpracovává podle optiky vše zatržené. Pokud není nic zatržené z optiky, zpracovávají se data
   z akcelerometru. Pokud není zatrhnuté vůbec nic, zpracovává se extenzometr.
 * Vše se interpoluje na 0.01s, to je v souladu se vzorkovaci frekvenci optiky.
-* Podle grafu můžeš vybrat rozsah pro FFT. Začátek a konec se zapisuje do políček pod grafem. 
-* Nulová horní mez znamená rozsah až do konce.
+* Podle grafu můžeš vybrat rozsah pro FFT. Začátek a konec se zapisuje do políček pod grafem nebo se dá naklikat v grafu. Klik=dolní mez, Shift+Klik=horní mez. 
+  Klikat se dá do kteréhokoliv z obou grafů. I do celkového i do detailního.
+* Nulová horní mez znamená rozsah až do konce. Raději ale dát explicitní konec, aby byla v tabulce zaznamenána délka intervalu. Ta něco také vypovídá o spolehlivosti frekvence.
 * BL jsou konce probů typu BendLine. Všechny výchylky jsou brány v ose y a je uvažována změna oproti výchozímu stavu, tj. uvažujeme posunutí, ne absolutní souřadnice v prostoru.
+* Uložit peak znamená uložit do paměti. Potom je potřeba ještě stáhnout csv s daty a případně podle něj aktualizovat uložená data na serveru. 
+* Pokud něco spadne před stažením dat, každé uložení peaku se loguje a je možné ztracená data vytáhnout z logu `~/solara_log/solara_FFT.log` nebo tak nějak.
 
 **Co je to za data**
 
@@ -504,6 +521,8 @@ def Navod():
 * Každý přístroj se bere přímo z měření. Není proto ACC nebo exenozmetr 
   synchronizován s optikou. Pokud jsou k dispozici všechny údaje, mohou se 
   časy maličko lišit posunutím.
+* Kontroloval jsem oproti datům od Patrika, který má 2021-03-22 zpracované v Matlabu. Data se trochu liší, ale to bude asi tím, kde přesně se odřezávalo. Jinak na
+  stejném časovém intervalu počítá Matlab 5000Hz (příkazy z <https://www.mathworks.com/help/matlab/ref/fft.html>) stejně jako Python 100Hz.
 """
         )
 
