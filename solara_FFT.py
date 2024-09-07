@@ -429,6 +429,7 @@ def smazat_fft(x=None):
 filter_day = solara.reactive(True)
 filter_tree = solara.reactive(True)
 filter_probe = solara.reactive(False)
+choice_elasto = solara.reactive(False)
 # filtered_df = solara.reactive(pd.DataFrame())
 
 @solara.component
@@ -449,6 +450,7 @@ def ShowSavedData():
                 solara.Switch(label=f"Day {s.day.value}", value=filter_day)    
                 solara.Switch(label=f"Tree {s.tree.value}", value=filter_tree)    
                 solara.Switch(label=f"Probe {probe.value[0]}", value=filter_probe)    
+                solara.Switch(label=" & Elasto", value=choice_elasto)    
         logger.debug(f"ShowSavedData entered {filter_day.value} {filter_tree.value} {filter_probe.value}")
         try:
             filtered_df = df_limits.value.copy()
@@ -458,9 +460,15 @@ def ShowSavedData():
             if filter_tree.value:
                 filtered_df = filtered_df.loc[
                     (slice(None), slice(None), s.tree.value,slice(None),slice(None)), :]
+            if choice_elasto.value and probe.value[0] != "Elasto(90)":
+                filtered_df_elasto = filtered_df.loc[
+                    (slice(None), slice(None),slice(None),slice(None),"Elasto(90)"), :]
+            else:
+                filtered_df_elasto = pd.DataFrame()                
             if filter_probe.value:
                 filtered_df = filtered_df.loc[
                     (slice(None), slice(None),slice(None),slice(None),probe.value[0]), :]
+            filtered_df = pd.concat([filtered_df, filtered_df_elasto]).sort_index()
             # df_limits.value = tempdf
             solara.display(filtered_df)
         except:
