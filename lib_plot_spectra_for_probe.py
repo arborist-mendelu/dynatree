@@ -131,7 +131,7 @@ def main():
         for f in figs.values():
             f['fig'].text(0.01,0.01,f['remark'][:100])
             f['fig'].text(0.4,0.4,f"peaks {f['peaks']}")
-            f['fig'].savefig(f"../temp/{row['type']}_{row['day']}_{row['tree']}_{row['measurement']}_{f['probe'].replace('(','').replace(')','')}.pdf")
+            f['fig'].savefig(f"../temp_spectra/{row['type']}_{row['day']}_{row['tree']}_{row['measurement']}_{f['probe'].replace('(','').replace(')','')}.pdf")
         plt.close('all')
     
 if __name__ == "__main__":

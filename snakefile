@@ -3,6 +3,7 @@ rule all:
         "../outputs/fft_boxplots_for_probes.pdf",
         "../outputs/fft_spectra.zip",
         "../outputs/synchro_optics_inclino.pdf",
+        "../outputs/synchro_optics_inclino_detail.pdf",
         "../outputs/fft_optics_boxplot.pdf"
         
 rule fft_boxplots:
@@ -31,7 +32,6 @@ rule fft_spectra:
     
     Runs the script lib_plot_spectra_for_probe.py to create pdf files as in solara
     app (signal above and FFT below). Adds remark and peak info to the image. 
-    Then merge images for the same eperiment into a single PDF.
     """
     input:
         data = "csv/solara_FFT.csv",
@@ -39,12 +39,10 @@ rule fft_spectra:
         zip = "../outputs/fft_spectra.zip"
     shell:
         """
-        rm -rf ../temp || true
-        mkdir ../temp
+        rm -rf ../temp_spectra || true
+        mkdir ../temp_spectra
         python lib_plot_spectra_for_probe.py
-        cd ../temp
-        for prefix in $(ls *.pdf | cut -d'_' -f1,2,3,4  | sort -u); do pdfunite $prefix*.pdf $prefix.pdf; done
-        rm *_*_*_*_*.pdf
+        cd ../temp_spectra
         zip {output.zip} *.pdf
         """
 
