@@ -9,10 +9,12 @@ Plot spectra from one probe. Data from csv/solara_FFT.csv
 """
 
 import lib_dynatree
+import lib_find_measurements
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft, fftfreq
+import matplotlib
 
 @lib_dynatree.timeit
 def plot_spectra_for_all_probes(
@@ -23,21 +25,28 @@ def plot_spectra_for_all_probes(
     fft_results = None,
     DT = 0.01):
 
-    data = lib_dynatree.DynatreeMeasurement(day, tree, measurement, measurement_type=measurement_type)
+    if measurement == "M01":
+        print("M01 is not considered")
+        return None
+    data = lib_dynatree.DynatreeMeasurement(
+        day=day, 
+        tree=tree, 
+        measurement=measurement,
+        measurement_type=measurement_type)
     
     if fft_results is None:
         fft_results = pd.read_csv("csv/solara_FFT.csv", index_col=[0,1,2,3,4])
     
     try:
         subset_fft_results = fft_results.loc[(measurement_type, day, tree, measurement, slice(None)),:]
-    except:
+    except Exception as e:
+        print(f"Exception {e}")
         return None
     
     subset_fft_results = subset_fft_results.dropna(subset=['peaks', 'remark'], how='all')
     idx = subset_fft_results.index
     
     figs = {}
-    remarks = {}
     for i,row in subset_fft_results.iterrows():
         probe = i[-1]
         if probe[:2] == "a0":
@@ -79,17 +88,52 @@ def plot_spectra_for_all_probes(
         except:
             pass
         
-        figs[probe] = {'fig':fig, 'remark':"" if pd.isna(row['remark']) else row['remark'], 'peaks': row['peaks']}
+        figs[probe] = {
+            'fig':fig, 
+            'remark':"" if pd.isna(row['remark']) else row['remark'], 
+            'peaks': row['peaks'],
+            'probe': probe
+            }
         # plt.close(fig)
             
         
     return figs
 
-if __name__ == "__main__":
-    figs = plot_spectra_for_all_probes()
-    for i in figs.values():
-        plt.show(i['fig'])
-        print(i['remark'])
-    
+def main():
+    # measurement_type = "normal"
+    # day = "2021-06-29"
+    # tree = "BK16"
+    # measurement = "M02"
 
+    # figs = plot_spectra_for_all_probes(
+    #     measurement_type=measurement_type,
+    #     day=day,
+    #     tree=tree,
+    #     measurement=measurement)
+    
+    matplotlib.use('TkAgg') # https://stackoverflow.com/questions/39270988/ice-default-io-error-handler-doing-an-exit-pid-errno-32-when-running
+
+    all = lib_find_measurements.get_all_measurements(method='all', type='normal',)
+    for i,row in all.iterrows():
+        if row['measurement'] == "M01":
+            continue
+        print (f"{row['date']} {row['tree']} {row['measurement']}")
+        figs = plot_spectra_for_all_probes(
+            measurement_type=row['type'],
+            day=row['day'],
+            tree=row['tree'],
+            measurement=row['measurement'])
+        # for i in figs.values():
+            # plt.show(i['fig'])
+            # print(i['remark'])
+        if figs is None:
+            continue
+        for f in figs.values():
+            f['fig'].text(0.01,0.01,f['remark'][:100])
+            f['fig'].text(0.4,0.4,f"peaks {f['peaks']}")
+            f['fig'].savefig(f"../temp/{row['type']}_{row['day']}_{row['tree']}_{row['measurement']}_{f['probe'].replace('(','').replace(')','')}.pdf")
+        plt.close('all')
+    
+if __name__ == "__main__":
+    main()
 

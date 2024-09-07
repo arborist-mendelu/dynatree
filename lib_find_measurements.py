@@ -82,7 +82,7 @@ def get_all_measurements(method='optics', type='normal', *args, **kwargs):
 
 def available_measurements(df, day, tree, measurement_type, exclude_M01=False):
     """
-    Get available measurements for give day, tree and measurement type.
+    Get available measurements for given day, tree and measurement type.
     Allows to exclude M01.
     """
     select_rows = (df["date"]==day) & (df["tree"]==tree)  & (df["type"]==measurement_type)

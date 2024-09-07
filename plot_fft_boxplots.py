@@ -33,10 +33,10 @@ def get_data(probe):
     df["leaves"] = "False"
     idx = df["day"].isin(["2021-06-29", "2022-08-16", "2023-07-17"])
     df.loc[idx,"leaves"] = "True"
-    idx = df["day"].isin(["2024-04-10"])
+    idx = (df["day"].isin(["2024-04-10"])) & (df["tree"].isin(["BK01","BK08", "BK09", "BK11", "BK12", "BK21"]))
     df.loc[idx,"leaves"] = "False & post reduction"
     df["freq"] = df[["peak"]].astype(float)
-    df = df.dropna()
+    df = df.dropna().sort_values(by="tree")
     return df
 
 def plot_data(df,probe):
@@ -49,11 +49,11 @@ def plot_data(df,probe):
         data=df, 
         x="tree", 
         y="freq", 
-        hue="day",
+        hue="leaves",
         ax = ax
         )
     [ax.axvline(x+.5,color='gray', lw=0.5) for x in ax.get_xticks()]
-    ax.legend(ncol=3)
+    ax.legend(title="Leaves")
     ax.grid(alpha=0.4)
     ax.set(title=f"Základní frekvence {probe}")
     # ax.set(ylim=(0,14))
@@ -75,11 +75,11 @@ def plot_data(df,probe):
     return fig
 
 fig = {}
-for probe in ["Pt3", "Elasto(90)", "Inclino(81)", "Inclino(80)"]:
+for probe in ["Pt3", "Elasto(90)", "Inclino(80)", "Inclino(81)"]:
     df = get_data(probe)
     fig[probe] = plot_data(df, probe)
     
-filename = "../outputs/fft_probes.pdf"
+filename = "../outputs/fft_boxplots_for_probes.pdf"
 with PdfPages(filename) as pdf:
     for f in fig.values():
         pdf.savefig(f, bbox_inches='tight') 
