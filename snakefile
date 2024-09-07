@@ -1,31 +1,51 @@
-rule fft_optics_boxplot:
-    """
-    Draw frequencies grouped by trees with distingushed date and leaf status.
-    The probe Pt3 is assumed.
-    """
+rule all:
     input:
-        data = "results/fft.csv",
-        script = "plot_fft.py"
-    output:
+        "../outputs/fft_boxplots_for_probes.pdf",
+        "../outputs/fft_spectra.zip",
+        "../outputs/synchro_optics_inclino.pdf",
         "../outputs/fft_optics_boxplot.pdf"
-    shell:
-        """
-        python {input.script}
-        """
-
-rule fft_elasto_boxplot:
+        
+rule fft_boxplots:
     """
     Draw frequencies grouped by trees with distingushed date and leaf status.
-    The probe Elasto is assumed.
+    The probes Elasto, Inclino, Pt3 are assumed.
+    The data are from csv/solara_FFT.csv, i.e. fft peaks are confirmed by a 
+    human and is more peaks are present, all are included. This script deals
+    only with the basic frequency, however.
     """
     input:
         data = "csv/solara_FFT.csv",
-        script = "plot_fft_elasto.py"
     output:
-        "../outputs/fft_elasto_boxplot.pdf"
+        pdf = "../outputs/fft_boxplots_for_probes.pdf"
     shell:
         """
-        python {input.script}
+        python plot_fft_boxplots.py
+        """
+
+rule fft_spectra:
+    """
+    Draw frequencies spectra.
+    The data are from csv/solara_FFT.csv, i.e. fft peaks are confirmed by a 
+    human and is more peaks are present, all are included. 
+    Comments are also included to the image.
+    
+    Runs the script lib_plot_spectra_for_probe.py to create pdf files as in solara
+    app (signal above and FFT below). Adds remark and peak info to the image. 
+    Then merge images for the same eperiment into a single PDF.
+    """
+    input:
+        data = "csv/solara_FFT.csv",
+    output:
+        zip = "../outputs/fft_spectra.zip"
+    shell:
+        """
+        rm -rf ../temp || true
+        mkdir ../temp
+        python lib_plot_spectra_for_probe.py
+        cd ../temp
+        for prefix in $(ls *.pdf | cut -d'_' -f1,2,3,4  | sort -u); do pdfunite $prefix*.pdf $prefix.pdf; done
+        rm *_*_*_*_*.pdf
+        zip {output.zip} *.pdf
         """
 
 rule synchronization_check:
@@ -48,4 +68,20 @@ rule synchronization_check:
         mkdir -p ../temp/optics_with_inclino
         python {input.script} --release_detail
         pdfunite ../temp/optics_with_inclino/*.pdf ../outputs/synchro_optics_inclino_detail.pdf
+        """
+        
+rule fft_optics_boxplot:
+    """
+    PROBABLY OBSOLETE, see fft_boxplots
+    Draw frequencies grouped by trees with distingushed date and leaf status.
+    The probe Pt3 is assumed.
+    """
+    input:
+        data = "results/fft.csv",
+        script = "plot_fft.py"
+    output:
+        "../outputs/fft_optics_boxplot.pdf"
+    shell:
+        """
+        python {input.script}
         """
