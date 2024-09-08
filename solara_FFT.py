@@ -378,10 +378,14 @@ def DoFFT():
                     newdf[i] = np.interp(newindex, oldindex, subdf[i].values)
                 # solara.display(newdf.head())
                 logger.debug("Will plot the detail.")
-                fig = px.scatter(newdf, height = s.height.value, width=s.width.value,
-                                      title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Detail from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f} resampled with dt={DT}", 
-                                      **kwds)
-                solara.FigurePlotly(fig, on_click=set_click_data)    
+                try:
+                    fig = px.scatter(newdf, height = s.height.value, width=s.width.value,
+                                          title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Detail from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f} resampled with dt={DT}", 
+                                          **kwds)
+                    solara.FigurePlotly(fig, on_click=set_click_data)    
+                except:
+                    solara.Error("Něco se nepovedlo. Možná meze nedávají smysl. Prověř meze.")
+                    return
 
         with solara.Column():    
             with solara.Card():
@@ -471,8 +475,8 @@ def ShowSavedData():
             filtered_df = pd.concat([filtered_df, filtered_df_elasto]).sort_index()
             # df_limits.value = tempdf
             solara.display(filtered_df)
-        except:
-            logger.error(f"ShowSavedData failed")
+        except Exception as e:
+            logger.error(f"ShowSavedData failed {e}")
         with solara.Row():
             solara.FileDownload(df_limits.value.to_csv(), filename=f"solara_FFT.csv", 
                                 label=f"Download as csv")

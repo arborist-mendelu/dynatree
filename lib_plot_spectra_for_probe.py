@@ -101,9 +101,9 @@ def plot_spectra_for_all_probes(
 
 def main():
     # measurement_type = "normal"
-    # day = "2021-06-29"
-    # tree = "BK16"
-    # measurement = "M02"
+    # day = "2021-03-22"
+    # tree = "BK11"
+    # measurement = "M03"
 
     # figs = plot_spectra_for_all_probes(
     #     measurement_type=measurement_type,
@@ -111,6 +111,7 @@ def main():
     #     tree=tree,
     #     measurement=measurement)
     
+    # return
     matplotlib.use('TkAgg') # https://stackoverflow.com/questions/39270988/ice-default-io-error-handler-doing-an-exit-pid-errno-32-when-running
 
     all = lib_find_measurements.get_all_measurements(method='all', type='normal',)
