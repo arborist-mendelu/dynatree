@@ -252,7 +252,10 @@ def main():
     #     print("File processing skipped.")
     #     return None    
     
-    matplotlib.use('TkAgg') # https://stackoverflow.com/questions/39270988/ice-default-io-error-handler-doing-an-exit-pid-errno-32-when-running
+    try:
+        matplotlib.use('TkAgg') # https://stackoverflow.com/questions/39270988/ice-default-io-error-handler-doing-an-exit-pid-errno-32-when-running
+    except:
+        matplotlib.use('Agg')
     parser = argparse.ArgumentParser(description="Explore quality of synchronization between optics and extenso/inclinometers.")
     # Přidání argumentu s volbou True/False
     parser.add_argument('--release_detail', action='store_true', help='Kreslí detail okolo vypuštění (True/False)')

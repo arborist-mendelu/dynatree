@@ -112,8 +112,10 @@ def main():
     #     measurement=measurement)
     
     # return
-    matplotlib.use('TkAgg') # https://stackoverflow.com/questions/39270988/ice-default-io-error-handler-doing-an-exit-pid-errno-32-when-running
-
+    try:
+        matplotlib.use('TkAgg') # https://stackoverflow.com/questions/39270988/ice-default-io-error-handler-doing-an-exit-pid-errno-32-when-running
+    except:
+        matplotlib.use('Agg')
     all = lib_find_measurements.get_all_measurements(method='all', type='normal',)
     for i,row in all.iterrows():
         if row['measurement'] == "M01":
