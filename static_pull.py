@@ -554,4 +554,4 @@ if __name__ == "__main__":
     
     # These two lines are for production code to do final analysis
     main_output = main()
-    main_output.to_csv("csv_output/regresions_static.csv")
+    main_output.to_csv("csv_output/regressions_static.csv")

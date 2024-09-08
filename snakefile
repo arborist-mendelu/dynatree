@@ -5,7 +5,8 @@ rule all:
         "../outputs/synchro_optics_inclino.pdf",
         "../outputs/synchro_optics_inclino_detail.pdf",
         "../outputs/fft_spectra_by_measurements.zip",
-        "../outputs/fft_spectra_elasto_acc2.zip"           
+        "../outputs/fft_spectra_elasto_acc2.zip",
+        "../outputs/regressions_static.csv"        
         
 rule fft_boxplots:
     """
@@ -73,6 +74,23 @@ rule fft_spectra_combine:
         rm *_*.pdf
         zip  out.zip *.pdf 
         cp out.zip ../{output.elasto}
+        """
+
+rule create_regressions_static:
+    """
+    Find regrassions coefficients for static pull and pulling phase of the pull-release
+    experiment.
+    """
+    input:
+        script = "static_pull.py",
+        xls = "../data/Popis_Babice_VSE_13082024.xlsx",
+        csv = "csv/intervals_split_M01.csv"
+    output:
+        csv = "../outputs/regressions_static.csv"
+    shell:
+        """
+        python static_pull.py
+        cp ./csv_output/regressions_static.csv {output.csv}
         """
 
 rule synchronization_check:

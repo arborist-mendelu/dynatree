@@ -434,6 +434,7 @@ filter_day = solara.reactive(True)
 filter_tree = solara.reactive(True)
 filter_probe = solara.reactive(False)
 choice_elasto = solara.reactive(False)
+choice_pt3 = solara.reactive(False)
 # filtered_df = solara.reactive(pd.DataFrame())
 
 @solara.component
@@ -445,6 +446,7 @@ def ShowSavedData():
                 * The data are from csv/solara_fft.csv.
                 * If you change the data, download the file and someone has to merge the data
                   with the file on server.
+                * If you filter out a02 (accelerometer near extensomter), you may want to see Elasto(90) as well. Similarly for a03 and Pt3. Just switch the corresponding switch on.
                 """, style={'color':'white'})):
             with solara.Column():
                 solara.Markdown("**Table with dataⓘ**")
@@ -455,6 +457,7 @@ def ShowSavedData():
                 solara.Switch(label=f"Tree {s.tree.value}", value=filter_tree)    
                 solara.Switch(label=f"Probe {probe.value[0]}", value=filter_probe)    
                 solara.Switch(label=" & Elasto", value=choice_elasto)    
+                solara.Switch(label=" & Pt3", value=choice_pt3)    
         logger.debug(f"ShowSavedData entered {filter_day.value} {filter_tree.value} {filter_probe.value}")
         try:
             filtered_df = df_limits.value.copy()
@@ -464,15 +467,23 @@ def ShowSavedData():
             if filter_tree.value:
                 filtered_df = filtered_df.loc[
                     (slice(None), slice(None), s.tree.value,slice(None),slice(None)), :]
+            # Add elasto?
             if choice_elasto.value and probe.value[0] != "Elasto(90)":
                 filtered_df_elasto = filtered_df.loc[
                     (slice(None), slice(None),slice(None),slice(None),"Elasto(90)"), :]
             else:
                 filtered_df_elasto = pd.DataFrame()                
+            # Add PT3?
+            if choice_pt3.value and probe.value[0] != "Pt3":
+                filtered_df_pt3 = filtered_df.loc[
+                    (slice(None), slice(None),slice(None),slice(None),"Pt3"), :]
+            else:
+                filtered_df_pt3 = pd.DataFrame()                
+            # Filter probe according to the choice and merge
             if filter_probe.value:
                 filtered_df = filtered_df.loc[
                     (slice(None), slice(None),slice(None),slice(None),probe.value[0]), :]
-            filtered_df = pd.concat([filtered_df, filtered_df_elasto]).sort_index()
+            filtered_df = pd.concat([filtered_df, filtered_df_elasto, filtered_df_pt3]).sort_index()
             # df_limits.value = tempdf
             solara.display(filtered_df)
         except Exception as e:
