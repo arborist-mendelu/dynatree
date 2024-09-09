@@ -45,6 +45,18 @@ except:
     )
     logger.error("Log file not available for writing. Logs are on screen only.")
 
+def tand(angle):
+    """
+    Evaluates tangens of the angle. The angli is in degrees.
+    """
+    return np.tan(np.deg2rad(angle))
+
+def arctand(value):
+    """
+    Evaluates arctan. Return the angle in degrees.
+    """
+    return np.rad2deg(np.arctan(value))    
+
 # from https://dev.to/kcdchennai/python-decorator-to-measure-execution-time-54hk
 def timeit(func):
     @wraps(func)
@@ -485,7 +497,12 @@ class DynatreeMeasurement:
     @cached_property
     def data_pulling(self):
         logger.debug("loading pulling data")
-        return pd.read_parquet(self.file_pulling_name)
+        df = pd.read_parquet(self.file_pulling_name)
+        for inclino in ["Inclino(80)", "Inclino(81)"]:
+            df.loc[:,[inclino]] = arctand(
+                np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 )
+                )
+        return df
     
     @cached_property
     def data_acc(self):

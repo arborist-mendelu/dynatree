@@ -22,7 +22,7 @@ regression_settings = {'color': 'gray', 'alpha': 0.5}
 title = "DYNATREE: vizualizace dat, se kterými se pracuje"
 
 
-methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'mraz'])
+methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'afterro2', 'mraz'])
 method = solara.reactive('normal')
 widths = [800,1000,1200,1400,1600,1800]
 width = solara.reactive(1000)

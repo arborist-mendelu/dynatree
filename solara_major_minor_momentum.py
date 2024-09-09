@@ -25,7 +25,7 @@ regression_settings = {'color': 'gray', 'alpha': 0.5}
 
 title = "DYNATREE: pulling, force, inclinometers, extensometer, optics, ..."
 
-methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'mraz'])
+methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'afterro2', 'mraz'])
 method = solara.reactive(methods.value[0])
 
 

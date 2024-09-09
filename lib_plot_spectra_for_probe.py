@@ -23,7 +23,10 @@ def plot_spectra_for_all_probes(
     tree = "BK11",
     measurement = "M02",
     fft_results = None,
-    DT = 0.01):
+    DT = 0.01,
+    log_x = False,
+    xmax = 3
+    ):
 
     if measurement == "M01":
         print("M01 is not considered")
@@ -81,7 +84,13 @@ def plot_spectra_for_all_probes(
                         continue
                     ax[1].axvline(x=float(freq), color='r', linestyle='--')
         
-            ax[1].set(xlim=(0,3), yscale="log", ylim=(upper_bound/10**4, upper_bound*6))
+            if log_x:
+                xmin = time_fft[1]
+            else:
+                xmin = 0
+            ax[1].set(xlim=(xmin,xmax), yscale="log", ylim=(upper_bound/10**4, upper_bound*6))
+            if log_x:
+                ax[1].set(xscale="log")
             ax[1].grid()
             
             ax[0].set(title=f"{measurement_type} {day} {tree} {measurement} {probe}")

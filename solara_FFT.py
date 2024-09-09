@@ -101,7 +101,9 @@ def prepare_images_for_comparison():
         day=s.day.value, 
         tree=s.tree.value,
         measurement=s.measurement.value, 
-        fft_results=df_limits.value
+        fft_results=df_limits.value, 
+        log_x = log_x.value,
+        xmax = range_x.value,
         )
     plt.close('all')
     logger.debug("prepare_images_for_comparison finished")
@@ -112,6 +114,7 @@ def prepare_images_for_comparison():
 def SrovnaniReset():
     experiment_changed.value = False
     prepare_images_for_comparison()
+
 
 @solara.component
 def Srovnani():
@@ -136,7 +139,7 @@ def Srovnani():
         with solara.Row():
             solara.Markdown(f"**Experiment {s.method.value}, {s.day.value}, {s.tree.value},  {s.measurement.value}**")
             solara.Button(label="Redraw", on_click=prepare_images_for_comparison)
-            solara.Text("(Use if the images do not match the selection on the left panel. The need for this should not appear, however.)")
+            solara.Text("(Use if the images do not match the selection on the left panel. The need for this should appear only of you change x-axis setting.)")
         with solara.ColumnsResponsive([6,6], large=[4,4,4], xlarge=[4,4,4]):
             for i in ans:
                 with solara.Card(title=i, style={'background-color':"#FFF"}):
@@ -166,7 +169,9 @@ def generuj_obrazky(x=None):
         logger.debug("Funkce RESETUJ")
     else:
         experiment_changed.value=True
-        
+
+range_x = solara.reactive(3)
+log_x = solara.reactive(False)
 
 @solara.component
 def Page():
@@ -178,6 +183,11 @@ def Page():
                     day_action = resetuj,
                     tree_action = resetuj,
                     measurement_action = generuj_obrazky)
+        with solara.Card():
+            solara.Switch(label="log freq axis", value=log_x)
+            solara.SliderInt(label="freq bounds", value=range_x, min=3, max=20)
+            with solara.Tooltip("This button redraws images on the 'Srovnani' tab. Use after a change in the x-axis setting."):
+                solara.Button(label="Redraw", on_click=prepare_images_for_comparison)            
         s.ImageSizes()
 
     if s.measurement.value not in s.available_measurements(s.df.value, s.day.value, s.tree.value, s.method.value, exclude_M01=True):
@@ -232,7 +242,7 @@ def ChooseProbe():
             solara.Markdown("**Probesⓘ**")
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
-    probes_inclino = ["Elasto(90)","Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
+    probes_inclino = ["Elasto(90)","Inclino(80)","Inclino(81)","Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     probes_optics = ["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)]
     probes_acc = ['a01_x', 'a01_y', 'a01_z', 'a02_x', 'a02_y', 'a02_z', 
                   'a03_x', 'a03_y', 'a03_z', 'a04_x', 'a04_y', 'a04_z']
@@ -407,8 +417,14 @@ def DoFFT():
                     upper_b = max(upper_b,10**(np.trunc(np.log10(np.max(yf_r)))+1))
             
                 lower_b = upper_b/100000
+                if log_x.value:
+                    xmin = df_fft.index[1]
+                else:
+                    xmin = 0
                 figFFT = px.scatter(df_fft, height = s.height.value, width=s.width.value,
-                                      title=f"FFT spectrum for {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Limits: from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f}", range_x=[0,6], log_y=True, range_y=[lower_b,upper_b],  
+                                      title=f"FFT spectrum for {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Limits: from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f}", 
+                                      log_x=log_x.value, range_x=[xmin,range_x.value], 
+                                      log_y=True, range_y=[lower_b,upper_b],  
                                       **kwds)
                 figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
                 solara.FigurePlotly(figFFT, on_click=save_freq_on_click)    
