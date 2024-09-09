@@ -18,6 +18,8 @@ import solara.lab
 from solara.lab import task
 import solara
 import time
+import solara_select_source as s
+
 DATA_PATH = "../data"
 
 tightcols = {'gap': "0px"}
@@ -25,34 +27,14 @@ regression_settings = {'color': 'gray', 'alpha': 0.5}
 
 title = "DYNATREE: pulling, force, inclinometers, extensometer, optics, ..."
 
-methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'afterro2', 'mraz'])
-method = solara.reactive(methods.value[0])
-
-
-df = solara.reactive(get_all_measurements(method=method.value))
-days = solara.reactive(df.value["date"].drop_duplicates().values)
-trees = solara.reactive(df.value["tree"].drop_duplicates().values)
-measurements = solara.reactive(df.value["measurement"].drop_duplicates().values)
-
-
-def get_measurements_list(x='all'):
-    df.value = get_all_measurements(method='all', type=x)
-    days.value = df.value["date"].drop_duplicates().values
-    trees.value = df.value["tree"].drop_duplicates().values
-    measurements.value = df.value["measurement"].drop_duplicates().values
-
-day = solara.reactive(days.value[0])
-tree = solara.reactive(trees.value[0])
-measurement = solara.reactive(measurements.value[0])
-use_optics = solara.reactive(False)
 include_details = solara.reactive(False)
 
 # Create data object when initialized
 data_object = lib_dynatree.DynatreeMeasurement(
-    day.value, 
-    tree.value, 
-    measurement.value,
-    measurement_type=method.value,
+    s.day.value, 
+    s.tree.value, 
+    s.measurement.value,
+    measurement_type=s.method.value,
     # use_optics=use_optics.value
     )
 
@@ -83,7 +65,6 @@ def fix_input(a):
     return a
 
 def resetuj_a_nakresli(reset_measurements=False):
-    measurement.set(measurements.value[0])
     return nakresli()
 
 # def get_data_object(day, tree, measuemrent, measurement_type, optics):
@@ -95,17 +76,17 @@ def get_data_object():
     Cheap, 0.0002s.
     """
     data_object = static_pull.DynatreeStaticMeasurement(
-        day=day.value, tree=tree.value,
-        measurement=measurement.value,
-        measurement_type=method.value,
+        day=s.day.value, tree=s.tree.value,
+        measurement=s.measurement.value,
+        measurement_type=s.method.value,
         optics=False
         # optics = use_optics.value
         )
-    if data_object.is_optics_available and use_optics.value == True:
+    if data_object.is_optics_available and s.use_optics.value == True:
         data_object = static_pull.DynatreeStaticMeasurement(
-            day=day.value, tree=tree.value,
-            measurement=measurement.value,
-            measurement_type=method.value,
+            day=s.day.value, tree=s.tree.value,
+            measurement=s.measurement.value,
+            measurement_type=s.method.value,
             optics=True)
     return data_object
 
@@ -208,39 +189,11 @@ def Page():
 
 @solara.component
 def Selection():
-    with solara.Card(title="Measurement choice"):
-        with solara.Column():
-            # solara.Switch(label="Use data from URL", value=data_from_url)
-            solara.ToggleButtonsSingle(value=method, values=list(methods.value),
-                                       on_value=get_measurements_list)
-            solara.ToggleButtonsSingle(value=day, values=list(days.value),
-                                       on_value=resetuj_a_nakresli)
-            solara.ToggleButtonsSingle(value=tree, values=list(trees.value),
-                                       on_value=resetuj_a_nakresli)
-            solara.ToggleButtonsSingle(value=measurement,
-                                       values=available_measurements(
-                                           df.value, day.value, tree.value, method.value),
-                                       on_value=nakresli
-                                       )
-        data_object = lib_dynatree.DynatreeMeasurement(
-            day.value, tree.value, measurement.value,measurement_type=method.value)
-        with solara.Tooltip("Umožní použít preprocessing udělaný na tahovkách M02 a více. Tím sice nebude stejná metodika jako pro M01 (tam se preprocessing nedělal), ale máme časovou synchronizaci s optikou, o opravu vynulování inklinometrů a pohyb bodů Pt3 a Pt4."):
-            solara.Switch(
-                label="Use optics data, if possible",
-                value=use_optics,
-                disabled=not data_object.is_optics_available,
-                on_value=nakresli
-            )
-        # solara.Div(style={"margin-bottom": "10px"})
+    s.Selection()
+    data_object = lib_dynatree.DynatreeMeasurement(
+        s.day.value, s.tree.value, s.measurement.value,measurement_type=s.method.value)
+    with solara.Column(align='center'):
         solara.Button("Run calculation", on_click=nakresli, color="primary")
-        # solara.Button("Clear cache", on_click=clear(), color="primary")
-        solara.Markdown(
-            f"**Selected**: {day.value}, {tree.value}, {measurement.value}")
-        if data_object.is_optics_available:
-            solara.Markdown("✅ Optics is available for this measurement.")
-        else:
-            solara.Markdown(
-                "❎ Optics is **not** available for this measurement.")
 
 def Statistics():
     data_object = get_data_object()
@@ -269,12 +222,12 @@ def Statistics():
 @solara.component
 def Graphs():
     solara.ProgressLinear(nakresli.pending)
-    if measurement.value not in available_measurements(df.value, day.value, tree.value, method.value):
+    if s.measurement.value not in available_measurements(s.df.value, s.day.value, s.tree.value, s.method.value):
         with solara.Error():
             solara.Markdown(
                 f"""
-                * Measurement {measurement.value} not available for tree {tree.value}
-                  day {day.value} measurement type {method.value}.
+                * Measurement {s.measurement.value} not available for tree {s.tree.value}
+                  day {s.day.value} measurement type {s.method.value}.
                 * You may need to switch measurement type (normal/den/noc/...) 
                   if the list of the measuemrent day is incorrect.
                 """)
@@ -369,7 +322,7 @@ def Detail():
                     values=[None]+cols[1:], value=ydata2, dense=True)
     with solara.Row():
 
-        if not use_optics.value:
+        if not s.use_optics.value:
             if ydata2.value in ["Pt3", "Pt4"]:
                 ydata2.value = None
                 return
@@ -382,10 +335,10 @@ def Detail():
                 return
         
         temp_data_object = static_pull.DynatreeStaticMeasurement(
-            day=day.value, tree=tree.value,
-            measurement=measurement.value, measurement_type=method.value,
+            day=s.day.value, tree=s.tree.value,
+            measurement=s.measurement.value, measurement_type=s.method.value,
             optics=False)
-        if measurement.value == "M01":
+        if s.measurement.value == "M01":
             with solara.Card():
                 solara.Markdown("**Pull No. of M01:**")
                 with solara.Column(**tightcols):
@@ -394,8 +347,8 @@ def Detail():
                 pull_value = pull.value
         else:
             pull_value = 0
-        if (use_optics.value) and (not temp_data_object.is_optics_available):
-            use_optics.value = False
+        if (s.use_optics.value) and (not temp_data_object.is_optics_available):
+            s.use_optics.value = False
             return
 
         with solara.Card():
@@ -420,17 +373,17 @@ def Detail():
         restricted = (0.3, 0.9)
 
     d_obj = static_pull.DynatreeStaticMeasurement(
-        day=day.value, tree=tree.value,
-        measurement=measurement.value, 
-        measurement_type=method.value,
-        optics=use_optics.value, 
+        day=s.day.value, tree=s.tree.value,
+        measurement=s.measurement.value, 
+        measurement_type=s.method.value,
+        optics=s.use_optics.value, 
         restricted=restricted)
     dataset = d_obj.pullings[pull_value]
     subdf = dataset.data
     if all_data.value:
-        _ = d_obj._get_static_pulling_data(optics=use_optics.value, restricted='get_all')
+        _ = d_obj._get_static_pulling_data(optics=s.use_optics.value, restricted='get_all')
         _["Time"] = _.index
-        subdf = static_pull.DynatreeStaticPulling(_, tree=tree.value)
+        subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value)
         subdf = subdf.data
     
     try:
@@ -451,14 +404,14 @@ def Detail():
         else:
             solara.Info(
                 """
-                No regressions if independent variable is Time or if all
+                No regressions are calculated if the independent variable is Time or if all
                 data are considered. (Put "Ignore time restriction off and select another independent variable.")
                 """)
     except:
         solara.Error(
             "Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
 
-    title = f"{day.value} {tree.value} {measurement.value} {method.value} Pull {pull_value}"
+    title = f"{s.day.value} {s.tree.value} {s.measurement.value} {s.method.value} Pull {pull_value}"
     if interactive_graph.value:
         kwds = {"template": "plotly_white", "height": 600, "title": title}
         try:

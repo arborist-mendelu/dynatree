@@ -12,6 +12,7 @@ import solara.lab
 import solara
 import pandas as pd
 import time
+import solara_select_source as s
 
 DATA_PATH = "../data"
 
@@ -22,36 +23,7 @@ regression_settings = {'color': 'gray', 'alpha': 0.5}
 title = "DYNATREE: vizualizace dat, se kterými se pracuje"
 
 
-methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'afterro2', 'mraz'])
-method = solara.reactive('normal')
-widths = [800,1000,1200,1400,1600,1800]
-width = solara.reactive(1000)
-heights = [400,600,800,1000,1200,1400]
-height = solara.reactive(600)
 show_data = solara.reactive(False)
-
-df = solara.reactive(get_all_measurements(method=method.value))
-days = solara.reactive(df.value["date"].drop_duplicates().values)
-trees = solara.reactive(df.value["tree"].drop_duplicates().values)
-measurements = solara.reactive(df.value["measurement"].drop_duplicates().values)
-
-
-def get_measurements_list(x='all'):
-    df.value = get_all_measurements(method='all', type=x)
-    days.value = df.value["date"].drop_duplicates().values
-    trees.value = df.value["tree"].drop_duplicates().values
-    measurements.value = df.value["measurement"].drop_duplicates().values
-
-day = solara.reactive(days.value[0])
-tree = solara.reactive(trees.value[0])
-measurement = solara.reactive(measurements.value[0])
-
-data_object = lib_dynatree.DynatreeMeasurement(
-    day.value, 
-    tree.value, 
-    measurement.value,
-    measurement_type=method.value,
-    )
 
 dependent_pull = solara.reactive(["Force(100)"])
 dependent_pt34 = solara.reactive(["Pt3"])
@@ -73,13 +45,19 @@ selection_data = solara.reactive(None)
 def set_selection_data(x=None):
     selection_data.value = x
 
+data_object = lib_dynatree.DynatreeMeasurement(
+    s.day.value, 
+    s.tree.value, 
+    s.measurement.value,
+    measurement_type=s.method.value,
+    )
 
 @solara.component
 def plot(df_, var, msg=None, id=None):
     df = df_.copy()
     solara.ToggleButtonsMultiple(value=var, values=list(df.columns))    
-    fig = px.scatter(df, y=var.value,  height = height.value, width=width.value,
-                     title=f"Dataset: {method.value}, {day.value}, {tree.value}, {measurement.value}",
+    fig = px.scatter(df, y=var.value,  height = s.height.value, width=s.width.value,
+                     title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
                      **kwds)    
     solara.FigurePlotly(fig, on_selection=set_selection_data)    
     if msg is not None:
@@ -90,10 +68,10 @@ def investigate(df_, var):
     
     def current_selection():
         ans = {
-            'measurement_type': [method.value],
-            'day':[day.value], 
-            'tree':[tree.value], 
-            'measurement':[measurement.value], 
+            'measurement_type': [s.method.value],
+            'day':[s.day.value], 
+            'tree':[s.tree.value], 
+            'measurement':[s.measurement.value], 
             'probe':[var.value[0]],
             'xmin':[selection_data.value['selector']['selector_state']['xrange'][0]],
             'xmax':[selection_data.value['selector']['selector_state']['xrange'][1]],
@@ -141,7 +119,7 @@ def investigate(df_, var):
         with solara.Card():
             solara.Markdown("**Data table**")
             solara.DataFrame(df)
-            solara.FileDownload(df.to_csv(), filename=f"{method.value}_{day.value}_{tree.value}_{measurement.value}.csv", label="Download as csv")
+            solara.FileDownload(df.to_csv(), filename=f"{s.method.value}_{s.day.value}_{s.tree.value}_{s.measurement.value}.csv", label="Download as csv")
     if selection_data.value is None:
         msg_selected = "You can use the box select tool to select some data and download the selected bounds for later use."
         save_disabled = True
@@ -177,18 +155,34 @@ kwds = {"template": "plotly_white",
 
 tab_index = solara.reactive(0)
 
+def resetuj(x=None):
+    # Srovnani(resetuj=True)
+    s.measurement.set(s.measurements.value[0])
+    generuj_obrazky()
+    
+def generuj_obrazky(x=None):
+    pass
+
 @solara.component
 def Page():
     data_object = lib_dynatree.DynatreeMeasurement(
-        day.value, 
-        tree.value, 
-        measurement.value,
-        measurement_type=method.value,
+        s.day.value, 
+        s.tree.value, 
+        s.measurement.value,
+        measurement_type=s.method.value,
         )
     solara.Title(title)
     solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
     with solara.Sidebar():
-        Selection()
+        s.Selection(exclude_M01=False, 
+                    optics_switch=False,       
+                    day_action = resetuj,
+                    tree_action = resetuj,
+                    measurement_action = generuj_obrazky)
+        with solara.Card():
+            solara.Switch(label="Show data table", value=show_data)
+        s.ImageSizes()
+
     with solara.lab.Tabs(value=tab_index):
         with solara.lab.Tab("Tahovky"):
             with solara.Card():

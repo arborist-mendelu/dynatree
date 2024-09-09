@@ -258,7 +258,7 @@ def ChooseProbe():
         elif len(probe_acc.value) != 0:
             probe.value = probe_acc.value
         else:
-            solara.Info("Vyber probe. Stránka se bude automaticky aktualizovat při výběru probu nebo změně stromu, dne čí měření.")
+            solara.Info("Vyber probe. Stránka se bude automaticky aktualizovat při výběru probu nebo změně stromu, dne nebo měření.")
             return None
         solara.Info(f"Active probes: {probe.value}")
     # solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
@@ -324,8 +324,6 @@ def FFT_parameters():
                 solara.Markdown("**Limits for FFTⓘ:**")
         solara.InputFloat("From",value=t_from)
         solara.InputFloat("To",value=t_to)
-    with solara.Row():
-        solara.InputText("Remark", value=remark)
         SaveButton()
     if pd.isna(t_to.value):
         t_to.value = 0
@@ -350,13 +348,13 @@ def save_limits():
 @solara.component
 def DoFFT():
     logger.debug(f"DoFFT entered {s.day.value} {s.tree.value} {s.measurement.value}" )
+    data_obj = ChooseProbe()
+    if data_obj is None:
+        # stop if no probe is selected
+        return None
     with solara.ColumnsResponsive(xlarge=[6,6]):
         with solara.Column():
             with solara.Card():
-                data_obj = ChooseProbe()
-                if data_obj is None:
-                    # stop if no probe is selected
-                    return None
                 try:
                     df = plot()
                 except:
@@ -440,6 +438,8 @@ def ShowFFTdata():
         solara.Button(label="Erase", on_click=smazat_fft)
         SaveButton()
         solara.Text("The first variable (blue) is considered as a label when saved.")
+    solara.InputText("Remark", value=remark)
+
 
 def smazat_fft(x=None):
     fft_freq.value = ""
