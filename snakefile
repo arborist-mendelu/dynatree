@@ -6,8 +6,9 @@ rule all:
         "../outputs/synchro_optics_inclino_detail.pdf",
         "../outputs/fft_spectra_by_measurements.zip",
         "../outputs/fft_spectra_elasto_acc2.zip",
-        "../outputs/regressions_static.csv"        
-        
+        "../outputs/regressions_static.csv",
+        "static_pull_analyze_Rope100.py"   
+             
 rule fft_boxplots:
     """
     Draw frequencies grouped by trees with distingushed date and leaf status.
@@ -127,6 +128,23 @@ rule fft_optics_boxplot:
         script = "plot_fft.py"
     output:
         "../outputs/fft_optics_boxplot.pdf"
+    shell:
+        """
+        python {input.script}
+        """
+
+rule RopeAngle_100_std:
+    """
+    Nakresli smerodatne odchylky veliciny RopeAngle(100) v natahovaci fazi
+    tahove staticke zkousky. Ocekavani, ze smerodatne odchylky budou velke se
+    nevyplnilo, protoze nektere dny jsou OK. Asi prejit ke koeficientu determinace
+    mezi uhlem a silou. Je mizerny i pro mereni, ktere ma malou smerodatnou 
+    odchylku v RopeAngle(100).
+    """
+    input:
+        script = "static_pull_analyze_Rope100.py"
+    output:
+        img = "../outputs/static_pulling_std_RopeAngle100.pdf"
     shell:
         """
         python {input.script}

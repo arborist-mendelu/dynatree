@@ -51,7 +51,7 @@ def extend_dataframe_with_zeros(data, tail=2):
     data_pad = data_pad.dropna()
     data_pad = data_pad - data_pad.mean()
     dt = data_pad.index[1]-data_pad.index[0]
-    time_start = np.arange(data_pad.index[0]-tail, data_pad.index[0], dt)
+    time_start = np.flip(np.arange( data_pad.index[0]-dt, data_pad.index[0]-tail, -dt))
     time_end = np.arange(data_pad.index[-1]+dt, data_pad.index[-1]+tail, dt)
     time_extended = np.concatenate([time_start,time_end])
     df_extended = pd.DataFrame(index = time_extended)

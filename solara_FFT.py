@@ -19,6 +19,9 @@ import matplotlib.pyplot as plt
 import os
 import logging
 from io import BytesIO
+from FFT_spectrum import extend_dataframe_with_zeros
+
+
 logger = logging.getLogger("Solara_FFT")
 logger.setLevel(logging.INFO)
 
@@ -90,6 +93,8 @@ remark = solara.reactive("")
 # peaks = solara.reactive("")
 fft_freq = solara.reactive("")
 save_button_color = solara.reactive("none")
+window_function = solara.reactive("none")
+window_functions = ["none", "zeros", "hanning"]
 
 tab_index = solara.reactive(0)
 
@@ -184,10 +189,17 @@ def Page():
                     tree_action = resetuj,
                     measurement_action = generuj_obrazky)
         with solara.Card():
-            solara.Switch(label="log freq axis", value=log_x)
-            solara.SliderInt(label="freq bounds", value=range_x, min=3, max=20)
-            with solara.Tooltip("This button redraws images on the 'Srovnani' tab. Use after a change in the x-axis setting."):
-                solara.Button(label="Redraw", on_click=prepare_images_for_comparison)            
+            with solara.Column():
+                solara.Switch(label="log freq axis", value=log_x)
+                with solara.Tooltip("Upper bound for image with FFT spectrum."):
+                    with solara.Column():
+                        solara.SliderInt(label="freq upper boundⓘ", value=range_x, min=3, max=20)
+                with solara.Tooltip("Implementační průběžná pokusná fáze. Okno se bere v úvahu při tvorbě FFT na této stránce, ale informace o použitém okně se zatím neukládá společně s hodnotami peaků a ani se nastavení nezohledňuje na stránce se přehledem všech zpracovaných probů pro dané měření."):
+                    with solara.Column():
+                        solara.SliderValue(label="windowⓘ", value=window_function, values=window_functions)
+                with solara.Tooltip("This button redraws images on the 'Srovnani' tab. Use after a change in the x-axis setting."):
+                    with solara.Column(align='center'):
+                        solara.Button(label="Redraw", on_click=prepare_images_for_comparison)
         s.ImageSizes()
 
     if s.measurement.value not in s.available_measurements(s.df.value, s.day.value, s.tree.value, s.method.value, exclude_M01=True):
@@ -384,6 +396,14 @@ def DoFFT():
                 newdf = pd.DataFrame(index=newindex, columns=subdf.columns)
                 for i in subdf.columns:
                     newdf[i] = np.interp(newindex, oldindex, subdf[i].values)
+                # subtract mean from each column
+                newdf = newdf.apply(lambda col: col - col.mean())
+                # apply window function
+                if window_function.value == "zeros":
+                    newdf = extend_dataframe_with_zeros(newdf, tail=5)
+                elif window_function.value == "hanning":
+                    hanning_window = np.hanning(len(newdf))
+                    newdf = newdf.apply(lambda col: col * hanning_window)
                 # solara.display(newdf.head())
                 logger.debug("Will plot the detail.")
                 try:
