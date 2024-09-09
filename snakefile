@@ -7,8 +7,8 @@ rule all:
         "../outputs/fft_spectra_by_measurements.zip",
         "../outputs/fft_spectra_elasto_acc2.zip",
         "../outputs/regressions_static.csv",
-        "static_pull_analyze_Rope100.py"   
-             
+        "../outputs/static_pulling_std_RopeAngle100.pdf"             
+        
 rule fft_boxplots:
     """
     Draw frequencies grouped by trees with distingushed date and leaf status.
