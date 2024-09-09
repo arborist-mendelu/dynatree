@@ -78,7 +78,7 @@ rule fft_spectra_combine:
 
 rule create_regressions_static:
     """
-    Find regrassions coefficients for static pull and pulling phase of the pull-release
+    Find regression coefficients for static pull and pulling phase of the pull-release
     experiment.
     """
     input:
@@ -89,7 +89,8 @@ rule create_regressions_static:
         csv = "../outputs/regressions_static.csv"
     shell:
         """
-        python static_pull.py
+        mkdir -p csv_output
+        python {input.script}
         cp ./csv_output/regressions_static.csv {output.csv}
         """
 

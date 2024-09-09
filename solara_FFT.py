@@ -408,7 +408,7 @@ def DoFFT():
             
                 lower_b = upper_b/100000
                 figFFT = px.scatter(df_fft, height = s.height.value, width=s.width.value,
-                                      title=f"FFT spectrum for {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Limits: from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f}", range_x=[0,3], log_y=True, range_y=[lower_b,upper_b],  
+                                      title=f"FFT spectrum for {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Limits: from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f}", range_x=[0,6], log_y=True, range_y=[lower_b,upper_b],  
                                       **kwds)
                 figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
                 solara.FigurePlotly(figFFT, on_click=save_freq_on_click)    
