@@ -388,6 +388,8 @@ class DynatreeStaticPulling:
         # evaluate horizontal and vertical force components and moment
         # obrat s values je potreba, protoze data maji MultiIndex
         # shorter names
+        if suffix != "":
+            suffix = f"_{suffix}"
         df.loc[:,['F_horizontal']] = (self.data['Force(100)'] * np.cos(np.deg2rad(rope_angle))).values
         df.loc[:,['F_vertical']] = (self.data['Force(100)'] * np.sin(np.deg2rad(rope_angle))).values
         df.loc[:,['M']] = df['F_horizontal'] * height_of_anchorage
@@ -395,7 +397,7 @@ class DynatreeStaticPulling:
         df.loc[:,['M_Elasto']] = df['F_horizontal'] * ( 
                     height_of_anchorage - height_of_elastometer )
         df.loc[:,["Angle"]] = rope_angle
-        df.columns = [f"{i}_{suffix}" for i in df.columns]
+        df.columns = [f"{i}{suffix}" for i in df.columns]
         self.data = pd.concat([self.data, df], axis=1)
         return self.data
     

@@ -7,7 +7,8 @@ rule all:
         "../outputs/fft_spectra_by_measurements.zip",
         "../outputs/fft_spectra_elasto_acc2.zip",
         "../outputs/regressions_static.csv",
-        "../outputs/static_pulling_std_RopeAngle100.pdf"             
+        "../outputs/static_pulling_std_RopeAngle100.pdf",
+        "../outputs/static_pulling_error_propagation.xlsx"
         
 rule fft_boxplots:
     """
@@ -149,3 +150,21 @@ rule RopeAngle_100_std:
         """
         python {input.script}
         """
+        
+rule static_pulling_error_propagation:
+    """'
+    Get parital derivatives of slopes in momentum-angle regressions graphs with
+    respect to angle. Shows that the regression coefficient is not influenced
+    by the rope angle. In particular, one degree change in angle gives 0.7% 
+    change in the slopes for BK01 (high angle, 20 degrees) and 0.4% change in 
+    the slopes for BK04 (small angle, 10 degrees).
+    """
+    input:
+        script = "static_pull_error_propagation.py"
+    output:
+        table = "../outputs/static_pulling_error_propagation.xlsx"
+    shell:
+        """
+        python {input.script}
+        """
+    
