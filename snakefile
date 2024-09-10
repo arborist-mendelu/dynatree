@@ -88,7 +88,7 @@ rule create_regressions_static:
         script = "static_pull.py",
         xls = "../data/Popis_Babice_VSE_13082024.xlsx",
         csv = "csv/intervals_split_M01.csv",
-        csv_angles_measured = "angles_measured.csv"
+        csv_angles_measured = "csv/angles_measured.csv"
     output:
         csv = "../outputs/regressions_static.csv"
     shell:

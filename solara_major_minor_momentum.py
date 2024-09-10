@@ -40,7 +40,7 @@ data_object = lib_dynatree.DynatreeMeasurement(
 
 data_possible_restrictions = ["0-100%", "10%-90%", "30%-90%"]
 
-xdata = solara.reactive("M_Measure")
+xdata = solara.reactive("M")
 ydata = solara.reactive(["blue", "yellow"])
 ydata2 = solara.reactive([])
 pull = solara.reactive(0)
@@ -297,13 +297,11 @@ def Detail():
     with solara.Sidebar():
         cols = ['Time', 'Pt3', 'Pt4', 'Force(100)', 'Elasto(90)', 'Elasto-strain',
                 # 'Inclino(80)X', 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y',
-                'RopeAngle(100)',
                 'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY',
                 'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
-                'F_horizontal_Rope', 'F_vertical_Rope',
-                'M_Rope', 'M_Pt_Rope', 'M_Elasto_Rope',
-                'F_horizontal_Measure', 'F_vertical_Measure',
-                'M_Measure', 'M_Pt_Measure', 'M_Elasto_Measure',]
+                'F_horizontal', 'F_vertical',
+                'M', 'M_Pt', 'M_Elasto',
+                ]
         with solara.Card(title="Horizontal axis"):
             solara.Markdown("Choose one variable.")
             solara.ToggleButtonsSingle(values=cols, value=xdata, dense=True)
@@ -493,17 +491,12 @@ def Help():
 ### Popis
 
 * Inlinometr blue je 80, yelllow je 81. Výchylky v jednotlivých osách jsou blueX a blueY resp. blue_Maj a blue_Min. Celková výchylka je blue. Podobně  druhý inklinometr.
-* F se rozkládá na vodorovnou a svislou složku.Vodorovná se používá k výpočtu momentu v bodě úvazu (M), v bodě Pt3 (M_Pt) a v místě s extenzometrem (M_Elasto). K tomu je potřeba znát odchylku lana od vodorovné polohy. Toto je možné 
-    1. zjistit ze siloměru v pull TXT souborech jako Ropeangle(100) 
-    2. anebo použít fixní hodnotu z geometrie a měření délek
-    3. anebo použít fixní hodnotu naměřenou na začátku experimentu.
-* Druhé dvě varianty jsou spolehlivější, **Rope(100) má někdy celkem rozeskákané hodnoty.**  Vypočítané veličiny mají na konci _Rope (varianta 1) nebo _Measure (varianta 3). Varianta 2 bude stejná jsko 3, jenom se lišit konstantním faktorem. Asi se hodí více data s _Measure na konci.
+* F se rozkládá na vodorovnou a svislou složku.Vodorovná se používá k výpočtu momentu v bodě úvazu (M), v bodě Pt3 (M_Pt) a v místě s extenzometrem (M_Elasto). 
 * Elasto-strain je Elasto(90)/200000.
 
 ### Komenáře
 
 * V diagramech síla nebo moment versus inklinometry není moc změna trendu mezi první polovinou diagramu a celkem. Takže je asi jedno jestli bereme pro sílu rozmezí 10-90 procent Fmax nebo 10-40 procent.
-* Veličina Rope(100) ze siloměru má dost rozeskákané hodnoty a to zašpiní cokoliv, co se pomocí toho počítá. Asi nebrat. To jsou veličiny, které mají na konci text "_Rope". Místo nich použít ty, co mají na konci "_Measure"
 * Graf moment versus inklinometry má někdy na začátku trochu neplechu. Možná mají velký vliv nevynulované hodnoty 
   inklinometrů, protože se přidávají k malým náklonům a hodně zkreslují. Zvážit posunutí rozmezí na vyšší hodnotu než 10 procent Fmax.
 

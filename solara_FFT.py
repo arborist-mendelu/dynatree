@@ -406,7 +406,7 @@ def DoFFT():
                 if window_function.value == "zeros":
                     newdf = extend_dataframe_with_zeros(newdf, tail=5)
                 elif window_function.value == "hanning":
-                    hanning_window = np.hanning(len(newdf), sym=False)
+                    hanning_window = np.hanning(len(newdf))
                     newdf = newdf.apply(lambda col: col * hanning_window)
                 elif window_function.value == "tukey":
                     tukey_window = signal.windows.tukey(len(newdf), alpha=alpha.value, sym=False)

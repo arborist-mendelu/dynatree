@@ -14,7 +14,6 @@ import solara_FFT
 from passlib.hash import pbkdf2_sha256
 import time
 import os
-import psutil
 
 def Naloguj_se():
     solara.Title("DYNATREE")
