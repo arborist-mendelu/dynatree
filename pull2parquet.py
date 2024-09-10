@@ -18,6 +18,7 @@ import pandas as pd
 import multi_handlers_logger
 import os
 logger = multi_handlers_logger.setup_logger(prefix="pull2parquet")
+import extract_angle_from_pulling_data as ea
 
 def get_df():
     
@@ -104,6 +105,27 @@ def read_csvdata_inclinometers(file):
 
 #%%
 df = get_df()        
+
+#%%
+# Extract the angle
+angles = {}
+for i,row in df.iterrows():
+    angles[(row['type'].lower(), row['day'].replace("_","-"), row['tree'], row['measurement'])
+           ] = [ea.get_angle(row['old_filename'])]
+
+df_angles = pd.DataFrame(angles).T.sort_index()
+
+df_angles = df_angles.reset_index()
+df_angles.columns = ['measurement_type','day','tree','measurement','angle']
+
+df_wide = df_angles.pivot(index=['measurement_type', 'day', 'tree'], columns='measurement', values='angle')
+# All nonzero values are equal
+df_wide["angle"] = df_wide.max(axis=1, skipna=True)
+df_wide = df_wide[["angle"]]
+df_wide.to_csv("csv/angles_from_pulling.csv")
+df_wide.to_excel("uhly_z_tahovek.xlsx")
+#%%
+# Write the parquet files
 for i,row in df.iterrows():
     zpracuj_radek(row)
     

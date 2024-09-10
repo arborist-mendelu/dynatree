@@ -13,6 +13,7 @@ import lib_dynatree
 import pandas as pd
 import numpy as np
 from scipy.fft import fft, fftfreq
+from scipy import signal
 import lib_plot_spectra_for_probe
 from solara.lab import task
 import matplotlib.pyplot as plt
@@ -94,7 +95,8 @@ remark = solara.reactive("")
 fft_freq = solara.reactive("")
 save_button_color = solara.reactive("none")
 window_function = solara.reactive("none")
-window_functions = ["none", "zeros", "hanning"]
+window_functions = ["none", "zeros", "hanning", "tukey"]
+alpha = solara.reactive(0.1)
 
 tab_index = solara.reactive(0)
 
@@ -188,7 +190,7 @@ def Page():
                     day_action = resetuj,
                     tree_action = resetuj,
                     measurement_action = generuj_obrazky)
-        with solara.Card():
+        with solara.Card(title="FFT parameters"):
             with solara.Column():
                 solara.Switch(label="log freq axis", value=log_x)
                 with solara.Tooltip("Upper bound for image with FFT spectrum."):
@@ -197,6 +199,7 @@ def Page():
                 with solara.Tooltip("Implementační průběžná pokusná fáze. Okno se bere v úvahu při tvorbě FFT na této stránce, ale informace o použitém okně se zatím neukládá společně s hodnotami peaků a ani se nastavení nezohledňuje na stránce se přehledem všech zpracovaných probů pro dané měření."):
                     with solara.Column():
                         solara.SliderValue(label="windowⓘ", value=window_function, values=window_functions)
+                        solara.SliderFloat(label="tukey alpha", value=alpha, min=0, max=1, step=0.01)
                 with solara.Tooltip("This button redraws images on the 'Srovnani' tab. Use after a change in the x-axis setting."):
                     with solara.Column(align='center'):
                         solara.Button(label="Redraw", on_click=prepare_images_for_comparison)
@@ -360,7 +363,8 @@ def save_limits():
 @solara.component
 def DoFFT():
     logger.debug(f"DoFFT entered {s.day.value} {s.tree.value} {s.measurement.value}" )
-    data_obj = ChooseProbe()
+    with solara.Card():
+        data_obj = ChooseProbe()
     if data_obj is None:
         # stop if no probe is selected
         return None
@@ -402,8 +406,11 @@ def DoFFT():
                 if window_function.value == "zeros":
                     newdf = extend_dataframe_with_zeros(newdf, tail=5)
                 elif window_function.value == "hanning":
-                    hanning_window = np.hanning(len(newdf))
+                    hanning_window = np.hanning(len(newdf), sym=False)
                     newdf = newdf.apply(lambda col: col * hanning_window)
+                elif window_function.value == "tukey":
+                    tukey_window = signal.windows.tukey(len(newdf), alpha=alpha.value, sym=False)
+                    newdf = newdf.apply(lambda col: col * tukey_window)
                 # solara.display(newdf.head())
                 logger.debug("Will plot the detail.")
                 try:

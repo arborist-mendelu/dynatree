@@ -77,7 +77,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
 
     @cached_property    
     def pullings(self): 
-        return [DynatreeStaticPulling(i, self.tree) 
+        return [DynatreeStaticPulling(i, tree=self.tree, measurement_type=self.measurement_type, day=self.day) 
                              for i in self._get_static_pulling_data(
                                      optics=self.optics, restricted=self.restricted)]
     @cached_property
@@ -287,6 +287,40 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
                    self.measurement} {self.measurement_type}"
                )
         return fig
+
+# csv_pull = pd.read_csv("csv/angles_from_pulling.csv", index_col=[0,1,2])
+csv_measure = pd.read_csv("csv/angles_measured.csv", index_col=[0,1,2])
+def find_rope_angle(measurement_type, day, tree):
+    """
+    Find rope angle. Try to match the data to the sheet "Hromadná tabulka"
+    in the xlx file. Return the answer if success. 
+    
+    If fails, return average value for given tree.
+    """
+    if measurement_type == "noc":
+        if ("nocni", day, tree) in csv_measure.index:
+            return csv_measure.at[("nocni", day, tree),"angle"]
+    try:
+        subdf = csv_measure.loc[(slice(None), day, tree),:]
+        return subdf.mean()['angle']
+    except:
+        pass
+    subdf = csv_measure.loc[(slice(None), slice(None), tree),:]
+    return subdf.mean()['angle']
+
+    # if source=='pulling_tests':
+    #     if  (measurement_type, day, tree) in csv_pull.index:
+    #         return csv_pull.at[(measurement_type, day, tree),"angle"]
+    #     else:
+    #         data = csv_pull.loc[(slice(None), slice(None), tree),"angle"]
+    # elif source == 'measurement':
+    #     pass
+    # else:
+    #     logging.error("Unknown angle source")
+    #     return None
+# find_rope_angle("noc", "2023-07-18", "BK08")
+# find_rope_angle("normalni", "2022-08-16", "BK08")
+
     
 class DynatreeStaticPulling:
     """
@@ -300,25 +334,29 @@ class DynatreeStaticPulling:
     If ini_forces or ini_regress are False, do not evaluate the forces
     and regressions. In this case the variable tree is not important.
     """
-    def __init__(self, data, tree=None, ini_forces=True, ini_regress=True):
+    def __init__(self, data, tree=None, ini_forces=True, ini_regress=True, measurement_type="normal", day=None):
         if tree is not None:
             treeNo = int(tree[-2:])
         self.data = data
         self._process_inclinometers_major_minor()
+        self.day = day
+        self.tree = tree
+        self.measurement_type = measurement_type
         if ini_forces:
             self._process_forces(
-                height_of_anchorage= DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
-                height_of_pt= DF_PT_NOTES.at[treeNo,'height_of_pt'],
-                rope_angle= DF_PT_NOTES.at[treeNo,'angle_of_anchorage'],
-                height_of_elastometer= DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
-                suffix = "Measure"
+                height_of_anchorage = DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
+                height_of_pt = DF_PT_NOTES.at[treeNo,'height_of_pt'],
+                rope_angle = find_rope_angle(measurement_type=self.measurement_type, tree=self.tree, day=self.day),
+                height_of_elastometer = DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
+                suffix = ""
                 )
-            self._process_forces(
-                height_of_anchorage= DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
-                height_of_pt= DF_PT_NOTES.at[treeNo,'height_of_pt'],
-                height_of_elastometer= DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
-                suffix = "Rope"
-                )
+            # self._process_forces(
+            #     height_of_anchorage= DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
+            #     height_of_pt= DF_PT_NOTES.at[treeNo,'height_of_pt'],
+            #     rope_angle = rope_angle(measurement_type=self.measurement_type, tree=self.tree, day=self.day, source='pulling_tests'),
+            #     height_of_elastometer= DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
+            #     suffix = "Rope"
+            #     )
         if ini_regress:
             self.regressions = self._get_regressions_for_one_pull()
     
@@ -381,10 +419,6 @@ class DynatreeStaticPulling:
         component of the force and moments of force
         """
         df = pd.DataFrame(index=self.data.index)
-        # evaluate the horizontal and vertical component
-        if rope_angle is None:
-            # If rope angle is not given, use the data from the table
-            rope_angle = self.data['RopeAngle(100)']
         # evaluate horizontal and vertical force components and moment
         # obrat s values je potreba, protoze data maji MultiIndex
         # shorter names
@@ -442,17 +476,14 @@ class DynatreeStaticPulling:
         """
         if "Pt3" in self.data.columns:
             pt_reg = [
-                ["M_Pt_Rope","Pt3", "Pt4"],
-                ["M_Pt_Measure","Pt3", "Pt4"],
+                ["M_Pt","Pt3", "Pt4"],
                 ]
         else:
             pt_reg = []
         reg = DynatreeStaticPulling._get_regressions(self.data,
             [
-            ["M_Rope",   "blue", "yellow", "blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"],
-            ["M_Measure","blue", "yellow", "blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"],
-            ["M_Elasto_Rope", "Elasto-strain"],
-            ["M_Elasto_Measure", "Elasto-strain"],
+            ["M","blue", "yellow", "blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"],
+            ["M_Elasto", "Elasto-strain"],
             ]+pt_reg
             )
         return reg
@@ -534,8 +565,9 @@ def main():
     return df_all_data
 
 if __name__ == "__main__":
-    # day, tree, measurement, mt = "2022-08-16", "BK11", "M02", "normal"
+    # day, tree, measurement, mt = "2022-08-16", "BK08", "M02", "normal"
     # day,tree,measurement, mt = "2023-07-17", "BK01", "M01", "afterro"
+    # rope_angle(mt, day, tree, 'pulling_tests')
 
     # # day, tree, measurement = "2021-06-29", "BK08", "M04"
     # m = DynatreeStaticMeasurement(

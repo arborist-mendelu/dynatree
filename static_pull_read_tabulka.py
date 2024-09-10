@@ -20,19 +20,17 @@ def preformat_datum(datum):
     # Převedeme na datetime objekt a následně na požadovaný formát
     return pd.to_datetime(datum, format='%d%m%Y').strftime('%Y-%m-%d')
 
+def transform(x):
+    if x == 18:
+        return f"JD{x}"
+    else:
+        return f"BK{x:02d}"
+
+# Použití funkce apply na sloupec 'strom'
+df['tree'] = df['strom'].apply(transform)
 # Aplikujeme funkci na celý sloupec
 df['day'] = df['Datum'].apply(preformat_datum)
 
-df['day'].drop_duplicates().sort_values()
+df = df[['Stav','day','tree','angle']].rename({'Stav':'state'}, axis=1)
+df.to_csv("csv/angles_measured.csv", index=None)
 
-#%%
-
-df["strom"].drop_duplicates()
-
-#%%
-
-df["day"].drop_duplicates().sort_values()
-
-#%%
-
-df["Stav"].drop_duplicates()

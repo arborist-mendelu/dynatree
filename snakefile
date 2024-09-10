@@ -8,7 +8,8 @@ rule all:
         "../outputs/fft_spectra_elasto_acc2.zip",
         "../outputs/regressions_static.csv",
         "../outputs/static_pulling_std_RopeAngle100.pdf",
-        "../outputs/static_pulling_error_propagation.xlsx"
+        "../outputs/static_pulling_error_propagation.xlsx",
+        "csv/angles_measured.csv"
         
 rule fft_boxplots:
     """
@@ -86,7 +87,8 @@ rule create_regressions_static:
     input:
         script = "static_pull.py",
         xls = "../data/Popis_Babice_VSE_13082024.xlsx",
-        csv = "csv/intervals_split_M01.csv"
+        csv = "csv/intervals_split_M01.csv",
+        csv_angles_measured = "angles_measured.csv"
     output:
         csv = "../outputs/regressions_static.csv"
     shell:
@@ -167,4 +169,21 @@ rule static_pulling_error_propagation:
         """
         python {input.script}
         """
+    
+rule angle_from_measurement:
+    """
+    Extract angle values from "../data/Popis_Babice_VSE_13082024.xlsx"
+    Used by static pulling.
+    """
+    input:
+        xls = "../data/Popis_Babice_VSE_13082024.xlsx",
+        script = "static_pull_read_tabulka.py"
+    output:
+        csv = "csv/angles_measured.csv"
+    shell:
+        """
+        mkdir -p csv_output
+        python {input.script}
+        """
+    
     

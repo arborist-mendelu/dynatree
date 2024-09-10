@@ -383,7 +383,7 @@ def Detail():
     if all_data.value:
         _ = d_obj._get_static_pulling_data(optics=s.use_optics.value, restricted='get_all')
         _["Time"] = _.index
-        subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value)
+        subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value, measurement_type=s.method.value)
         subdf = subdf.data
     
     try:

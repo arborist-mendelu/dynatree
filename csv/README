@@ -9,3 +9,5 @@ release_data_XXX.csv - vysledek skriptu extract_release_data,
 tsv_dirs.csv - vysledek skriptu, obsahuje cesty k tsv souborum
 
 intervals_split_M01.csv - used in static_pull.py, k pripadnemu rucnimu prebiti automatickeho hledani intervalu s jednotlivymi zatazenimi u statiky M1
+
+csv/angles_from_pulling.csv - created by pull2parquet.py as a sideeffect when reading pulling files. Contains angle from the file.
