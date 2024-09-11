@@ -454,7 +454,7 @@ class DynatreeStaticPulling:
         df.plot(x="Force(100)", y=colors, ax=a[1], ylabel="Angle", xlabel="Force", style='.')
         a[1].legend(title="Inclinometers")
 
-        a[3].plot(df["M_Measure"], df[colors], '.')
+        a[3].plot(df["M"], df[colors], '.')
         a[3].set(
                     xlabel = "Momentum from Measured rope angle",
                     ylabel = "Angle",
