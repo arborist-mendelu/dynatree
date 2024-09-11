@@ -19,6 +19,7 @@ from solara.lab import task
 import solara
 import time
 import solara_select_source as s
+import graphs_regressions
 
 DATA_PATH = "../data"
 
@@ -48,6 +49,8 @@ restrict_data = solara.reactive(data_possible_restrictions[-1])
 interactive_graph = solara.reactive(False)
 all_data = solara.reactive(False)
 force_interval = solara.reactive("None")
+tab_index = solara.reactive(0)
+
 # data_from_url = solara.reactive(False)
 # 
 def fix_input(a):
@@ -146,23 +149,25 @@ def Page():
         Selection()
     # solara.Markdown("# Under construction")
     # return
-    with solara.lab.Tabs():
+    with solara.lab.Tabs(value=tab_index):
         with solara.lab.Tab("Grafy"):
             with solara.Card():
                 try:
-                    start = time.time_ns()/1000000
-                    Graphs()
-                    end = time.time_ns()/1000000
-                    # print(f"Graphs took {end-start}ms.")
+                    if tab_index.value == 0:
+                        start = time.time_ns()/1000000
+                        Graphs()
+                        end = time.time_ns()/1000000
+                        # print(f"Graphs took {end-start}ms.")
                 except:
                     pass
         with solara.lab.Tab("Volba proměnných a regrese"):
             with solara.Card(title="Increasing part of the time-force diagram"):
                 try:
-                    start = time.time_ns()/1000000
-                    Detail()
-                    end = time.time_ns()/1000000
-                    # print(f"Details took {end-start}ms.")
+                    if tab_index.value == 1:
+                        start = time.time_ns()/1000000
+                        Detail()
+                        end = time.time_ns()/1000000
+                        # print(f"Details took {end-start}ms.")
                 except:
                     pass
         with solara.lab.Tab("Statistiky"):
@@ -175,6 +180,10 @@ def Page():
                     #     solara.Text(f"Statistics took {end-start}ms.")
                 except:
                     pass
+
+        with solara.lab.Tab("Regrese"):
+            if tab_index.value == 3:
+                graphs_regressions.Page()
 
         with solara.lab.Tab("Návod a komentáře"):
             with solara.Card(title="Návod"):
@@ -407,7 +416,7 @@ def Detail():
                 """)
     except:
         solara.Error(
-            "Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny.")
+            "Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny. Pokud tato hláška během chvíle zmizí, je neškodná.")
 
     title = f"{s.day.value} {s.tree.value} {s.measurement.value} {s.method.value} Pull {pull_value}"
     if interactive_graph.value:
