@@ -77,9 +77,14 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
 
     @cached_property    
     def pullings(self): 
-        return [DynatreeStaticPulling(i, tree=self.tree, measurement_type=self.measurement_type, day=self.day) 
-                             for i in self._get_static_pulling_data(
-                                     optics=self.optics, restricted=self.restricted)]
+        return [
+            DynatreeStaticPulling(i, tree=self.tree, 
+                  measurement_type=self.measurement_type, day=self.day,
+                  extra_columns={"blue":"Inclino(80)", "yellow":"Inclino(81)",
+                 **self.identify_major_minor}) 
+            for i in self._get_static_pulling_data(
+                optics=self.optics, restricted=self.restricted)
+            ]
     @cached_property
     def regresions(self):
         lib_dynatree.logger.debug("Calculating regressionsfor static measurement")
@@ -269,7 +274,23 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         for i,df in enumerate(df_list):
             lower, upper = DynatreeStaticMeasurement._restrict_dataframe(df, column="Force(100)", restricted=restricted)
             df_list[i] = df.loc[lower:upper,:]
+        # df_list = [DynatreeStaticMeasurement.add_colors(df) for df in df_list]
         return df_list
+    
+    # @staticmethod
+    # def add_colors(df):
+    #     """
+    #     Adds new columns to dataframe by replacing Inclino(80) and 
+    #     Inclino(81) by colors blue and yellow.
+    #     """
+    #     cols = df.columns
+    #     for col in cols:
+    #         if "Inclino" in col:
+    #             newcol = col
+    #             newcol = newcol.replace("Inclino(80)","blue")
+    #             newcol = newcol.replace("Inclino(81)","yellow")
+    #             df[newcol] = df[col]
+    #     return df
     
     def plot(self):
         fig, ax = plt.subplots()
@@ -334,11 +355,14 @@ class DynatreeStaticPulling:
     If ini_forces or ini_regress are False, do not evaluate the forces
     and regressions. In this case the variable tree is not important.
     """
-    def __init__(self, data, tree=None, ini_forces=True, ini_regress=True, measurement_type="normal", day=None):
+    def __init__(self, data, tree=None, ini_forces=True, ini_regress=True, measurement_type="normal", day=None, extra_columns=None):
         if tree is not None:
             treeNo = int(tree[-2:])
+        if extra_columns is not None:
+            for i in extra_columns.keys():
+                data[i] = data[extra_columns[i]]
         self.data = data
-        self._process_inclinometers_major_minor()
+        # self._process_inclinometers_major_minor()
         self.day = day
         self.tree = tree
         self.measurement_type = measurement_type
@@ -366,45 +390,44 @@ class DynatreeStaticPulling:
     def __repr__(self):
         return f"Dynatree static pulling, data shape {self.data.shape}"
     
-    def _process_inclinometers_major_minor(self):
-        """
-        The input is dataframe loaded by pd.read_csv from pull_tests directory.
+    # def _process_inclinometers_major_minor(self):
+    #     """
+    #     The input is dataframe loaded by pd.read_csv from pull_tests directory.
         
-        * Converts Inclino(80) and Inclino(81) to blue and yellow respectively.
-        * Evaluates the total angle of inclination from X and Y part
-        * Adds the columns with Major and Minor axis.
+    #     * Converts Inclino(80) and Inclino(81) to blue and yellow respectively.
+    #     * Ads blueMaj etc. as a copy of blueX or blueY, respectively.
         
-        Returns new dataframe with the corresponding columns
-        """
-        df = pd.DataFrame(index=self.data.index, columns=["blue","yellow"], dtype=float)
-        df[["blueX","blueY","yellowX","yellowY"]] = self.data[["Inclino(80)X","Inclino(80)Y", "Inclino(81)X","Inclino(81)Y",]]
-        for inclino in ["blue","yellow"]:
-            df.loc[:,[inclino]] = arctand(
-                np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 )
-                )
-            # najde maximum bez ohledu na znamenko
-            maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
-            # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
-            if maxima[f"{inclino}X"]>maxima[f"{inclino}Y"]:
-                df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}X"]
-                df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}Y"]
-            else:
-                df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}Y"]
-                df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}X"]
-            # Najde pozici, kde je extremalni hodnota - nejkladnejsi nebo nejzapornejsi
-            idx = df[f"{inclino}_Maj"].abs().idxmax()
-            # promenna bude jednicka pokus je extremalni hodnota kladna a minus
-            # jednicka, pokud je extremalni hodnota zaporna
-            if pd.isna(idx):
-                znamenko = 1
-            else:
-                znamenko = np.sign(df[f"{inclino}_Maj"][idx])
-            # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
-            # blueM, blueV, yellowM, yellowV
-            for axis in ["_Maj", "_Min"]:
-                df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]
-        self.data = pd.concat([self.data, df], axis=1)
-        return self.data
+    #     Returns new dataframe with the corresponding columns
+    #     """
+    #     df = pd.DataFrame(index=self.data.index, columns=["blue","yellow"], dtype=float)
+    #     df[["blueX","blueY","yellowX","yellowY"]] = self.data[["Inclino(80)X","Inclino(80)Y", "Inclino(81)X","Inclino(81)Y",]]
+    #     for inclino in ["blue","yellow"]:
+    #         df.loc[:,[inclino]] = arctand(
+    #             np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 )
+    #             )
+    #         # najde maximum bez ohledu na znamenko
+    #         maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
+    #         # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
+    #         if maxima[f"{inclino}X"]>maxima[f"{inclino}Y"]:
+    #             df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}X"]
+    #             df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}Y"]
+    #         else:
+    #             df.loc[:,[f"{inclino}_Maj"]] = df[f"{inclino}Y"]
+    #             df.loc[:,[f"{inclino}_Min"]] = df[f"{inclino}X"]
+    #         # Najde pozici, kde je extremalni hodnota - nejkladnejsi nebo nejzapornejsi
+    #         idx = df[f"{inclino}_Maj"].abs().idxmax()
+    #         # promenna bude jednicka pokus je extremalni hodnota kladna a minus
+    #         # jednicka, pokud je extremalni hodnota zaporna
+    #         if pd.isna(idx):
+    #             znamenko = 1
+    #         else:
+    #             znamenko = np.sign(df[f"{inclino}_Maj"][idx])
+    #         # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
+    #         # blueM, blueV, yellowM, yellowV
+    #         for axis in ["_Maj", "_Min"]:
+    #             df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]
+    #     self.data = pd.concat([self.data, df], axis=1)
+    #     return self.data
 
     def _process_forces(
             self,
@@ -445,7 +468,7 @@ class DynatreeStaticPulling:
         df.loc[:,["Force(100)"]].plot(ax=a[0], legend=False, xlabel="Time", ylabel="Force", style='.')
         colors = ["blue","yellow"]
 
-        df.loc[:,["blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"]
+        df.loc[:,["blueMaj", "blueMin", "yellowMaj", "yellowMin"]
                ].plot(ax=a[2], xlabel="Time", style='.')
         a[2].grid()
         a[2].set(ylabel="Angle")
@@ -482,7 +505,7 @@ class DynatreeStaticPulling:
             pt_reg = []
         reg = DynatreeStaticPulling._get_regressions(self.data,
             [
-            ["M","blue", "yellow", "blue_Maj", "blue_Min", "yellow_Maj", "yellow_Min"],
+            ["M","blue", "yellow", "blueMaj", "blueMin", "yellowMaj", "yellowMin"],
             ["M_Elasto", "Elasto-strain"],
             ]+pt_reg
             )

@@ -48,7 +48,7 @@ def plot_one_measurement(
     aby se dala porovnat se silou a v samostatné soustavě souřadnic 
     data z eleastometru.
     
-    major_minor: pokud je True, kresli se major a minor. Jinak inclino(80) a incino (81)
+    major_minor: pokud je True, kresli se major a minor. Jinak inclino(80)X a inclino(80)Y
     release_detail: pokud je True, kresli se detail okolo vypusteni
     
     df: do not read csv but use this one DataFrame instead

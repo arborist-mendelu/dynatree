@@ -175,24 +175,24 @@ def Page():
                     pass
         with solara.lab.Tab("Volba proměnných a regrese"):
             with solara.Card(title="Increasing part of the time-force diagram"):
-                try:
+                # try:
                     if tab_index.value == 1:
                         start = time.time_ns()/1000000
                         Detail()
                         end = time.time_ns()/1000000
                         # print(f"Details took {end-start}ms.")
-                except:
-                    pass
+                # except:
+                    # pass
         with solara.lab.Tab("Statistiky"):
             with solara.Card():
-                try:
+                # try:
                     start = time.time_ns()/1000000
                     Statistics()
                     end = time.time_ns()/1000000
                     # with solara.AppBar():
                     #     solara.Text(f"Statistics took {end-start}ms.")
-                except:
-                    pass
+                # except:
+                    # pass
 
         with solara.lab.Tab("Regrese"):
             if (tab_index.value == 3) and (ShowRegressions.not_called):
@@ -229,10 +229,15 @@ def Selection():
     with solara.Column(align='center'):
         solara.Button("Run calculation", on_click=nakresli, color="primary")
 
+def fixdf(df):
+    df.columns = ["{i[0]}" if i[1]=='nan' else "{i[0]}_{i[1]}" for i in df.columns]
+    return df
+
 def Statistics():
+    return
     data_object = get_data_object()
     if data_object.is_optics_available:
-        l = [data_object.data_optics_extra, data_object.data_pulling]
+        l = [fixdf(data_object.data_optics_extra), data_object.data_pulling]
         titles = ["Pulling data interpolated to optics time", "Pulling data"]
     else:
         l = [data_object.data_pulling]
@@ -331,8 +336,8 @@ def Detail():
     with solara.Sidebar():
         cols = ['Time', 'Pt3', 'Pt4', 'Force(100)', 'Elasto(90)', 'Elasto-strain',
                 # 'Inclino(80)X', 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y',
-                'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY',
-                'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
+                'blue', 'yellow',
+                'blueMaj', 'blueMin', 'yellowMaj', 'yellowMin',
                 'F_horizontal', 'F_vertical',
                 'M', 'M_Pt', 'M_Elasto',
                 ]
@@ -415,7 +420,8 @@ def Detail():
     if all_data.value:
         _ = d_obj._get_static_pulling_data(optics=s.use_optics.value, restricted='get_all')
         _["Time"] = _.index
-        subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value, measurement_type=s.method.value)
+        subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value, measurement_type=s.method.value,  extra_columns={"blue":"Inclino(80)", "yellow":"Inclino(81)",
+        **d_obj.identify_major_minor})
         subdf = subdf.data
     
     try:
@@ -429,7 +435,7 @@ def Detail():
                 target = ydata.value
             else:
                 target = ydata.value + [ydata2.value]
-            reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value]+target])
+            reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value]+target], )
             solara.DataFrame(reg_df.iloc[:, :5])
             # solara.display(reg_df.iloc[:, :5])
             df_subj_reg = subdf[[xdata.value]+target]
@@ -486,7 +492,7 @@ def Detail():
                             **regression_settings)
         except:
             pass
-        if ydata2.value != None:
+        if ydata2.value != None and False:
             ax2 = ax.twinx()
             # see https://stackoverflow.com/questions/24280180/matplotlib-colororder-and-twinx
             ax2._get_lines = ax._get_lines
@@ -524,7 +530,7 @@ def Help():
 
 ### Popis
 
-* Inlinometr blue je 80, yelllow je 81. Výchylky v jednotlivých osách jsou blueX a blueY resp. blue_Maj a blue_Min. Celková výchylka je blue. Podobně  druhý inklinometr.
+* Inlinometr blue je 80, yelllow je 81. Výchylky v jednotlivých osách jsou blueX a blueY resp. blueMaj a blueMin. Celková výchylka je blue. Podobně  druhý inklinometr.
 * F se rozkládá na vodorovnou a svislou složku.Vodorovná se používá k výpočtu momentu v bodě úvazu (M), v bodě Pt3 (M_Pt) a v místě s extenzometrem (M_Elasto). 
 * Elasto-strain je Elasto(90)/200000.
 

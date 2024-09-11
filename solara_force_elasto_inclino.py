@@ -167,6 +167,14 @@ def Sidebar():
 @solara.component
 def Grafy():    
     solara.ProgressLinear(nakresli.pending)    
+    solara.Warning(solara.Markdown(
+"""
+* Grafy vznikají za běhu, nejsou použita předpočítaná data, aby se daly hned zohlednit 
+případné posuny v synchronizaci nebo instrukce pro nulování inklinometrů. 
+* Po změnách v 
+`csv/synchronization_finetune_inclinometers_fix.csv` spusť `parquet_add_inclino.py`.
+`
+"""))
     if measurement.value not in available_measurements(df, day.value, tree.value):
         solara.Error(f"Measurement {measurement.value} not available for this tree.")
         return
