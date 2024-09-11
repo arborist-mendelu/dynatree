@@ -12,6 +12,7 @@ import solara_vizualizace
 import solara_force_elasto_inclino
 import solara_FFT
 from passlib.hash import pbkdf2_sha256
+import pandas as pd
 import time
 import os
 
@@ -174,6 +175,22 @@ def Page():
                 * Použití: rychlé zobrazení spekter, vizuální porovnání, zjištění důvodů, proč se některá spektra liší (například kvůli krátkému sigálu, narušení oscilací apod.) 
                 """
                   )
+
+            with solara.lab.Tab("Notes from measurements"):
+                solara.Markdown(
+                """
+                ## Notes from measurements
+                
+                Notes are extracted from the file `Popis_Babice_VSE_13082024.xlsx`.
+                The measurements with no notes are dropped. 
+                The table is created automatically by snakemake file.
+                """
+                  )
+                
+                df = pd.read_csv("csv_output/measurement_notes.csv", index_col=0).dropna(subset=["remark1","remark2"], how='all')
+                df = df.set_index(["day","tree","measurement"])
+                solara.display(df)
+
 
 routes = [
     solara.Route(path="/", component=Page, label="home"),

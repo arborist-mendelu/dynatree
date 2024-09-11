@@ -9,7 +9,21 @@ rule all:
         "../outputs/regressions_static.csv",
         "../outputs/static_pulling_std_RopeAngle100.pdf",
         "../outputs/static_pulling_error_propagation.xlsx",
-        "csv/angles_measured.csv"
+        "csv/angles_measured.csv",
+        "csv_output/measurement_notes.csv"
+        
+rule measurement_notes:
+    """
+    Extract the measurement notes from the xlsx file.
+    """        
+    input:
+        xls = "../data/Popis_Babice_VSE_13082024.xlsx",
+    output:
+        "csv_output/measurement_notes.csv"
+    shell:
+        """
+        python read_measurements_notes.py
+        """
         
 rule fft_boxplots:
     """

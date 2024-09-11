@@ -14,7 +14,6 @@ import os
 import plotly.express as px
 import plotly
 from plotly.subplots import make_subplots
-import solara
 
 prefix = "/babice/Mereni_Babice_zpracovani"
 if os.path.isdir(prefix):
@@ -52,17 +51,6 @@ df = df.dropna(subset=["Independent","Dependent"], how='all')
 # df[["Independent","Dependent"]].drop_duplicates()
 df = df[df["lower_cut"]==0.3]
 
-
-# # Ignore the minor axis (the regressions are not great)
-# mask = df["Dependent"].str.contains("_Min")
-# df_ignore["Min"] = df.loc[mask,:].copy()
-# df = df.loc[np.logical_not(mask),:]
-
-# # Ignore the major axis (similar to tal value)
-# mask = df["Dependent"].str.contains("_Maj")
-# df_ignore["Maj"] = df.loc[mask,:].copy()
-# df = df.loc[np.logical_not(mask),:]
-
 # Set information about leaves.
 df.loc[:,"leaves"] = False
 idx = (df["day"].isin(days_with_leaves_true))
@@ -78,19 +66,19 @@ idx = (df["type"]=="afterro")
 df.loc[idx,"reductionNo"]=1
 idx = (df["type"]=="afterro2")
 df.loc[idx,"reductionNo"]=2
+
 df = df.drop(["optics","lower_cut"], axis=1).reset_index(drop=True)
 df = df[df["Dependent"].isin(["blue","yellow","Elasto-strain"])]
 
-savedf = df.copy()
 pairs = df[["Independent","Dependent"]].drop_duplicates()
 
-df = savedf
 df["state"] = df["leaves"].astype(str) + ", " +df["reductionNo"].astype(str)
 trees = df["tree"].drop_duplicates().values
 
-def Page():
+def main():
+    f_ans = {}
     for tree in trees:
-        fig = make_subplots(rows=1, cols=3, subplot_titles=("M/blue", "M/yellow", "Elasto/Elasto-strain"))
+        fig = make_subplots(rows=1, cols=3, subplot_titles=("M/blue", "M/yellow", "M_Elasto/Elasto-strain"))
         f = {}
         for I,_ in enumerate(zip(["M","M","M_Elasto"],["blue", "yellow", "Elasto-strain"])):
             i,d = _
@@ -100,4 +88,5 @@ def Page():
                          title = f"Slope in {i} versus {d}")
             fig.add_trace(f[I]['data'][0], row=1, col=1+I)
         fig.update_layout(height=400, width=1200, title_text=f"Tree {tree}")
-        solara.FigurePlotly(fig)
+        f_ans[tree] = fig
+    return f_ans

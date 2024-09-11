@@ -121,6 +121,19 @@ styles_css = """
 # http://localhost:8765/tahovky?tree=BK04&method=normal&measurement=M02&use_optics=True&day=2022-08-16
 # http://localhost:8765/tahovky?tree=BK08&method=den&measurement=M03&use_optics=False&day=2022-08-16
 
+
+@task
+def ShowRegressions():
+    return graphs_regressions.main()
+
+# @solara.component
+# def DoTask(mytask):
+#     solara.ProgressLinear(mytask.pending)    
+#     if mytask.finished:
+#         solara.FigureMatplotlib(mytask.value)
+#     elif mytask.not_called:
+#         solara.Markdown("**Ještě nebylo spuštěno.**")
+
 @solara.component
 def Page():
     # global first_pass
@@ -182,8 +195,20 @@ def Page():
                     pass
 
         with solara.lab.Tab("Regrese"):
-            if tab_index.value == 3:
-                graphs_regressions.Page()
+            if (tab_index.value == 3) and (ShowRegressions.not_called):
+                ShowRegressions()
+            solara.ProgressLinear(ShowRegressions.pending)    
+            solara.Markdown(
+                """
+                * True/False in the x axis is realted to the leaves presence.
+                * The number on the x axis is the number of branch reductions.
+                * `False, 1` means that the experiment has been perfomed without the leaves and somewhere between first and second branch reduction.
+                """
+                )
+            if ShowRegressions.finished:
+                images = ShowRegressions.value
+                for f in images.values():
+                    solara.FigurePlotly(f)
 
         with solara.lab.Tab("Návod a komentáře"):
             with solara.Card(title="Návod"):
