@@ -495,10 +495,38 @@ class DynatreeMeasurement:
         return f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}.parquet"
 
     @cached_property
+    def identify_major_minor(self):
+        list_inclino = ["Inclino(80)", "Inclino(81)"]
+        df = pd.read_parquet(self.file_pulling_name)
+        for inclino in list_inclino:
+            # najde maximum bez ohledu na znamenko
+            maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
+            # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
+            if maxima[f"{inclino}X"]>maxima[f"{inclino}Y"]:
+                return{f"{inclino}Maj": f"{inclino}X", 
+                       f"{inclino}Min": f"{inclino}Y", }
+            else:
+                return{f"{inclino}Maj": f"{inclino}Y", 
+                       f"{inclino}Min": f"{inclino}X", }
+
+    @cached_property
     def data_pulling(self):
         logger.debug("loading pulling data")
         df = pd.read_parquet(self.file_pulling_name)
-        for inclino in ["Inclino(80)", "Inclino(81)"]:
+        list_inclino = ["Inclino(80)", "Inclino(81)"]
+        
+        for inclino in list_inclino:
+            idx = df[self.identify_major_minor[f"{inclino}Maj"]].abs().idxmax()
+            # promenna bude jednicka pokus je extremalni hodnota kladna a minus
+            # jednicka, pokud je extremalni hodnota zaporna
+            if pd.isna(idx):
+                znamenko = 1
+            else:
+                znamenko = np.sign(df[f"{inclino}_Maj"][idx])
+            # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
+            for axis in ["Maj", "Min"]:
+                df.loc[:,[f"{inclino}{axis}"]] = znamenko * df[f"{inclino}{axis}"]
+        for inclino in list_inclino:
             df.loc[:,[inclino]] = arctand(
                 np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 )
                 )
