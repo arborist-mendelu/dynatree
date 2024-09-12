@@ -199,5 +199,23 @@ rule angle_from_measurement:
         mkdir -p csv_output
         python {input.script}
         """
-    
-    
+
+rule plot_pull_major_minor:
+    """
+    Plots pull data labeled as BlueMajor and BlueMinor etc. 
+    Useful to check if the major a minor axes are properly
+    recognised. 
+    """
+    output:
+        pdf = "../outputs/pull_major_minor_check.pdf",
+        M01pdf = "../outputs/pull_major_minor_check_M01.pdf"        
+    shell:
+        """
+        rm -r ../temp/inclino || true
+        mkdir -p ../temp/inclino
+        echo "Generating PDF files"
+        python plot_pull_major_minor.py
+        echo "Merge PDF files"
+        pdfunite ../temp/inclino/*.pdf {output.pdf}        
+        pdfunite ../temp/inclino/*.pdf {output.M01pdf}        
+        """

@@ -27,7 +27,7 @@ date = "2021-03-22"
 # df_ext["Time"] = df_ext.index
 
 # %%
-plot_one_measurement(
+f = plot_one_measurement(
         date=date,
         tree=tree, 
         measurement=measurement, 
@@ -37,4 +37,5 @@ plot_one_measurement(
         return_figure=True, 
         major_minor=True
         ) 
+
 

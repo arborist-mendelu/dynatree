@@ -45,6 +45,9 @@ except:
     )
     logger.error("Log file not available for writing. Logs are on screen only.")
 
+df_scale_factors = pd.read_csv("csv/scale_factors.csv", index_col=[0,1,2]
+                               ).sort_index()
+
 def tand(angle):
     """
     Evaluates tangens of the angle. The angli is in degrees.
@@ -286,14 +289,16 @@ def do_welch(s, time, nperseg=2**10, fs = 100):
     Pxx
     return f, Pxx
 
-def read_data_inclinometers(file, release=None, delta_time=0):
+def read_data_inclinometers(m, release=None, delta_time=0):
     """
     Read data from pulling tests, restart Time from 0 and turn Time to index.
     If release is given, shift the Time and index columns so that the release 
     is at the given time. In this case the original time is in the column Time_inclino
     
+    m .. measurementm instance of DynatreeMeasurement
+    
     """
-    df_pulling_tests = pd.read_parquet(file)
+    df_pulling_tests = m.data_pulling
     if "Time" not in df_pulling_tests.columns:
         df_pulling_tests["Time"] = df_pulling_tests.index
     df_pulling_tests["Time"] = df_pulling_tests["Time"] - df_pulling_tests["Time"][0]
@@ -429,6 +434,21 @@ date2color = {
     '2021-06-29': "C1",
     }
 
+def fix_inclinometers_sign(df_, measurement_type, day, tree):
+    """
+    Fix the sign of the inclinometer. The function is used to ensure that 
+    major axis has positive values of inclination.
+    """
+    df_scale_factors = pd.read_csv("csv/scale_factors.csv", index_col=[0,1,2]
+                                   ).sort_index()
+    df = df_.copy()
+    coords = (measurement_type,day,tree)
+    if coords in df_scale_factors.index:
+        df_temp = df_scale_factors.loc[coords,:]
+        for i,row in df_temp.iterrows():
+            df[row['probe']+"X"] = df[row['probe']+"X"] * row['scale_factor']
+            df[row['probe']+"Y"] = df[row['probe']+"Y"] * row['scale_factor']
+    return df
 
 class DynatreeMeasurement:
     def __init__(self, day, tree, measurement, measurement_type='normal', datapath="../data"):
@@ -493,15 +513,21 @@ class DynatreeMeasurement:
         """
         return f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}.parquet"
 
-    @cached_property
+    @property
     def identify_major_minor(self):
+        if self.measurement != "M01":
+            return DynatreeMeasurement(
+                self.day, self.tree, 
+                "M01", measurement_type=self.measurement_type).identify_major_minor
         list_inclino = ["Inclino(80)", "Inclino(81)"]
         colors = {"Inclino(80)":"blue", "Inclino(81)":"yellow"}
         df = pd.read_parquet(self.file_pulling_name)
+        df = fix_inclinometers_sign(
+            df, self.measurement_type, self.day, self.tree)
         ans = {}
         for inclino in list_inclino:
-            # najde maximum bez ohledu na znamenko
-            maxima = df[[f"{inclino}X",f"{inclino}Y"]].abs().max()
+            # najde maximum, major ma maximum kladne a vysoke
+            maxima = df[[f"{inclino}X",f"{inclino}Y"]].max()
             # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
             if maxima[f"{inclino}X"]>maxima[f"{inclino}Y"]:
                 ans[f"{inclino}Maj"] = f"{inclino}X"
@@ -530,21 +556,6 @@ class DynatreeMeasurement:
         for inclino in list_inclino:
             major = major_dict[f"{inclino}Maj"]
             minor = major_dict[f"{inclino}Min"]
-            idx = df[major].abs().idxmax()
-            # promenna bude jednicka pokus je extremalni hodnota kladna a minus
-            # jednicka, pokud je extremalni hodnota zaporna
-            if not isinstance(idx, float):
-                idx = idx.iloc[0]
-            if pd.isna(idx):
-                znamenko = 1
-            else:
-                hodnota = df[major].loc[idx]
-                if not isinstance(hodnota, float):
-                    hodnota = hodnota.iloc[0]
-                znamenko = np.sign(hodnota)
-            # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
-            for axis in [major, minor]:
-                df.loc[:,[axis]] = znamenko * df.loc[:,[axis]]
 
             if isinstance(df.columns, pd.MultiIndex):
                 target = (inclino,"nan")
@@ -560,6 +571,7 @@ class DynatreeMeasurement:
     def data_pulling(self):
         logger.debug("loading pulling data")
         df = pd.read_parquet(self.file_pulling_name)
+        df = fix_inclinometers_sign(df, self.measurement_type, self.day, self.tree)
         df = DynatreeMeasurement.add_total_angle(df,self.identify_major_minor)
         return df
     
@@ -610,7 +622,9 @@ class DynatreeMeasurement:
         logger.debug("loading optics extra")
         ans = pd.read_parquet(self.file_optics_extra_name)
         ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
-        ans = DynatreeMeasurement.add_total_angle(ans,self.identify_major_minor)
+        # the sign is already fixed in the parquet_add_inclino.py
+        #ans = fix_inclinometers_sign(ans, self.measurement_type, self.day, self.tree)
+        # ans = DynatreeMeasurement.add_total_angle(ans,self.identify_major_minor)
         return ans
 
     @cached_property

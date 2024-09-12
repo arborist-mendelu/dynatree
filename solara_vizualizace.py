@@ -188,7 +188,11 @@ def Page():
             with solara.Card():
                 try:
                     if tab_index.value == 0:
+                        major_minor = data_object.identify_major_minor
+                        solara.display(major_minor)
                         df = data_object.data_pulling
+                        for i in major_minor.keys():
+                            df[i] = df[major_minor[i]]
                         plot(df, dependent_pull, id="tahovky")
                         investigate(df, dependent_pull)
                 except:

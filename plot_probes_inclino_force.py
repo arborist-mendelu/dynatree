@@ -59,6 +59,7 @@ def plot_one_measurement(
 
     """
       
+    m = DynatreeMeasurement(date, tree, measurement)
     if df_remarks is None:
         df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
     
@@ -69,14 +70,12 @@ def plot_one_measurement(
     date = date.replace("-","_")
     
     if df is None:
-        df = read_data_selected(
-            f"{path}/parquet/{date}/BK{tree}_M0{measurement}.parquet")
+        df = m.data_optics_pt34
     else:
         # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{measurement}.csv")
         pass
     if df_extra is None:
-        df_extra = read_data(
-            f"{path}/parquet/{date}/BK{tree}_M0{measurement}_pulling.parquet")
+        df_extra = m.data_optics_extra
 
     draw_from,draw_to = xlim
     if draw_from == None:
@@ -141,7 +140,7 @@ def plot_one_measurement(
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     release_time_optics = find_release_time_optics(df)
     df_pulling_tests = read_data_inclinometers(
-        f"{path}/parquet_pulling/{date}/normal_BK{tree}_M0{measurement}.parquet", 
+        m, 
         release=release_time_optics, 
         delta_time=delta_time
         )    
@@ -245,6 +244,7 @@ def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
             major_minor=True, 
             release_detail=release_detail
             )
+        # break
     print()    
     print(f"Konec zpracování pro {date}")
     
@@ -274,6 +274,7 @@ def main():
         print(i)
         print("=====================================================")
         plot_one_day(date=i, release_detail=args.release_detail)
+        # break
 
 if __name__ == "__main__":
     main()
