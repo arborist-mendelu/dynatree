@@ -175,24 +175,24 @@ def Page():
                     pass
         with solara.lab.Tab("Volba proměnných a regrese"):
             with solara.Card(title="Increasing part of the time-force diagram"):
-                # try:
+                try:
                     if tab_index.value == 1:
                         start = time.time_ns()/1000000
                         Detail()
                         end = time.time_ns()/1000000
                         # print(f"Details took {end-start}ms.")
-                # except:
-                    # pass
+                except:
+                    pass
         with solara.lab.Tab("Statistiky"):
             with solara.Card():
-                # try:
+                try:
                     start = time.time_ns()/1000000
                     Statistics()
                     end = time.time_ns()/1000000
                     # with solara.AppBar():
                     #     solara.Text(f"Statistics took {end-start}ms.")
-                # except:
-                    # pass
+                except:
+                    pass
 
         with solara.lab.Tab("Regrese"):
             if (tab_index.value == 3) and (ShowRegressions.not_called):

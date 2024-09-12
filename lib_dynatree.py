@@ -32,7 +32,7 @@ try:
         level=logging.ERROR,
         format="[%(asctime)s] %(levelname)s | %(message)s",
     )
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(logging.ERROR)
 except:
     logger = logging.getLogger("lib_dynatree")
     screen_handler = logging.StreamHandler()
@@ -313,8 +313,8 @@ def read_data_inclinometers(m, release=None, delta_time=0):
         release_time_force = df_pulling_tests["Force(100)"].idxmax()
         
     # Sync the dataframe from inclino to optics    
-    if delta_time != 0:
-        print(f"  info: Using time fix {delta_time} when reading data from inclino/force/elasto")
+    # if delta_time != 0:
+    #     print(f"  info: Using time fix {delta_time} when reading data from inclino/force/elasto")
     df_pulling_tests["Time_inclino"] = df_pulling_tests.index
     df_pulling_tests["Time"] = df_pulling_tests["Time_inclino"] - release_time_force + release + delta_time
     df_pulling_tests.set_index("Time", inplace=True)
@@ -488,7 +488,7 @@ class DynatreeMeasurement:
         The name of the file with optics.
         """
         if self.measurement_type != "normal":
-            logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
+            logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
             return ""
         return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}.parquet"
     
@@ -500,7 +500,7 @@ class DynatreeMeasurement:
         can be concatenated.
         """
         if self.measurement_type != "normal":
-            logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
+            logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
             return ""
         return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}_pulling.parquet"
     

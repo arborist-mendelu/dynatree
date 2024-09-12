@@ -22,6 +22,7 @@ from lib_dynatree import read_data, read_data_selected, find_release_time_optics
 from lib_dynatree import find_finetune_synchro, read_data_inclinometers, DynatreeMeasurement
 from static_pull import DynatreeStaticPulling
 import pathlib
+from tqdm import tqdm
 
 def plot_one_measurement(
         date="2021-03-22",
@@ -230,9 +231,10 @@ def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
     
     files =  glob.glob(f"../data/parquet/{date.replace('-','_')}/BK??_M??.parquet")
     files.sort()
+    pbar = tqdm(total=len(files))
     for file in files:
         filename = file.split("/")[-1].replace(".parquet","")
-        print(filename,", ",end="", flush=True)
+        # print(filename,", ",end="", flush=True)
         tree, measurement = filename.split("_")
         plot_one_measurement(
             date=date, 
@@ -244,8 +246,9 @@ def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
             major_minor=True, 
             release_detail=release_detail
             )
-        # break
-    print()    
+        pbar.update(1)
+
+    pbar.close()
     print(f"Konec zpracování pro {date}")
     
 def main():

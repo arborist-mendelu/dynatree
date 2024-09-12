@@ -23,7 +23,7 @@ import lib_dynatree
 from lib_find_measurements import get_all_measurements
 
 import logging
-lib_dynatree.logger.setLevel(logging.INFO)
+lib_dynatree.logger.setLevel(logging.ERROR)
 
 import multi_handlers_logger as mhl
 
@@ -249,7 +249,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         If restricted is get_all, return the whole dataset.
         """
         if optics and not self.is_optics_available:
-            lib_dynatree.logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement}")
+            lib_dynatree.logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement}")
             return []
         if  (not optics) or (self.measurement == "M01"):
             df = self.data_pulling_interpolated
@@ -548,6 +548,7 @@ class DynatreeStaticPulling:
 
 def main():
     logger = mhl.setup_logger(prefix="static_pull_")
+    logger.setLevel(logging.ERROR)
     logger.info("========== INITIALIZATION OF static-pull.py  ============")
     df = get_all_measurements(method='all', type='all')
     # drop missing optics

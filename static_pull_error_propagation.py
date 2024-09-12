@@ -53,8 +53,6 @@ def get_derivatives(tree=tree, angle=22, h=0.1):
     result["Slope_Derivative_relative"] = result["Slope_Derivative"]/result["Slope"]
     return result
 
-get_regressions(tree="BK01")
-
 
 # %%
 bk01 = get_derivatives()

@@ -75,6 +75,13 @@ pairs = df[["Independent","Dependent"]].drop_duplicates()
 df["state"] = df["leaves"].astype(str) + ", " +df["reductionNo"].astype(str)
 trees = df["tree"].drop_duplicates().values
 
+df = df.query("not (Dependent == 'blue' and tree == 'BK08' and measurement == 'M03' and day == '2021-03-22')")
+df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-04-05')")
+df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-08-16')")
+df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK08' and measurement == 'M03' and day == '2024-09-02')")
+df = df.query("not (Dependent == 'blue' and tree == 'BK13' and measurement == 'M01' and day == '2024-09-02' and 'pullNo' == '0')")
+
+
 def main():
     f_ans = {}
     for tree in trees:
