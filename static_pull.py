@@ -455,7 +455,8 @@ class DynatreeStaticPulling:
                     height_of_anchorage - height_of_elastometer )
         df.loc[:,["Angle"]] = rope_angle
         df.columns = [f"{i}{suffix}" for i in df.columns]
-        self.data = pd.concat([self.data, df], axis=1)
+        # self.data = pd.concat([self.data, df], axis=1)
+        self.data.loc[:,df.columns] = df
         return self.data
     
     def plot(self, pullNo=None):
