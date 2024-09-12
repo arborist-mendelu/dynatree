@@ -217,5 +217,5 @@ rule plot_pull_major_minor:
         python plot_pull_major_minor.py
         echo "Merge PDF files"
         pdfunite ../temp/inclino/*.pdf {output.pdf}        
-        pdfunite ../temp/inclino/*.pdf {output.M01pdf}        
+        pdfunite ../temp/inclino/*M01.pdf {output.M01pdf}        
         """
