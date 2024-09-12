@@ -19,7 +19,7 @@ from matplotlib import ticker
 import matplotlib
 import argparse
 from lib_dynatree import read_data, read_data_selected, find_release_time_optics, find_release_time_interval
-from lib_dynatree import find_finetune_synchro, read_data_inclinometers
+from lib_dynatree import find_finetune_synchro, read_data_inclinometers, DynatreeMeasurement
 from static_pull import DynatreeStaticPulling
 import pathlib
 
@@ -153,10 +153,14 @@ def plot_one_measurement(
         inclino_mean = df_pulling_tests.loc[start:end,inclino].mean()
         df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean
     if major_minor:
-        list_major_minor = ["blue_Maj", "blue_Min", "yellow_Maj","yellow_Min"]
+        axes_major = DynatreeMeasurement(date, tree, measurement).identify_major_minor
+        list_major_minor = ["blueMaj", "blueMin", "yellowMaj","yellowMin"]
         df_major_minor = DynatreeStaticPulling(
             df_pulling_tests, ini_forces=False, ini_regress=False
             ).data
+        for i in list_major_minor:
+            df_pulling_tests[i] = df_pulling_tests[
+                axes_major[i.replace("blue","Inclino(80)").replace("yellow","Inclino(81)")]]
         # df_major_minor = process_inclinometers_major_minor(df_pulling_tests)
         df_major_minor.loc[draw_from:draw_to,list_major_minor].plot(ax=ax, style=".")
         ax.legend(list_major_minor, title="", loc=3)

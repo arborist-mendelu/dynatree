@@ -258,7 +258,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
             else:
                 times = [{"minimum":0, "maximum": self.data_pulling["Force(100)"].idxmax()}]                
         else:
-            dfA = self.data_optics_extra
+            dfA = self.data_optics_extra_reduced
             dfB = self.data_optics_pt34.loc[:,[("Pt3","Y0"),("Pt4","Y0")]].copy()
             dfB = dfB - dfB.iloc[0,:]
             df = pd.concat([dfA,dfB], axis=1)
@@ -472,19 +472,19 @@ class DynatreeStaticPulling:
                ].plot(ax=a[2], xlabel="Time", style='.')
         a[2].grid()
         a[2].set(ylabel="Angle")
-        a[2].legend(title="Inclinometer_axis")
+        a[2].legend(title="Inclinometers axes")
 
-        df.plot(x="Force(100)", y=colors, ax=a[1], ylabel="Angle", xlabel="Force", style='.')
-        a[1].legend(title="Inclinometers")
+        df.plot(x="M_Elasto", y="Elasto-strain", ax=a[1], xlabel="Momentum at extensometer", ylabel="Strain on extensometer", style='.', color="C1", legend=None)
+        a[1].grid()
 
         a[3].plot(df["M"], df[colors], '.')
         a[3].set(
                     xlabel = "Momentum from Measured rope angle",
                     ylabel = "Angle",
                     )
-        a[3].legend(colors)
+        a[3].legend(colors, title="Inclinometers")
 
-        for _ in [a[0],a[1],a[3]]:
+        for _ in [a[0],a[3]]:
             _.set(ylim=(0,None))
             _.grid()
         if pullNo != None:

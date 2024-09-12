@@ -230,12 +230,19 @@ def Selection():
         solara.Button("Run calculation", on_click=nakresli, color="primary")
 
 def fixdf(df):
-    df.columns = ["{i[0]}" if i[1]=='nan' else "{i[0]}_{i[1]}" for i in df.columns]
+    df.columns = [f"{i[0]}" if i[1]=='nan' else f"{i[0]}_{i[1]}" for i in df.columns]
+    df = df[[i for i in df.columns if "_" not in i]]
     return df
 
 def Statistics():
-    return
     data_object = get_data_object()
+    solara.Markdown(
+"""
+This card reports missing data.
+
+* Rope(100) is never used
+* Inclino(80) and Inclino(81) are claculated from the other data
+""")
     if data_object.is_optics_available:
         l = [fixdf(data_object.data_optics_extra), data_object.data_pulling]
         titles = ["Pulling data interpolated to optics time", "Pulling data"]

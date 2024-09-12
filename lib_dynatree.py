@@ -120,8 +120,7 @@ def get_data(date, tree, measurement):
 
 
 def read_data_selected(file,
-                        probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]],
-                        # probes = ["Time", 'Pt0', 'Pt1', 'Pt3', 'Pt4', 'Pt8', 'Pt9', 'Pt10', 'Pt11', 'Pt12', 'Pt13']
+                        probes = ["Time", 'Pt0', 'Pt1', 'Pt3', 'Pt4', 'Pt8', 'Pt9', 'Pt10', 'Pt11', 'Pt12', 'Pt13']
                         ):
     # lru_cache vould complain TypeError: unhashable type: 'list'
     return read_data_selected_doit(file, tuple(probes))
@@ -534,18 +533,27 @@ class DynatreeMeasurement:
             idx = df[major].abs().idxmax()
             # promenna bude jednicka pokus je extremalni hodnota kladna a minus
             # jednicka, pokud je extremalni hodnota zaporna
+            if not isinstance(idx, float):
+                idx = idx.iloc[0]
             if pd.isna(idx):
                 znamenko = 1
             else:
-                znamenko = np.sign(df[major][idx])
+                hodnota = df[major].loc[idx]
+                if not isinstance(hodnota, float):
+                    hodnota = hodnota.iloc[0]
+                znamenko = np.sign(hodnota)
             # V zavisosti na znamenku se neudela nic nebo zmeni znamenko ve sloupcich
             for axis in [major, minor]:
                 df.loc[:,[axis]] = znamenko * df.loc[:,[axis]]
 
-            df.loc[:,[inclino]] = arctand(
+            if isinstance(df.columns, pd.MultiIndex):
+                target = (inclino,"nan")
+            else:
+                target = inclino
+            df.loc[:,target] = (arctand(
                 np.sqrt((tand(df.loc[:,major]))**2 
                         + (tand(df.loc[:,minor]))**2 )
-                ) * np.sign(df[major])
+                ) * np.sign(df.loc[:,major])).values
         return df
     
     @cached_property
@@ -595,12 +603,26 @@ class DynatreeMeasurement:
         
     @cached_property
     def data_optics_extra(self):
+        """
+        Pulling data interpolated to the optics, synced with optics and with
+        extra columns where we try to fix the movement of cameras.
+        """
         logger.debug("loading optics extra")
         ans = pd.read_parquet(self.file_optics_extra_name)
         ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
         ans = DynatreeMeasurement.add_total_angle(ans,self.identify_major_minor)
         return ans
-      
+
+    @cached_property
+    def data_optics_extra_reduced(self):
+        """
+        Like optics extra, but only the data from pulling device are considered.
+        The column index converted from multiindex to plain index.
+        """
+        logger.debug("loading optics extra reduced")
+        ans = self.data_optics_extra
+        return ans
+
     @property
     def is_optics_available(self):
         return os.path.isfile(self.file_optics_name)
