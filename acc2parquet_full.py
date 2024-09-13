@@ -45,7 +45,7 @@ pbar = tqdm(total=len(df))
 for i,row in df.iterrows():
     files = glob.glob(os.path.join(row['directory'], '*.mat'))
     for soubor in files:
-        print(soubor)
+        # print(soubor)
         measurement = soubor.split("/")[-1].split(".")[-2]
         target = f"../data/parquet_acc/{row['kind'].lower()}_{row['date']}_{row['tree']}_{measurement}_5000.parquet"
         file_path = Path(target)
