@@ -9,6 +9,7 @@ rule all:
         "../outputs/regressions_static.csv",
         "../outputs/static_pulling_std_RopeAngle100.pdf",
         "../outputs/static_pulling_error_propagation.xlsx",
+        "../outputs/anotated_regressions_static.csv",
         "csv/angles_measured.csv",
         "csv_output/measurement_notes.csv"
         
@@ -219,3 +220,19 @@ rule plot_pull_major_minor:
         pdfunite ../temp/inclino/*.pdf {output.pdf}        
         pdfunite ../temp/inclino/*M01.pdf {output.M01pdf}        
         """
+
+rule anotate_static_pull_regressions:
+    """
+    Merge data from pull
+    """        
+    input:
+        "../outputs/regressions_static.csv", 
+        "csv/static_fail.csv"
+    output:
+        "../outputs/anotated_regressions_static.csv"
+    shell:
+        """
+        python anotate_regressions_static.py
+        """
+
+    

@@ -1,8 +1,8 @@
 """
 Created on Wed Aug 21 06:21:13 2024
 
-Pracuje s daty z regressions_static.csv, vytvoreneho skriptem 
-static_pull.py
+Pracuje s daty z anotated_regressions_static.csv, vytvoreneho skriptem 
+static_pull.py a anotate_regressions_static.py
 
 
 @author: marik
@@ -43,7 +43,7 @@ days_with_leaves_true = ["2021-06-29", "2021-08-03", "2022-08-16", "2023-07-17",
 days_after_first_reduction = ['2024-01-16', '2024-04-10', '2024-09-02']
 
 # Načtení a vyčištění dat
-df = pd.read_csv("../outputs/regressions_static.csv", index_col=0)
+df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
 df = df.drop(["p-value","stderr", "intercept_stderr", "R^2", "upper_cut"], axis=1).reset_index(drop=True)
 df = df[df["tree"] != "JD18"]
 
@@ -75,11 +75,13 @@ pairs = df[["Independent","Dependent"]].drop_duplicates()
 df["state"] = df["leaves"].astype(str) + ", " +df["reductionNo"].astype(str)
 trees = df["tree"].drop_duplicates().values
 
-df = df.query("not (Dependent == 'blue' and tree == 'BK08' and measurement == 'M03' and day == '2021-03-22')")
-df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-04-05')")
-df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-08-16')")
-df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK08' and measurement == 'M03' and day == '2024-09-02')")
-df = df.query("not (Dependent == 'blue' and tree == 'BK13' and measurement == 'M01' and day == '2024-09-02' and 'pullNo' == '0')")
+# +
+# df = df.query("not (Dependent == 'blue' and tree == 'BK08' and measurement == 'M03' and day == '2021-03-22')")
+# df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-04-05')")
+# df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-08-16')")
+# df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK08' and measurement == 'M03' and day == '2024-09-02')")
+# df = df.query("not (Dependent == 'blue' and tree == 'BK13' and measurement == 'M01' and day == '2024-09-02' and 'pullNo' == '0')")
+# -
 
 
 def main():
@@ -91,9 +93,16 @@ def main():
             i,d = _
             f[I] = px.strip(df[(df["Independent"]==i) & (df["Dependent"]==d) & (df["tree"]==tree)], 
                          x="state", y="Slope", #points="all", 
-                            hover_data=['day', 'tree', "measurement", "type", "pullNo"], width=1000, height=500, 
+                         hover_data=['day', 'tree', "measurement", "type", "pullNo"], width=1000, height=500, 
+                          color='failed',   
+                         # color_discrete_sequence=px.colors.qualitative.Set1,  # Nastavení barevné škály
                          title = f"Slope in {i} versus {d}")
-            fig.add_trace(f[I]['data'][0], row=1, col=1+I)
+            for trace in f[I]['data']:
+                fig.add_trace(trace, row=1, col=1+I)
         fig.update_layout(height=400, width=1200, title_text=f"Tree {tree}")
+        fig.update_layout(showlegend=False)
         f_ans[tree] = fig
     return f_ans
+
+
+

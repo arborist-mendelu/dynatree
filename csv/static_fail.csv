@@ -1,6 +1,6 @@
 Dependent,tree,measurement,day,pullNo,reason
 blue,BK08,M03,2021-03-22,0,Inklinometr vypadl během napínání
-Elasto-strain,BK10,M04,2022-04-05,0,"Extenzometr vypadl, bez signálu, dointerpolováno""
+Elasto-strain,BK10,M04,2022-04-05,0,"Extenzometr vypadl, bez signálu, dointerpolováno"
 ???Elasto-strain,BK10,M04,2022-08-16,0,
 ??Elasto-strain,BK08,M03,2024-09-02,0,
 yellow,BK04,M02,2024-04-10,0,Inklinometr vypadl během napínání
