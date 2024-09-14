@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Sep 14 12:37:02 2024
+
+@author: marik
+"""
+
+import pandas as pd
+import lib_dynatree
+import static_pull
+import matplotlib.pyplot as plt
+import matplotlib
+
+
+
+df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
+df = df.dropna(subset=["Independent","Dependent"],how='all')
+df = df[df["lower_cut"]==0.3]
+df = df.dropna(how='all', axis=0)
+df = df[~df['Dependent'].str.contains('Min')]
+df = df.sort_values(by="R^2")
+
+
+def plot_row(row):
+    if row['Dependent'] in ["Pt3","Pt4"]:
+        return
+    m = static_pull.DynatreeStaticMeasurement(
+        day=row['day'], tree=row['tree'], measurement=row['measurement'], 
+        measurement_type=row['type'])
+    pull = m.pullings[row['pullNo']]
+    
+    fig, ax = plt.subplots(2,2,figsize=(12,8))
+    if row['Dependent'] in ['blue','blueMaj']:
+        data = pull.data
+        data.plot(y=["Inclino(80)X","Inclino(80)Y"], ax=ax[0,0], style='.')
+        ax[0,0].grid()
+        data.plot(x="Force(100)", y=["Inclino(80)X","Inclino(80)Y"], ax=ax[0,1], style='.')
+        ax[0,1].grid()
+        m.data_pulling.plot(y=["Inclino(80)X","Inclino(80)Y"], ax = ax[1,0], style='.')
+    
+    if row['Dependent'] in ['yellow','yellowMaj']:
+        data = pull.data
+        data.plot(y=["Inclino(81)X","Inclino(81)Y"], ax=ax[0,0], style='.')
+        ax[0,0].grid()
+        data.plot(x="Force(100)", y=["Inclino(81)X","Inclino(81)Y"], ax=ax[0,1], style='.')
+        ax[0,1].grid()
+        m.data_pulling.plot(y=["Inclino(81)X","Inclino(81)Y"], ax = ax[1,0], style='.')
+        
+    if row['Dependent'] == 'Elasto-strain':
+        data = pull.data
+        data.plot(y=["Elasto(90)"], ax=ax[0,0], style='.')
+        ax[0,0].grid()
+        data.plot(x="Force(100)", y=["Elasto(90)"], ax=ax[0,1], style='.')
+        ax[0,1].grid()
+        m.data_pulling.plot(y=["Elasto(90)"], ax = ax[1,0], style='.')
+        
+    ax[1,1].text(0,0.5,row['reason'], wrap=True)
+    ax[1,1].axis('off')
+    plt.suptitle(f"{pull.measurement_type} {pull.day} {pull.tree} {row['measurement']} pullNo={row['pullNo']} R^2={row['R^2']:.4f}")
+    plt.tight_layout()
+    return fig,ax
+
+#%%            
+
+#%%
+def main():
+    try:
+        matplotlib.use('TkAgg') # https://stackoverflow.com/questions/39270988/ice-default-io-error-handler-doing-an-exit-pid-errno-32-when-running
+    except:
+        matplotlib.use('Agg')
+    for i,row in df.iterrows():
+        if (row['R^2'] > 0.5) and (not row['failed']):
+            continue
+        out = plot_row(row)
+        if out is not None:
+            fig, ax = out
+            filename = f"{row['type']}_{row['day']}_{row['tree']}_{row['measurement']}_{row['pullNo']}"
+            fig.savefig(f"../temp/static_fail_images/{filename}.png")
+            plt.close('all')
+
+
+if __name__ == "__main__":
+    main()
+    

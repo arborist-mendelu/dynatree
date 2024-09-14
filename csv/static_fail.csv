@@ -13,7 +13,6 @@ Pt3,normal,BK13,M02,2022-08-16,0,"Optika selhala, meří chaos"
 Pt4,normal,BK13,M02,2022-08-16,0,"Optika selhala, meří chaos"
 blue,afterro2,BK13,M01,2024-09-02,0,Blue neměřil.
 blue,normal,BK08,M03,2021-03-22,0,Inklinometr vypadl během napínání.
-blue,normal,BK09,M02,2021-06-29,0,"Inklinometr rozeskákaný, projeví se po interpolaci na časy z optiky."
 blue,normal,BK16,M02,2022-04-05,0,"Osy major a minor jsou srovnatelné, což je divné. Major by měla mít mnohem vyšší hodnoty."
 yellow,normal,BK04,M02,2024-04-10,0,Inklinometr vypadl během napínání.
 yellow,mraz,BK01,M02,2024-01-16,0,"Osy major a minor jsou srovnatelné, což je divné. Major by měla mít mnohem vyšší hodnoty."
