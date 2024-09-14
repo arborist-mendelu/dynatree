@@ -127,11 +127,11 @@ rule synchronization_check:
         "../outputs/synchro_optics_inclino_detail.pdf"
     shell:
         """
-        rm -rf ../temp/* || true
+        rm -rf ../temp/optics_with_inclino || true
         mkdir -p ../temp/optics_with_inclino
         python {input.script}
         pdfunite ../temp/optics_with_inclino/*.pdf ../outputs/synchro_optics_inclino.pdf
-        rm -rf ../temp/* || true
+        rm -rf ../temp/optics_with_inclino || true
         mkdir -p ../temp/optics_with_inclino
         python {input.script} --release_detail
         pdfunite ../temp/optics_with_inclino/*.pdf ../outputs/synchro_optics_inclino_detail.pdf
