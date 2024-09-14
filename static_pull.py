@@ -80,6 +80,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         return [
             DynatreeStaticPulling(i, tree=self.tree, 
                   measurement_type=self.measurement_type, day=self.day,
+                  parent_experiment=self,
                   extra_columns={"blue":"Inclino(80)", "yellow":"Inclino(81)",
                  **self.identify_major_minor}) 
             for i in self._get_static_pulling_data(
@@ -355,7 +356,7 @@ class DynatreeStaticPulling:
     If ini_forces or ini_regress are False, do not evaluate the forces
     and regressions. In this case the variable tree is not important.
     """
-    def __init__(self, data, tree=None, ini_forces=True, ini_regress=True, measurement_type="normal", day=None, extra_columns=None):
+    def __init__(self, data, tree=None, ini_forces=True, ini_regress=True, measurement_type="normal", day=None, extra_columns=None, parent_experiment=None):
         if tree is not None:
             treeNo = int(tree[-2:])
         if extra_columns is not None:
@@ -366,6 +367,7 @@ class DynatreeStaticPulling:
         self.day = day
         self.tree = tree
         self.measurement_type = measurement_type
+        self.parent_experiment = parent_experiment
         if ini_forces:
             self._process_forces(
                 height_of_anchorage = DF_PT_NOTES.at[treeNo,'height_of_anchorage'],

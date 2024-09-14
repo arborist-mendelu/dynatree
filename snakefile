@@ -11,7 +11,9 @@ rule all:
         "../outputs/static_pulling_error_propagation.xlsx",
         "../outputs/anotated_regressions_static.csv",
         "csv/angles_measured.csv",
-        "csv_output/measurement_notes.csv"
+        "csv_output/measurement_notes.csv",
+        "../outputs/static_pull_removed_experiments.zip"
+
         
 rule measurement_notes:
     """
@@ -94,7 +96,7 @@ rule fft_spectra_combine:
         cp out.zip ../{output.elasto}
         """
 
-rule create_regressions_static:
+rule static_pull_create_regressions:
     """
     Find regression coefficients for static pull and pulling phase of the pull-release
     experiment.
@@ -119,7 +121,7 @@ rule synchronization_check:
     Both variants, with full timeline and with detail around the release.
     """
     input:
-        script = "plot_probes_inclino_force.py",
+        script = "plot_probes_inclino_force.py"
     output:
         "../outputs/synchro_optics_inclino.pdf",
         "../outputs/synchro_optics_inclino_detail.pdf"
@@ -221,7 +223,7 @@ rule plot_pull_major_minor:
         pdfunite ../temp/inclino/*M01.pdf {output.M01pdf}        
         """
 
-rule anotate_static_pull_regressions:
+rule static_pull_regressions_anotate:
     """
     Merge data from pull
     """        
@@ -232,7 +234,21 @@ rule anotate_static_pull_regressions:
         "../outputs/anotated_regressions_static.csv"
     shell:
         """
-        python anotate_regressions_static.py
+        python static_pull_anotatte_regressions.py
         """
 
-    
+rule static_pull_plot_failed:
+    """
+    """
+    input: 
+        "../outputs/anotated_regressions_static.csv"
+    output: 
+        "../outputs/static_pull_removed_experiments.zip"
+    shell:
+        """
+        rm -rf ../temp/static_fail_images || true
+        mkdir -p ../temp/static_fail_images
+        python static_pull_suspicious.py
+        cd ../temp/static_fail_images
+        zip -r ../{output} *.* 
+        """

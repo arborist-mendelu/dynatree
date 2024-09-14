@@ -12,10 +12,11 @@ import pandas as pd
 
 df = pd.read_csv("../outputs/regressions_static.csv", index_col=0)
 df_bad = pd.read_csv("csv/static_fail.csv")
+df_bad["pullNo"] = df_bad["pullNo"].astype(int)
 
 # Sloučení obou tabulek na základě sloupců Dependent, tree, measurement, day a pullNo
-df_combined = pd.merge(df, df_bad[['Dependent', 'tree', 'measurement', 'day', 'pullNo', 'reason']], 
-                       on=['Dependent', 'tree', 'measurement', 'day', 'pullNo'], 
+df_combined = pd.merge(df, df_bad[['Dependent', 'tree', 'measurement', 'day', 'pullNo', 'reason', 'type']], 
+                       on=['Dependent', 'tree', 'measurement', 'day', 'pullNo','type'], 
                        how='left', 
                        suffixes=('', '_bad'))
 

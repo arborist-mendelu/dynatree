@@ -514,6 +514,15 @@ class DynatreeMeasurement:
         return f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}.parquet"
 
     @property
+    def file_acc5000_name(self):
+        """
+        Returns the file with ACC data. The file is 
+        sampled at 5000Hz.
+        Renames columns and adds time to index.
+        """
+        return f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}_5000.parquet"
+
+    @property
     def identify_major_minor(self):
         if self.measurement != "M01":
             return DynatreeMeasurement(
@@ -582,6 +591,15 @@ class DynatreeMeasurement:
         df.columns = [i.replace("Data1_","").replace("ACC","A0").replace("_axis","").lower() for i in df.columns]
         df = df.reindex(columns=sorted(df.columns))
         df.index = np.array(range(len(df.index)))/100
+        return df 
+
+    @cached_property
+    def data_acc5000(self):
+        logger.debug("loading acc data at 5000Hz")
+        df = pd.read_parquet(self.file_acc5000_name)
+        df.columns = [i.replace("Data1_","").replace("ACC","A0").replace("_axis","").lower() for i in df.columns]
+        df = df.reindex(columns=sorted(df.columns))
+        df.index = np.array(range(len(df.index)))/5000
         return df 
 
     @cached_property

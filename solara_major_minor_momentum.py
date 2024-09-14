@@ -126,6 +126,20 @@ styles_css = """
 def ShowRegressions():
     return graphs_regressions.main()
 
+@solara.component
+def ShowRegressionsHere():
+    if ShowRegressions.finished:
+        images = ShowRegressions.value
+        df_failed = pd.read_csv("csv/static_fail.csv")
+        df_checked = pd.read_csv("csv/static_checked_OK.csv")
+        for t,f in images.items():
+            with solara.Card():
+                solara.FigurePlotly(f)
+                solara.Markdown(f"Failed experiments")
+                solara.display(df_failed[df_failed["tree"]==t])
+                solara.Markdown(f"Succesfully checked experiments")
+                solara.display(df_checked[df_checked["tree"]==t])
+
 # @solara.component
 # def DoTask(mytask):
 #     solara.ProgressLinear(mytask.pending)    
@@ -205,10 +219,7 @@ def Page():
                 * `False, 1` means that the experiment has been perfomed without the leaves and somewhere between first and second branch reduction.
                 """
                 )
-            if ShowRegressions.finished:
-                images = ShowRegressions.value
-                for f in images.values():
-                    solara.FigurePlotly(f)
+            ShowRegressionsHere()
 
         with solara.lab.Tab("Návod a komentáře"):
             with solara.Card(title="Návod"):
@@ -499,7 +510,7 @@ def Detail():
                             **regression_settings)
         except:
             pass
-        if ydata2.value != None and False:
+        if ydata2.value != None:
             ax2 = ax.twinx()
             # see https://stackoverflow.com/questions/24280180/matplotlib-colororder-and-twinx
             ax2._get_lines = ax._get_lines
@@ -523,6 +534,7 @@ def Detail():
             solara.DataFrame(df_subj_reg)
     except:
         pass
+    plt.close('all')
 
 
 def Help():
