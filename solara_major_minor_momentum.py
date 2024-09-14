@@ -126,6 +126,20 @@ styles_css = """
 def ShowRegressions():
     return graphs_regressions.main()
 
+@solara.component
+def ShowRegressionsHere():
+    if ShowRegressions.finished:
+        images = ShowRegressions.value
+        df_failed = pd.read_csv("csv/static_fail.csv")
+        df_checked = pd.read_csv("csv/static_checked_OK.csv")
+        for t,f in images.items():
+            with solara.Card():
+                solara.FigurePlotly(f)
+                solara.Markdown(f"Failed experiments")
+                solara.display(df_failed[df_failed["tree"]==t])
+                solara.Markdown(f"Succesfully checked experiments")
+                solara.display(df_checked[df_checked["tree"]==t])
+
 # @solara.component
 # def DoTask(mytask):
 #     solara.ProgressLinear(mytask.pending)    
@@ -205,10 +219,7 @@ def Page():
                 * `False, 1` means that the experiment has been perfomed without the leaves and somewhere between first and second branch reduction.
                 """
                 )
-            if ShowRegressions.finished:
-                images = ShowRegressions.value
-                for f in images.values():
-                    solara.FigurePlotly(f)
+            ShowRegressionsHere()
 
         with solara.lab.Tab("Návod a komentáře"):
             with solara.Card(title="Návod"):
@@ -229,10 +240,22 @@ def Selection():
     with solara.Column(align='center'):
         solara.Button("Run calculation", on_click=nakresli, color="primary")
 
+def fixdf(df):
+    df.columns = [f"{i[0]}" if i[1]=='nan' else f"{i[0]}_{i[1]}" for i in df.columns]
+    df = df[[i for i in df.columns if "_" not in i]]
+    return df
+
 def Statistics():
     data_object = get_data_object()
+    solara.Markdown(
+"""
+This card reports missing data.
+
+* Rope(100) is never used
+* Inclino(80) and Inclino(81) are claculated from the other data
+""")
     if data_object.is_optics_available:
-        l = [data_object.data_optics_extra, data_object.data_pulling]
+        l = [fixdf(data_object.data_optics_extra), data_object.data_pulling]
         titles = ["Pulling data interpolated to optics time", "Pulling data"]
     else:
         l = [data_object.data_pulling]
@@ -331,8 +354,8 @@ def Detail():
     with solara.Sidebar():
         cols = ['Time', 'Pt3', 'Pt4', 'Force(100)', 'Elasto(90)', 'Elasto-strain',
                 # 'Inclino(80)X', 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y',
-                'blue', 'yellow', 'blueX', 'blueY', 'yellowX', 'yellowY',
-                'blue_Maj', 'blue_Min', 'yellow_Maj', 'yellow_Min',
+                'blue', 'yellow',
+                'blueMaj', 'blueMin', 'yellowMaj', 'yellowMin',
                 'F_horizontal', 'F_vertical',
                 'M', 'M_Pt', 'M_Elasto',
                 ]
@@ -415,7 +438,8 @@ def Detail():
     if all_data.value:
         _ = d_obj._get_static_pulling_data(optics=s.use_optics.value, restricted='get_all')
         _["Time"] = _.index
-        subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value, measurement_type=s.method.value)
+        subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value, measurement_type=s.method.value,  extra_columns={"blue":"Inclino(80)", "yellow":"Inclino(81)",
+        **d_obj.identify_major_minor})
         subdf = subdf.data
     
     try:
@@ -429,7 +453,7 @@ def Detail():
                 target = ydata.value
             else:
                 target = ydata.value + [ydata2.value]
-            reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value]+target])
+            reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value]+target], )
             solara.DataFrame(reg_df.iloc[:, :5])
             # solara.display(reg_df.iloc[:, :5])
             df_subj_reg = subdf[[xdata.value]+target]
@@ -510,6 +534,7 @@ def Detail():
             solara.DataFrame(df_subj_reg)
     except:
         pass
+    plt.close('all')
 
 
 def Help():
@@ -524,7 +549,7 @@ def Help():
 
 ### Popis
 
-* Inlinometr blue je 80, yelllow je 81. Výchylky v jednotlivých osách jsou blueX a blueY resp. blue_Maj a blue_Min. Celková výchylka je blue. Podobně  druhý inklinometr.
+* Inlinometr blue je 80, yelllow je 81. Výchylky v jednotlivých osách jsou blueX a blueY resp. blueMaj a blueMin. Celková výchylka je blue. Podobně  druhý inklinometr.
 * F se rozkládá na vodorovnou a svislou složku.Vodorovná se používá k výpočtu momentu v bodě úvazu (M), v bodě Pt3 (M_Pt) a v místě s extenzometrem (M_Elasto). 
 * Elasto-strain je Elasto(90)/200000.
 

@@ -257,7 +257,7 @@ def ChooseProbe():
             solara.Markdown("**Probesⓘ**")
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
-    probes_inclino = ["Elasto(90)","Inclino(80)","Inclino(81)","Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
+    probes_inclino = ["Elasto(90)","Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     probes_optics = ["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)]
     probes_acc = ['a01_x', 'a01_y', 'a01_z', 'a02_x', 'a02_y', 'a02_z', 
                   'a03_x', 'a03_y', 'a03_z', 'a04_x', 'a04_y', 'a04_z']

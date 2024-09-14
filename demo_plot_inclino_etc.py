@@ -7,7 +7,7 @@ Created on Sat Dec  2 22:11:07 2023
 """
 
 from lib_dynatree import read_data
-from csv_add_inclino import extend_one_csv
+# from csv_add_inclino import extend_one_csv
 from plot_probes_inclino_force import plot_one_measurement
 
 # %%
@@ -27,7 +27,7 @@ date = "2021-03-22"
 # df_ext["Time"] = df_ext.index
 
 # %%
-plot_one_measurement(
+f = plot_one_measurement(
         date=date,
         tree=tree, 
         measurement=measurement, 
@@ -37,4 +37,5 @@ plot_one_measurement(
         return_figure=True, 
         major_minor=True
         ) 
+
 

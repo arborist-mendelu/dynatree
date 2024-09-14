@@ -46,6 +46,7 @@ import warnings
 from scipy import interpolate
 from lib_dynatree import read_data, find_release_time_optics
 from lib_dynatree import read_data_inclinometers, find_finetune_synchro, directory2date
+from lib_dynatree import DynatreeMeasurement
 
 def fix_data_by_points_on_ground(df):
     """
@@ -150,8 +151,9 @@ def extend_one_file(
         print(f"\n  info: Fixing data, nonzero delta time {delta_time} found.")
     
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
+    m = DynatreeMeasurement(date, tree, measurement)
     df_pulling_tests_ = read_data_inclinometers(
-        f"{path}/parquet_pulling/{date.replace('-','_')}/normal_BK{tree}_M0{measurement}.parquet", 
+        m, 
         release=release_time_optics, 
         delta_time=delta_time
         )

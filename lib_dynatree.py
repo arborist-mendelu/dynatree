@@ -32,7 +32,7 @@ try:
         level=logging.ERROR,
         format="[%(asctime)s] %(levelname)s | %(message)s",
     )
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(logging.ERROR)
 except:
     logger = logging.getLogger("lib_dynatree")
     screen_handler = logging.StreamHandler()
@@ -44,6 +44,9 @@ except:
         format="[%(asctime)s] %(levelname)s | %(message)s",
     )
     logger.error("Log file not available for writing. Logs are on screen only.")
+
+df_scale_factors = pd.read_csv("csv/scale_factors.csv", index_col=[0,1,2]
+                               ).sort_index()
 
 def tand(angle):
     """
@@ -120,8 +123,7 @@ def get_data(date, tree, measurement):
 
 
 def read_data_selected(file,
-                        probes=["Time"] + [f"Pt{i}" for i in [0,1,3,4,8,9,10,11,12,13]],
-                        # probes = ["Time", 'Pt0', 'Pt1', 'Pt3', 'Pt4', 'Pt8', 'Pt9', 'Pt10', 'Pt11', 'Pt12', 'Pt13']
+                        probes = ["Time", 'Pt0', 'Pt1', 'Pt3', 'Pt4', 'Pt8', 'Pt9', 'Pt10', 'Pt11', 'Pt12', 'Pt13']
                         ):
     # lru_cache vould complain TypeError: unhashable type: 'list'
     return read_data_selected_doit(file, tuple(probes))
@@ -287,14 +289,16 @@ def do_welch(s, time, nperseg=2**10, fs = 100):
     Pxx
     return f, Pxx
 
-def read_data_inclinometers(file, release=None, delta_time=0):
+def read_data_inclinometers(m, release=None, delta_time=0):
     """
     Read data from pulling tests, restart Time from 0 and turn Time to index.
     If release is given, shift the Time and index columns so that the release 
     is at the given time. In this case the original time is in the column Time_inclino
     
+    m .. measurementm instance of DynatreeMeasurement
+    
     """
-    df_pulling_tests = pd.read_parquet(file)
+    df_pulling_tests = m.data_pulling
     if "Time" not in df_pulling_tests.columns:
         df_pulling_tests["Time"] = df_pulling_tests.index
     df_pulling_tests["Time"] = df_pulling_tests["Time"] - df_pulling_tests["Time"][0]
@@ -309,8 +313,8 @@ def read_data_inclinometers(file, release=None, delta_time=0):
         release_time_force = df_pulling_tests["Force(100)"].idxmax()
         
     # Sync the dataframe from inclino to optics    
-    if delta_time != 0:
-        print(f"  info: Using time fix {delta_time} when reading data from inclino/force/elasto")
+    # if delta_time != 0:
+    #     print(f"  info: Using time fix {delta_time} when reading data from inclino/force/elasto")
     df_pulling_tests["Time_inclino"] = df_pulling_tests.index
     df_pulling_tests["Time"] = df_pulling_tests["Time_inclino"] - release_time_force + release + delta_time
     df_pulling_tests.set_index("Time", inplace=True)
@@ -430,6 +434,21 @@ date2color = {
     '2021-06-29': "C1",
     }
 
+def fix_inclinometers_sign(df_, measurement_type, day, tree):
+    """
+    Fix the sign of the inclinometer. The function is used to ensure that 
+    major axis has positive values of inclination.
+    """
+    df_scale_factors = pd.read_csv("csv/scale_factors.csv", index_col=[0,1,2]
+                                   ).sort_index()
+    df = df_.copy()
+    coords = (measurement_type,day,tree)
+    if coords in df_scale_factors.index:
+        df_temp = df_scale_factors.loc[coords,:]
+        for i,row in df_temp.iterrows():
+            df[row['probe']+"X"] = df[row['probe']+"X"] * row['scale_factor']
+            df[row['probe']+"Y"] = df[row['probe']+"Y"] * row['scale_factor']
+    return df
 
 class DynatreeMeasurement:
     def __init__(self, day, tree, measurement, measurement_type='normal', datapath="../data"):
@@ -469,7 +488,7 @@ class DynatreeMeasurement:
         The name of the file with optics.
         """
         if self.measurement_type != "normal":
-            logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
+            logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
             return ""
         return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}.parquet"
     
@@ -481,7 +500,7 @@ class DynatreeMeasurement:
         can be concatenated.
         """
         if self.measurement_type != "normal":
-            logger.error(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
+            logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
             return ""
         return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}_pulling.parquet"
     
@@ -494,14 +513,75 @@ class DynatreeMeasurement:
         """
         return f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}.parquet"
 
+    @property
+    def file_acc5000_name(self):
+        """
+        Returns the file with ACC data. The file is 
+        sampled at 5000Hz.
+        Renames columns and adds time to index.
+        """
+        return f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}_5000.parquet"
+
+    @property
+    def identify_major_minor(self):
+        if self.measurement != "M01":
+            return DynatreeMeasurement(
+                self.day, self.tree, 
+                "M01", measurement_type=self.measurement_type).identify_major_minor
+        list_inclino = ["Inclino(80)", "Inclino(81)"]
+        colors = {"Inclino(80)":"blue", "Inclino(81)":"yellow"}
+        df = pd.read_parquet(self.file_pulling_name)
+        df = fix_inclinometers_sign(
+            df, self.measurement_type, self.day, self.tree)
+        ans = {}
+        for inclino in list_inclino:
+            # najde maximum, major ma maximum kladne a vysoke
+            maxima = df[[f"{inclino}X",f"{inclino}Y"]].max()
+            # vytvori sloupce blue_Maj, blue_Min, yellow_Maj,  yellow_Min....hlavni a vedlejsi osa
+            if maxima[f"{inclino}X"]>maxima[f"{inclino}Y"]:
+                ans[f"{inclino}Maj"] = f"{inclino}X"
+                ans[f"{inclino}Min"] = f"{inclino}Y"
+                ans[f"{colors[inclino]}Maj"] = f"{inclino}X"
+                ans[f"{colors[inclino]}Min"] = f"{inclino}Y"
+            else:
+                ans[f"{inclino}Maj"] = f"{inclino}Y"
+                ans[f"{inclino}Min"] = f"{inclino}X"
+                ans[f"{colors[inclino]}Maj"] = f"{inclino}Y"
+                ans[f"{colors[inclino]}Min"] = f"{inclino}X"
+        return ans
+
+    @staticmethod
+    def add_total_angle(df, major_dict):
+        """
+        The input is a dataframe with columns including Inclino(80)X, Inclino(80)Y, 
+        Inclino(81)X, Inclino(81)Y and dictionary major_dict wihch may look like this:
+        {'Inclino(80)Maj': 'Inclino(80)Y', 'Inclino(80)Min': 'Inclino(80)X', 
+         'Inclino(81)Maj': 'Inclino(81)X', 'Inclino(81)Min': 'Inclino(81)Y'}
+        The output is the dataframe extended by the columns with total angle. 
+        The total angle preserves the sign of the major axis (thus the main 
+        peak is positive). 
+        """
+        list_inclino = ["Inclino(80)", "Inclino(81)"]
+        for inclino in list_inclino:
+            major = major_dict[f"{inclino}Maj"]
+            minor = major_dict[f"{inclino}Min"]
+
+            if isinstance(df.columns, pd.MultiIndex):
+                target = (inclino,"nan")
+            else:
+                target = inclino
+            df.loc[:,target] = (arctand(
+                np.sqrt((tand(df.loc[:,major]))**2 
+                        + (tand(df.loc[:,minor]))**2 )
+                ) * np.sign(df.loc[:,major])).values
+        return df
+    
     @cached_property
     def data_pulling(self):
         logger.debug("loading pulling data")
         df = pd.read_parquet(self.file_pulling_name)
-        for inclino in ["Inclino(80)", "Inclino(81)"]:
-            df.loc[:,[inclino]] = arctand(
-                np.sqrt((tand(df[f"{inclino}X"]))**2 + (tand(df[f"{inclino}Y"]))**2 )
-                )
+        df = fix_inclinometers_sign(df, self.measurement_type, self.day, self.tree)
+        df = DynatreeMeasurement.add_total_angle(df,self.identify_major_minor)
         return df
     
     @cached_property
@@ -511,6 +591,15 @@ class DynatreeMeasurement:
         df.columns = [i.replace("Data1_","").replace("ACC","A0").replace("_axis","").lower() for i in df.columns]
         df = df.reindex(columns=sorted(df.columns))
         df.index = np.array(range(len(df.index)))/100
+        return df 
+
+    @cached_property
+    def data_acc5000(self):
+        logger.debug("loading acc data at 5000Hz")
+        df = pd.read_parquet(self.file_acc5000_name)
+        df.columns = [i.replace("Data1_","").replace("ACC","A0").replace("_axis","").lower() for i in df.columns]
+        df = df.reindex(columns=sorted(df.columns))
+        df.index = np.array(range(len(df.index)))/5000
         return df 
 
     @cached_property
@@ -544,11 +633,28 @@ class DynatreeMeasurement:
         
     @cached_property
     def data_optics_extra(self):
+        """
+        Pulling data interpolated to the optics, synced with optics and with
+        extra columns where we try to fix the movement of cameras.
+        """
         logger.debug("loading optics extra")
         ans = pd.read_parquet(self.file_optics_extra_name)
         ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
+        # the sign is already fixed in the parquet_add_inclino.py
+        #ans = fix_inclinometers_sign(ans, self.measurement_type, self.day, self.tree)
+        # ans = DynatreeMeasurement.add_total_angle(ans,self.identify_major_minor)
         return ans
-      
+
+    @cached_property
+    def data_optics_extra_reduced(self):
+        """
+        Like optics extra, but only the data from pulling device are considered.
+        The column index converted from multiindex to plain index.
+        """
+        logger.debug("loading optics extra reduced")
+        ans = self.data_optics_extra
+        return ans
+
     @property
     def is_optics_available(self):
         return os.path.isfile(self.file_optics_name)

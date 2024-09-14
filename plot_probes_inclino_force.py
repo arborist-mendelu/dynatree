@@ -19,9 +19,10 @@ from matplotlib import ticker
 import matplotlib
 import argparse
 from lib_dynatree import read_data, read_data_selected, find_release_time_optics, find_release_time_interval
-from lib_dynatree import find_finetune_synchro, read_data_inclinometers
+from lib_dynatree import find_finetune_synchro, read_data_inclinometers, DynatreeMeasurement
 from static_pull import DynatreeStaticPulling
 import pathlib
+from tqdm import tqdm
 
 def plot_one_measurement(
         date="2021-03-22",
@@ -48,7 +49,7 @@ def plot_one_measurement(
     aby se dala porovnat se silou a v samostatné soustavě souřadnic 
     data z eleastometru.
     
-    major_minor: pokud je True, kresli se major a minor. Jinak inclino(80) a incino (81)
+    major_minor: pokud je True, kresli se major a minor. Jinak inclino(80)X a inclino(80)Y
     release_detail: pokud je True, kresli se detail okolo vypusteni
     
     df: do not read csv but use this one DataFrame instead
@@ -59,6 +60,7 @@ def plot_one_measurement(
 
     """
       
+    m = DynatreeMeasurement(date, tree, measurement)
     if df_remarks is None:
         df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
     
@@ -69,14 +71,12 @@ def plot_one_measurement(
     date = date.replace("-","_")
     
     if df is None:
-        df = read_data_selected(
-            f"{path}/parquet/{date}/BK{tree}_M0{measurement}.parquet")
+        df = m.data_optics_pt34
     else:
         # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{measurement}.csv")
         pass
     if df_extra is None:
-        df_extra = read_data(
-            f"{path}/parquet/{date}/BK{tree}_M0{measurement}_pulling.parquet")
+        df_extra = m.data_optics_extra
 
     draw_from,draw_to = xlim
     if draw_from == None:
@@ -141,7 +141,7 @@ def plot_one_measurement(
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     release_time_optics = find_release_time_optics(df)
     df_pulling_tests = read_data_inclinometers(
-        f"{path}/parquet_pulling/{date}/normal_BK{tree}_M0{measurement}.parquet", 
+        m, 
         release=release_time_optics, 
         delta_time=delta_time
         )    
@@ -153,10 +153,14 @@ def plot_one_measurement(
         inclino_mean = df_pulling_tests.loc[start:end,inclino].mean()
         df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean
     if major_minor:
-        list_major_minor = ["blue_Maj", "blue_Min", "yellow_Maj","yellow_Min"]
+        axes_major = DynatreeMeasurement(date, tree, measurement).identify_major_minor
+        list_major_minor = ["blueMaj", "blueMin", "yellowMaj","yellowMin"]
         df_major_minor = DynatreeStaticPulling(
             df_pulling_tests, ini_forces=False, ini_regress=False
             ).data
+        for i in list_major_minor:
+            df_pulling_tests[i] = df_pulling_tests[
+                axes_major[i.replace("blue","Inclino(80)").replace("yellow","Inclino(81)")]]
         # df_major_minor = process_inclinometers_major_minor(df_pulling_tests)
         df_major_minor.loc[draw_from:draw_to,list_major_minor].plot(ax=ax, style=".")
         ax.legend(list_major_minor, title="", loc=3)
@@ -227,9 +231,10 @@ def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
     
     files =  glob.glob(f"../data/parquet/{date.replace('-','_')}/BK??_M??.parquet")
     files.sort()
+    pbar = tqdm(total=len(files))
     for file in files:
         filename = file.split("/")[-1].replace(".parquet","")
-        print(filename,", ",end="", flush=True)
+        # print(filename,", ",end="", flush=True)
         tree, measurement = filename.split("_")
         plot_one_measurement(
             date=date, 
@@ -241,7 +246,9 @@ def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
             major_minor=True, 
             release_detail=release_detail
             )
-    print()    
+        pbar.update(1)
+
+    pbar.close()
     print(f"Konec zpracování pro {date}")
     
 def main():
@@ -270,6 +277,7 @@ def main():
         print(i)
         print("=====================================================")
         plot_one_day(date=i, release_detail=args.release_detail)
+        # break
 
 if __name__ == "__main__":
     main()

@@ -28,6 +28,8 @@ from parquet_add_inclino import extend_one_file
 from plot_probes_inclino_force import plot_one_measurement
 from lib_dynatree import read_data
 from lib_dynatree import timeit
+from lib_dynatree import fix_inclinometers_sign
+from lib_dynatree import DynatreeMeasurement
 
 def split_path(file):
     data = file.split("/")
@@ -99,11 +101,11 @@ def nakresli():
         endlim = None
     else:
         endlim = end.value
-    file = f"{DATA_PATH}/parquet/{day.value.replace('-','_')}/{tree.value}_{measurement.value}.parquet"
+    m = DynatreeMeasurement(day.value, tree.value, measurement.value)
     if not nakresli.is_current():
         print("Interrupting non current function nakresli")
         return None
-    DF = read_data(file)
+    DF = m.data_optics
     df_ext = extend_one_file(date=day.value, 
             tree=tree.value, 
             measurement=measurement.value, 
@@ -167,6 +169,14 @@ def Sidebar():
 @solara.component
 def Grafy():    
     solara.ProgressLinear(nakresli.pending)    
+    solara.Warning(solara.Markdown(
+"""
+* Grafy vznikají za běhu, nejsou použita předpočítaná data, aby se daly hned zohlednit 
+případné posuny v synchronizaci nebo instrukce pro nulování inklinometrů. 
+* Po změnách v 
+`csv/synchronization_finetune_inclinometers_fix.csv` spusť `parquet_add_inclino.py`.
+`
+"""))
     if measurement.value not in available_measurements(df, day.value, tree.value):
         solara.Error(f"Measurement {measurement.value} not available for this tree.")
         return

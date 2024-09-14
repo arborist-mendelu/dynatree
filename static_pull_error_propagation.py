@@ -54,7 +54,6 @@ def get_derivatives(tree=tree, angle=22, h=0.1):
     return result
 
 
-
 # %%
 bk01 = get_derivatives()
 bk01

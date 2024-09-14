@@ -17,6 +17,7 @@ import logging
 logger = logging.getLogger("prevod")
 logger.setLevel(logging.DEBUG)
 from pathlib import Path
+from tqdm import tqdm
 
 from scipy.signal import savgol_filter
 
@@ -40,12 +41,13 @@ df = pd.DataFrame(upraveny_seznam, columns=["date","kind","tree","directory"])
 
 #%%
 
+pbar = tqdm(total=len(df))
 for i,row in df.iterrows():
     files = glob.glob(os.path.join(row['directory'], '*.mat'))
     for soubor in files:
-        print(soubor)
+        # print(soubor)
         measurement = soubor.split("/")[-1].split(".")[-2]
-        target = f"../data/parquet_acc/{row['kind'].lower()}_{row['date']}_{row['tree']}_{measurement}.parquet"
+        target = f"../data/parquet_acc/{row['kind'].lower()}_{row['date']}_{row['tree']}_{measurement}_5000.parquet"
         file_path = Path(target)
         if file_path.is_file():
             # print(f"Soubor {target} existuje, koncim.")
@@ -54,9 +56,12 @@ for i,row in df.iterrows():
         # continue
         mat = scipy.io.loadmat(soubor)
         data = {k:mat[k].T[0] for k in mat.keys() if "Data1_A" in k}
-        smoothed_data = {k: savgol_filter(data[k], window_length=1000, polyorder=2)[::50] for k in data.keys()}  # Změna hodnot window_length a polyorder může ovlivnit úroveň vyhlazení
-        newdf = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in smoothed_data.items()]))
+        length = min([len(j) for j in data.values()])
+        data = {k:data[k][:length] for k in data.keys()}        
+        newdf = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in data.items()]))
         newdf.to_parquet(target)
         # logger.info(f"File {soubor} processed")        
+    pbar.update(1)
 
+pbar.close()
 logging.info("Finished")
