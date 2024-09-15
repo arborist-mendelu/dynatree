@@ -1,7 +1,7 @@
 Dependent,type,tree,measurement,day,pullNo,reason
 Elasto-strain,normal,BK10,M04,2022-04-05,0,"Extenzometr vypadl, bez signálu, dointerpolováno."
-Elasto-strain,normal,BK12,M04,2021-06-29,0,Extenzometr neměřil.
 Elasto-strain,normal,BK07,M04,2021-06-29,0,Extenzometr vypadl během napínání
+Elasto-strain,normal,BK12,M04,2021-06-29,0,Extenzometr neměřil.
 Elasto-strain,normal,BK12,M03,2021-06-29,0,Extenzometr vypadl během napínání
 Elasto-strain,normal,BK16,M01,2022-04-05,0,Extenzometr měří jenom půlobloučky - divné
 Elasto-strain,normal,BK16,M01,2022-04-05,1,Extenzometr měří jenom půlobloučky - divné

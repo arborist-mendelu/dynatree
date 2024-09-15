@@ -21,7 +21,7 @@ import os
 import logging
 from io import BytesIO
 from FFT_spectrum import extend_dataframe_with_zeros
-
+# from lib_dynasignal import do_fft, process_signal
 
 logger = logging.getLogger("Solara_FFT")
 logger.setLevel(logging.INFO)
@@ -97,6 +97,7 @@ save_button_color = solara.reactive("none")
 window_function = solara.reactive("none")
 window_functions = ["none", "zeros", "hanning", "tukey"]
 alpha = solara.reactive(0.1)
+# acc_fft_axis = solara.reactive('a03_z')
 
 tab_index = solara.reactive(0)
 

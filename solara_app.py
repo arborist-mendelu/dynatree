@@ -11,6 +11,7 @@ import solara_major_minor_momentum
 import solara_vizualizace
 import solara_force_elasto_inclino
 import solara_FFT
+import solara_FFT_ACC
 from passlib.hash import pbkdf2_sha256
 import pandas as pd
 import time
@@ -198,4 +199,5 @@ routes = [
     solara.Route(path="tahovky", component=Ochrana(solara_major_minor_momentum.Page), label="tahovky"),
     solara.Route(path="synchronizace", component=Ochrana(solara_force_elasto_inclino.Page), label="synchronizace"),
     solara.Route(path="FFT", component=Ochrana(solara_FFT.Page), label="FFT"),
+    solara.Route(path="FFT_for_ACC", component=Ochrana(solara_FFT_ACC.Page), label="FFT"),
 ]
