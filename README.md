@@ -2,8 +2,8 @@
 
 ## Zdroje
 
-Zdrojová data se přetransformují do parquet souborů. Skripty potom sahají jenom sem a do adresáře skripty/csv. Umístění parquet souborů vzheldem k adresáři skripty je
-../data. Pravidelně se zrcadlí na jupyter.mendelu.cz do adresáře /babice, kde má práva pro čtení každý.
+Zdrojová data se přetransformují do parquet souborů. Skripty potom sahají jenom sem a do adresáře `skripty/csv`. Umístění parquet souborů vzheldem k adresáři skripty je
+`../data`. Pravidelně se zrcadlí na jupyter.mendelu.cz do adresáře `/babice`, kde má práva pro čtení každý.
 
 Skripty pro tvorbu parquet souborů:
 
@@ -13,11 +13,15 @@ Skripty pro tvorbu parquet souborů:
 * `find_tsv.py`, `xsight_tsv2parquet.py` Nalezeni a transformace tsv souboru. Staci spustit ve spravnem poradi (nejdriv najit adresare a potom je zpracovavat.)
 * `pull2parquet.py`  Tahovky do parquet souboru. Nejdriv najit zdroje a pote spustit skript. Nalezeni zdroju viz navod v souboru.
 
+Acc jsou nezavisle, prdavani tahovek k optice predpoklada, ze jsou aktualni data z tahovek a z optiky, tj. `parquet_add_inclino.py` spoustet nakonec. A vzdy po uprave 
+`synchronization_finetune_inclinometers_fix.csv`.
 
 ## Skripty
 
-Krome transformace zdroju (predchozi odstavec) je vsechno automatizaovane. Staci spustit `snakemake` pripadne pravidlo `all`.
-Mozna bude hlasit chybu ohledne temp adresaru. Obvykle se pouzivaji ./temp a ../temp, tak je dobre je vytvorit, pokud se to na nich zasekne.
+Krome transformace zdroju (predchozi odstavec) je vsechno automatizovane. Staci spustit `snakemake` pripadne pravidlo `all`.
+
+Mozna bude hlasit chybu ohledne temp adresaru. Obvykle se pouzivaji `./temp` a `../temp`, tak je dobre je vytvorit, pokud se to na nich zasekne. Vyzuivaji se nastroje pro 
+praci s pdf souboru jako pdfunite apod. Doinstaluj, kde to hlasi chybu. Nebo zkontroluj spoustene prikazy podle snakefile.
 
 ## Solara aplikace
 
@@ -27,11 +31,13 @@ Pripadne jedna cast `solara run solara_FFT` apod. Vsechno ma zacatek "solara".
 
 ## Výstupy
 
-Viz snakamake soubor. V adresáři ../outputs. Jednou za čas se ručně přepkopíruje na erc disk do adresáře Mereni_Babice_zpracovani/vsytupy (nebo tak nejak)
+Viz `snakefile` soubor. Výstupy jsou zpravidla v adresáři ../outputs. Jednou za čas se ručně přepkopíruje na erc disk do adresáře Mereni_Babice_zpracovani/vystupy (nebo tak nejak)
 
 
 
 # Skripty pro zpracování dat z optiky apod - totó odnés čas ....
+
+# Něco platí, něco ne.
 
 * Soubory, které něco kreslí jsou soubory se jménem `plot_*.py`
 kde se něco testuje a zkouší jsou soubory `temp_*.py` nebo
