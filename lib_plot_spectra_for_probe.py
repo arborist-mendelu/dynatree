@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft, fftfreq
 import matplotlib
+from tqdm import tqdm
 
 @lib_dynatree.timeit
 def plot_spectra_for_all_probes(
@@ -126,10 +127,12 @@ def main():
     except:
         matplotlib.use('Agg')
     all = lib_find_measurements.get_all_measurements(method='all', type='normal',)
+    pbar = tqdm(total=len(all))
     for i,row in all.iterrows():
         if row['measurement'] == "M01":
             continue
-        print (f"{row['date']} {row['tree']} {row['measurement']}")
+        # print (f"{row['date']} {row['tree']} {row['measurement']}")
+        pbar.set_description(f"{row['type']} {row['date']} {row['tree']} {row['measurement']}")
         figs = plot_spectra_for_all_probes(
             measurement_type=row['type'],
             day=row['day'],
@@ -145,6 +148,8 @@ def main():
             f['fig'].text(0.4,0.4,f"peaks {f['peaks']}")
             f['fig'].savefig(f"../temp_spectra/{row['type']}_{row['day']}_{row['tree']}_{row['measurement']}_{f['probe'].replace('(','').replace(')','')}.pdf")
         plt.close('all')
+        pbar.update(1)
+    pbar.close()    
     
 if __name__ == "__main__":
     main()

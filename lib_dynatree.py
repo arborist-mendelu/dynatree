@@ -45,8 +45,12 @@ except:
     )
     logger.error("Log file not available for writing. Logs are on screen only.")
 
-df_scale_factors = pd.read_csv("csv/scale_factors.csv", index_col=[0,1,2]
-                               ).sort_index()
+df_scale_factors = pd.read_csv(
+    "csv/scale_factors.csv", index_col=[0,1,2]
+    ).sort_index()
+df_reset_inclinometers = pd.read_csv(
+    "csv/reset_inclinometers.csv", index_col=[0,1,2,3]
+    ).sort_index()
 
 def tand(angle):
     """
@@ -587,6 +591,15 @@ class DynatreeMeasurement:
         logger.debug("loading pulling data")
         df = pd.read_parquet(self.file_pulling_name)
         df = fix_inclinometers_sign(df, self.measurement_type, self.day, self.tree)
+        idx = (self.measurement_type,self.day, self.tree, self.measurement)
+        if idx in df_reset_inclinometers.index:
+            row = df_reset_inclinometers.loc[idx,:]
+            for key, value in row.items():
+                if not isinstance(value, float):
+                    value = value.iloc[0]
+                if not pd.isna(value):
+                    shift = df.loc[value:,key].dropna().iloc[0]
+                    df[key] = df[key] - shift
         df = DynatreeMeasurement.add_total_angle(df,self.identify_major_minor)
         return df
     

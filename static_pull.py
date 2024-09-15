@@ -90,7 +90,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
     def regresions(self):
         lib_dynatree.logger.debug("Calculating regressionsfor static measurement")
         if self.optics and not self.is_optics_available:
-            lib_dynatree.logger.error(f"{self.date} {self.tree} {self.measurement}: Optics used but optics is not available.")
+            lib_dynatree.logger.info(f"{self.date} {self.tree} {self.measurement}: Optics used but optics is not available.")
             return None
         ans = pd.concat(
             [

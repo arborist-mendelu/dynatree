@@ -12,6 +12,7 @@ Elasto-strain,normal,BK16,M04,2022-04-05,0,Extenzometr měří jenom půloblouč
 Pt3,normal,BK13,M02,2022-08-16,0,"Optika selhala, meří chaos"
 Pt4,normal,BK13,M02,2022-08-16,0,"Optika selhala, meří chaos"
 blue,afterro2,BK13,M01,2024-09-02,0,Blue neměřil.
+blue,afterro2,BK14,M01,2024-09-02,0,Blue velký skok při druhém zatáhnutí.
 blue,normal,BK08,M03,2021-03-22,0,Inklinometr vypadl během napínání.
 blue,normal,BK16,M02,2022-04-05,0,"Osy major a minor jsou srovnatelné, což je divné. Major by měla mít mnohem vyšší hodnoty."
 yellow,normal,BK04,M02,2024-04-10,0,Inklinometr vypadl během napínání.

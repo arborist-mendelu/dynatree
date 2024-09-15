@@ -108,6 +108,8 @@ df = get_df()
 
 #%%
 # Extract the angle
+
+# Should not be used. The data are not reliable.
 angles = {}
 for i,row in df.iterrows():
     angles[(row['type'].lower(), row['day'].replace("_","-"), row['tree'], row['measurement'])

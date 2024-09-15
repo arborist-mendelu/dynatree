@@ -209,6 +209,7 @@ def Page():
                         for i in major_minor.keys():
                             df[i] = df[major_minor[i]]
                         plot(df, dependent_pull, id="tahovky")
+                        solara.Text(f"Row for csv with zeroing at given time: {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},,,,")
                         investigate(df, dependent_pull)
                 except:
                     pass
