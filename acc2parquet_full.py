@@ -3,7 +3,7 @@
 """
 Created on Sep 03 2024
 
-Skript hledá acc soubory a prepisuje je do parquet. Meni frekvenci z 5000 na 100.
+Skript hledá acc soubory a prepisuje je do parquet. Nemeni sampling rate.
 
 
 @author: marik
