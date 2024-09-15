@@ -578,6 +578,12 @@ class DynatreeMeasurement:
     
     @cached_property
     def data_pulling(self):
+        """
+        Data from pulling test devices (extenzometer, inclinometer, 
+        force gauge).
+        
+        Major axis is rescaled such that the main peak is positive.
+        """
         logger.debug("loading pulling data")
         df = pd.read_parquet(self.file_pulling_name)
         df = fix_inclinometers_sign(df, self.measurement_type, self.day, self.tree)
