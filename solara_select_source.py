@@ -99,7 +99,7 @@ def Selection(
         # solara.Button("Clear cache", on_click=clear(), color="primary")
         if confirm_choice:
             solara.Markdown(
-                f"**Selected**: {day.value}, {tree.value}, {measurement.value}")
+                f"**Selected**: {method.value}, {day.value}, {tree.value}, {measurement.value}")
         if report_optics_availability:
             if data_object.is_optics_available:
                 solara.Markdown("✅ Optics is available for this measurement.")
