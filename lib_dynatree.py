@@ -52,6 +52,29 @@ df_reset_inclinometers = pd.read_csv(
     "csv/reset_inclinometers.csv", index_col=[0,1,2,3]
     ).sort_index()
 
+
+def get_notes():
+    """
+    Je potreba opracvit pripady, kdy misto Measurement je Measurement after 
+    RO nebo neco podobneho.
+    """
+    notes = pd.read_csv("csv_output/measurement_notes.csv", index_col=0)
+    notes['day'] = notes['day'].str.split("_").str[0]
+    
+    # # Přidání nuly ve sloupci 'measurement' (M1 -> M01)
+    notes['measurement'] = notes['measurement'].str.replace('M(\d)', lambda x: f"M0{x.group(1)}", regex=True)
+    
+    # # Transformace sloupce 'tree' (1 -> BK01)
+    notes['tree'] = notes['tree'].astype(str).str.zfill(2)
+    notes['tree'] = 'BK' + notes['tree']
+    
+    notes = notes.set_index(['day', 'measurement', 'tree'])
+    notes = notes.dropna(how='all').fillna("")
+    notes["remark"] = notes["remark1"] + " " + notes["remark2"]
+    return notes
+
+notes = get_notes()
+
 def tand(angle):
     """
     Evaluates tangens of the angle. The angli is in degrees.
