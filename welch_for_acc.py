@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Sep 16 11:24:56 2024
+
+@author: marik
+"""
+
+import lib_dynatree 
+import lib_dynasignal
+import lib_find_measurements
+from scipy import interpolate, signal
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from tqdm import tqdm
+import matplotlib
+
+
+df = lib_find_measurements. get_all_measurements(method='all', type='all')
+df = df[df['measurement'] != 'M01']
+
+#%%
+
+# day, tree, measurement, measurement_type = "2024-09-02", "BK01", "M05", "normal"
+
+# m = lib_dynatree.DynatreeMeasurement(
+#     day=day, tree=tree, measurement=measurement, measurement_type=measurement_type
+#     )
+
+def do_welch_spectra(m):
+    fig, axs = plt.subplots(2,1, figsize=(12,6))
+    dt = 0.0002
+    tukey_alpha = 0.2
+    
+    data = m.data_acc5000
+    cols = [i for i in data.columns if "z" in i]
+    data = data.loc[:,cols]
+    
+    a = data.loc[:,'a03_z'].copy()
+    a.loc[:20] = 0
+    release = a.idxmax()
+    data = data.loc[release:,:]
+    data = data - data.mean()
+    
+    length = data.index[-1]-data.index[0]
+    if length < 60:
+        df_ = pd.DataFrame(0, columns=data.columns,
+                          index = np.arange(0,60-length,dt)+data.index[-1]+dt    
+                          )
+    
+        data = pd.concat([data,df_])
+
+    tukey_window = signal.windows.tukey(len(data), alpha=tukey_alpha, sym=False)
+    data = data.mul(tukey_window, axis=0)
+    ax = axs[0]
+    data.plot(ax=ax)
+    ax.set(title = str(m).replace("Dynatree measurement",""), xlabel="Time / s", 
+           ylabel = "Acceleration / (m*s^-2)")
+    ax.grid()
+
+    ax = axs[1]
+    welch = lib_dynasignal.do_welch(data, nperseg=2**13)
+    welch.loc[1:100,:].plot(ax=ax)
+    ax.set(yscale='log')
+    ax.set(xlabel="Freq", ylabel="Power spectral density")
+    ax.grid()
+    return fig,axs
+#%%
+
+matplotlib.use('Agg')
+pbar = tqdm(total=len(df))
+for i,row in df.iterrows():
+    m = lib_dynatree.DynatreeMeasurement(day=row['day'], tree=row['tree'], measurement=row['measurement'], measurement_type=row['type'])
+    pbar.set_description(f"{m}")
+    fig, ax = do_welch_spectra(m)
+    filename = f"../temp/welch/{m.tree}_{m.measurement_type}_{m.day}_{m.measurement}.png"
+    fig.savefig(filename)
+    pbar.update(1)
+    plt.close('all')
+    
+    
+#%%
+
+# do_welch_spectra(m)    
