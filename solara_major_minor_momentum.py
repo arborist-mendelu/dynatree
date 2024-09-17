@@ -394,13 +394,16 @@ def Polarni():
     dataset = d_obj.pullings[pull_value]
     subdf = dataset.data
     fig,ax = plt.subplots()
-    ax.plot(subdf['blueMaj'],subdf['blueMin'])
-    ax.plot(subdf['yellowMaj'],subdf['yellowMin'])
+    ax.plot(subdf['blueMaj'],subdf['blueMin'], label="blue")
+    ax.plot(subdf['yellowMaj'],subdf['yellowMin'], label="yellow")
     ax.set_aspect('equal')
+    ax.legend()
     bound = [*ax.get_xlim(), *ax.get_ylim()]
     bound = np.abs(np.array(bound)).max()
-    ax.set(xlim=(-bound,bound), ylim=(-bound,bound))
-
+    title = f"{d_obj.measurement_type} {d_obj.day} {d_obj.tree} {d_obj.measurement}"
+    if d_obj.measurement == "M01":
+        title = f"{title}, PullNo {pull_value}"
+    ax.set(xlim=(-bound,bound), ylim=(-bound,bound), title=title, xlabel="Major inclinometer", ylabel="Minor inclinometer")
     ax.grid(which='both')
 
     solara.FigureMatplotlib(fig)
