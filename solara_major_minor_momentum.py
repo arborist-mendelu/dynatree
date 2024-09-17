@@ -197,6 +197,16 @@ def Page():
                         # print(f"Details took {end-start}ms.")
                 except:
                     pass
+        with solara.lab.Tab("Polární graf"):
+            with solara.Card():
+                try:
+                    if tab_index.value == 2:
+                        start = time.time_ns()/1000000
+                        Polarni()
+                        end = time.time_ns()/1000000
+                        # print(f"Details took {end-start}ms.")
+                except:
+                    pass
         with solara.lab.Tab("Statistiky"):
             with solara.Card():
                 try:
@@ -335,6 +345,65 @@ msg = """
 * Možná není vybráno nic pro svislou osu. 
 * Možná je vybrána stejná veličina pro vodorovnou a svislou osu. 
 * Nebo je nějaký jiný problém. Možná mrkni nejprve na záložku Grafy."""
+
+def Polarni():
+    global subdf
+    if nakresli.not_called:
+        solara.Info(
+            "Nejdřív nakresli graf v první záložce. Klikni na Run calculation v sidebaru.")
+        return
+    if not nakresli.finished:
+        with solara.Row():
+            solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
+            solara.SpinnerSolara(size="100px")
+            return
+
+    with solara.Row():
+        temp_data_object = static_pull.DynatreeStaticMeasurement(
+            day=s.day.value, tree=s.tree.value,
+            measurement=s.measurement.value, measurement_type=s.method.value,
+            optics=False)
+        if s.measurement.value == "M01":
+            with solara.Card():
+                solara.Markdown("**Pull No. of M01:**")
+                with solara.Column(**tightcols):
+                    pulls = list(range(len(temp_data_object.pullings)))
+                    solara.ToggleButtonsSingle(values=pulls, value=pull)
+                pull_value = pull.value
+        else:
+            pull_value = 0
+        with solara.Card():
+            solara.Markdown("**Bounds to cut out boundaries in % of Fmax**")
+            with solara.Column(**tightcols):
+                solara.ToggleButtonsSingle(
+                    values=data_possible_restrictions, value=restrict_data)
+        
+        if restrict_data.value == data_possible_restrictions[0]:
+            restricted = None
+        elif restrict_data.value == data_possible_restrictions[1]:
+            restricted = (0.1, 0.9)
+        else:
+            restricted = (0.3, 0.9)
+
+    d_obj = static_pull.DynatreeStaticMeasurement(
+        day=s.day.value, tree=s.tree.value,
+        measurement=s.measurement.value, 
+        measurement_type=s.method.value,
+        optics=s.use_optics.value, 
+        restricted=restricted)
+    dataset = d_obj.pullings[pull_value]
+    subdf = dataset.data
+    fig,ax = plt.subplots()
+    ax.plot(subdf['blueMaj'],subdf['blueMin'])
+    ax.plot(subdf['yellowMaj'],subdf['yellowMin'])
+    ax.set_aspect('equal')
+    bound = [*ax.get_xlim(), *ax.get_ylim()]
+    bound = np.abs(np.array(bound)).max()
+    ax.set(xlim=(-bound,bound), ylim=(-bound,bound))
+
+    ax.grid(which='both')
+
+    solara.FigureMatplotlib(fig)
 
 def Detail():
     global subdf

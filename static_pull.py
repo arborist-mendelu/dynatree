@@ -361,7 +361,7 @@ class DynatreeStaticPulling:
             treeNo = int(tree[-2:])
         if extra_columns is not None:
             for i in extra_columns.keys():
-                data[i] = data[extra_columns[i]]
+                data.loc[:,i] = data.loc[:,extra_columns[i]]
         self.data = data
         # self._process_inclinometers_major_minor()
         self.day = day
