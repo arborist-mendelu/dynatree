@@ -92,6 +92,8 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
     sf = sf - sf[0]
     sf.plot(ax=ax[0])
     s.signal.plot(ax=ax[0])
+    if probe[0]=="a":
+        ax[0].set(ylim=(s.signal.min(),s.signal.max()))
     s.fft.plot(logy=True, xlim=(0,3), ax=ax[1])
     ax[0].grid()
     ax[1].grid()
@@ -117,7 +119,7 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
     
 # plot_one_probe(tree="BK04")    
 
-# plot_one_probe(tree="BK09", measurement='M03', day="2021-03-22", probe="Pt3")    
+# plot_one_probe(tree="BK09", measurement='M03', day="2021-03-22", probe="a03_z")    
     
 #%%
 if __name__ == '__main__':
@@ -132,6 +134,7 @@ if __name__ == '__main__':
     
     
     probes = ["blueMaj", "yellowMaj", "Elasto(90)", "Pt3", "Pt4"]
+    probes = ["a01_z", "a02_z", "a03_z", "a04_z"]
     for probe in probes:
         print(f"Probe {probe}")
         pbar = tqdm(total=len(df))
