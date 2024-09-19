@@ -138,6 +138,9 @@ if __name__ == '__main__':
         for i, row in df.iterrows():
             date, tree, measurement, measurement_type, optics, day = row
             pbar.set_description(f"{measurement_type} {day} {tree} {measurement}")
+            if (tree=="JD18") & (probe in ["Pt3", "Pt4"]):
+                pbar.update(1)
+                continue
             out[(measurement_type, day, tree, measurement, probe)
                 ] = [plot_one_probe(day, tree, measurement, measurement_type, probe=probe)]
             pbar.update(1)
