@@ -80,7 +80,10 @@ df_failed_FFT_experiments=pd.read_csv("csv/FFT_failed.csv")
     
 def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement_type='normal', probe='Elasto(90)'):
     m = dt.DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type)
-    s = DynatreeSignal(m, probe)
+    probename = probe
+    if probe in ["blueMaj","yellowMaj"]:
+        probe = m.identify_major_minor['blueMaj']
+    s = DynatreeSignal(m, probe, release_source="Elasto(90)")
     fig, ax = plt.subplots(2,1)
     # print (s.release_time)
     s.signal_full.plot(ax=ax[0])
@@ -91,8 +94,8 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
     ymax = s.fft.values.max()
     ax[1].set(ylim=(ymax/10**4,ymax*2), xlabel="Freq / Hz", ylabel="Amplitude")
     ax[0].set(xlim=(0,None), xlabel="Time / s", ylabel="Value")
-    plt.suptitle(f"{s.measurement} {s.signal_source}, {s.main_peak:.03f} Hz".replace("Dynatree measurement ",""))
-    test = [f"{measurement_type}", f"{day}", f"{tree}", f"{measurement}", f"{probe}"] in df_failed_FFT_experiments.values.tolist()
+    plt.suptitle(f"{s.measurement} {probename}, {s.main_peak:.03f} Hz".replace("Dynatree measurement ",""))
+    test = [f"{measurement_type}", f"{day}", f"{tree}", f"{measurement}", f"{probename}"] in df_failed_FFT_experiments.values.tolist()
     if test:
         prefix = "FAILED_"
         value = np.nan
@@ -101,7 +104,7 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
         value = s.main_peak
         ax[1].axvline(s.main_peak, color='r', linestyle="--")
     plt.tight_layout()
-    fig.savefig(f"../temp/fft_elasto/{prefix}{s.measurement.measurement_type}_{s.measurement.day}_{s.measurement.tree}_{s.measurement.measurement}_{s.signal_source}.png")
+    fig.savefig(f"../temp/fft_tukey/{prefix}{s.measurement.measurement_type}_{s.measurement.day}_{s.measurement.tree}_{s.measurement.measurement}_{probename}.png")
     plt.close('all')
     return value
     # print(s.measurement.measurement_type, s.measurement.day, 
@@ -116,19 +119,25 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
 if __name__ == '__main__':
     # resource.setrlimit(resource.RLIMIT_DATA, (100 * 1024 * 1024, 100 * 1024 * 1024)) 
     matplotlib.use('TkAgg')
-
     out = {}
     df = lib_find_measurements.get_all_measurements(method='all', type='all')  
     df = df[df["measurement"]!="M01"]
-    pbar = tqdm(total=len(df))
-    for i, row in df.iterrows():
-        date, tree, measurement, measurement_type, optics, day = row
-        pbar.set_description(f"{measurement_type} {day} {tree} {measurement}")
-        out[(measurement_type, day, tree, measurement)
-            ] = [plot_one_probe(day, tree, measurement, measurement_type, probe="Elasto(90)")]
-        pbar.update(1)
-
+    
+    
+    probes = ["blueMaj", "yellowMaj", "Elasto(90)"]
+    for probe in probes:
+        print(f"Probe {probe}")
+        pbar = tqdm(total=len(df))
+        for i, row in df.iterrows():
+            date, tree, measurement, measurement_type, optics, day = row
+            pbar.set_description(f"{measurement_type} {day} {tree} {measurement}")
+            out[(measurement_type, day, tree, measurement, probe)
+                ] = [plot_one_probe(day, tree, measurement, measurement_type, probe=probe)]
+            pbar.update(1)
+        pbar.close()
+    
+    
     out_df = pd.DataFrame(out).T
     out_df = out_df.reset_index(drop=False)
-    out_df.columns=["type","day","tree","measurement","peak"]
-    out_df.to_csv(f"../temp/Elasto.csv", index=False)
+    out_df.columns=["type","day","tree","measurement","probe","peak"]
+    out_df.to_csv(f"../outputs/FFT_csv_tukey.csv", index=False)

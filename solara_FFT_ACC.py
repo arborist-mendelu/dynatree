@@ -139,7 +139,7 @@ def Page():
 """
 * Pracuje se s původním vzorkováním 5000Hz.
 * Time domain: časový průběh zvoleného signálu. Oranžová tečka je automatem určené vypuštění. Toto je stanoveno jako maximum na intervalu od 20 sekund do konce.
-* Tukey: Ořezaný signál od vypuštění na délku 60 sekund. Pokud je kratší, je vycenrováno a doplněno nulami. Poté je aplikováno Tukey okénko na celou minutu.
+# * Tukey: Ořezaný signál od vypuštění na délku 60 sekund. Pokud je kratší, je vycenrováno a doplněno nulami. Poté je aplikováno Tukey okénko na celou minutu.
 Parametr okénka je možné měnit.
 * FFT: Interaktivní graf, je možné zoomovat. Pokud nevyhovuje defualt nastavení, odzoomuj a znovu vyber, co tě zajímá.
 """                
