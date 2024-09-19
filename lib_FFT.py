@@ -34,9 +34,9 @@ class DynatreeSignal:
         elif self.signal_source in self.measurement.data_acc5000.columns:
             self.signal_full = self.measurement.data_acc5000[self.signal_source]
             self.release_full = self.measurement.data_acc5000[self.release_source]
-        elif self.signal_source in self.measurement.data_opticspt34.columns:
-            self.signal_full = self.measurement.data_opticspt34[self.signal_source]
-            self.release_full = self.measurement.data_opticspt34[self.release_source]
+        elif self.signal_source in self.measurement.data_optics_pt34.columns:
+            self.signal_full = self.measurement.data_optics_pt34[self.signal_source]
+            self.release_full = self.measurement.data_optics_pt34[self.release_source]
         self.dt = dt
         self.tukey = tukey
 

@@ -9,7 +9,6 @@ noc,2022-08-16,BK10,M02,Elasto(90)
 noc,2022-08-16,BK10,M03,Elasto(90)
 noc,2022-08-16,BK10,M04,Elasto(90)
 normal,2021-06-29,BK01,M04,blueMaj
-normal,2021-06-29,BK07,M02,yellowMaj
 normal,2021-06-29,BK07,M04,blueMaj
 normal,2021-06-29,BK07,M05,blueMaj
 normal,2021-06-29,BK08,M02,blueMaj
@@ -25,7 +24,6 @@ normal,2021-06-29,BK13,M04,yellowMaj
 normal,2021-06-29,BK14,M03,Elasto(90)
 normal,2021-06-29,BK14,M03,blueMaj
 normal,2021-06-29,BK14,M03,yellowMaj
-normal,2022-04-05,BK07,M04,yellowMaj
 normal,2022-04-05,BK10,M03,blueMaj
 normal,2022-04-05,BK10,M04,blueMaj
 normal,2022-04-05,BK12,M02,Elasto(90)
@@ -53,14 +51,12 @@ normal,2023-07-17,BK09,M04,Elasto(90)
 normal,2023-07-17,BK09,M04,blueMaj
 normal,2023-07-17,BK09,M04,yellowMaj
 normal,2023-07-17,BK10,M02,blueMaj
-normal,2023-07-17,BK10,M04,blueMaj
 normal,2023-07-17,BK12,M04,blueMaj
 normal,2023-07-17,BK16,M02,yellowMaj
 normal,2023-07-17,BK16,M03,Elasto(90)
 normal,2023-07-17,BK16,M03,blueMaj
 normal,2023-07-17,BK16,M03,yellowMaj
 normal,2023-07-17,BK16,M04,Elasto(90)
-normal,2024-04-10,BK10,M02,Elasto(90)
 normal,2024-04-10,BK10,M02,blueMaj
 normal,2024-04-10,BK10,M02,yellowMaj
 normal,2024-04-10,BK10,M03,blueMaj
@@ -69,7 +65,6 @@ normal,2024-09-02,BK08,M02,blueMaj
 normal,2024-09-02,BK08,M02,yellowMaj
 normal,2024-09-02,BK08,M03,Elasto(90)
 normal,2024-09-02,BK08,M03,blueMaj
-normal,2024-09-02,BK09,M02,blueMaj
 normal,2024-09-02,BK09,M03,yellowMaj
 normal,2024-09-02,BK10,M02,Elasto(90)
 normal,2024-09-02,BK10,M02,blueMaj
@@ -81,7 +76,6 @@ normal,2024-09-02,BK10,M04,Elasto(90)
 normal,2024-09-02,BK10,M04,blueMaj
 normal,2024-09-02,BK10,M04,yellowMaj
 normal,2024-09-02,BK16,M04,Elasto(90)
-afterro2,2024-09-02,BK21,M04,yellowMaj
 afterro2,2024-09-02,BK21,M04,blueMaj
 afterro2,2024-09-02,BK08,M03,blueMaj
 afterro2,2024-09-02,BK08,M03,yellowMaj
