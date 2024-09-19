@@ -34,9 +34,9 @@ class DynatreeSignal:
         elif self.signal_source in self.measurement.data_acc5000.columns:
             self.signal_full = self.measurement.data_acc5000[self.signal_source]
             self.release_full = self.measurement.data_acc5000[self.release_source]
-        elif self.signal_source in self.measurement.data_optics_pt34.columns:
-            self.signal_full = self.measurement.data_optics_pt34[self.signal_source]
-            self.release_full = self.measurement.data_optics_pt34[self.release_source]
+        elif self.signal_source in ["Pt3", "Pt4"]:
+            self.signal_full = self.measurement.data_optics_pt34[(self.signal_source, "Y0")]
+            self.release_full = self.measurement.data_optics_pt34[(self.release_source, "Y0")]
         self.dt = dt
         self.tukey = tukey
 
@@ -81,12 +81,16 @@ df_failed_FFT_experiments=pd.read_csv("csv/FFT_failed.csv")
 def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement_type='normal', probe='Elasto(90)'):
     m = dt.DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type)
     probename = probe
+    release_source = probe
     if probe in ["blueMaj","yellowMaj"]:
         probe = m.identify_major_minor[probe]
-    s = DynatreeSignal(m, probe, release_source="Elasto(90)")
+        release_source="Elasto(90)"
+    s = DynatreeSignal(m, probe, release_source=release_source)
     fig, ax = plt.subplots(2,1)
     # print (s.release_time)
-    s.signal_full.plot(ax=ax[0])
+    sf = s.signal_full.copy()
+    sf = sf - sf[0]
+    sf.plot(ax=ax[0])
     s.signal.plot(ax=ax[0])
     s.fft.plot(logy=True, xlim=(0,3), ax=ax[1])
     ax[0].grid()
@@ -113,7 +117,7 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
     
 # plot_one_probe(tree="BK04")    
 
-# plot_one_probe(tree="BK09", measurement='M03', day="2023-07-17")    
+# plot_one_probe(tree="BK09", measurement='M03', day="2021-03-22", probe="Pt3")    
     
 #%%
 if __name__ == '__main__':
@@ -127,7 +131,7 @@ if __name__ == '__main__':
     df = df[df["measurement"]!="M01"]
     
     
-    probes = ["blueMaj", "yellowMaj", "Elasto(90)"]
+    probes = ["blueMaj", "yellowMaj", "Elasto(90)", "Pt3", "Pt4"]
     for probe in probes:
         print(f"Probe {probe}")
         pbar = tqdm(total=len(df))
