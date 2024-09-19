@@ -118,7 +118,10 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
 #%%
 if __name__ == '__main__':
     # resource.setrlimit(resource.RLIMIT_DATA, (100 * 1024 * 1024, 100 * 1024 * 1024)) 
-    matplotlib.use('TkAgg')
+    try:
+        matplotlib.use('TkAgg')
+    except:
+        matplotlib.use('Agg')
     out = {}
     df = lib_find_measurements.get_all_measurements(method='all', type='all')  
     df = df[df["measurement"]!="M01"]
