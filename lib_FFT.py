@@ -82,7 +82,7 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
     m = dt.DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type)
     probename = probe
     if probe in ["blueMaj","yellowMaj"]:
-        probe = m.identify_major_minor['blueMaj']
+        probe = m.identify_major_minor[probe]
     s = DynatreeSignal(m, probe, release_source="Elasto(90)")
     fig, ax = plt.subplots(2,1)
     # print (s.release_time)
