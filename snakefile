@@ -299,7 +299,7 @@ rule fft_all_probes:
         mkdir ../temp/fft_tukey
         python lib_FFT.py
         cd ../temp/fft_tukey/
-        zip -j {output.zip} *.* 
+        zip {output.zip} *.* 
         """
         
 rule fft_all_probes_boxplots:

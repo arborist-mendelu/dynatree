@@ -83,14 +83,30 @@ class DynatreeSignal:
 
 df_failed_FFT_experiments=pd.read_csv("csv/FFT_failed.csv")
     
-def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement_type='normal', probe='Elasto(90)'):
+def process_one_probe(
+        day='2021-03-22', tree='BK01', measurement='M03', measurement_type='normal', probe='Elasto(90)',
+        plot = 'failed'
+        ):
+    """
+    Parameter plot selects experiments for plot. Is suppoed to have values
+    'never', 'failed' or 'all'
+    """
     m = dt.DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type)
     probename = probe
     release_source = probe
     if probe in ["blueMaj","yellowMaj"]:
         probe = m.identify_major_minor[probe]
         release_source="Elasto(90)"
+    test_failed = [f"{measurement_type}", f"{day}", f"{tree}", f"{measurement}", f"{probename}"] in df_failed_FFT_experiments.values.tolist()
     s = DynatreeSignal(m, probe, release_source=release_source)
+    if test_failed:
+        value = np.nan
+    else:
+        value = s.main_peak
+    if plot=='never':
+        return value 
+    if plot=='failed' and not pd.isna(value):
+        return value 
     fig, ax = plt.subplots(2,1)
     # print (s.release_time)
     sf = s.signal_full.copy()
@@ -106,13 +122,10 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
     ax[1].set(ylim=(ymax/10**4,ymax*2), xlabel="Freq / Hz", ylabel="Amplitude")
     ax[0].set(xlim=(0,None), xlabel="Time / s", ylabel="Value")
     plt.suptitle(f"{s.measurement} {probename}, {s.main_peak:.03f} Hz".replace("Dynatree measurement ",""))
-    test = [f"{measurement_type}", f"{day}", f"{tree}", f"{measurement}", f"{probename}"] in df_failed_FFT_experiments.values.tolist()
-    if test:
+    if test_failed:
         prefix = "FAILED-"
-        value = np.nan
     else:
         prefix = ""
-        value = s.main_peak
         ax[1].axvline(s.main_peak, color='r', linestyle="--")
     plt.tight_layout()
     fig.savefig(f"../temp/fft_tukey/{prefix}{s.measurement.measurement_type}_{s.measurement.day}_{s.measurement.tree}_{s.measurement.measurement}_{probename}.png")
@@ -160,7 +173,7 @@ if __name__ == '__main__':
                 continue
             try:
                 out[(measurement_type, day, tree, measurement, probe)
-                    ] = [plot_one_probe(day, tree, measurement, measurement_type, probe=probe)]
+                    ] = [process_one_probe(day, tree, measurement, measurement_type, probe=probe)]
             except:
                 logger.error(f"FFT failed for {measurement_type}, {day}, {tree}, {measurement}, {probe}")
             pbar.update(1)

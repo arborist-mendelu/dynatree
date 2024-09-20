@@ -121,7 +121,7 @@ def Page():
     if nakresli.finished:
         fig, figB, figC, figD = nakresli.value
 
-    with solara.lab.Tabs(value=tab_value.value):
+    with solara.lab.Tabs(value=tab_value):
         with solara.lab.Tab("Time domain"):
             if nakresli.finished:
                 solara.FigureMatplotlib(fig, format='png')            

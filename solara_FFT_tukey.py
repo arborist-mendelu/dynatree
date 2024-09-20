@@ -32,7 +32,7 @@ df_fft_all = df_fft_long.pivot(
 button_color = solara.reactive('primary')
 probe = solara.reactive("Elasto(90)")
 restrict = 50 # cut the FFT at 50Hz
-
+tab_value = solara.reactive(2)
 
 def ChooseProbe():
     data_obj = lib_dynatree.DynatreeMeasurement(
@@ -44,9 +44,6 @@ def ChooseProbe():
                      ] in df_failed
         if test_is_failed:
             solara.Error(f"Classified as failed.")
-        # else:
-        #     solara.Info(f"The measurement is classifid as suitable for processing.")
-    # solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
     return data_obj
 
 def resetujmethod(x=None):
@@ -118,6 +115,14 @@ def add_horizontal_line(df):
     
     return styles
 
+def ostyluj(subdf):
+    cm = sns.light_palette("blue", as_cmap=True)
+    subdf = (subdf.style.background_gradient(cmap=cm, axis=None)
+             .apply(add_horizontal_line, axis=None)
+             .applymap(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+             .applymap(lambda x: 'background: transparent' if pd.isnull(x) else '')
+             )
+    return subdf
 
 @solara.component
 def Page():
@@ -137,49 +142,45 @@ def Page():
 
     ChooseProbe()
     
-    with solara.lab.Tabs():
+    with solara.lab.Tabs(value=tab_value):
         with solara.lab.Tab("Static image"):
-            try:
-                solara.ProgressLinear(nakresli_signal.pending)
-                if nakresli_signal.not_called:
-                    nakresli_signal()
-                if nakresli_signal.finished:
-                        solara.FigureMatplotlib(nakresli_signal.value)
-                        plt.close('all')
-            except:
-                pass
+            if tab_value.value == 0:
+                try:
+                    solara.ProgressLinear(nakresli_signal.pending)
+                    if nakresli_signal.not_called:
+                        nakresli_signal()
+                    if nakresli_signal.finished:
+                            solara.FigureMatplotlib(nakresli_signal.value)
+                            plt.close('all')
+                except:
+                    pass
         with solara.lab.Tab("Dynamic FFT image"):
-            try:
-                data = zpracuj()
-                df_fft = data['fft'].loc[:restrict]
-                if isinstance(df_fft.name, tuple):
-                    df_fft.name = df_fft.name[0]
-                ymax = df_fft.to_numpy().max()
-                figFFT = px.line(df_fft, 
-                                 height = s.height.value, width=s.width.value,
-                                 title=f"FFT spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
-                                 log_y=True, range_x=[0,10], range_y=[ymax/100000, ymax*2]
-                )
-                figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
-                solara.FigurePlotly(figFFT)
-            except:
-                pass
+            if tab_value.value == 1:
+                try:
+                    data = zpracuj()
+                    df_fft = data['fft'].loc[:restrict]
+                    if isinstance(df_fft.name, tuple):
+                        df_fft.name = df_fft.name[0]
+                    ymax = df_fft.to_numpy().max()
+                    figFFT = px.line(df_fft, 
+                                     height = s.height.value, width=s.width.value,
+                                     title=f"FFT spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
+                                     log_y=True, range_x=[0,10], range_y=[ymax/100000, ymax*2]
+                    )
+                    figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
+                    solara.FigurePlotly(figFFT)
+                except:
+                    pass
         with solara.lab.Tab("Statistiky"):
-            cm = sns.light_palette("blue", as_cmap=True)
-    
-            with solara.Card(title="Current day"):
-                subdf = df_fft_all.loc[(s.method.value,s.day.value,s.tree.value,slice(None)),:]
-                subdf = subdf.fillna("")
-                subdf = subdf.style.background_gradient(cmap=cm)
-                solara.display(subdf)
-            with solara.Card(title=f"All days for tree {s.method.tree}"):
-                subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
-                subdf = subdf.fillna("")
-                subdf = (subdf.style
-                         .apply(add_horizontal_line, axis=None)
-                         .background_gradient(cmap=cm)
-                         )
-                solara.display(subdf)
+            if tab_value.value == 2:
+                with solara.Card(title="Current day"):
+                    subdf = df_fft_all.loc[(s.method.value,s.day.value,s.tree.value,slice(None)),:]
+                    subdf = ostyluj(subdf)
+                    solara.display(subdf)
+                with solara.Card(title=f"All days for tree {s.tree.value}"):
+                    subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
+                    subdf = ostyluj(subdf)
+                    solara.display(subdf)
         with solara.lab.Tab("Popis"):
             solara.Markdown(
 f"""
