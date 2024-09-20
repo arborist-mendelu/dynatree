@@ -19,6 +19,7 @@ import matplotlib
 
 length = 60  # the length of the signal
 peak_min = .1 # do not look for the peak smaller than this value
+peak_max = 0.75 # do not look for the peak larger than this value
 
 class DynatreeSignal:
 
@@ -74,7 +75,7 @@ class DynatreeSignal:
     
     @property
     def main_peak(self):
-        return self.fft.loc[peak_min:].idxmax()
+        return self.fft.loc[peak_min:peak_max].idxmax()
 
 df_failed_FFT_experiments=pd.read_csv("csv/FFT_failed.csv")
     
