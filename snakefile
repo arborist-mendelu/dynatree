@@ -298,7 +298,7 @@ rule fft_all_probes:
         rm -r ../temp/fft_tukey || true
         mkdir ../temp/fft_tukey
         python lib_FFT.py
-        zip -r {output.zip} "../temp/fft_tukey/" 
+        zip -j -r {output.zip} "../temp/fft_tukey/" 
         """
         
 rule fft_all_probes_boxplots:
