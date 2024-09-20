@@ -12,7 +12,8 @@ rule all:
         "../outputs/anotated_regressions_static.csv",
         "csv/angles_measured.csv",
         "csv_output/measurement_notes.csv",
-        "../outputs/static_pull_removed_experiments.zip"
+        "../outputs/static_pull_removed_experiments.zip",
+        "../outputs/FFT_csv_tukey.csv",
 
         
 rule measurement_notes:
