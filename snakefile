@@ -299,7 +299,9 @@ rule fft_all_probes:
         mkdir ../temp/fft_tukey
         python lib_FFT.py
         cd ../temp/fft_tukey/
-        zip {output.zip} *.* 
+        echo "fft images" > readme
+        rm ../{output.zip}
+        zip ../{output.zip} *
         """
         
 rule fft_all_probes_boxplots:

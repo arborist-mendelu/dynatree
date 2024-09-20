@@ -85,7 +85,8 @@ df_failed_FFT_experiments=pd.read_csv("csv/FFT_failed.csv")
     
 def process_one_probe(
         day='2021-03-22', tree='BK01', measurement='M03', measurement_type='normal', probe='Elasto(90)',
-        plot = 'failed'
+        plot = 'never',
+        # plot = 'failed',
         ):
     """
     Parameter plot selects experiments for plot. Is suppoed to have values

@@ -203,7 +203,7 @@ se do výsledných statistik.
     
         {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}
         
-* Pokud chceš projít a vychat více nebo hodně obrázků, je efektivnější si stáhout
+* Pokud chceš projít a vynechat více nebo hodně obrázků, je efektivnější si stáhout
 obrázky fft z ERC disku (`outputs/FFT_spectra.zip`), projít je, odmazávat co se nehodí, 
 potom v koši najít jména odmazaných souborů a ta jednoduchým najdi 
 nahraď přetransformovat na řádky co csv souboru. Pro roztřídění do podadresářů podle stromů použij následující oneliner.
