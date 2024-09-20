@@ -154,8 +154,12 @@ def Page():
                 pass
         with solara.lab.Tab("Statistiky"):
             # breakpoint()
-            subdf = df_fft_all.loc[(s.method.value,s.day.value,s.tree.value,slice(None)),:]
-            solara.display(subdf)
+            with solara.Card():
+                subdf = df_fft_all.loc[(s.method.value,s.day.value,s.tree.value,slice(None)),:]
+                solara.display(subdf)
+            with solara.Card():
+                subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
+                solara.display(subdf)
         with solara.lab.Tab("Popis"):
             solara.Markdown(
 f"""
@@ -167,6 +171,7 @@ a ponechaný na 5000Hz pro akcelerometry.
 signál netrvá tak dlouho, doplní se nulami. 
 * Na signál se aplikuje tukey okénko pro oříznutí okrajových efektů.
 * Výsledný signál se protáhne přes FFT.
+* Záložka statistky ukazuje hlavní frekvenci. Hodí se pro nalezení odlehlých měření.
 
 # Která data jsou označena jako nevalidní?
 

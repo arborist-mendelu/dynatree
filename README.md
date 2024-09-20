@@ -1,5 +1,24 @@
 # Zpracování dat
 
+
+## Instalace
+
+Je nainstalováno na jupyter.mendelu.cz v /babice. Přístup ke čtení má každý s účtem na tomto serveru. (I přes jupyter notebook.)
+
+* Vytvoř conda (mamba) environmen dynatree
+    mamba create -n dynatree
+    conda activate dynatree
+* Nainstaluj balíčky. Příkaz z packages.txt zkopíruj do příkazové řádky a spusť.
+* Nainstaluj snakemake
+    mamba install bioconda::snakemake
+* Vytvoř adresář např babice. V něm podadresáře data (může být symlink na adresář s daty), temp, outputs a skripty.
+* Zkopíruj zdrojová data, není potřeba pokud používáš symlink.
+* Nainstaluj pdfunite
+    sudo apt-get install poppler-utils
+* Do adresáře skripty stáni skripty. Na jménu adresáře nezáleží, můžeš nechat jméno dynatree-optika. Vytvoř podadresáře log a logs.
+* snakemake
+
+
 ## Zdroje
 
 Zdrojová data se přetransformují do parquet souborů. Skripty potom sahají jenom sem a do adresáře `skripty/csv`. Umístění parquet souborů vzheldem k adresáři skripty je

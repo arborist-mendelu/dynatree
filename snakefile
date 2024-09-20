@@ -279,3 +279,23 @@ rule static_pull_plot_failed:
         cd ../temp/static_fail_images
         zip -r ../{output} *.* 
         """
+        
+rule fft_all_probes:
+    """
+    Find fft data (main peak). Also create images in ../temp/fft_tukey/
+    """
+    input: 
+        "csv/FFT_failed.csv"
+    output: 
+        csv = "../outputs/FFT_csv_tukey.csv",
+        zip = "../outputs/FFT_spectra.zip"
+    conda:
+        "dynatree"        
+    shell:
+        """
+        rm -r ../temp/fft_tukey || true
+        mkdir ../temp/fft_tukey
+        python lib_FFT.py
+        zip -r {output.zip} "../temp/fft_tukey/" 
+        """
+    
