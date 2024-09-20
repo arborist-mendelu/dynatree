@@ -38,14 +38,14 @@ def ChooseProbe():
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
     probes = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3","Pt4", 'a01_z', 'a02_z', 'a03_z', 'a04_z']
-    with solara.Column():
+    with solara.Row():        
         solara.ToggleButtonsSingle(value=probe, values=probes, on_value=nakresli_signal)
         test_is_failed = [s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value
                      ] in df_failed
         if test_is_failed:
-            solara.Warning(f"Active probe: {probe.value}. This measurement is classified as failed.")
-        else:
-            solara.Info(f"Active probe: {probe.value}. The measurement is classifid as suitable for processing.")
+            solara.Error(f"Classified as failed.")
+        # else:
+        #     solara.Info(f"The measurement is classifid as suitable for processing.")
     # solara.ToggleButtonsMultiple(value=probe, values=probes, mandatory=True)
     return data_obj
 
@@ -182,8 +182,11 @@ se do výsledných statistik.
         {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}
         
 * Pokud chceš projít a vychat více nebo hodně obrázků, je efektivnější si stáhout
-obrázky fft z ERC disku, projít je, odmazávat co se nehodí, potom koši najít jména
-odmazaných souborů a ta jednoduchým najdi nahraď přetransformovat na řádky co csv souboru.
+obrázky fft z ERC disku (`outputs/FFT_spectra.zip`), projít je, odmazávat co se nehodí, 
+potom v koši najít jména odmazaných souborů a ta jednoduchým najdi 
+nahraď přetransformovat na řádky co csv souboru. Pro roztřídění do podadresářů podle stromů použij následující oneliner.
+
+        for file in *_BK??_*; do dir="${{file#*_}}"; dir="${{dir%%_*}}"; mkdir -p "$dir"; mv "$file" "$dir/"; done
 
 
 # Ovládání

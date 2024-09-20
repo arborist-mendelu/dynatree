@@ -299,4 +299,19 @@ rule fft_all_probes:
         python lib_FFT.py
         zip -r {output.zip} "../temp/fft_tukey/" 
         """
+        
+rule fft_all_probes_boxplots:
+    """
+    Draw boxplots from fft
+    """
+    input: 
+        "../outputs/FFT_csv_tukey.csv",
+    output: 
+        "../outputs/fft_boxplots_for_probes_tukey.pdf"
+    conda:
+        "dynatree"        
+    shell:
+        """
+        python plot_fft_boxplots_tukey.py
+        """
     
