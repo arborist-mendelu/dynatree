@@ -88,7 +88,7 @@ def nakresli_signal(x=None):
     tempsignal.plot(ax=ax[0])
     output['signal'].plot(ax=ax[0])
     limits = (output['signal'].min(), output['signal'].max())
-    ax[0].set (title=f"{s.method.value} {s.day.value} {s.tree.value} {s.measurement.value} {probe.value}",
+    ax[0].set (title=f"{s.method.value} {s.day.value} {s.tree.value} {s.measurement.value} {probe.value}, {output['main_peak']:.04f}Hz",
             ylim=limits)
     output['fft'].plot(logy=True, xlim=(0,10), ax=ax[1])
     ax[0].grid()
