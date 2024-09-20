@@ -21,8 +21,9 @@ import logging
 
 
 length = 60  # the length of the signal
+# todo: make min and max different for each tree
 peak_min = .1 # do not look for the peak smaller than this value
-peak_max = 0.75 # do not look for the peak larger than this value
+peak_max = 0.7 # do not look for the peak larger than this value
 
 class DynatreeSignal:
 
