@@ -16,7 +16,7 @@ import lib_FFT
 import pandas as pd
 import numpy as np
 import plotly.express as px
-
+import seaborn as sns
 
 # https://stackoverflow.com/questions/37470734/matplotlib-giving-error-overflowerror-in-draw-path-exceeded-cell-block-limit
 import matplotlib as mpl
@@ -107,6 +107,18 @@ def nakresli_signal(x=None):
     return (fig)    
     # plt.close('all')
 
+# Funkce pro stylování - přidání hranice, když se změní hodnota v úrovni 'tree'
+def add_horizontal_line(df):
+    styles = pd.DataFrame('', index=df.index, columns=df.columns)
+    
+    # Projdi všechny řádky a přidej stylování
+    for i in range(1, len(df)):
+        if df.index[i][1] != df.index[i - 1][1]:  # Pokud se změní 'tree'
+            styles.iloc[i, :] = 'border-top: 2px solid black'  # Přidej hranici
+    
+    return styles
+
+
 @solara.component
 def Page():
     solara.Title("DYNATREE: FFT s automatickou detekci vypuštění")
@@ -153,12 +165,20 @@ def Page():
             except:
                 pass
         with solara.lab.Tab("Statistiky"):
-            # breakpoint()
-            with solara.Card():
+            cm = sns.light_palette("blue", as_cmap=True)
+    
+            with solara.Card(title="Current day"):
                 subdf = df_fft_all.loc[(s.method.value,s.day.value,s.tree.value,slice(None)),:]
+                subdf = subdf.fillna("")
+                subdf = subdf.style.background_gradient(cmap=cm)
                 solara.display(subdf)
-            with solara.Card():
+            with solara.Card(title=f"All days for tree {s.method.tree}"):
                 subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
+                subdf = subdf.fillna("")
+                subdf = (subdf.style
+                         .apply(add_horizontal_line, axis=None)
+                         .background_gradient(cmap=cm)
+                         )
                 solara.display(subdf)
         with solara.lab.Tab("Popis"):
             solara.Markdown(
@@ -171,7 +191,8 @@ a ponechaný na 5000Hz pro akcelerometry.
 signál netrvá tak dlouho, doplní se nulami. 
 * Na signál se aplikuje tukey okénko pro oříznutí okrajových efektů.
 * Výsledný signál se protáhne přes FFT.
-* Záložka statistky ukazuje hlavní frekvenci. Hodí se pro nalezení odlehlých měření.
+* Záložka statistky ukazuje hlavní frekvenci. Hodí se pro nalezení odlehlých měření. Pro lepší
+hledání úletú jsou hodnoty podbarvené gradientem.
 
 # Která data jsou označena jako nevalidní?
 
