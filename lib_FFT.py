@@ -85,8 +85,8 @@ df_failed_FFT_experiments=pd.read_csv("csv/FFT_failed.csv")
     
 def process_one_probe(
         day='2021-03-22', tree='BK01', measurement='M03', measurement_type='normal', probe='Elasto(90)',
-        plot = 'never',
-        # plot = 'failed',
+        # plot = 'never',
+        plot = 'failed',
         ):
     """
     Parameter plot selects experiments for plot. Is suppoed to have values
@@ -109,8 +109,7 @@ def process_one_probe(
     if plot=='failed' and not pd.isna(value):
         return value 
     fig, ax = plt.subplots(2,1)
-    # print (s.release_time)
-    sf = s.signal_full.copy()
+    sf = s.signal_full
     sf = sf - sf[0]
     sf.plot(ax=ax[0])
     s.signal.plot(ax=ax[0])

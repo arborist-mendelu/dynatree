@@ -28,6 +28,10 @@ df_fft_all = df_fft_long.pivot(
     index = ["type","day","tree","measurement"],
     values="peak",
     columns="probe")
+df_fft_all = df_fft_all.loc[:,[
+    'Elasto(90)', 'blueMaj', 'yellowMaj', 
+    'Pt3', 'Pt4', 
+    'a01_z', 'a02_z', 'a03_z', 'a04_z']]
 
 button_color = solara.reactive('primary')
 probe = solara.reactive("Elasto(90)")
@@ -48,6 +52,7 @@ def ChooseProbe():
 
 def resetujmethod(x=None):
     s.get_measurements_list()
+    nakresli_signal()
     resetuj()
     
 def resetuj(x=None):
@@ -150,8 +155,13 @@ def Page():
                     if nakresli_signal.not_called:
                         nakresli_signal()
                     if nakresli_signal.finished:
-                            solara.FigureMatplotlib(nakresli_signal.value)
+                            solara.FigureMatplotlib(nakresli_signal.value, format='png')
                             plt.close('all')
+                    solara.Markdown(
+f"""
+`{s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}`
+"""                        
+                        )
                 except:
                     pass
         with solara.lab.Tab("Dynamic FFT image"):
@@ -174,13 +184,19 @@ def Page():
         with solara.lab.Tab("Statistiky"):
             if tab_value.value == 2:
                 with solara.Card(title="Current day"):
-                    subdf = df_fft_all.loc[(s.method.value,s.day.value,s.tree.value,slice(None)),:]
-                    subdf = ostyluj(subdf)
-                    solara.display(subdf)
+                    try:
+                        subdf = df_fft_all.loc[(s.method.value,s.day.value,s.tree.value,slice(None)),:]
+                        subdf = ostyluj(subdf)
+                        solara.display(subdf)
+                    except:
+                        pass
                 with solara.Card(title=f"All days for tree {s.tree.value}"):
-                    subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
-                    subdf = ostyluj(subdf)
-                    solara.display(subdf)
+                    try:
+                        subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
+                        subdf = ostyluj(subdf)
+                        solara.display(subdf)
+                    except:
+                        pass
         with solara.lab.Tab("Popis"):
             solara.Markdown(
 f"""
@@ -217,6 +233,28 @@ nahraď přetransformovat na řádky co csv souboru. Pro roztřídění do podad
 dynamický obrázek s fft.
 * Pokud chceš plný rozsah fft, použij tlačítko autoscale u obrázku a poté si vyber, co potřebuješ.
 * V dynamickém obrázku je kvůli lepší odezvě použit jenom rozsah do 50Hz.
+
+# Komentáře
+
+```
+normal,2021-06-29,BK04,M03,a04_z - dva peaky vedle sebe druhý je vyšší
+normal,2021-06-29,BK04,M04,a04_z - dva peaky vedle sebe druhý je vyšší
+normal,2023-07-17,BK04,M04,a04_z - dva peaky vedle sebe druhý je vyšší
+normal,2023-07-17,BK09,M03,a04_z - dva peaky vedle sebe druhý je vyšší
+noc,2023-07-17,BK10,M02,blueMaj - komplikovné vypuštění, dalo by se vylepšit samostatným nastavením času vypuštění
+noc,2023-07-17,BK10,M02,yellowMaj - komplikovné vypuštění, dalo by se vylepšit samostatným nastavením času vypuštění
+normal,2023-07-17,BK11,M02,a04_z - dva peaky vedle sebe druhý je vyšší
+normal,2023-07-17,BK11,M04,a04_z - dva peaky vedle sebe druhý je vyšší
+normal,2023-07-17,BK12,M04,a04_z - dva peaky vedle sebe druhý je vyšší
+normal,2021-03-22,BK13,M02,a01_z - peak se základní frekvencí je malý
+normal,2021-03-22,BK13,M03,a01_z - peak se základní frekvencí je malý
+normal,2021-03-22,BK13,M04,a01_z - peak se základní frekvencí je malý
+normal,2021-06-29,BK13,M03,a04_z - peak se základní frekvencí je malý
+normal,2024-04-10,BK13,M02,a04_z - peak se základní frekvencí je malý
+normal,2024-04-10,BK13,M03,a04_z - peak se základní frekvencí je malý
+normal,2024-04-10,BK13,M04,a04_z - peak se základní frekvencí je malý
+normal,2021-06-29,BK21,M03,a01_z - peak se základní frekvencí je malý
+```
 
 """                
                 )
