@@ -154,6 +154,9 @@ if __name__ == '__main__':
             if (tree=="JD18") & (probe in ["Pt3", "Pt4"]):
                 pbar.update(1)
                 continue
+            if (probe in ["Pt3", "Pt4"]) & (not optics):
+                pbar.update(1)
+                continue
             try:
                 out[(measurement_type, day, tree, measurement, probe)
                     ] = [plot_one_probe(day, tree, measurement, measurement_type, probe=probe)]
