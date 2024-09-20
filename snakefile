@@ -14,6 +14,7 @@ rule all:
         "csv_output/measurement_notes.csv",
         "../outputs/static_pull_removed_experiments.zip",
         "../outputs/FFT_csv_tukey.csv",
+        "../outputs/fft_boxplots_for_probes_tukey.pdf",
 
         
 rule measurement_notes:
