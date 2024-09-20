@@ -107,7 +107,7 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
     plt.suptitle(f"{s.measurement} {probename}, {s.main_peak:.03f} Hz".replace("Dynatree measurement ",""))
     test = [f"{measurement_type}", f"{day}", f"{tree}", f"{measurement}", f"{probename}"] in df_failed_FFT_experiments.values.tolist()
     if test:
-        prefix = "FAILED_"
+        prefix = "FAILED-"
         value = np.nan
     else:
         prefix = ""

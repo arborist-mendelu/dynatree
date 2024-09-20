@@ -16,8 +16,8 @@ def get_data():
 
     df = df_long.pivot(index=["type","day","tree","measurement"], columns="probe", values="peak")
     df = df.reset_index()
-    df ["diff1"] = df["Elasto(90)"] - df["blueMaj"] 
-    df ["diff2"] = df["Elasto(90)"] - df["yellowMaj"] 
+    # df ["diff1"] = df["Elasto(90)"] - df["blueMaj"] 
+    # df ["diff2"] = df["Elasto(90)"] - df["yellowMaj"] 
     
     days_with_leaves_true = ["2021-06-29", "2021-08-03", "2022-08-16", "2023-07-17", "2024-09-02"]
     days_after_first_reduction = ['2024-01-16', '2024-04-10', '2024-09-02']
@@ -41,7 +41,7 @@ def get_data():
     df.loc[idx,"reductionNo"]=1
     idx = (df["type"]=="afterro2")
     df.loc[idx,"reductionNo"]=2
-    df = df.dropna().sort_values(by="tree")
+    df = df.sort_values(by="tree")
    
     
    
@@ -90,7 +90,7 @@ def plot_data(df,probe):
 df = get_data()
 
 fig = {}
-for probe in ["Elasto(90)","blueMaj","yellowMaj"]:
+for probe in ["Elasto(90)","blueMaj","yellowMaj","Pt3","Pt4","a01_z","a01_z","a02_z","a03_z","a04_z"]:
     fig[probe] = plot_data(df, probe)
     
 filename = "../outputs/fft_boxplots_for_probes_tukey.pdf"
