@@ -39,7 +39,8 @@ def plot_one_measurement(
         plot_fixes=True, 
         plot_Pt4=False,
         major_minor=False,
-        release_detail=False
+        release_detail=False,
+        img_path="../temp"
         ):
     """
     Vykreslí tři obrázky. 
@@ -219,9 +220,9 @@ def plot_one_measurement(
     axes[2].set(ylim=(0,None))
     fig.tight_layout()
     if save_figure:
-        pathlib.Path(f"{path}/../temp/optics_with_inclino/").mkdir(parents=True, exist_ok=True)
+        pathlib.Path(f"{img_path}/optics_with_inclino/").mkdir(parents=True, exist_ok=True)
         fig.savefig(
-            f"{path}/../temp/optics_with_inclino/{date}_BK{tree}_M0{measurement}.pdf")
+            f"{img_path}/optics_with_inclino/{date}_BK{tree}_M0{measurement}.pdf")
     if return_figure:
         return fig
     else:

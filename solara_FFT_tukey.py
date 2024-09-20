@@ -23,6 +23,11 @@ import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 
 df_failed = pd.read_csv("csv/FFT_failed.csv").values.tolist()
+df_fft_long = pd.read_csv("../outputs/FFT_csv_tukey.csv")
+df_fft_all = df_fft_long.pivot(
+    index = ["type","day","tree","measurement"],
+    values="peak",
+    columns="probe")
 
 button_color = solara.reactive('primary')
 probe = solara.reactive("Elasto(90)")
@@ -147,6 +152,10 @@ def Page():
                 solara.FigurePlotly(figFFT)
             except:
                 pass
+        with solara.lab.Tab("Statistiky"):
+            # breakpoint()
+            subdf = df_fft_all.loc[(s.method.value,s.day.value,s.tree.value,slice(None)),:]
+            solara.display(subdf)
         with solara.lab.Tab("Popis"):
             solara.Markdown(
 f"""
