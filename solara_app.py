@@ -193,13 +193,12 @@ def Page():
                 df = df.set_index(["day","tree","measurement"])
                 solara.display(df)
 
-
 routes = [
     solara.Route(path="/", component=Page, label="home"),
     solara.Route(path="vizualizace", component=Ochrana(solara_vizualizace.Page), label="vizualizace"),
     solara.Route(path="tahovky", component=Ochrana(solara_major_minor_momentum.Page), label="tahovky"),
     solara.Route(path="synchronizace", component=Ochrana(solara_force_elasto_inclino.Page), label="synchronizace"),
     solara.Route(path="FFT", component=Ochrana(solara_FFT.Page), label="FFT1"),
-    solara.Route(path="FFT_for_ACC", component=Ochrana(solara_FFT_ACC.Page), label="FFT2"),
+    # solara.Route(path="FFT_for_ACC", component=Ochrana(solara_FFT_ACC.Page), label="FFT2"),
     solara.Route(path="FFT_Tukey_all", component=Ochrana(solara_FFT_tukey.Page), label="FFT3"),
 ]

@@ -17,6 +17,10 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import seaborn as sns
+import psutil
+import logging
+
+# lib_dynatree.logger.setLevel(logging.INFO)
 
 # https://stackoverflow.com/questions/37470734/matplotlib-giving-error-overflowerror-in-draw-path-exceeded-cell-block-limit
 import matplotlib as mpl
@@ -63,6 +67,7 @@ def resetuj(x=None):
 def set_button_color(x=None):
     button_color.value = 'primary'    
 
+@lib_dynatree.timeit
 def zpracuj(x=None):
     m = lib_dynatree.DynatreeMeasurement(day=s.day.value, 
         tree=s.tree.value, 
@@ -80,6 +85,7 @@ def zpracuj(x=None):
     return {'main_peak': sig.main_peak, 'signal':sig.signal, 'fft':sig.fft, 'signal_full':sig.signal_full}
 
 @task
+@lib_dynatree.timeit
 def nakresli_signal(x=None):
     output = zpracuj()
     
@@ -124,14 +130,14 @@ def ostyluj(subdf):
     cm = sns.light_palette("blue", as_cmap=True)
     subdf = (subdf.style.background_gradient(cmap=cm, axis=None)
              .apply(add_horizontal_line, axis=None)
-             .applymap(lambda x: 'color: lightgray' if pd.isnull(x) else '')
-             .applymap(lambda x: 'background: transparent' if pd.isnull(x) else '')
+             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+             .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
              )
     return subdf
 
 @solara.component
 def Page():
-    solara.Title("DYNATREE: FFT s automatickou detekci vypuštění")
+    solara.Title("DYNATREE: FFT s automatickou detekci vypuštění a tukey oknem")
     solara.Style(s.styles_css)
     with solara.Sidebar():
         s.Selection(exclude_M01=True, 
@@ -144,11 +150,20 @@ def Page():
 
         with solara.Column(align='center'):
             solara.Button(label='Redraw',on_click=nakresli_signal, color='primary')
+        with solara.Card():
+            with solara.Column():
+                solara.Text(f'CPU: {psutil.cpu_percent(4)}%')
+                solara.Text(f'Mem total: {psutil.virtual_memory()[0]/1000000000:.1f}GB')
+                solara.Text(f'Mem used: {psutil.virtual_memory()[3]/1000000000:.1f}GB')
+                solara.Text(f'Mem free: {psutil.virtual_memory()[4]/1000000000:.1f}GB')
+                
+        
 
     ChooseProbe()
     
     with solara.lab.Tabs(value=tab_value):
         with solara.lab.Tab("Static image"):
+            plt.close('all')
             if tab_value.value == 0:
                 try:
                     solara.ProgressLinear(nakresli_signal.pending)
@@ -156,7 +171,6 @@ def Page():
                         nakresli_signal()
                     if nakresli_signal.finished:
                             solara.FigureMatplotlib(nakresli_signal.value, format='png')
-                            plt.close('all')
                     solara.Markdown(
 f"""
 `{s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}`
@@ -164,7 +178,9 @@ f"""
                         )
                 except:
                     pass
-        with solara.lab.Tab("Dynamic FFT image"):
+            plt.close('all')
+        with solara.lab.Tab("Interactive FFT image"):
+            plt.close('all')
             if tab_value.value == 1:
                 try:
                     data = zpracuj()
@@ -181,15 +197,10 @@ f"""
                     solara.FigurePlotly(figFFT)
                 except:
                     pass
+            plt.close('all')
         with solara.lab.Tab("Statistiky"):
+            plt.close('all')
             if tab_value.value == 2:
-                with solara.Card(title="Current day"):
-                    try:
-                        subdf = df_fft_all.loc[(s.method.value,s.day.value,s.tree.value,slice(None)),:]
-                        subdf = ostyluj(subdf)
-                        solara.display(subdf)
-                    except:
-                        pass
                 with solara.Card(title=f"All days for tree {s.tree.value}"):
                     try:
                         subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
@@ -197,6 +208,7 @@ f"""
                         solara.display(subdf)
                     except:
                         pass
+            plt.close('all')
         with solara.lab.Tab("Popis"):
             solara.Markdown(
 f"""
