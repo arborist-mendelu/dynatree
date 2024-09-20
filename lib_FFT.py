@@ -16,6 +16,9 @@ import lib_find_measurements
 from tqdm import tqdm
 import resource
 import matplotlib
+import multi_handlers_logger as mhl
+import logging
+
 
 length = 60  # the length of the signal
 peak_min = .1 # do not look for the peak smaller than this value
@@ -125,6 +128,11 @@ def plot_one_probe(day='2021-03-22', tree='BK01', measurement='M03', measurement
 #%%
 if __name__ == '__main__':
     # resource.setrlimit(resource.RLIMIT_DATA, (100 * 1024 * 1024, 100 * 1024 * 1024)) 
+    
+    logger = mhl.setup_logger(prefix="FFT_tukey_")
+    logger.setLevel(logging.ERROR)
+    logger.info("========== INITIALIZATION OF static-pull.py  ============")
+
     try:
         matplotlib.use('TkAgg')
     except:
@@ -134,8 +142,9 @@ if __name__ == '__main__':
     df = df[df["measurement"]!="M01"]
     
     
-    probes = ["blueMaj", "yellowMaj", "Elasto(90)", "Pt3", "Pt4"]
-    probes = ["a01_z", "a02_z", "a03_z", "a04_z"]
+    probes = ["blueMaj", "yellowMaj", "Elasto(90)"]
+    probes = probes + ["Pt3", "Pt4"]
+    probes = probes + ["a01_z", "a02_z", "a03_z", "a04_z"]
     for probe in probes:
         print(f"Probe {probe}")
         pbar = tqdm(total=len(df))
@@ -149,7 +158,7 @@ if __name__ == '__main__':
                 out[(measurement_type, day, tree, measurement, probe)
                     ] = [plot_one_probe(day, tree, measurement, measurement_type, probe=probe)]
             except:
-                pass
+                logger.error(f"FFT failed for {measurement_type}, {day}, {tree}, {measurement}, {probe}")
             pbar.update(1)
         pbar.close()
     
