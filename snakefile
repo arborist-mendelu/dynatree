@@ -300,7 +300,7 @@ rule fft_all_probes:
         python lib_FFT.py
         cd ../temp/fft_tukey/
         echo "fft images" > readme
-        rm ../{output.zip}
+        rm ../{output.zip} || true
         zip ../{output.zip} *
         """
         
