@@ -13,6 +13,7 @@ import solara_force_elasto_inclino
 import solara_FFT
 import solara_FFT_ACC
 import solara_FFT_tukey
+import solara_download
 from passlib.hash import pbkdf2_sha256
 import pandas as pd
 import time
@@ -201,4 +202,5 @@ routes = [
     solara.Route(path="FFT", component=Ochrana(solara_FFT.Page), label="FFT1"),
     # solara.Route(path="FFT_for_ACC", component=Ochrana(solara_FFT_ACC.Page), label="FFT2"),
     solara.Route(path="FFT_Tukey_all", component=Ochrana(solara_FFT_tukey.Page), label="FFT3"),
+    solara.Route(path="Downloads", component=Ochrana(solara_download.Page), label="DWNL"),
 ]

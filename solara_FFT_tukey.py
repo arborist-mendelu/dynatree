@@ -361,13 +361,15 @@ f"""
 # Která data jsou označena jako nevalidní?
 
 * Pokud má signál záznam v souboru `csv/FFT_failed.csv`, označí se jako špatný a nezpracovává
-  se do výsledných statistik. 
+  se do výsledných statistik. Generuje se průběh signálu a výstup FFT, ten je <a href='/static/public/FFT_spectra.zip'>ke stažení zde</a>.
 * Pokud chceš vynechat tohle měření, přidej do souboru tento řádek:
     
         {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}
         
-* Pokud chceš projít a vynechat více nebo hodně obrázků, je efektivnější si stáhout
-  obrázky fft z ERC disku (`outputs/FFT_spectra.zip`), projít je, odmazávat co se nehodí, 
+* Pokud chceš projít a vynechat více nebo hodně měření, je efektivnější si vygenerovat 
+  offline obrázky (Robert). Postup: V souboru `lib_FFT.py` opravit volbu `plot='failed'` na
+  `plot='all'`, spustit (pojede dlouho takže pomocí `nohup` nebo `screen`), stáhnout výstup 
+  (`outputs/FFT_spectra.zip`), projít obrázky, odmazávat co se nehodí, 
   potom v koši najít jména odmazaných souborů a ta jednoduchým najdi 
   nahraď přetransformovat na řádky co csv souboru. Pro roztřídění do podadresářů podle stromů použij následující oneliner.
 

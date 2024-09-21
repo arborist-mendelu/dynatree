@@ -1,0 +1,39 @@
+---
+anotated_regressions_static.csv: Výstup z regresí mezi momenty a náklonem ve statice. Má začleněny případné komentáře.
+    K 2024-09-21 obsahuje varianty s lower_cut 10 i 30 procent.
+
+regressions_static.csv: Výstup z regresí mezi momenty a náklonem ve statice. 
+    K 2024-09-21 obsahuje varianty s lower_cut 10 i 30 procent.
+
+static_pull_removed_experiments.zip: Obrázky experimentů, které nejsou zařezeny do vyhodnocování vztahů mezi momentem a náklonem ve statice.
+
+static_pulling_error_propagation.xlsx: Analýza vlivu změny úhlu naklonění lana na 
+    regresní koeficient mezi momentem a náklonem ve statice.
+
+FFT_csv_tukey.csv: Výstupy z FFT analýzy. Bez podsamplování ACC, automatická volba intervalu.
+    Long format, wide format je ke stažení na stráce s FFT.
+
+FFT_spectra.zip: Obrázky spekter, která jsou vyloučena ze zpracování jako nepovedené experimenty. Pro zpracování pomocí tukey window a jendotné délky intervalu.
+
+fft_boxplots_for_probes_tukey.pdf: Srovnání frekvencí, jak se u jednotlivých stromů měnila frekvence s roční dobou, číslem ořezu. Nový přístup s tukey okénkem.
+
+synchro_optics_inclino_detail.pdf: Obrázky pro kontrolu synchronizace mezi inklinometry a optikou. Detail okolo vypuštění.
+
+synchro_optics_inclino.pdf: Obrázky pro kontrolu synchronizace mezi inklinometry a optikou. Celý experiment.
+
+---
+
+static_pulling_std_RopeAngle100.pdf: Směrodatná odchylka velčiny Rope100 z TXT souborů z tahovek. Mělo sloužit 
+    jako podpůrný argument, proč tuto hodnotu nebrat. Nakonec se ukázalo, že stroj si vymýšlí
+    hodnoty náklonu jaké chce, tak je to asi jedno. 
+
+fft_spectra.zip: Obrázky spekter. Postaru (ruční volba intervalu, ruční potvrzování peaků.) Každé spektrum je samostatné PDF. Určeno spíš k dalšímu zpracování.
+
+fft_spectra_by_measurements.zip: Obrázky spekter podle měření. Postaru (ruční volba intervalu, ruční potvrzování peaků. ACC podsamplované).
+
+fft_spectra_elasto_acc2.zip: Obrázky spekter pro porovnání ACC2 a Elasto. Oba se pěkně chovaly a jsou blízko sebe. Postaru (ruční volba intervalu, ruční potvrzování peaků. ACC podsamplované.)
+
+fft_boxplots_for_probes.pdf: Srovnání frekvencí, jak se u jednotlivých stromů měnila frekvence s roční dobou, číslem ořezu. Postaru.
+
+
+
