@@ -63,7 +63,6 @@ den,2022-08-16,BK11,M04,a04_z
 mraz,2024-01-16,BK08,M02,a02_z
 mraz,2024-01-16,BK08,M03,a02_z
 mraz,2024-01-16,BK08,M04,a02_z
-mraz,2024-01-16,BK09,M02,a02_z
 mraz,2024-01-16,BK10,M02,a02_z
 mraz,2024-01-16,BK10,M03,a02_z
 mraz,2024-01-16,BK10,M04,a02_z
@@ -86,9 +85,7 @@ noc,2022-08-16,BK08,M03,a04_z
 noc,2022-08-16,BK08,M05,a04_z
 noc,2022-08-16,BK09,M02,a04_z
 noc,2022-08-16,BK09,M03,a04_z
-noc,2022-08-16,BK09,M04,Elasto(90)
 noc,2022-08-16,BK09,M04,a04_z
-noc,2022-08-16,BK10,M02,Elasto(90)
 noc,2022-08-16,BK10,M02,a04_z
 noc,2022-08-16,BK10,M03,Elasto(90)
 noc,2022-08-16,BK10,M03,a04_z
@@ -132,9 +129,7 @@ normal,2021-03-22,BK09,M04,a03_z
 normal,2021-03-22,BK10,M03,a02_z
 normal,2021-03-22,BK10,M04,a02_z
 normal,2021-03-22,BK11,M03,a02_z
-normal,2021-03-22,BK11,M03,a03_z
 normal,2021-03-22,BK11,M03,a04_z
-normal,2021-03-22,BK12,M02,a02_z
 normal,2021-03-22,BK12,M02,a03_z
 normal,2021-03-22,BK12,M02,a04_z
 normal,2021-03-22,BK12,M03,Pt3
@@ -173,7 +168,6 @@ normal,2021-06-29,BK07,M04,Pt4
 normal,2021-06-29,BK07,M04,a02_z
 normal,2021-06-29,BK07,M04,a03_z
 normal,2021-06-29,BK07,M04,a04_z
-normal,2021-06-29,BK07,M04,blueMaj
 normal,2021-06-29,BK07,M05,a02_z
 normal,2021-06-29,BK07,M05,a03_z
 normal,2021-06-29,BK07,M05,blueMaj
@@ -208,7 +202,6 @@ normal,2021-06-29,BK11,M03,a04_z
 normal,2021-06-29,BK11,M04,a04_z
 normal,2021-06-29,BK11,M05,a04_z
 normal,2021-06-29,BK12,M02,a01_z
-normal,2021-06-29,BK12,M02,blueMaj
 normal,2021-06-29,BK12,M03,Elasto(90)
 normal,2021-06-29,BK12,M03,Pt3
 normal,2021-06-29,BK12,M03,Pt4
@@ -365,7 +358,6 @@ normal,2023-07-17,BK07,M04,a01_z
 normal,2023-07-17,BK07,M04,a04_z
 normal,2023-07-17,BK07,M05,a01_z
 normal,2023-07-17,BK08,M03,a01_z
-normal,2023-07-17,BK08,M03,a02_z
 normal,2023-07-17,BK09,M02,Elasto(90)
 normal,2023-07-17,BK09,M02,a01_z
 normal,2023-07-17,BK09,M02,a02_z
@@ -447,10 +439,6 @@ normal,2024-09-02,BK14,M02,a02_z
 normal,2024-09-02,BK14,M02,a04_z
 normal,2024-09-02,BK14,M03,a02_z
 normal,2024-09-02,BK14,M03,a04_z
-normal,2024-09-02,BK14,M04,a01_z
-normal,2024-09-02,BK14,M04,a02_z
-normal,2024-09-02,BK14,M04,a03_z
-normal,2024-09-02,BK14,M04,a04_z
 normal,2024-09-02,BK16,M04,a04_z
 normal,2024-09-02,JD18,M03,a03_z
 normal,2024-09-02,BK01,M02,yellowMaj
