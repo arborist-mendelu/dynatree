@@ -17,8 +17,9 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import seaborn as sns
-import psutil
-import logging
+# import psutil
+# import logging
+import time
 
 # lib_dynatree.logger.setLevel(logging.INFO)
 
@@ -26,6 +27,7 @@ import logging
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 
+df_komentare = pd.read_csv("csv/FFT_comments.csv", index_col=[0,1,2,3,4])
 df_failed = pd.read_csv("csv/FFT_failed.csv").values.tolist()
 df_fft_long = pd.read_csv("../outputs/FFT_csv_tukey.csv")
 df_fft_all = df_fft_long.pivot(
@@ -51,12 +53,11 @@ def ChooseProbe():
         test_is_failed = [s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value
                      ] in df_failed
         if test_is_failed:
-            solara.Error(f"Classified as failed.")
+            solara.Error("Classified as failed.")
     return data_obj
 
 def resetujmethod(x=None):
     s.get_measurements_list()
-    nakresli_signal()
     resetuj()
     
 def resetuj(x=None):
@@ -84,12 +85,14 @@ def zpracuj(x=None):
 
     return {'main_peak': sig.main_peak, 'signal':sig.signal, 'fft':sig.fft, 'signal_full':sig.signal_full}
 
+
 @task
 @lib_dynatree.timeit
 def nakresli_signal(x=None):
     output = zpracuj()
     
-    fig, ax = plt.subplots(2,1,figsize=(10,5))
+    plt.close('all')    
+    f, ax = plt.subplots(2,1,figsize=(6,4))
     tempsignal = output['signal_full']
     tempsignal = tempsignal.dropna()
     tempsignal = tempsignal - tempsignal.iloc[0]
@@ -103,6 +106,7 @@ def nakresli_signal(x=None):
     ax[1].grid()
     ymax = output['fft'].max()
     ax[1].set(ylim=(ymax/10**4,ymax*2), xlabel="Freq / Hz", ylabel="Amplitude")
+    ax[1].yaxis.set_ticklabels([])
     ax[0].set(xlim=(0,None), xlabel="Time / s", ylabel="Value")
     test_is_failed = [s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value
                      ] in df_failed    
@@ -112,7 +116,7 @@ def nakresli_signal(x=None):
         value = output['main_peak']
         ax[1].axvline(value, color='r', linestyle="--")
     plt.tight_layout()
-    return (fig)    
+    return (f)    
     # plt.close('all')
 
 # Funkce pro stylování - přidání hranice, když se změní hodnota v úrovni 'tree'
@@ -135,35 +139,67 @@ def ostyluj(subdf):
              )
     return subdf
 
+def myformat(df, column, row_index, value):
+    if isinstance(value, float) and pd.isna(value):
+        return "-"
+    if isinstance(value, str):
+        return value
+    return f"{value:.3f}"
+
+subdf = pd.DataFrame()
+def on_action_cell(column, row_index):
+    row = subdf.iloc[row_index,:]
+    probe.value = column
+    s.method.value = row['type']
+    s.day.value = row['day']
+    s.tree.value = row['tree']
+    s.measurement.value = row['measurement']
+    nakresli_signal()
+    
+cell_actions = [solara.CellAction(name="Show", on_click=on_action_cell)]
+
+def FFT_remark():
+    coords = (s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value)
+    if coords in df_komentare.index:
+        with solara.Column():
+            with solara.Warning():
+                solara.Text(df_komentare.loc[coords,:].iloc[0])    
+
+
 @solara.component
+@lib_dynatree.timeit
 def Page():
+    global subdf
+    initime = time.time()
     solara.Title("DYNATREE: FFT s automatickou detekci vypuštění a tukey oknem")
     solara.Style(s.styles_css)
+    solara.Style("td {padding-left: 1em !important;}")
     with solara.Sidebar():
-        s.Selection(exclude_M01=True, 
-                    optics_switch=False, 
-                    day_action = resetuj,
-                    tree_action = resetuj,
-                    measurement_action = nakresli_signal, 
-                    )  
-        s.ImageSizes()
-
-        with solara.Column(align='center'):
-            solara.Button(label='Redraw',on_click=nakresli_signal, color='primary')
-        with solara.Card():
-            with solara.Column():
-                solara.Text(f'CPU: {psutil.cpu_percent(4)}%')
-                solara.Text(f'Mem total: {psutil.virtual_memory()[0]/1000000000:.1f}GB')
-                solara.Text(f'Mem used: {psutil.virtual_memory()[3]/1000000000:.1f}GB')
-                solara.Text(f'Mem free: {psutil.virtual_memory()[4]/1000000000:.1f}GB')
+        if tab_value.value != 3:
+            s.Selection(exclude_M01=True, 
+                        optics_switch=False, 
+                        day_action = resetuj,
+                        tree_action = resetuj,
+                        measurement_action = nakresli_signal, 
+                        )  
+            s.ImageSizes()
+    
+            with solara.Column(align='center'):
+                solara.Button(label='Redraw',on_click=nakresli_signal, color='primary')
+        # with solara.Card():
+        #     with solara.Column():
+        #         solara.Text(f'CPU: {psutil.cpu_percent(4)}%')
+        #         solara.Text(f'Mem total: {psutil.virtual_memory()[0]/1000000000:.1f}GB')
+        #         solara.Text(f'Mem used: {psutil.virtual_memory()[3]/1000000000:.1f}GB')
+        #         solara.Text(f'Mem free: {psutil.virtual_memory()[4]/1000000000:.1f}GB')
                 
         
-
+    now = time.time()
+    lib_dynatree.logger.info(f"Before choose probe after {now-initime}.")
     ChooseProbe()
     
     with solara.lab.Tabs(value=tab_value):
         with solara.lab.Tab("Static image"):
-            plt.close('all')
             if tab_value.value == 0:
                 try:
                     solara.ProgressLinear(nakresli_signal.pending)
@@ -176,11 +212,18 @@ f"""
 `{s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}`
 """                        
                         )
+                    FFT_remark()
+                    with solara.Info():
+                        solara.Markdown(
+"""
+* Svislá červená čára je frekvence použitá do dalšího zpracování. Stanovena jako maximum na určitém frekvenčním 
+  intervalu. Numerická hodnota je i v nadpisu obrázku.
+* Pokud je toto měření pokažené, zkopíruj si řádek nad tímto rámečkem a přidá se mezi seznam zkažených.
+"""                            
+                            )
                 except:
                     pass
-            plt.close('all')
         with solara.lab.Tab("Interactive FFT image"):
-            plt.close('all')
             if tab_value.value == 1:
                 try:
                     data = zpracuj()
@@ -197,18 +240,54 @@ f"""
                     solara.FigurePlotly(figFFT)
                 except:
                     pass
-            plt.close('all')
-        with solara.lab.Tab("Statistiky"):
-            plt.close('all')
+        with solara.lab.Tab("Statistiky barevne"):
             if tab_value.value == 2:
                 with solara.Card(title=f"All days for tree {s.tree.value}"):
                     try:
-                        subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
-                        subdf = ostyluj(subdf)
-                        solara.display(subdf)
+                        subdfA = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
+                        subdfA = ostyluj(subdfA)
+                        solara.display(subdfA)
+                        # subdf = subdf.reset_index()
+                        # solara.DataTable(subdf, items_per_page=100, format=myformat)
                     except:
                         pass
-            plt.close('all')
+                with solara.Info():
+                    solara.Markdown(
+f"""
+* Políčka jsou podbarvena podle hodnoty. V rámci jednoho dne (viz vodorovné čáry v tabulce) by měly být 
+  barvy plus minus stejné.
+* Vyjádření k některým měřením:
+"""                        
+                        )
+                    solara.display(df_komentare)
+        with solara.lab.Tab("Statistiky s odkazy"):
+            if tab_value.value == 3:
+                with solara.Card(title=f"All days for tree {s.tree.value}"):
+                    # try:
+                        subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
+                        # subdf = ostyluj(subdf)
+                        # solara.display(subdf)
+                        subdf = subdf.reset_index()
+                        solara.DataTable(subdf, items_per_page=100, format=myformat,cell_actions=cell_actions)                        
+                    # except:
+                        # pass
+                with solara.Sidebar():
+                    # try:
+                        solara.ProgressLinear(nakresli_signal.pending)
+                        FFT_remark()
+                        if nakresli_signal.finished:
+                            solara.FigureMatplotlib(nakresli_signal.value)
+                    # except:
+                    #     pass
+                with solara.Info():
+                    solara.Markdown(
+"""
+* Hodnoty v tabulce jsou zaokrouhlené. Co je jinde 0.69993 je zde jako 0.700. Pozor ať Tě to nezmate.
+* Za položkama v tabulce jsou tři tečky, které po najetí umožní zobrazit statický graf a případnou 
+  poznámku v sidebaru. Toto je možné použít na na data, která patří k existujícím měřením, ale mají
+  v tabulce pomlčku, protože jsou tato měření vyhodnocena jako pokažená.
+"""                        
+                        )
         with solara.lab.Tab("Popis"):
             solara.Markdown(
 f"""
@@ -248,25 +327,7 @@ dynamický obrázek s fft.
 
 # Komentáře
 
-```
-normal,2021-06-29,BK04,M03,a04_z - dva peaky vedle sebe druhý je vyšší
-normal,2021-06-29,BK04,M04,a04_z - dva peaky vedle sebe druhý je vyšší
-normal,2023-07-17,BK04,M04,a04_z - dva peaky vedle sebe druhý je vyšší
-normal,2023-07-17,BK09,M03,a04_z - dva peaky vedle sebe druhý je vyšší
-noc,2023-07-17,BK10,M02,blueMaj - komplikovné vypuštění, dalo by se vylepšit samostatným nastavením času vypuštění
-noc,2023-07-17,BK10,M02,yellowMaj - komplikovné vypuštění, dalo by se vylepšit samostatným nastavením času vypuštění
-normal,2023-07-17,BK11,M02,a04_z - dva peaky vedle sebe druhý je vyšší
-normal,2023-07-17,BK11,M04,a04_z - dva peaky vedle sebe druhý je vyšší
-normal,2023-07-17,BK12,M04,a04_z - dva peaky vedle sebe druhý je vyšší
-normal,2021-03-22,BK13,M02,a01_z - peak se základní frekvencí je malý
-normal,2021-03-22,BK13,M03,a01_z - peak se základní frekvencí je malý
-normal,2021-03-22,BK13,M04,a01_z - peak se základní frekvencí je malý
-normal,2021-06-29,BK13,M03,a04_z - peak se základní frekvencí je malý
-normal,2024-04-10,BK13,M02,a04_z - peak se základní frekvencí je malý
-normal,2024-04-10,BK13,M03,a04_z - peak se základní frekvencí je malý
-normal,2024-04-10,BK13,M04,a04_z - peak se základní frekvencí je malý
-normal,2021-06-29,BK21,M03,a01_z - peak se základní frekvencí je malý
-```
-
 """                
                 )
+            solara.display(df_komentare)
+            

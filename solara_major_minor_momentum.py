@@ -218,7 +218,7 @@ def Page():
                 except:
                     pass
 
-        with solara.lab.Tab("Regrese"):
+        with solara.lab.Tab("Přehled"):
             if (tab_index.value == 3) and (ShowRegressions.not_called):
                 ShowRegressions()
             solara.ProgressLinear(ShowRegressions.pending)    
