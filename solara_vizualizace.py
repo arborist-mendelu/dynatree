@@ -14,6 +14,7 @@ import pandas as pd
 import time
 import solara_select_source as s
 import matplotlib.pyplot as plt
+import matplotlib
 
 DATA_PATH = "../data"
 
@@ -74,7 +75,8 @@ def plot_img(df, var, msg=None, id=None):
     except:
         pass
     ax.set(title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}")    
-    solara.FigureMatplotlib(fig)    
+    solara.FigureMatplotlib(fig)
+    plt.close('all')    
     if msg is not None:
         msg        
 

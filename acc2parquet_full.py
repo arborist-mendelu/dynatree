@@ -19,8 +19,6 @@ logger.setLevel(logging.DEBUG)
 from pathlib import Path
 from tqdm import tqdm
 
-from scipy.signal import savgol_filter
-
 source_dir = "/mnt/ERC/ERC"
 
 adresar = source_dir+'/Mereni_Babice'
@@ -56,7 +54,7 @@ for i,row in df.iterrows():
         # continue
         mat = scipy.io.loadmat(soubor)
         data = {k:mat[k].T[0] for k in mat.keys() if "Data1_A" in k}
-        length = min([len(j) for j in data.values()])
+        length = max([len(j) for j in data.values()])
         data = {k:data[k][:length] for k in data.keys()}        
         newdf = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in data.items()]))
         newdf.to_parquet(target)
