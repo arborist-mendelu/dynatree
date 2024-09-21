@@ -44,6 +44,7 @@ probe = solara.reactive("Elasto(90)")
 restrict = 50 # cut the FFT at 50Hz
 tab_value = solara.reactive(2)
 
+
 def ChooseProbe():
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
@@ -131,7 +132,8 @@ def add_horizontal_line(df):
 
 def ostyluj(subdf):
     cm = sns.light_palette("blue", as_cmap=True)
-    subdf = (subdf.style.background_gradient(cmap=cm, axis=None)
+    subdf = (subdf.style.background_gradient(#cmap=cm, 
+                                             axis=None)
              .apply(add_horizontal_line, axis=None)
              .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
              .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
@@ -164,6 +166,12 @@ def FFT_remark():
             with solara.Warning():
                 solara.Text(df_komentare.loc[coords,:].iloc[0])    
 
+def csv_line():
+    solara.Markdown(
+f"""
+`{s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}`
+"""                        
+        )
 
 @solara.component
 @lib_dynatree.timeit
@@ -205,12 +213,8 @@ def Page():
                     if nakresli_signal.not_called:
                         nakresli_signal()
                     if nakresli_signal.finished:
-                            solara.FigureMatplotlib(nakresli_signal.value, format='png')
-                    solara.Markdown(
-f"""
-`{s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}`
-"""                        
-                        )
+                        solara.FigureMatplotlib(nakresli_signal.value, format='png')
+                    csv_line()
                     FFT_remark()
                     with solara.Info():
                         solara.Markdown(
@@ -309,6 +313,7 @@ applyGradient();
                         pass
                 with solara.Sidebar():
                     try:
+                        csv_line()
                         solara.ProgressLinear(nakresli_signal.pending)
                         FFT_remark()
                         if nakresli_signal.finished:
@@ -353,6 +358,9 @@ nahraď přetransformovat na řádky co csv souboru. Pro roztřídění do podad
 
         for file in *_BK??_*; do dir="${{file#*_}}"; dir="${{dir%%_*}}"; mkdir -p "$dir"; mv "$file" "$dir/"; done
 
+* Po úpravě csv souborů, kde jsou experimenty, které selhaly, je potřeba přegenerovat 
+  soubor FFT_csv_tukey.csv obsahující všechny frekvence a distribuovat na servery. Kromě toho 
+  rozkopírovat i csv soubory, které se měnily. 
 
 # Ovládání
 
