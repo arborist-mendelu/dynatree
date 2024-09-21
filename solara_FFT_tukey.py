@@ -85,7 +85,6 @@ def zpracuj(x=None):
 
     return {'main_peak': sig.main_peak, 'signal':sig.signal, 'fft':sig.fft, 'signal_full':sig.signal_full}
 
-
 @task
 @lib_dynatree.timeit
 def nakresli_signal(x=None):
@@ -226,21 +225,23 @@ f"""
         with solara.lab.Tab("Interactive FFT image"):
             if tab_value.value == 1:
                 try:
-                    data = zpracuj()
-                    df_fft = data['fft'].loc[:restrict]
-                    if isinstance(df_fft.name, tuple):
-                        df_fft.name = df_fft.name[0]
-                    ymax = df_fft.to_numpy().max()
-                    figFFT = px.line(df_fft, 
-                                     height = s.height.value, width=s.width.value,
-                                     title=f"FFT spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
-                                     log_y=True, range_x=[0,10], range_y=[ymax/100000, ymax*2]
-                    )
-                    figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
-                    solara.FigurePlotly(figFFT)
+                    solara.ProgressLinear(nakresli_signal.pending)
+                    if nakresli_signal.finished:
+                        data = zpracuj()
+                        df_fft = data['fft'].loc[:restrict]
+                        if isinstance(df_fft.name, tuple):
+                            df_fft.name = df_fft.name[0]
+                        ymax = df_fft.to_numpy().max()
+                        figFFT = px.line(df_fft, 
+                                         height = s.height.value, width=s.width.value,
+                                         title=f"FFT spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
+                                         log_y=True, range_x=[0,10], range_y=[ymax/100000, ymax*2]
+                        )
+                        figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
+                        solara.FigurePlotly(figFFT)
                 except:
                     pass
-        with solara.lab.Tab("Statistiky barevne"):
+        with solara.lab.Tab("Přehled barevně"):
             if tab_value.value == 2:
                 with solara.Card(title=f"All days for tree {s.tree.value}"):
                     try:
@@ -260,25 +261,60 @@ f"""
 """                        
                         )
                     solara.display(df_komentare)
-        with solara.lab.Tab("Statistiky s odkazy"):
+        with solara.lab.Tab("Přehled s odkazy"):
             if tab_value.value == 3:
                 with solara.Card(title=f"All days for tree {s.tree.value}"):
-                    # try:
+                    try:
                         subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
                         # subdf = ostyluj(subdf)
                         # solara.display(subdf)
                         subdf = subdf.reset_index()
                         solara.DataTable(subdf, items_per_page=100, format=myformat,cell_actions=cell_actions)                        
-                    # except:
-                        # pass
+                        solara.HTML(tag="script", unsafe_innerHTML=
+"""
+function applyGradient() {
+  const rows = document.querySelectorAll('tr');
+  const values = [];
+  // Najdi číselné hodnoty v atributech title buněk od pátého sloupce dál
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td:nth-child(n+5)');
+    cells.forEach(cell => {
+      const value = parseFloat(cell.getAttribute('title'));
+      if (!isNaN(value)) {
+        values.push(value);
+      }
+    });
+  });
+  // Zjisti minimum a maximum
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  // Aplikuj barvy na základě hodnot
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td:nth-child(n+5)');
+    cells.forEach(cell => {
+      const value = parseFloat(cell.getAttribute('title'));
+      if (!isNaN(value)) {
+        const intensity = (value - minValue) / (maxValue - minValue); // Normalizace hodnoty
+        const colorIntensity = Math.floor(intensity * 255); // Přepočet na 0-255
+        cell.style.backgroundColor = `rgb(${255 - colorIntensity}, ${255 - colorIntensity}, ${255})`;
+      }
+    });
+  });
+};
+
+applyGradient();
+"""
+                            )
+                    except:
+                        pass
                 with solara.Sidebar():
-                    # try:
+                    try:
                         solara.ProgressLinear(nakresli_signal.pending)
                         FFT_remark()
                         if nakresli_signal.finished:
                             solara.FigureMatplotlib(nakresli_signal.value)
-                    # except:
-                    #     pass
+                    except:
+                        pass
                 with solara.Info():
                     solara.Markdown(
 """
