@@ -27,6 +27,8 @@ import time
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 
+
+pd.options.display.float_format = '{:.3f}'.format
 df_komentare = pd.read_csv("csv/FFT_comments.csv", index_col=[0,1,2,3,4])
 df_failed = pd.read_csv("csv/FFT_failed.csv").values.tolist()
 df_fft_long = pd.read_csv("../outputs/FFT_csv_tukey.csv")
@@ -132,7 +134,7 @@ def add_horizontal_line(df):
 
 def ostyluj(subdf):
     cm = sns.light_palette("blue", as_cmap=True)
-    subdf = (subdf.style.background_gradient(#cmap=cm, 
+    subdf = (subdf.style.format(precision=3).background_gradient(#cmap=cm, 
                                              axis=None)
              .apply(add_horizontal_line, axis=None)
              .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
@@ -261,6 +263,8 @@ def Page():
 f"""
 * Políčka jsou podbarvena podle hodnoty. V rámci jednoho dne (viz vodorovné čáry v tabulce) by měly být 
   barvy plus minus stejné.
+* Krok mezi frekvencemi je 0.017Hz. Odchylka v mezích 0.02Hz nic neznamená, může se jednat o 
+  vedlejší bod u širokého peaku.
 * Vyjádření k některým měřením:
 """                        
                         )
@@ -329,43 +333,63 @@ applyGradient();
   v tabulce pomlčku, protože jsou tato měření vyhodnocena jako pokažená.
 """                        
                         )
-        with solara.lab.Tab("Popis"):
+        with solara.lab.Tab("Popis & Download"):
+            with solara.Card(style={'background-color':"#FBFBFB"}):
+                solara.Markdown("**Downloads**")
+                with solara.Row(justify="space-around",style={'background-color':"#FBFBFB"}):
+                    solara.FileDownload(df_fft_long.to_csv(), filename="fft_dynatree.csv", label="Peaks in long format")
+                    solara.FileDownload(df_fft_all.to_csv(), filename="fft_dynatree_wide.csv", label="Peaks in wide format")
+                    solara.FileDownload(df_komentare.to_csv(), filename="FFT_comments.csv", label="Comments")
+                    solara.FileDownload(pd.DataFrame(df_failed, columns=["type","day","tree","mesurement","probe"]).to_csv(index=None), filename="FFT_failed.csv", label="Failed")
+                
             solara.Markdown(
 f"""
 # Co tu je za data?
 
 * Signál je dointerpolovaný na 100Hz pro elasto, inclino a optiku (optika občas vypadávala a elasto/inclino mají menší frekvenci) 
-a ponechaný na 5000Hz pro akcelerometry.
+  a ponechaný na 5000Hz pro akcelerometry.
 * Podle maxima signálu se určí okamžiku vypuštění. Od něj se bere 60 sekund. Pokud
-signál netrvá tak dlouho, doplní se nulami. 
+  signál netrvá tak dlouho, doplní se nulami. Místo maxima inklinometrů se bere maximum extenzometru 
+  (chová se líp).
 * Na signál se aplikuje tukey okénko pro oříznutí okrajových efektů.
 * Výsledný signál se protáhne přes FFT.
-* Záložka statistky ukazuje hlavní frekvenci. Hodí se pro nalezení odlehlých měření. Pro lepší
-hledání úletú jsou hodnoty podbarvené gradientem.
+* Záložky "Přehled barevně" a "Přehled s odkazy" ukazují hlavní frekvenci. Hodí se pro nalezení odlehlých měření. 
+  Stejné hodnoty jsou podbarveny stejně. Hledáme odchylku od (v ideálním případě) jednobarevných bloků.
+* Data s hodnotami peaků jsou ke stažení na odkazech nahoře.
+* Data s evidencí nevalidních experimentů a data s komentáři jsou také ke stažení.
 
 # Která data jsou označena jako nevalidní?
 
 * Pokud má signál záznam v souboru `csv/FFT_failed.csv`, označí se jako špatný a nezpracovává
-se do výsledných statistik. 
+  se do výsledných statistik. 
 * Pokud chceš vynechat tohle měření, přidej do souboru tento řádek:
     
         {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}
         
 * Pokud chceš projít a vynechat více nebo hodně obrázků, je efektivnější si stáhout
-obrázky fft z ERC disku (`outputs/FFT_spectra.zip`), projít je, odmazávat co se nehodí, 
-potom v koši najít jména odmazaných souborů a ta jednoduchým najdi 
-nahraď přetransformovat na řádky co csv souboru. Pro roztřídění do podadresářů podle stromů použij následující oneliner.
+  obrázky fft z ERC disku (`outputs/FFT_spectra.zip`), projít je, odmazávat co se nehodí, 
+  potom v koši najít jména odmazaných souborů a ta jednoduchým najdi 
+  nahraď přetransformovat na řádky co csv souboru. Pro roztřídění do podadresářů podle stromů použij následující oneliner.
 
         for file in *_BK??_*; do dir="${{file#*_}}"; dir="${{dir%%_*}}"; mkdir -p "$dir"; mv "$file" "$dir/"; done
 
 * Po úpravě csv souborů, kde jsou experimenty, které selhaly, je potřeba přegenerovat 
-  soubor FFT_csv_tukey.csv obsahující všechny frekvence a distribuovat na servery. Kromě toho 
-  rozkopírovat i csv soubory, které se měnily. 
+  soubor `FFT_csv_tukey.csv` obsahující všechny frekvence a distribuovat na servery. Kromě toho 
+  rozkopírovat i csv soubory, které se měnily. Na um-bc201 takto:
+  
+    ```
+    cd /mnt/zaloha/babice/dynatree-optika/
+    conda activate dynatree
+    snakemake
+    rsync -zarv -P ../outputs/FFT_csv_tukey.csv jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/outputs/
+    rsync -zarv -P csv jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/
+    rsync -zarv -P csv_output jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/
+    ```
 
 # Ovládání
 
 * Vyber měření a probe. Jedna záložka ukazuje statický obrázek signál a fft, druhá záložka
-dynamický obrázek s fft.
+  dynamický obrázek s fft.
 * Pokud chceš plný rozsah fft, použij tlačítko autoscale u obrázku a poté si vyber, co potřebuješ.
 * V dynamickém obrázku je kvůli lepší odezvě použit jenom rozsah do 50Hz.
 

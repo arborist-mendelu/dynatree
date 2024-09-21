@@ -229,6 +229,7 @@ def Page():
                 * `False, 1` means that the experiment has been perfomed without the leaves and somewhere between first and second branch reduction.
                 """
                 )
+            solara.FileDownload(graphs_regressions.read_data().to_csv(), filename="static_dynatree.csv", label="Download these data")
             ShowRegressionsHere()
 
         with solara.lab.Tab("Návod a komentáře"):
