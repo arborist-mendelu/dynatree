@@ -173,9 +173,16 @@ def Page():
                 """
                 ## FFT
                 
-                * Umožní udělat FFT na zvolelných datech. Obsahuje optiku (Pt3, Pt4, konce BL) a tahovky (Elasto).
-                * Data se interpolují s krokem 0.01s.
+                * Umožní udělat FFT na zvolelných datech. Obsahuje optiku (Pt3, Pt4, konce BL), extenzometr, inklinometry, akcelerometry.
                 * Použití: rychlé zobrazení spekter, vizuální porovnání, zjištění důvodů, proč se některá spektra liší (například kvůli krátkému sigálu, narušení oscilací apod.) 
+                """
+                  )
+            with solara.lab.Tab("Downloads"):
+                solara.Markdown(
+                """
+                ## Downloads
+                
+                * Data ke stažení, aktualizují se přímo na serveru po dokončený výpočtů, měla by být vždy ta nejaktuálnější. 
                 """
                   )
 
@@ -199,7 +206,7 @@ routes = [
     solara.Route(path="vizualizace", component=Ochrana(solara_vizualizace.Page), label="vizualizace"),
     solara.Route(path="tahovky", component=Ochrana(solara_major_minor_momentum.Page), label="tahovky"),
     solara.Route(path="synchronizace", component=Ochrana(solara_force_elasto_inclino.Page), label="synchronizace"),
-    solara.Route(path="FFT", component=Ochrana(solara_FFT.Page), label="FFT1"),
+    solara.Route(path="FFT_old", component=Ochrana(solara_FFT.Page), label="FFT1"),
     # solara.Route(path="FFT_for_ACC", component=Ochrana(solara_FFT_ACC.Page), label="FFT2"),
     solara.Route(path="FFT_Tukey_all", component=Ochrana(solara_FFT_tukey.Page), label="FFT3"),
     solara.Route(path="Downloads", component=Ochrana(solara_download.Page), label="DWNL"),

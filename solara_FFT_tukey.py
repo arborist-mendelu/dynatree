@@ -376,7 +376,8 @@ f"""
 # Která data jsou označena jako nevalidní?
 
 * Pokud má signál záznam v souboru `csv/FFT_failed.csv`, označí se jako špatný a nezpracovává
-  se do výsledných statistik. Generuje se průběh signálu a výstup FFT, ten je <a href='/static/public/FFT_spectra.zip'>ke stažení zde</a>.
+  se do výsledných statistik. Generuje se průběh signálu a výstup FFT zkontrolovat po stažení.
+  Stahování je na volbě Download v modrém pásu.
 * Pokud chceš vynechat tohle měření, přidej do souboru tento řádek:
     
         {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}
