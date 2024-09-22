@@ -20,12 +20,26 @@ import seaborn as sns
 # import psutil
 # import logging
 import time
+import os
 
 # lib_dynatree.logger.setLevel(logging.INFO)
 
 # https://stackoverflow.com/questions/37470734/matplotlib-giving-error-overflowerror-in-draw-path-exceeded-cell-block-limit
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
+
+
+import logging
+
+logger = logging.getLogger("Solara_FFT")
+logger.setLevel(logging.WARNING)
+
+filelogger = logging.getLogger("FFT Rotating Log")
+filelogger.setLevel(logging.INFO)
+filehandler = logging.handlers.RotatingFileHandler(f"{os.path.expanduser('~')}/solara_log/solara_FFT.log", maxBytes=10000000, backupCount=10)
+log_format = logging.Formatter("[%(asctime)s] %(levelname)s | %(message)s")
+filehandler.setFormatter(log_format)
+filelogger.addHandler(filehandler)
 
 
 pd.options.display.float_format = '{:.3f}'.format
@@ -67,6 +81,7 @@ def resetujmethod(x=None):
 def resetuj(x=None):
     # Srovnani(resetuj=True)
     manual_release_time.value = 0
+    fft_freq.value = load_fft_freq()
     s.measurement.set(s.measurements.value[0])
     nakresli_signal()
     
@@ -93,6 +108,7 @@ def zpracuj(x=None):
 
 def spust_mereni(x=None):
     manual_release_time.value = 0
+    fft_freq.value = load_fft_freq()
     nakresli_signal()
 
 @task
@@ -182,7 +198,58 @@ f"""
 """                        
         )
 
+fft_freq = solara.reactive("")
+save_button_color = solara.reactive("none")
 
+df_manual_peaks = solara.reactive(pd.read_csv("csv/FFT_manual_peaks.csv", index_col=[0,1,2,3,4], dtype={'peaks':str}).fillna(""))
+df_manual_peaks.value = df_manual_peaks.value.sort_index()
+
+def save_peaks():
+    df_manual_peaks.value.loc[(
+        s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value),:
+        ] = [fft_freq.value]
+    df_manual_peaks.value = df_manual_peaks.value.sort_index()
+    save_button_color.value = "none"
+    filelogger.info(f"Saved {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value},{fft_freq.value}")
+
+def save_freq_on_click(x=None):
+    logger.debug(f"FFT clicked. Event: {x}")
+    logger.debug(f"Previous value: {fft_freq.value}")
+    if pd.isna(fft_freq.value):
+        fft_freq.set(f" {x['points']['xs'][0]:.4f}")
+    else:
+        fft_freq.set(fft_freq.value + f" {x['points']['xs'][0]:.4f}")
+    logger.debug(f"Current value: {fft_freq.value}")
+    save_button_color.value = "red"
+
+def clear_fft_freq(x=None):
+    fft_freq.value = ""
+    save_button_color.value = "red"
+
+def oprav_peaky(subdf):
+    if not use_manual_peaks.value:
+        return subdf
+    idx = subdf.index
+    for i,row in df_manual_peaks.value.iterrows():
+        coords = tuple(row.name[:-1])
+        probe = row.name[-1]
+        value = float(row.iloc[0].strip().split(" ")[0])
+        if not coords in idx:
+            continue
+        subdf.loc[coords,probe] = value
+    return subdf
+
+@solara.component
+def SaveButton():
+    solara.Button(label="Save to memory", on_click=save_peaks, color=save_button_color.value)
+
+def load_fft_freq():
+    coords = (s.method.value,s.day.value,s.tree.value,s.measurement.value,probe.value)
+    if coords in df_manual_peaks.value.index:
+        return df_manual_peaks.value.loc[coords,'peaks']
+    return ""
+
+use_manual_peaks = solara.reactive(True)
 
 @solara.component
 @lib_dynatree.timeit
@@ -225,6 +292,7 @@ def Page():
                         nakresli_signal()
                     if nakresli_signal.finished:
                         solara.FigureMatplotlib(nakresli_signal.value, format='png')
+                        plt.close('all')
                     with solara.Row():
                         csv_line()
                         solara.InputFloat(
@@ -258,20 +326,28 @@ def Page():
                                          log_y=True, range_x=[0,10], range_y=[ymax/100000, ymax*2]
                         )
                         figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
-                        solara.FigurePlotly(figFFT)
+                        solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
+                        with solara.Row():
+                            solara.Text(fft_freq.value)
+                            solara.Button(label="Clear", on_click=clear_fft_freq)
+                            SaveButton()
+                            solara.FileDownload(df_manual_peaks.value.to_csv(), filename=f"FFT_manual_peaks.csv", label="Download csv")
+                        solara.display(df_manual_peaks.value)
                 except:
                     pass
         with solara.lab.Tab("Přehled barevně"):
             if tab_value.value == 2:
                 with solara.Card(title=f"All days for tree {s.tree.value}"):
-                    try:
-                        subdfA = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
-                        subdfA = ostyluj(subdfA)
-                        solara.display(subdfA)
+                    solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
+                    # try:
+                    subdfA = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
+                    subdfA = oprav_peaky(subdfA.copy())
+                    subdfA = ostyluj(subdfA)
+                    solara.display(subdfA)
                         # subdf = subdf.reset_index()
                         # solara.DataTable(subdf, items_per_page=100, format=myformat)
-                    except:
-                        pass
+                    # except:
+                        # pass
                 with solara.Info():
                     solara.Markdown(
 f"""
@@ -285,13 +361,54 @@ f"""
                     solara.display(df_komentare)
         with solara.lab.Tab("Přehled s odkazy"):
             if tab_value.value == 3:
+                with solara.Sidebar():
+                # with solara.Columns():
+                    with solara.Column():
+                        try:
+                            with solara.Column():
+                                csv_line()
+                                solara.ProgressLinear(nakresli_signal.pending)
+                                FFT_remark()
+                                if nakresli_signal.finished:
+                                    solara.FigureMatplotlib(nakresli_signal.value)
+                                    plt.close('all')
+                                    # data = zpracuj()
+                                    # print("zpracovano")
+                                    # df_fft = data['fft'].loc[:restrict]
+                                    # if isinstance(df_fft.name, tuple):
+                                    #     df_fft.name = df_fft.name[0]
+                                    # ymax = df_fft.to_numpy().max()
+                                    # figFFTB = px.line(df_fft, 
+                                    #                  # height = "300px", width="400px",
+                                    #                  title=f"FFT spectrum", 
+                                    #                  log_y=True, range_x=[0,2], range_y=[ymax/100000, ymax*2]
+                                    # )
+                                    # figFFTB.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
+                                    # solara.FigurePlotly(figFFTB)
+                            
+                        except:
+                            pass
                 with solara.Card(title=f"All days for tree {s.tree.value}"):
+                    # Does not work fine, the table is not updated.
+                    # solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
                     try:
                         subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
                         # subdf = ostyluj(subdf)
                         # solara.display(subdf)
+                        subdf = oprav_peaky(subdf.copy())
                         subdf = subdf.reset_index()
                         solara.DataTable(subdf, items_per_page=100, format=myformat,cell_actions=cell_actions)                        
+
+                        with solara.Info():
+                            solara.Markdown(
+        """
+        * Hodnoty v tabulce jsou zaokrouhlené. Co je jinde 0.69993 je zde jako 0.700. Pozor ať Tě to nezmate.
+        * Za položkama v tabulce jsou tři tečky, které po najetí umožní zobrazit statický graf a případnou 
+          poznámku v sidebaru. Toto je možné použít na na data, která patří k existujícím měřením, ale mají
+          v tabulce pomlčku, protože jsou tato měření vyhodnocena jako pokažená.
+        """                        
+                                )
+
                         solara.HTML(tag="script", unsafe_innerHTML=
 """
 function applyGradient() {
@@ -329,24 +446,6 @@ applyGradient();
                             )
                     except:
                         pass
-                with solara.Sidebar():
-                    try:
-                        csv_line()
-                        solara.ProgressLinear(nakresli_signal.pending)
-                        FFT_remark()
-                        if nakresli_signal.finished:
-                            solara.FigureMatplotlib(nakresli_signal.value)
-                    except:
-                        pass
-                with solara.Info():
-                    solara.Markdown(
-"""
-* Hodnoty v tabulce jsou zaokrouhlené. Co je jinde 0.69993 je zde jako 0.700. Pozor ať Tě to nezmate.
-* Za položkama v tabulce jsou tři tečky, které po najetí umožní zobrazit statický graf a případnou 
-  poznámku v sidebaru. Toto je možné použít na na data, která patří k existujícím měřením, ale mají
-  v tabulce pomlčku, protože jsou tato měření vyhodnocena jako pokažená.
-"""                        
-                        )
         with solara.lab.Tab("Popis & Download"):
             with solara.Card(style={'background-color':"#FBFBFB"}):
                 solara.Markdown("**Downloads**")
