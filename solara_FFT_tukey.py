@@ -314,6 +314,9 @@ def Page():
             if tab_value.value == 1:
                 try:
                     solara.ProgressLinear(nakresli_signal.pending)
+                    if nakresli_signal.not_called:
+                        nakresli_signal()
+                        return
                     if nakresli_signal.finished:
                         data = zpracuj()
                         df_fft = data['fft'].loc[:restrict]
@@ -455,6 +458,7 @@ applyGradient();
                     solara.FileDownload(df_komentare.to_csv(), filename="FFT_comments.csv", label="Comments")
                     solara.FileDownload(pd.DataFrame(df_failed, columns=["type","day","tree","mesurement","probe"]).to_csv(index=None), filename="FFT_failed.csv", label="Failed")
                     solara.FileDownload(pd.read_csv("csv/FFT_release.csv").to_csv(index=None), filename="FFT_release.csv", label="Manual release times")
+                    solara.FileDownload(pd.read_csv("csv/FFT_manual_peaks.csv").to_csv(index=None), filename="FFT_manual_peaks.csv", label="Manual peaks")
                 
             solara.Markdown(
 f"""

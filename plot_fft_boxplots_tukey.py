@@ -61,7 +61,7 @@ def get_data():
     
    
     df["state"] = df["leaves"].astype(str) + " & " + df["reductionNo"].astype(str)
-    df = df.sort_values(by=['reductionNo', 'leaves'], ascending=[False, True]).reset_index(drop=True)
+    df = df.sort_values(by=['tree','reductionNo', 'leaves'], ascending=[True, False, True]).reset_index(drop=True)
 
     return df
    
