@@ -85,7 +85,6 @@ def zpracuj(x=None):
     else:
         probe_final = probe.value
     sig = lib_FFT.DynatreeSignal(m, probe_final, release_source=release_source)
-
     return {'main_peak': sig.main_peak, 'signal':sig.signal, 'fft':sig.fft, 'signal_full':sig.signal_full}
 
 @task

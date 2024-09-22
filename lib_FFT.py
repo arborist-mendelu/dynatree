@@ -45,9 +45,12 @@ class DynatreeSignal:
             self.release_full = self.measurement.data_optics_pt34[(self.release_source, "Y0")]
         self.dt = dt
         self.tukey = tukey
+        self.manual_release_time = None
 
     @property
     def release_time(self):
+        if self.manual_release_time is not None:
+            return self.manual_release_time
         coords = (self.measurement.measurement_type, self.measurement.day, self.measurement.tree,
                   self.measurement.measurement, self.release_source)
         if coords in df_manual_release_times.index:
