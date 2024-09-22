@@ -11,8 +11,26 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+# df_long['diff'] = df_long['ori']-df_long['peak']
+#%%
+
 def get_data():
     df_long = pd.read_csv("../outputs/FFT_csv_tukey.csv")
+    # fix by manual peaks
+    df_fix = pd.read_csv("csv/FFT_manual_peaks.csv")
+    df_fix["type"] = df_fix["measurement_type"]
+    df_fix['peak'] = df_fix['peaks'].str.strip()  # Odstranění vedoucí mezery
+    df_fix['peak'] = df_fix['peak'].str.split().str[0]  # Rozdělení a ponechání první části
+    df_fix['peak'] = df_fix['peak'].astype(float)  # Převedení na float
+    df_fix = df_fix.drop(['peaks'], axis=1)
+    
+    df_long = pd.read_csv("../outputs/FFT_csv_tukey.csv")
+    df_fix = df_fix.set_index(['type', 'day', 'tree', 'measurement', 'probe'])
+    df_long = df_long.set_index(['type', 'day', 'tree', 'measurement', 'probe'])
+    # df_long['ori'] = df_long['peak']
+    df_long['peak'].update(df_fix['peak'])
+    df_long = df_long.reset_index()
+
 
     df = df_long.pivot(index=["type","day","tree","measurement"], columns="probe", values="peak")
     df = df.reset_index()
@@ -22,9 +40,6 @@ def get_data():
     days_with_leaves_true = ["2021-06-29", "2021-08-03", "2022-08-16", "2023-07-17", "2024-09-02"]
     days_after_first_reduction = ['2024-01-16', '2024-04-10', '2024-09-02']
     df = df[df["tree"] != "JD18"]
-
-    
-
 
     # Set information about leaves.
     df.loc[:,"leaves"] = False

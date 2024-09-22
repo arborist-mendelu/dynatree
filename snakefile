@@ -310,6 +310,7 @@ rule fft_all_probes_boxplots:
     """
     input: 
         "../outputs/FFT_csv_tukey.csv",
+        "csv/FFT_manual_peaks.csv"
     output: 
         "../outputs/fft_boxplots_for_probes_tukey.pdf"
     conda:
