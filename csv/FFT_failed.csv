@@ -87,10 +87,7 @@ noc,2022-08-16,BK09,M02,a04_z
 noc,2022-08-16,BK09,M03,a04_z
 noc,2022-08-16,BK09,M04,a04_z
 noc,2022-08-16,BK10,M02,a04_z
-noc,2022-08-16,BK10,M03,Elasto(90)
 noc,2022-08-16,BK10,M03,a04_z
-noc,2022-08-16,BK10,M03,blueMaj
-noc,2022-08-16,BK10,M03,yellowMaj
 noc,2022-08-16,BK10,M04,a04_z
 noc,2022-08-16,BK11,M02,a04_z
 noc,2022-08-16,BK11,M03,a04_z
@@ -269,8 +266,6 @@ normal,2022-04-05,BK10,M03,a04_z
 normal,2022-04-05,BK10,M03,blueMaj
 normal,2022-04-05,BK10,M04,a02_z
 normal,2022-04-05,BK10,M04,blueMaj
-normal,2022-04-05,BK12,M02,blueMaj
-normal,2022-04-05,BK12,M02,yellowMaj
 normal,2022-04-05,BK14,M02,blueMaj
 normal,2022-04-05,BK16,M02,a04_z
 normal,2022-04-05,BK16,M03,a04_z
@@ -376,8 +371,6 @@ normal,2023-07-17,JD18,M03,a01_z
 normal,2023-07-17,JD18,M04,a01_z
 normal,2024-04-10,BK09,M02,a01_z
 normal,2024-04-10,BK10,M02,a02_z
-normal,2024-04-10,BK10,M02,blueMaj
-normal,2024-04-10,BK10,M02,yellowMaj
 normal,2024-04-10,BK11,M02,a01_z
 normal,2024-04-10,BK11,M03,a01_z
 normal,2024-04-10,BK11,M03,a04_z

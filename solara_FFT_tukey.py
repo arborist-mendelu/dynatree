@@ -45,7 +45,7 @@ button_color = solara.reactive('primary')
 probe = solara.reactive("Elasto(90)")
 restrict = 50 # cut the FFT at 50Hz
 tab_value = solara.reactive(2)
-
+manual_release_time = solara.reactive(0.0)
 
 def ChooseProbe():
     data_obj = lib_dynatree.DynatreeMeasurement(
@@ -65,6 +65,7 @@ def resetujmethod(x=None):
     
 def resetuj(x=None):
     # Srovnani(resetuj=True)
+    manual_release_time.value = 0
     s.measurement.set(s.measurements.value[0])
     nakresli_signal()
     
@@ -85,7 +86,13 @@ def zpracuj(x=None):
     else:
         probe_final = probe.value
     sig = lib_FFT.DynatreeSignal(m, probe_final, release_source=release_source)
+    if manual_release_time.value > 0.0:
+        sig.manual_release_time = manual_release_time.value
     return {'main_peak': sig.main_peak, 'signal':sig.signal, 'fft':sig.fft, 'signal_full':sig.signal_full}
+
+def spust_mereni(x=None):
+    manual_release_time.value = 0
+    nakresli_signal()
 
 @task
 @lib_dynatree.timeit
@@ -174,6 +181,8 @@ f"""
 """                        
         )
 
+
+
 @solara.component
 @lib_dynatree.timeit
 def Page():
@@ -188,7 +197,7 @@ def Page():
                         optics_switch=False, 
                         day_action = resetuj,
                         tree_action = resetuj,
-                        measurement_action = nakresli_signal, 
+                        measurement_action = spust_mereni, 
                         )  
             s.ImageSizes()
     
@@ -215,7 +224,12 @@ def Page():
                         nakresli_signal()
                     if nakresli_signal.finished:
                         solara.FigureMatplotlib(nakresli_signal.value, format='png')
-                    csv_line()
+                    with solara.Row():
+                        csv_line()
+                        solara.InputFloat(
+                            "You may enter manual release time and click Redraw. Zero value is for automatical determination of release time.", 
+                            value=manual_release_time, 
+                            on_value=nakresli_signal)
                     FFT_remark()
                     with solara.Info():
                         solara.Markdown(
