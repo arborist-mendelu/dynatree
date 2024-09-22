@@ -73,7 +73,7 @@ def get_notes():
     notes["remark"] = notes["remark1"] + " " + notes["remark2"]
     return notes
 
-notes = get_notes()
+# notes = get_notes()
 
 def tand(angle):
     """
