@@ -340,6 +340,7 @@ applyGradient();
                     solara.FileDownload(df_fft_all.to_csv(), filename="fft_dynatree_wide.csv", label="Peaks in wide format")
                     solara.FileDownload(df_komentare.to_csv(), filename="FFT_comments.csv", label="Comments")
                     solara.FileDownload(pd.DataFrame(df_failed, columns=["type","day","tree","mesurement","probe"]).to_csv(index=None), filename="FFT_failed.csv", label="Failed")
+                    solara.FileDownload(pd.read_csv("csv/FFT_release.csv").to_csv(index=None), filename="FFT_release.csv", label="Manual release times")
                 
             solara.Markdown(
 f"""
@@ -356,6 +357,7 @@ f"""
   Stejné hodnoty jsou podbarveny stejně. Hledáme odchylku od (v ideálním případě) jednobarevných bloků.
 * Data s hodnotami peaků jsou ke stažení na odkazech nahoře.
 * Data s evidencí nevalidních experimentů a data s komentáři jsou také ke stažení.
+* Pokud automatika selhala při detekci vypuštění, je možné zadat vlastní začátek zpracovávaného signálu. Tím je možno opravit případy, kdy v okamžiku vypuštění není maximum signálu.
 
 # Která data jsou označena jako nevalidní?
 
