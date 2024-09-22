@@ -15,6 +15,7 @@ import time
 import solara_select_source as s
 import matplotlib.pyplot as plt
 import matplotlib
+from plotly_resampler import FigureResampler
 
 DATA_PATH = "../data"
 
@@ -55,30 +56,34 @@ data_object = lib_dynatree.DynatreeMeasurement(
     )
 
 @solara.component
-def plot(df, var, msg=None, id=None):
+def plot(df, var, msg=None, id=None, resample=False):
     # df = df_.copy()
     solara.ToggleButtonsMultiple(value=var, values=list(df.columns))    
     fig = px.scatter(df, y=var.value,  height = s.height.value, width=s.width.value,
                      title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
                      **kwds)    
-    solara.FigurePlotly(fig, on_selection=set_selection_data)    
+    if resample:
+        fig_res = FigureResampler(fig)
+        solara.FigurePlotly(fig_res, on_selection=set_selection_data)    
+    else:
+        solara.FigurePlotly(fig, on_selection=set_selection_data)    
     if msg is not None:
         msg
 
-@solara.component
-def plot_img(df, var, msg=None, id=None):
-    # df = df_.copy()
-    solara.ToggleButtonsMultiple(value=var, values=list(df.columns))    
-    fig, ax = plt.subplots()
-    try:
-        df.plot(y=var.value, ax=ax)
-    except:
-        pass
-    ax.set(title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}")    
-    solara.FigureMatplotlib(fig)
-    plt.close('all')    
-    if msg is not None:
-        msg        
+# @solara.component
+# def plot_img(df, var, msg=None, id=None):
+#     # df = df_.copy()
+#     solara.ToggleButtonsMultiple(value=var, values=list(df.columns))    
+#     fig, ax = plt.subplots()
+#     try:
+#         df.plot(y=var.value, ax=ax)
+#     except:
+#         pass
+#     ax.set(title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}")    
+#     solara.FigureMatplotlib(fig)
+#     plt.close('all')    
+#     if msg is not None:
+#         msg        
 
 @solara.component
 def investigate(df_, var):
@@ -227,7 +232,7 @@ def Page():
                         investigate(df2, dependent_pt34)                        
                         pass
                     else:
-                        solara.Warning(solara.Markdown("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná. Tím pádem nejsou ani tahovky nasamplované podle optiky."))
+                        solara.Warning(solara.Markdown("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná."))
                 except:
                     pass
         with solara.lab.Tab("Tahovky@100Hz"):
@@ -242,7 +247,7 @@ def Page():
                         investigate(df3, dependent_extra)
                         pass
                     else:
-                        solara.Warning(solara.Markdown("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná."))
+                        solara.Warning(solara.Markdown("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná. Tím pádem nejsou ani tahovky nasamplované podle optiky."))
                 except:
                     pass
         with solara.lab.Tab("Optika BL44-67"):
@@ -279,7 +284,13 @@ def Page():
                 try:
                     if (tab_index.value==5):
                         df5 = data_object.data_acc5000
-                        plot_img(df5, dependent_acc)                        
+                        solara.Warning(
+"""
+Data jsou dynamicky přesamplovaná pomocí plotly-resample. Mohou tedy vypadat trochu jinak než v jiném zobrazovátku, ale bez downsamplování by se s nimi 
+nedalo pracovat. Downsamplování je pouze při zobrazování, nepoužívá se pro výpočty.
+"""
+                            )
+                        plot(df5, dependent_acc, resample=True)                        
                         # plot(df5, dependent_acc)                        
                     #     investigate(df5, dependent_acc)                        
                     else:

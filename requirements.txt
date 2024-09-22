@@ -18,3 +18,4 @@ openpyxl
 conda-forge::passlib
 tqdm
 openpyxl
+plotly-resampler
