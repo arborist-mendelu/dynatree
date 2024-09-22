@@ -8,36 +8,57 @@ Created on Wed May  1 17:24:26 2024
 
 import solara
 import yaml
+import os
 
-
+# Funkce pro získání velikosti souboru v MB na 2 desetinná místa
+def velikost_souboru_v_mb(cesta_k_souboru):
+    velikost_bajty = os.path.getsize(cesta_k_souboru)  # Získání velikosti souboru v bajtech
+    velikost_mb = velikost_bajty / (1024 * 1024)  # Převod na MB
+    return f"{velikost_mb:.2f} MB"  # Formátování na 2 desetinná místa
 
 @solara.component
 def Page():
     # with open('downloads.yml', 'r') as file:
     #     data = yaml.load_all(file, yaml.FullLoader)
-    solara.Title("DYNATREE: FFT")
-    # solara.Style(s.styles_css)
+    solara.Title("DYNATREE: Download site")
+        # solara.Style(s.styles_css)
     solara.Markdown("# Downloads")
     
-    solara.Info("""Stahuj pomocí pravého tlačítka a "otevřít v novém panelu". Jinak 
-                se nepůjde přepnout na jinou záložku a budeš muset dát reload a znovu zadávat
-                heslo.                
-                """)
+    with solara.Info():
+        solara.Markdown(
+"""
+* Výstupy ze skriptů v projektu. Jsou zde soubory, které vznikají při běhu `snakemake` v adresáři
+  `outputs`. 
+* Odkazy se sem přidávají ručně, tak všechno nemusí být aktuální
+* Odkazy fungují i bez nutnosti zadávat heslo.
+""")
 
-    title = {0: "Aktuální soubory", 1: "Asi už nepotřebné soubory"}
+    # title = {0: "Aktuální soubory", 1: "Asi už nepotřebné soubory"}
 
     file = open('downloads.yml', 'r')
     data = yaml.load_all(file, yaml.FullLoader)
-    # for doc in data:
-    #     for k,v in doc.items():
-    #         print(k, "->", v)
-    #         print(f"**🔗 <a href=/static/public/{k}>{k}</a>**: {v}")
-    #     print ("\n")
-    # with solara.Column(gap='0px'):
+
     for t,doc in enumerate(data):
-        solara.Markdown(f"## {title[t]}")
-        for k,v in doc.items():
-            solara.Markdown(f"**🔗 <a href=/static/public/{k}>{k}</a>**: {v}")
+        # solara.Markdown(f"## {title[t]}")
+        with solara.Card():
+            for k,v in doc.items():
+                if k=="title":
+                    solara.Markdown(f"## {v}")
+                elif k=="popis":
+                    solara.Markdown(v)
+                else:
+                    _ = v.split(".")
+                    popis = _[0]
+                    detail = ". ".join(_[1:])
+                    with solara.Column(gap='20px'):
+                        lightgray = "#F4F4FF"
+                        with solara.Card(style={"background-color": lightgray}):
+                            with solara.Row(style={"background-color": lightgray}):
+                                solara.Button(
+                                    label=f"Download ({velikost_souboru_v_mb('../outputs/'+k)})",
+                                    attributes={"href": f"/static/public/{k}", "target": "_blank"}, text=True, outlined=True)
+                                solara.Markdown(f"**{popis}.** {detail}")
 
 
+    
         

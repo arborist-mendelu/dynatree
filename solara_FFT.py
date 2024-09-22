@@ -210,6 +210,7 @@ def Page():
         print(f"Mereni {s.measurement.value} neni k dispozici, koncim")
         return
     preload_data()
+    solara.Warning("Tento postup asi odnesl čas, tady asi být nechceš.")
     with solara.lab.Tabs(value=tab_index):
         with solara.lab.Tab("FFT"):
             if tab_index.value == 0:
@@ -244,7 +245,7 @@ def Page():
             except:
                 solara.Error("Něco se nepovedlo. Možná není žádné meření zpracované")
 
-        with solara.lab.Tab("Návod"):
+        with solara.lab.Tab("Návod&Download"):
             Navod()
 
 def ChooseProbe():
@@ -552,6 +553,11 @@ def drop_rows():
 
 @solara.component
 def Navod():
+    with solara.Card(style={'background-color':"#FBFBFB"}):
+        solara.Markdown("**Downloads** Soubor ke stažení obsahuje zpracované proby, začátek a konec intervalu, ručně stanovené peaky, případnou poznámku")
+        with solara.Row(justify="space-around",style={'background-color':"#FBFBFB"}):
+            solara.FileDownload(df_limits.value.to_csv(), filename="fft_old_dynatree.csv", label="Peaks")
+ 
     solara.Markdown(
 """
 **TL;DR**

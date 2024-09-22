@@ -1,29 +1,51 @@
 ---
-anotated_regressions_static.csv: Výstup z regresí mezi momenty a náklonem ve statice. Má začleněny případné komentáře.
-    K 2024-09-21 obsahuje varianty s lower_cut 10 i 30 procent.
+title: "Statika"
 
-regressions_static.csv: Výstup z regresí mezi momenty a náklonem ve statice. 
-    K 2024-09-21 obsahuje varianty s lower_cut 10 i 30 procent.
+popis: |
+    * Statické experimenty, M01 a napínací fáze dalších Mxx. 
+    * Tabulky s regresními koeficienty mezi momentem a náklonem apod.
+    * Tabulky jsou velké, k 2024-09-21 obsahují varianty s lower_cut 10 i 30 procent.
+    * Předpokládají, že si z toho dále vyfiltruješ, co tě zajímá.
+    
+anotated_regressions_static.csv: Data, regresní koeficienty s anotacemi. Výstup z regresí mezi momenty a náklonem ve statice. Má začleněny případné komentáře.
 
-static_pull_removed_experiments.zip: Obrázky experimentů, které nejsou zařezeny do vyhodnocování vztahů mezi momentem a náklonem ve statice.
+regressions_static.csv: Data, regresní koeficienty. Výstup z regresí mezi momenty a náklonem ve statice. 
 
-static_pulling_error_propagation.xlsx: Analýza vlivu změny úhlu naklonění lana na 
-    regresní koeficient mezi momentem a náklonem ve statice.
+static_pull_removed_experiments.zip: 
+    Obrázky vyřazených experimentů. Obrázky experimentů, které nejsou zařezeny 
+    do vyhodnocování vztahů mezi momentem a náklonem ve statice. 
 
-FFT_csv_tukey.csv: Výstupy z FFT analýzy. Bez podsamplování ACC, automatická volba intervalu.
-    Long format, wide format je ke stažení na stráce s FFT.
-
-FFT_spectra.zip: Obrázky spekter, která jsou vyloučena ze zpracování jako nepovedené experimenty. Pro zpracování pomocí tukey window a jendotné délky intervalu.
-
-fft_boxplots_for_probes_tukey.pdf: Srovnání frekvencí, jak se u jednotlivých stromů měnila frekvence s roční dobou, číslem ořezu. Nový přístup s tukey okénkem.
+static_pulling_error_propagation.xlsx: |
+    Tabulka, šíření chyby stanovení náklonu lana. Analýza vlivu změny úhlu naklonění lana na 
+    regresní koeficient mezi momentem a náklonem ve statice. Derivace
+    směrnice v regresi podle úhlu lana. Počítáno pomocí centrální diference a pro dva případy:
+    pro tah pod malým a tah pod velkým úhlem.
 
 synchro_optics_inclino_detail.pdf: Obrázky pro kontrolu synchronizace mezi inklinometry a optikou. Detail okolo vypuštění.
 
 synchro_optics_inclino.pdf: Obrázky pro kontrolu synchronizace mezi inklinometry a optikou. Celý experiment.
 
 ---
+title: "FFT, tukey window etc"
 
-static_pulling_std_RopeAngle100.pdf: Směrodatná odchylka velčiny Rope100 z TXT souborů z tahovek. Mělo sloužit 
+popis: 
+    FFT analýza nově (k 2024-09-22), tj. automatické (doladit? připustit výjimky?) 
+    detekování okamžiku vypuštění, tukey window, automatické detekování peaků.
+
+FFT_csv_tukey.csv: Data, výstupy z FFT analýzy. Bez podsamplování ACC, automatická volba intervalu.
+    Long format. (Wide format vzniká za běhu a je ke stažení na stráce FFT_tukey_all. 
+    Tam jsou ke stažení i csv, které s v průběhu zpracování používají.)
+
+FFT_spectra.zip: Obrázky nepovedených experimentů. Spektra, která jsou vyloučena ze zpracování jako nepovedené experimenty. 
+
+fft_boxplots_for_probes_tukey.pdf: Obrázky, přehled. Srovnání frekvencí, jak se u jednotlivých stromů měnila frekvence s roční dobou, číslem ořezu.
+
+---
+title: "To všecho odnés čas?"
+
+popis: "Možná neaktuální, možná nechat pro srovnání. Mohlo by se hodit"
+
+static_pulling_std_RopeAngle100.pdf: Obrázky, směrodatná odchylka velčiny Rope100 z TXT souborů z tahovek. Mělo sloužit 
     jako podpůrný argument, proč tuto hodnotu nebrat. Nakonec se ukázalo, že stroj si vymýšlí
     hodnoty náklonu jaké chce, tak je to asi jedno. 
 
@@ -31,9 +53,10 @@ fft_spectra.zip: Obrázky spekter. Postaru (ruční volba intervalu, ruční pot
 
 fft_spectra_by_measurements.zip: Obrázky spekter podle měření. Postaru (ruční volba intervalu, ruční potvrzování peaků. ACC podsamplované).
 
+
 fft_spectra_elasto_acc2.zip: Obrázky spekter pro porovnání ACC2 a Elasto. Oba se pěkně chovaly a jsou blízko sebe. Postaru (ruční volba intervalu, ruční potvrzování peaků. ACC podsamplované.)
 
-fft_boxplots_for_probes.pdf: Srovnání frekvencí, jak se u jednotlivých stromů měnila frekvence s roční dobou, číslem ořezu. Postaru.
-
-
-
+fft_boxplots_for_probes.pdf: |
+    Obrázky srovnání frekvencí, jak se u jednotlivých stromů měnila frekvence s roční dobou, 
+    číslem ořezu. Postaru. Data jsou v adresáři s csv. Dají se stáhnout. Link ke stažení je 
+    na stránce se (starou) FFT analýzou.
