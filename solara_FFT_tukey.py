@@ -383,7 +383,7 @@ f"""
     cd /mnt/zaloha/babice/dynatree-optika/
     conda activate dynatree
     snakemake
-    rsync -zarv -P ../outputs/FFT_csv_tukey.csv jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/outputs/
+    rsync -zarv -P ../outputs jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/
     rsync -zarv -P csv jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/
     rsync -zarv -P csv_output jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/
     ```

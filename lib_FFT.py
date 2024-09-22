@@ -24,6 +24,7 @@ length = 60  # the length of the signal
 # todo: make min and max different for each tree
 peak_min = .1 # do not look for the peak smaller than this value
 peak_max = 0.7 # do not look for the peak larger than this value
+df_manual_release_times = pd.read_csv("csv/FFT_release.csv", index_col=[0,1,2,3,4])
 
 class DynatreeSignal:
 
@@ -47,6 +48,10 @@ class DynatreeSignal:
 
     @property
     def release_time(self):
+        coords = (self.measurement.measurement_type, self.measurement.day, self.measurement.tree,
+                  self.measurement.measurement, self.release_source)
+        if coords in df_manual_release_times.index:
+            return df_manual_release_times.at[coords,'release']
         data = self.release_full.dropna()
         data = data - data.iloc[0]
         data = data.dropna()

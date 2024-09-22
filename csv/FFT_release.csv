@@ -1,0 +1,8 @@
+type,day,tree,measurement,probe,release
+normal,2023-07-17,BK16,M03,Elasto(90),63.3
+normal,2023-07-17,BK10,M03,Elasto(90),82.2
+normal,2022-04-05,BK24,M03,Elasto(90),81.8
+normal,2022-04-05,BK24,M03,Pt3,81.5
+normal,2022-04-05,BK24,M03,Pt4,81.5
+normal,2021-06-29,BK21,M04,Pt3,98
+normal,2021-06-29,BK21,M04,Pt4,98
