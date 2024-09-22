@@ -39,7 +39,8 @@ df_fft_all = df_fft_long.pivot(
 df_fft_all = df_fft_all.loc[:,[
     'Elasto(90)', 'blueMaj', 'yellowMaj', 
     'Pt3', 'Pt4', 
-    'a01_z', 'a02_z', 'a03_z', 'a04_z']]
+    'a01_z', 'a02_z', 'a03_z', 'a04_z'
+    ]]
 
 button_color = solara.reactive('primary')
 probe = solara.reactive("Elasto(90)")
@@ -50,7 +51,7 @@ manual_release_time = solara.reactive(0.0)
 def ChooseProbe():
     data_obj = lib_dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
-    probes = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3","Pt4", 'a01_z', 'a02_z', 'a03_z', 'a04_z']
+    probes = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3","Pt4", 'a01_z', 'a02_z', 'a03_z', 'a04_z', 'a01_y', 'a02_y', 'a03_y', 'a04_y']
     with solara.Row():        
         solara.ToggleButtonsSingle(value=probe, values=probes, on_value=nakresli_signal)
         test_is_failed = [s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value
