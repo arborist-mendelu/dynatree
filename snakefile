@@ -329,11 +329,12 @@ rule static_1_versus_2_3:
         csv = "../outputs/anotated_regressions_static.csv",
         script = "static_pull_first_versus_other_pulls.py"
     output:
-        "static_pull_first_versus_other_pulls.html"
+        "../outputs/static_pull_first_versus_other_pulls.html"
     conda:
         "dynatree"        
     shell:
         """
         jupytext --to notebook {input.script}
         jupyter nbconvert --to html --execute static_pull_first_versus_other_pulls.ipynb
+        cp static_pull_first_versus_other_pulls.html {output}
         """
