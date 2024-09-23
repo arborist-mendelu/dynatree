@@ -1,0 +1,16 @@
+[Unit]
+Description=Solara for DYNATREE project
+After=network.target
+
+[Service]
+User=marik
+Group=marik
+RuntimeDirectory=solara
+Restart=always
+RestartSec=1
+WorkingDirectory=/mnt/zaloha/babice/dynatree-optika/
+ExecStart=bash run_service.sh
+TimeoutStopSec=2
+
+[Install]
+WantedBy=multi-user.target
