@@ -15,7 +15,7 @@ emd
 sphinx 
 sphinx_rtd_theme 
 openpyxl
-conda-forge::passlib
+passlib
 tqdm
 openpyxl
 plotly-resampler
