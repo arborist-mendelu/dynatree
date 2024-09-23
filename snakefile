@@ -335,6 +335,6 @@ rule static_1_versus_2_3:
     shell:
         """
         jupytext --to notebook {input.script}
-        jupyter nbconvert --to html --execute static_pull_first_versus_other_pulls.ipynb
+        jupyter nbconvert --to html --execute static_pull_first_versus_other_pulls.ipynb --no-input
         cp static_pull_first_versus_other_pulls.html {output}
         """

@@ -25,6 +25,8 @@ synchro_optics_inclino_detail.pdf: Obrázky pro kontrolu synchronizace mezi inkl
 
 synchro_optics_inclino.pdf: Obrázky pro kontrolu synchronizace mezi inklinometry a optikou. Celý experiment.
 
+static_pull_first_versus_other_pulls.html: Porovnání směrnic z regresí, druhý a třetí tah vydělený prvním tahem.
+
 ---
 title: "FFT, tukey window etc"
 

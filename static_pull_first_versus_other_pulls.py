@@ -35,7 +35,6 @@ def add_leaves_info(df_):
     df.loc[idx,"reductionNo"]=2
     return df
 
-
 df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
 df = df.dropna(subset=["Independent","Dependent"],how='all')
 df = df[df["lower_cut"]==0.3]
@@ -44,8 +43,6 @@ df = df[~df['Dependent'].str.contains('Min')]
 df = df[~df['tree'].str.contains('JD')]
 df = df[~ df["failed"]]
 df = df.drop(["Intercept","p-value","stderr","intercept_stderr","lower_cut", "upper_cut"], axis=1)
-
-
 
 a = df[(df["optics"]) & (df['Dependent'].str.contains('Pt'))]
 b = df[~df["optics"]]
