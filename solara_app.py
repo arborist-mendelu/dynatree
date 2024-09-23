@@ -97,7 +97,7 @@ def Logout():
             except:
                 pass
             with solara.Tooltip("Logout"):
-                solara.Button(icon_name="mdi-logout", 
+                solara.Button(icon_name="mdi-logout",
                               icon=True, on_click=lambda: user_accepted.set(False))    
 
 @solara.component

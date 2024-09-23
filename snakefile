@@ -320,3 +320,20 @@ rule fft_all_probes_boxplots:
         python plot_fft_boxplots_tukey.py
         """
     
+rule static_1_versus_2_3:
+    """
+    Compares the slopes from momentum-force diagram for the first pull 
+    and the second or third pull.
+    """
+    input:
+        csv = "../outputs/anotated_regressions_static.csv",
+        script = "static_pull_first_versus_other_pulls.py"
+    output:
+        "static_pull_first_versus_other_pulls.html"
+    conda:
+        "dynatree"        
+    shell:
+        """
+        jupytext --to notebook {input.script}
+        jupyter nbconvert --to html --execute static_pull_first_versus_other_pulls.ipynb
+        """
