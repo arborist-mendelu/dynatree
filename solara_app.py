@@ -117,8 +117,11 @@ def monitoring():
     
 @solara.component
 def Page():
-    if os.environ['SERVER_NAME'] == "localhost":
+    servername = os.environ['SERVER_NAME']
+    if servername == "localhost":
         solara.lab.theme.themes.light.primary = "#006000"
+    elif servername == "um-bc201.mendleu.cz":
+        solara.lab.theme.themes.light.primary = "#000000"
     with solara.Sidebar():
         solara.Markdown("**Projekt DYNATREE**")
         if not user_accepted.value:
