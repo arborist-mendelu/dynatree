@@ -15,6 +15,7 @@ rule all:
         "../outputs/static_pull_removed_experiments.zip",
         "../outputs/FFT_csv_tukey.csv",
         "../outputs/fft_boxplots_for_probes_tukey.pdf",
+        "../outputs/static_pull_first_versus_other_pulls.html"
 
         
 rule measurement_notes:
@@ -254,7 +255,8 @@ rule static_pull_regressions_anotate:
     """        
     input:
         "../outputs/regressions_static.csv", 
-        "csv/static_fail.csv"
+        "csv/static_fail.csv",
+        "static_pull_anotatte_regressions.py"
     conda:
         "dynatree"        
     output:
@@ -336,5 +338,6 @@ rule static_1_versus_2_3:
         """
         jupytext --to notebook {input.script}
         jupyter nbconvert --to html --execute static_pull_first_versus_other_pulls.ipynb --no-input
-        cp static_pull_first_versus_other_pulls.html {output}
+        rm static_pull_first_versus_other_pulls.ipynb
+        mv static_pull_first_versus_other_pulls.html {output}
         """
