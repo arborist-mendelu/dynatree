@@ -89,9 +89,10 @@ def read_data():
     df["state"] = df["leaves"].astype(str) + ", " +df["reductionNo"].astype(str)
     return df
 
-def main(remove_failed=False):
+def main(remove_failed=False, trees=None):
     df = read_data()        
-    trees = df["tree"].drop_duplicates().values
+    if trees is None:
+        trees = df["tree"].drop_duplicates().values
     df['reason'] = df['reason'].fillna("")
     if remove_failed:
         df = df[~df["failed"]]
@@ -103,13 +104,14 @@ def main(remove_failed=False):
             i,d = _
             f[I] = px.strip(df[(df["Independent"]==i) & (df["Dependent"]==d) & (df["tree"]==tree)], 
                          x="state", y="Slope", #points="all", 
-                         hover_data=['day', 'tree', "measurement", "type", "pullNo", "R^2", "reason"], width=1000, height=500, 
-                          color='evaluation',   
+                         hover_data=['day', 'tree', "measurement", "type", "pullNo", "R^2", "reason", "Dependent"], width=1000, height=500, 
+                         color='evaluation',   
+                         template =  "plotly_white",
                          # color_discrete_sequence=px.colors.qualitative.Set1,  # Nastavení barevné škály
                          title = f"Slope in {i} versus {d}")
             for trace in f[I]['data']:
                 fig.add_trace(trace, row=1, col=1+I)
         fig.update_layout(height=400, width=1200, title_text=f"Tree {tree}")
-        fig.update_layout(showlegend=False)
+        fig.update_layout(showlegend=False, template =  "plotly_white",)
         f_ans[tree] = fig
     return f_ans

@@ -3,4 +3,4 @@ Elasto-strain,BK04,M01,2021-06-29,2,"Směrnice je malá, ale žádný viditelný
 Elasto-strain,BK08,M03,2024-09-02,0,"Extenzometr skočil, ale mimo interval, který se promítá do výstupu."
 Elasto-strain,BK10,M04,2022-08-16,0,"Nepovedené napínání i vypuštění, ale nevidím důvod pro vyhození tohoto řešení. Korelační koeficient horší."
 Elasto-strain,BK13,M01,2023-07-17,2,"Při posledním zatáhnutí je výsledný bod mimo zbytek chumlu, ale  není patrné, že by něco selhalo."
-Elasto=strain,BK14,M03,2021-06-29,0,"Nevidím důvod, proč vyhodit toto odlehlé měření." 
+Elasto-strain,BK14,M03,2021-06-29,0,"Nevidím důvod, proč vyhodit toto odlehlé měření." 

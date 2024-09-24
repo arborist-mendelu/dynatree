@@ -12,6 +12,17 @@ import pandas as pd
 
 df = pd.read_csv("../outputs/regressions_static.csv", index_col=0)
 df_bad = pd.read_csv("csv/static_fail.csv")
+
+dfs = {}
+for color in ["blue","yellow"]:
+    for axis in ["Maj","Min"]:
+        d1 = df_bad[df_bad["Dependent"]==color].copy()
+        d1.loc[:,"Dependent"] = f"{color}{axis}"
+        dfs[f"{color}{axis}"] = d1.copy()
+dfs = pd.concat(dfs.values())
+df_bad = pd.concat([df_bad, dfs])
+
+#%%
 df_bad["pullNo"] = df_bad["pullNo"].astype(int)
 
 # Sloučení obou tabulek na základě sloupců Dependent, tree, measurement, day a pullNo

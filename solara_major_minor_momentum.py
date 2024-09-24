@@ -14,13 +14,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 # import glob
 import solara.express as px
+import plotly.express as plx
 import solara.lab
 from solara.lab import task
 import solara
 import time
 import solara_select_source as s
 import graphs_regressions
-
+import static_lib_pull_comparison
+import plotly.graph_objects as go
 DATA_PATH = "../data"
 
 tightcols = {'gap': "0px"}
@@ -121,127 +123,112 @@ styles_css = """
 # http://localhost:8765/tahovky?tree=BK04&method=normal&measurement=M02&use_optics=True&day=2022-08-16
 # http://localhost:8765/tahovky?tree=BK08&method=den&measurement=M03&use_optics=False&day=2022-08-16
 
-
-@task
-def ShowRegressions():
-    return graphs_regressions.main()
+@solara.component
+def prehled():
+    solara.Markdown(
+"""
+* Tady jsou směrnice z regresí M/blue, M/yellow a M_Elasto/Elasto. Pokud nějaká
+  hodnota ulítává, je možné, že inklinometr nebo extenzometr špatně měřil. V takovém případě se 
+  kontroluje asi časový průběh příslušného přístroje.
+* True/False se vztahuje k přítomnosti listů. 
+* Číslo 0 až 2 se vztahuje k počtu ořezů.
+* V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
+"""
+        )
+    # with solara.Row():
+    #     solara.Button("Update Page", on_click=ShowRegressionsHere)
+    images = graphs_regressions.main(trees=[s.tree.value])
+    df_failed = pd.read_csv("csv/static_fail.csv")
+    df_checked = pd.read_csv("csv/static_checked_OK.csv")
+    for t,f in images.items():
+        with solara.Card():
+            solara.FigurePlotly(f)
+            solara.Markdown(f"Failed experiments")
+            solara.display(df_failed[df_failed["tree"]==t])
+            solara.Markdown(f"Succesfully checked experiments")
+            solara.display(df_checked[df_checked["tree"]==t])
+    solara.FileDownload(graphs_regressions.read_data().to_csv(), filename="static_dynatree.csv", label="Download data")
 
 @solara.component
-def ShowRegressionsHere():
-    if ShowRegressions.finished:
-        images = ShowRegressions.value
-        df_failed = pd.read_csv("csv/static_fail.csv")
-        df_checked = pd.read_csv("csv/static_checked_OK.csv")
-        for t,f in images.items():
-            with solara.Card():
-                solara.FigurePlotly(f)
-                solara.Markdown(f"Failed experiments")
-                solara.display(df_failed[df_failed["tree"]==t])
-                solara.Markdown(f"Succesfully checked experiments")
-                solara.display(df_checked[df_checked["tree"]==t])
-
-# @solara.component
-# def DoTask(mytask):
-#     solara.ProgressLinear(mytask.pending)    
-#     if mytask.finished:
-#         solara.FigureMatplotlib(mytask.value)
-#     elif mytask.not_called:
-#         solara.Markdown("**Ještě nebylo spuštěno.**")
+def normalized_slope():
+    df_merged = static_lib_pull_comparison.df_merged
+    subdf = df_merged[df_merged["pullNo"]!=0].loc[:,
+        ["pullNo","Slope_normalized","tree", "Dependent","type","day"]]
+    subdf = subdf[subdf["tree"]==s.tree.value].sort_values(by="day")
+    cat_order = subdf["day"].drop_duplicates().tolist()
+    fig = plx.box(
+        subdf, 
+        x="day", 
+        y="Slope_normalized", 
+        color='type', 
+        points='all', 
+        hover_data=["tree","type","pullNo", "Dependent"],
+        category_orders={"day": cat_order},
+        height = s.height.value, width=s.width.value,
+        title=f"Tree {s.tree.value}", 
+        template =  "plotly_white", 
+        )
+    fig.update_layout(xaxis=dict(type='category'))
+    solara.FigurePlotly(fig)    
 
 @solara.component
 def Page():
-    # global first_pass
-    
-    # # if first_pass:
-    # #     first_pass = False
-    # if data_from_url.value:
-    #     args =  solara.use_router().search
-    #     if len(str(args))>0:
-    #         parsed = str(args).split("&")
-    #         params = {}
-    #         for i in parsed:
-    #             _,__ = i.split("=")
-    #             params[_] = __
-    #         solara.Text(str(params))
-    #         tree.value = params['tree']
-    #         day.value = params['day']
-    #         method.value = params['method']
-    #         measurement.value  =params['measurement']
-    #         use_optics.value = params['use_optics']=="True"
         
     solara.Title(title)
     solara.Style(styles_css)
     with solara.Sidebar():
-        # solara.Markdown("Výběr proměnných pro záložku \"Volba proměnných a regrese\".")
         Selection()
-    # solara.Markdown("# Under construction")
-    # return
+        if tab_index.value in [3,4]:
+            s.ImageSizes()
+            s.width.value = 1200
     with solara.lab.Tabs(value=tab_index):
         with solara.lab.Tab("Grafy"):
             with solara.Card():
                 try:
                     if tab_index.value == 0:
-                        start = time.time_ns()/1000000
                         Graphs()
-                        end = time.time_ns()/1000000
-                        # print(f"Graphs took {end-start}ms.")
                 except:
                     pass
         with solara.lab.Tab("Volba proměnných a regrese"):
             with solara.Card(title="Increasing part of the time-force diagram"):
                 try:
                     if tab_index.value == 1:
-                        start = time.time_ns()/1000000
                         Detail()
-                        end = time.time_ns()/1000000
-                        # print(f"Details took {end-start}ms.")
                 except:
                     pass
         with solara.lab.Tab("Polární graf"):
             with solara.Card():
                 try:
                     if tab_index.value == 2:
-                        start = time.time_ns()/1000000
                         Polarni()
-                        end = time.time_ns()/1000000
-                        # print(f"Details took {end-start}ms.")
                 except:
                     pass
-        with solara.lab.Tab("Statistiky"):
+
+        with solara.lab.Tab("Srovnání s prvním zatáhnutím"):
             with solara.Card():
+                solara.Markdown(
+"""
+* V grafech je podíl směrnice z druhého nebo třetího zatáhnutí  směrnice z prvního zatáhnutí. Toto je v grafu vedeno jako Slope_normalized.
+* Pokud věříme, že při první zatáhnutí je systém tužší, měl by podíl být stabilně pod jedničkou.
+* V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
+""")
                 try:
-                    start = time.time_ns()/1000000
-                    Statistics()
-                    end = time.time_ns()/1000000
-                    # with solara.AppBar():
-                    #     solara.Text(f"Statistics took {end-start}ms.")
+                    if tab_index.value == 3:
+                        normalized_slope()
                 except:
                     pass
 
+                    # solara.FigurePlotly(figPl)                
         with solara.lab.Tab("Přehled"):
-            if (tab_index.value == 3) and (ShowRegressions.not_called):
-                ShowRegressions()
-            solara.ProgressLinear(ShowRegressions.pending)    
-            solara.Markdown(
-                """
-                * True/False in the x axis is realted to the leaves presence.
-                * The number on the x axis is the number of branch reductions.
-                * `False, 1` means that the experiment has been perfomed without the leaves and somewhere between first and second branch reduction.
-                """
-                )
-            solara.FileDownload(graphs_regressions.read_data().to_csv(), filename="static_dynatree.csv", label="Download these data")
-            ShowRegressionsHere()
-
+            with solara.Column():
+                try:
+                    if tab_index.value == 4:
+                        prehled()
+                except:
+                    pass
         with solara.lab.Tab("Návod a komentáře"):
             with solara.Card(title="Návod"):
                 Help()
-
-    # MainPage()
-
-# def clear():
-#     # https://stackoverflow.com/questions/37653784/how-do-i-use-cache-clear-on-python-functools-lru-cache
-#     static_pull.nakresli.__dict__["__wrapped__"].cache_clear()
-#     static_pull.process_data.__dict__["__wrapped__"].cache_clear()
 
 @solara.component
 def Selection():
