@@ -7,6 +7,7 @@ Created on Wed Aug 28 18:41:25 2024
 """
 
 import solara
+from solara.lab import task
 import solara_major_minor_momentum
 import solara_vizualizace
 import solara_force_elasto_inclino
@@ -17,7 +18,9 @@ import solara_download
 from passlib.hash import pbkdf2_sha256
 import pandas as pd
 import time
+from datetime import datetime
 import os
+import psutil
 
 def Naloguj_se():
     solara.Title("DYNATREE")
@@ -100,9 +103,22 @@ def Logout():
                 solara.Button(icon_name="mdi-logout",
                               icon=True, on_click=lambda: user_accepted.set(False))    
 
+@task
+def monitoring():
+    def get_metrics():
+        cpu_usage = psutil.cpu_percent(interval=1)
+        memory_info = psutil.virtual_memory()
+        return cpu_usage, memory_info
+    cpu, memory = get_metrics()
+    timestamp = time.time()
+    dt_object = datetime.fromtimestamp(timestamp)    
+    date = f"{dt_object.strftime('%Y-%m-%d %H:%M:%S')}"
+    return [cpu, memory, date]
+    
 @solara.component
 def Page():
-    Logout()
+    if os.environ['SERVER_NAME'] == "localhost":
+        solara.lab.theme.themes.light.primary = "#006000"
     with solara.Sidebar():
         solara.Markdown("**Projekt DYNATREE**")
         if not user_accepted.value:
@@ -193,16 +209,33 @@ def Page():
                 
                 Notes are extracted from the file `Popis_Babice_VSE_13082024.xlsx`.
                 The measurements with no notes are dropped. 
-                The table is created automatically by snakemake file.
+                The table is created automatically by snakemake file. The table does not contain
+                data annotated by another label than "Measurement:".
                 """
                   )
                 
                 df = pd.read_csv("csv_output/measurement_notes.csv", index_col=0).dropna(subset=["remark1","remark2"], how='all')
                 df = df.set_index(["day","tree","measurement"])
                 solara.display(df)
-
+            with solara.lab.Tab("Monitoring serveru"):
+                with solara.Card():
+                    if monitoring.not_called:
+                        monitoring()
+                    solara.ProgressLinear(monitoring.pending)
+                    if monitoring.finished:
+                        cpu, memory, date = monitoring.value
+                        with solara.Info():
+                            with solara.Column():
+                                solara.Text(f"CPU Usage: {cpu}%")
+                                solara.ProgressLinear(value=cpu, color='red')
+                                solara.Text(f"Memory Usage: {memory.percent}%")
+                                solara.ProgressLinear(value=memory.percent, color='red')
+                                solara.Text(f"Memory Total: {memory.total/1024**3:.2f}GB")
+                                solara.Text(f"Datum a čas: {date}")
+                        solara.Button("Refresh", on_click=monitoring)
+                
 routes = [
-    solara.Route(path="/", component=Page, label="home"),
+    solara.Route(path="/", component=Ochrana(Page), label="home"),
     solara.Route(path="vizualizace", component=Ochrana(solara_vizualizace.Page), label="vizualizace"),
     solara.Route(path="tahovky", component=Ochrana(solara_major_minor_momentum.Page), label="tahovky"),
     solara.Route(path="synchronizace", component=Ochrana(solara_force_elasto_inclino.Page), label="synchronizace"),
