@@ -22,12 +22,6 @@ from datetime import datetime
 import os
 import psutil
 
-servername = os.environ['SERVER_NAME']
-if servername == "localhost":
-    solara.lab.theme.themes.light.primary = "#006000"
-elif servername == "um-bc201.mendelu.cz":
-    solara.lab.theme.themes.light.primary = "#000000"
-
 
 def Naloguj_se():
     solara.Title("DYNATREE")
@@ -124,6 +118,14 @@ def monitoring():
     
 @solara.component
 def Page():
+
+    servername = os.environ['SERVER_NAME']
+    if servername == "localhost":
+        solara.lab.theme.themes.light.primary = "#006000"
+    elif servername == "um-bc201.mendelu.cz":
+        solara.lab.theme.themes.light.primary = "#000000"
+    
+
     with solara.Sidebar():
         solara.Markdown("**Projekt DYNATREE**")
         if not user_accepted.value:
