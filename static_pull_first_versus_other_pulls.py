@@ -14,68 +14,19 @@ import lib_dynatree
 from scipy.stats import ttest_1samp
 from scipy import stats
 
-def add_leaves_info(df_):
-    df = df_.copy()
-    days_with_leaves_true = ["2021-06-29", "2021-08-03", "2022-08-16", "2023-07-17", "2024-09-02"]
-    days_after_first_reduction = ['2024-01-16', '2024-04-10', '2024-09-02']
-    
-    # Set information about leaves.
-    df.loc[:,"leaves"] = False
-    idx = (df["day"].isin(days_with_leaves_true))
-    df.loc[idx,"leaves"] = True
-    # no reduction is default
-    df.loc[:,"reductionNo"] = 0
-    # one reduction: afterro or any day later
-    idx = (df["day"].isin(days_after_first_reduction))
-    df.loc[idx,"reductionNo"] = 1
-    idx = (df["type"]=="afterro")
-    df.loc[idx,"reductionNo"]=1
-    # two reductions
-    idx = (df["type"]=="afterro2")
-    df.loc[idx,"reductionNo"]=2
-    return df
-
-df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
-df = df.dropna(subset=["Independent","Dependent"],how='all')
-df = df[df["lower_cut"]==0.3]
-df = df.dropna(how='all', axis=0)
-df = df[~df['Dependent'].str.contains('Min')]
-df = df[~df['tree'].str.contains('JD')]
-df = df[~ df["failed"]]
-df = df.drop(["Intercept","p-value","stderr","intercept_stderr","lower_cut", "upper_cut"], axis=1)
-
-a = df[(df["optics"]) & (df['Dependent'].str.contains('Pt'))]
-b = df[~df["optics"]]
-oridf = pd.concat([a,b]).reset_index(drop=True)
-
+import static_lib_pull_comparison
 # -
 
 # # Je u prvního měření větší tuhost?
 #
-# Sledujeme statické měření. Určíme směrnice mezi veličinami, co nás zajímají. Je směrice v prvním tahu odlišná od směrnice ve druhém a dalším tazích? Vydělíme
+# Sledujeme statické měření. Určíme směrnice mezi veličinami, co nás zajímají. Je směrice v prvním tahu odlišná od směrnice ve druhém a dalším zatažení? Vydělíme
 # druhou a třetí směrnici první směrnicí porovnáváme podíly s jedničkou. 
+#
+# Použitá data jsou regresní koeficienty ze závislostí M versus blue, M verus blueMajor, M verus yellow, M versus yellowMajor a M_Elasto verus Elasto-strain.
+# Poslední závislost je klesající (stlačování extenzometru), proto je směrnice záporná. Ale po vydělení zápornou směrnicí z prvního zatáhnutí se to srovná.
 
-df = oridf.copy()
-df = df[
-    (df["measurement"]=="M01") & 
-     (df["Independent"]=="M")
-    ].drop(["measurement","optics"], axis=1)
+df_merged = static_lib_pull_comparison.df_merged
 
-
-# +
-# Nejprve vytáhneme hodnoty Slope pro pull=0
-df_zero_pull = df[df['pullNo'] == 0].copy()
-
-# Přejmenujeme sloupec Slope, aby bylo jasné, že jde o referenční hodnoty
-df_zero_pull = df_zero_pull.rename(columns={'Slope': 'Slope_zero_pull'})
-
-# Merge původního DataFrame s tím, kde je pull=0, na základě společných sloupců
-df_merged = pd.merge(df, df_zero_pull[['day', 'tree', 'Independent', 'Dependent', 'Slope_zero_pull']],
-                     on=['day', 'tree', 'Independent', 'Dependent'], how='left')
-
-# Vydělení hodnoty Slope referenční hodnotou Slope_zero_pull
-for i in ['Slope']:
-    df_merged[f'{i}_normalized'] = df_merged[i] / df_merged[f'{i}_zero_pull']
 
 # +
 
@@ -84,8 +35,14 @@ subdf = df_merged[df_merged["pullNo"]!=0].loc[:,["pullNo","Slope_normalized","tr
 fig, ax = plt.subplots(1,1,figsize=(20,5))
 subdf['pullNo'] = subdf['pullNo'].astype('category')
 sns.stripplot(data=subdf, x='tree', y=f'{target}_normalized', hue='pullNo', ax=ax, jitter=0.4)
-ax.grid()
-ax.set(ylim=(None,1.5))
+ax.set(title="Podíl směrnic následujícího a prvního zatáhnutí")
+ax.grid(axis='y')
+ax.legend(bbox_to_anchor=(1.1, 1))
+ax.axhline(1,color='red')
+[ax.axvline(x+.5,color='gray', lw=0.5) for x in ax.get_xticks()]
+
+# ax.legend(["druhé zatáhnutí", "třetí zatáhnutí", "čtvrté zatáhnutí"])
+ax.set(ylim=(None,None));
 # -
 
 # Jestli jsou podíly rovny jedné nebo ne je možné otestovat i statistickým testem.
@@ -104,6 +61,55 @@ result2 = subdf.groupby('tree').apply(test_hypothesis, include_groups=False).res
 result = pd.merge(result1,result2, on=["tree"])
 result["H0_rejected"] = result["p_value"]<0.05
 result.sort_values(by="p_value").reset_index(drop=True)
+# -
+# # Srování uvnitř jednotlivých stromů
+#
+# Pro každý strom rozseparujeme data podle dnů.
+
+# +
+target == 'Slope'
+trees = subdf["tree"].sort_values().drop_duplicates().tolist()
+
+for tree in trees:
+    fig, ax = plt.subplots(1,1,figsize=(15,5))
+    subdf = df_merged[df_merged["tree"]==tree]
+    subdf = subdf[subdf["pullNo"]!=0]
+    sns.boxplot(data=subdf, x='day', y=f'{target}_normalized', hue='type', ax=ax, boxprops={'alpha': 0.4})
+    sns.stripplot(data=subdf, x='day', y=f'{target}_normalized', hue='type', ax=ax, dodge=True)
+    ax.grid(axis='y')
+    ax.set(title=tree)
+    ax.legend(bbox_to_anchor=(1.12, 1))
+    ax.axhline(1,color='red')
+    [ax.axvline(x+.5,color='gray', lw=0.5) for x in ax.get_xticks()]
+
+
+# -
+
+
+# Deset měření, kde je poměr mezi následným a prvním zatáhnutím nejdále od jedničky. Deset extrémů z každého konce. Zajímá nás sloupec "Slope normalized", který je 
+# pro první zatáhnutí jedna a pro další zatáhnutí jsme věřili, že bude menší než jedna.
+
+df_merged.sort_values(by="Slope_normalized").tail(10)
+
+
+df_merged.sort_values(by="Slope_normalized").head(10)
+
+
+# Průměrná hodnota, jaké procento tuhosti je při druhém a dalších zatáhnutích (100% je první zatáhnutí).
+
+df_merged["Slope_normalized"].mean()
+
+# +
+
+import plotly.express as px
+fig = px.box(subdf, x="day", y="Slope_normalized", points="all", color='type', hover_data=["Independent","Dependent","Slope","measurement","pullNo"])
+# Nastavení osy x jako kategorie
+fig.update_layout(
+    xaxis=dict(
+        type='category'
+    )
+)
+fig.show()
 # -
 
 
