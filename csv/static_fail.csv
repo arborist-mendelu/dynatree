@@ -20,3 +20,7 @@ yellow,normal,BK21,M01,2023-07-17,0,"Inklinometr major jde výrazně přes vodor
 yellow,normal,BK21,M01,2023-07-17,1,"Inklinometr major jde výrazně přes vodorovnou osu a minor je velký. To znamená velký skok u celkové výchylky."
 yellow,normal,BK21,M01,2023-07-17,2,"Inklinometr major jde výrazně přes vodorovnou osu a minor je velký. To znamená velký skok u celkové výchylky."
 yellow,mraz,BK01,M02,2024-01-16,0,"Osy major a minor jsou srovnatelné, což je divné. Major by měla mít mnohem vyšší hodnoty."
+yellow,normal,2021-03-22,BK16,M01,2,"Žlutý inklinometr přestal měřit při posledním zatáhnutí."
+blue,den,2021-08-03,BK07,M01,0,"Major jde výrazně přes vodorovnou osu a vzorec pro celkový náklon dává nesmysly."
+blue,den,2021-08-03,BK07,M01,1,"Major jde výrazně přes vodorovnou osu a vzorec pro celkový náklon dává nesmysly."
+blue,den,2021-08-03,BK07,M01,2,"Major jde výrazně přes vodorovnou osu a vzorec pro celkový náklon dává nesmysly."
