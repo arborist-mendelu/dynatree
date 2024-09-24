@@ -231,6 +231,7 @@ def Page():
                                 solara.Text(f"Memory Usage: {memory.percent}%")
                                 solara.ProgressLinear(value=memory.percent, color='red')
                                 solara.Text(f"Memory Total: {memory.total/1024**3:.2f}GB")
+                                solara.Text(f"Cores: {psutil.cpu_count()}")
                                 solara.Text(f"Datum a čas: {date}")
                         solara.Button("Refresh", on_click=monitoring)
                 
