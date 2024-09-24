@@ -120,7 +120,7 @@ def Page():
     servername = os.environ['SERVER_NAME']
     if servername == "localhost":
         solara.lab.theme.themes.light.primary = "#006000"
-    elif servername == "um-bc201.mendleu.cz":
+    elif servername == "um-bc201.mendelu.cz":
         solara.lab.theme.themes.light.primary = "#000000"
     with solara.Sidebar():
         solara.Markdown("**Projekt DYNATREE**")
