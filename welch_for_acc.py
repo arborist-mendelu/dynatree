@@ -52,7 +52,7 @@ def do_welch_spectra(row):
         ans.plot(ax=ax)
         
     axs[0].set(ylim=(lb,ub))
-    axs[0].set(title = f"{m.day} {m.tree} {m.measurement} {probe}")
+    axs[0].set(title = f"{m.day} {m.tree} {m.measurement_type} {probe}")
     axs[1].set(yscale='log')    
     axs[1].grid()
     axs[1].legend(measurements)
