@@ -15,7 +15,8 @@ rule all:
         "../outputs/static_pull_removed_experiments.zip",
         "../outputs/FFT_csv_tukey.csv",
         "../outputs/fft_boxplots_for_probes_tukey.pdf",
-        "../outputs/static_pull_first_versus_other_pulls.html"
+        "../outputs/static_pull_first_versus_other_pulls.html",
+        "../outputs/static_pull_major_versus_total.html"
 
         
 rule measurement_notes:
@@ -340,4 +341,24 @@ rule static_1_versus_2_3:
         jupyter nbconvert --to html --execute static_pull_first_versus_other_pulls.ipynb --no-input
         rm static_pull_first_versus_other_pulls.ipynb
         mv static_pull_first_versus_other_pulls.html {output}
+        """
+
+rule static_major_verus_total:
+    """
+    Compares the slopes from momentum-force diagram for the major and total
+    angle.
+    """
+    input:
+        csv = "../outputs/anotated_regressions_static.csv",
+        script = "static_pull_Major_versus_total.py"
+    output:
+        "../outputs/static_pull_major_versus_total.html"
+    conda:
+        "dynatree"        
+    shell:
+        """
+        jupytext --to notebook {input.script}
+        jupyter nbconvert --to html --execute static_pull_Major_versus_total.ipynb --no-input
+        rm static_pull_Major_versus_total.ipynb
+        mv static_pull_Major_versus_total.html {output}
         """

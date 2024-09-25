@@ -29,7 +29,8 @@ def Page():
 """
 * Výstupy ze skriptů v projektu. Jsou zde soubory, které vznikají při běhu `snakemake` v adresáři
   `outputs`. 
-* Odkazy se sem přidávají ručně, tak všechno nemusí být aktuální
+* Odkazy se sem přidávají ručně, tak všechno nemusí být aktuální. Data se potom aktualizují
+  při `snakemake`.
 * Odkazy fungují i bez nutnosti zadávat heslo.
 """)
 

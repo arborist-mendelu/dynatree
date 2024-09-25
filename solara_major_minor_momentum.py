@@ -226,7 +226,7 @@ def Page():
                         prehled()
                 except:
                     pass
-        with solara.lab.Tab("Návod a komentáře"):
+        with solara.lab.Tab("Komentáře & dwnl."):
             with solara.Card(title="Návod"):
                 Help()
 
@@ -596,8 +596,21 @@ def Detail():
         pass
     plt.close('all')
 
-
+def stahni_csv(file, label="Download", msg=None):
+    with solara.Row():
+        solara.FileDownload(
+            pd.read_csv(file).to_csv(index=None), 
+            label=label,
+            filename=file.split("/")[-1])
+        solara.Text(msg)
+    
 def Help():
+    with solara.Card():
+        with solara.Column():
+            solara.Text("Použité parametry")
+            stahni_csv("csv/static_fail.csv", msg="Zkoušky klasifikované jako nepovedené")
+            stahni_csv("csv/static_checked_OK.csv", msg="Zkoušky klasifikované jako OK, i když se hodnoty liší od ostatních")
+            stahni_csv("csv/reset_inclinometers.csv", msg="Ručně vynulované inklinometry")
     solara.Markdown(
         """
 ### Práce
@@ -650,5 +663,6 @@ Pokud chceš dynamické měření brát jako statiku, použij přepínač "Use o
 * 2024-08-26: bereme do úvahy i den/noc/afterro/mraz
 * 2024-08-28: přepsáno pomocí tříd a OOP, mírná blbuvzdornost při volbě proměnných na osy s detailním grafem, kontrola dosupnosti optiky se promítá i do přepínačů
 * 2024-08-29: zařazeno pod jednu střechu s dalšími aplikacemi
+* 2024-09-?? polární graf, interaktivní grafy
 """
     )
