@@ -38,13 +38,14 @@ def do_welch_spectra(row):
     ub = 0
 
     for measurement in measurements:
-        if [measurement_type, day, tree, measurement] in failed:
-            continue
         m = lib_dynatree.DynatreeMeasurement(
             day=day, 
             tree=tree, measurement=measurement, 
             measurement_type=measurement_type
         )
+        if [measurement_type, day, tree, measurement] in failed:
+            print(f"Sikipping {measurement_type} {day} {tree} {measurement}")
+            continue
         sig = lib_FFT.DynatreeSignal(m, probe)
         lb = min(lb, sig.signal.min())
         ub = max(ub, sig.signal.max())
