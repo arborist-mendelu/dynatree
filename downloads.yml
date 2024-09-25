@@ -45,7 +45,7 @@ FFT_spectra.zip: Obrázky nepovedených experimentů. Spektra, která jsou vylou
 
 fft_boxplots_for_probes_tukey.pdf: Obrázky, přehled. Srovnání frekvencí, jak se u jednotlivých stromů měnila frekvence s roční dobou, číslem ořezu.
 
-welch.zip: Obrázky, welchovo spektrum. Obrázky s wechovým spektrem. dou vidět peaky při vyšší frekvenci, hladší křivka. 
+welch.pdf: Obrázky, welchovo spektrum. Obrázky s wechovým spektrem. Jdou vidět peaky při vyšší frekvenci, hladší křivka než z FFT. 
 
 ---
 title: "To všecho odnés čas?"

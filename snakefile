@@ -378,5 +378,5 @@ rule welch:
         python {input}
         cd ../temp/welch
 	montage BK*.png -tile 2x2 -geometry +0+0 welch.pdf
-        mv welch.zip ../../outputs
+        mv welch.pdf ../../outputs
         """
