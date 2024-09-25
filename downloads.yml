@@ -31,7 +31,7 @@ static_pull_major_versus_total.html: Porovnání směrnic z regresí, major vers
 
 
 ---
-title: "FFT, tukey window etc"
+title: "FFT, oscilace, etc"
 
 popis: 
     FFT analýza nově (k 2024-09-22), tj. automatické (doladit? připustit výjimky?) 
@@ -44,6 +44,8 @@ FFT_csv_tukey.csv: Data, výstupy z FFT analýzy. Bez podsamplování ACC, autom
 FFT_spectra.zip: Obrázky nepovedených experimentů. Spektra, která jsou vyloučena ze zpracování jako nepovedené experimenty. 
 
 fft_boxplots_for_probes_tukey.pdf: Obrázky, přehled. Srovnání frekvencí, jak se u jednotlivých stromů měnila frekvence s roční dobou, číslem ořezu.
+
+welch.zip: Obrázky, welchovo spektrum. Obrázky s wechovým spektrem. dou vidět peaky při vyšší frekvenci, hladší křivka. 
 
 ---
 title: "To všecho odnés čas?"
