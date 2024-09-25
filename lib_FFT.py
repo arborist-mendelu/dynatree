@@ -43,7 +43,10 @@ class DynatreeSignal:
         elif self.signal_source in ["Pt3", "Pt4"]:
             self.signal_full = self.measurement.data_optics_pt34[(self.signal_source, "Y0")]
             self.release_full = self.measurement.data_optics_pt34[(self.release_source, "Y0")]
-        self.dt = dt
+        if "a0" in self.signal_source:
+            self.dt = 0.0002
+        else:
+            self.dt = 0.01
         self.tukey = tukey
         self.manual_release_time = None
 

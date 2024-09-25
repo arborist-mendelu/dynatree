@@ -44,7 +44,7 @@ def do_welch_spectra(row):
             measurement_type=measurement_type
         )
         if [measurement_type, day, tree, measurement] in failed:
-            print(f"Sikipping {measurement_type} {day} {tree} {measurement}")
+            print(f"Skipping {measurement_type} {day} {tree} {measurement}")
             continue
         sig = lib_FFT.DynatreeSignal(m, probe)
         lb = min(lb, sig.signal.min())
