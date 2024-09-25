@@ -51,11 +51,12 @@ def do_welch_spectra(row):
         ans = lib_dynasignal.do_welch(pd.DataFrame(sig.signal),  nperseg=2**8)
         ans.plot(ax=ax)
         
-    axs[0].set(ylim=(lb,ub))
+    axs[0].set(ylim=(lb,ub), yabel="Acceleration", xlabel="Time / s")
     axs[0].set(title = f"{m.day} {m.tree} {m.measurement_type} {probe}")
-    axs[1].set(yscale='log')    
+    axs[1].set(yscale='log', ylabel="Power spectral density", xlabel="Freq / Hz")    
     axs[1].grid()
     axs[1].legend(measurements)
+    plt.tight_layout()
     
     return fig,axs
 
