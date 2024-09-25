@@ -17,7 +17,7 @@ rule all:
         "../outputs/fft_boxplots_for_probes_tukey.pdf",
         "../outputs/static_pull_first_versus_other_pulls.html",
         "../outputs/static_pull_major_versus_total.html",
-        "../outputs/welch.zip"
+        "../outputs/welch.pdf"
 
         
 rule measurement_notes:
@@ -366,7 +366,7 @@ rule static_major_verus_total:
 
 rule welch:
     output:
-        "../outputs/welch.zip"
+        "../outputs/welch.pdf"
     input:
         "welch_for_acc.py"
     conda:
@@ -376,7 +376,7 @@ rule welch:
         rm -r ../temp/welch || true
         mkdir ../temp/welch
         python {input}
-        cd ../temp
-        zip -r welch.zip welch
-        mv welch.zip ../outputs
+        cd ../temp/welch
+	montage BK*.png -tile 2x2 -geometry +0+0 welch.pdf
+        mv welch.zip ../../outputs
         """
