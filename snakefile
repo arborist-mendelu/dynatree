@@ -17,6 +17,7 @@ rule all:
         "../outputs/fft_boxplots_for_probes_tukey.pdf",
         "../outputs/static_pull_first_versus_other_pulls.html",
         "../outputs/static_pull_major_versus_total.html"
+        "../outputs/welch.zip"
 
         
 rule measurement_notes:
@@ -361,4 +362,21 @@ rule static_major_verus_total:
         jupyter nbconvert --to html --execute static_pull_Major_versus_total.ipynb --no-input
         rm static_pull_Major_versus_total.ipynb
         mv static_pull_Major_versus_total.html {output}
+        """
+
+rule welch:
+    output:
+        "../outputs/welch.zip"
+    input:
+        "welch_for_acc.py"
+    conda:
+        "dynatree"        
+    shell:
+        """
+        rm -r ../temp/welch || true
+        mkdir ../temp/welch
+        python {input}
+        cd ../temp
+        zip -r welch.zip welch
+        mv welch.zip ../outputs
         """
