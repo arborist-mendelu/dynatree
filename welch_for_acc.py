@@ -9,12 +9,12 @@ Created on Mon Sep 16 11:24:56 2024
 import lib_dynatree 
 import lib_dynasignal
 import lib_find_measurements
-from scipy import interpolate, signal
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 import matplotlib
+import lib_FFT
 
 
 df = lib_find_measurements. get_all_measurements(method='all', type='all')
@@ -35,40 +35,53 @@ end=10000
 def do_welch_spectra(m):
     fig, axs = plt.subplots(2,1, figsize=(12,6))
     dt = 0.0002
-    tukey_alpha = 0.2
-    
-    data = m.data_acc5000
-    cols = [i for i in data.columns if "z" in i]
-    data = data.loc[:,cols]
-    
-    a = data.loc[:,'a03_z'].copy()
-    a.loc[:20] = 0
-    release = a.idxmax()
-    data = data.loc[release:,:]
-    data = data - data.mean()
-    
-    length = data.index[-1]-data.index[0]
-    if length < 60:
-        df_ = pd.DataFrame(0, columns=data.columns,
-                          index = np.arange(0,60-length,dt)+data.index[-1]+dt    
-                          )
-    
-        data = pd.concat([data,df_])
+    probe = "a03_z"
 
-    tukey_window = signal.windows.tukey(len(data), alpha=tukey_alpha, sym=False)
-    data = data.mul(tukey_window, axis=0)
-    ax = axs[0]
-    data.plot(ax=ax)
-    ax.set(title = str(m).replace("Dynatree measurement",""), xlabel="Time / s", 
-           ylabel = "Acceleration / (m*s^-2)")
-    ax.grid()
+    sig = lib_FFT.DynatreeSignal(m, probe)
+
+    ax = axs[0]    
+    sig.signal_full.plot(ax=ax)
+    sig.signal.plot(ax=ax)
+    ax.set(ylim=(sig.signal.min(), sig.signal.max()))
+    ax.set(title = f"{m.day} {m.tree} {m.measurement} {probe}")
 
     ax = axs[1]
-    welch = lib_dynasignal.do_welch(data, nperseg=2**15)
-    welch.loc[1:end,:].plot(ax=ax)
-    ax.set(yscale='log')
-    ax.set(xlabel="Freq", ylabel="Power spectral density")
+    ans = lib_dynasignal.do_welch(pd.DataFrame(sig.signal),  nperseg=2**8)
+    ans.plot(ax=ax)
+    ax.set(yscale='log')    
     ax.grid()
+    # data = m.data_acc5000
+    # cols = [i for i in data.columns if "z" in i]
+    # data = data.loc[:,cols]
+    
+    # a = data.loc[:,'a03_z'].copy()
+    # a.loc[:20] = 0
+    # release = a.idxmax()
+    # data = data.loc[release:,:]
+    # data = data - data.mean()
+    
+    # length = data.index[-1]-data.index[0]
+    # if length < 60:
+    #     df_ = pd.DataFrame(0, columns=data.columns,
+    #                       index = np.arange(0,60-length,dt)+data.index[-1]+dt    
+    #                       )
+    
+    #     data = pd.concat([data,df_])
+
+    # tukey_window = signal.windows.tukey(len(data), alpha=tukey_alpha, sym=False)
+    # data = data.mul(tukey_window, axis=0)
+    # ax = axs[0]
+    # data.plot(ax=ax)
+    # ax.set(title = str(m).replace("Dynatree measurement",""), xlabel="Time / s", 
+    #        ylabel = "Acceleration / (m*s^-2)")
+    # ax.grid()
+
+    # ax = axs[1]
+    # welch = lib_dynasignal.do_welch(data, nperseg=2**15)
+    # welch.loc[1:end,:].plot(ax=ax)
+    # ax.set(yscale='log')
+    # ax.set(xlabel="Freq", ylabel="Power spectral density")
+    # ax.grid()
     return fig,axs
 
 #%%
@@ -83,6 +96,8 @@ for i,row in df.iterrows():
     fig.savefig(filename)
     pbar.update(1)
     plt.close('all')
+    break
+pbar.close()
     
     
 #%%
