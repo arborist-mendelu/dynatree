@@ -63,11 +63,9 @@ def do_welch_spectra(row):
 
 
 
-#%%
-
 matplotlib.use('Agg')
-pbar = tqdm(total=len(df))
 tdf = df[["type","day","tree"]].copy().drop_duplicates()
+pbar = tqdm(total=len(tdf))
 
 for i,row in tdf.iterrows():
     fig, ax = do_welch_spectra(row)
