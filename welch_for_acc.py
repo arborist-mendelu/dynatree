@@ -18,6 +18,11 @@ import lib_FFT
 df = lib_find_measurements. get_all_measurements(method='all', type='all')
 df = df[df['measurement'] != 'M01']
 
+probe = "a03_z"
+
+failed_df = pd.read_csv("csv/FFT_failed.csv")
+failed = failed_df[failed_df["probe"]==probe].drop(columns=["probe"]).values.tolist()
+
 def do_welch_spectra(row):
     
     measurement_type, day, tree = row
@@ -29,11 +34,12 @@ def do_welch_spectra(row):
 
     fig, axs = plt.subplots(2,1, figsize=(12,6))
     dt = 0.0002
-    probe = "a03_z"
     lb = 0
     ub = 0
 
     for measurement in measurements:
+        if [measurement_type, day, tree, measurement] in failed:
+            continue
         m = lib_dynatree.DynatreeMeasurement(
             day=day, 
             tree=tree, measurement=measurement, 
