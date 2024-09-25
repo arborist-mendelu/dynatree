@@ -69,7 +69,7 @@ pbar = tqdm(total=len(tdf))
 
 for i,row in tdf.iterrows():
     fig, ax = do_welch_spectra(row)
-    filename = f"../temp/welch/{row['tree']}_{row['type']}_{row['day']}.png"
+    filename = f"../temp/welch/{row['tree']}_{row['day']}_{row['type']}.png"
     fig.savefig(filename)
     pbar.update(1)
     plt.close('all')
