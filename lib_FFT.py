@@ -88,6 +88,9 @@ class DynatreeSignal:
     @property
     def main_peak(self):
         return self.fft.loc[peak_min:peak_max].idxmax()
+    
+    # def welch(self, nperseg=2**13):
+        
 
 df_failed_FFT_experiments=pd.read_csv("csv/FFT_failed.csv")
     

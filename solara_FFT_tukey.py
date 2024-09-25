@@ -59,6 +59,7 @@ df_fft_all = df_fft_all.loc[:,[
 button_color = solara.reactive('primary')
 probe = solara.reactive("Elasto(90)")
 restrict = 50 # cut the FFT at 50Hz
+restrict = 5000
 tab_value = solara.reactive(2)
 manual_release_time = solara.reactive(0.0)
 
@@ -449,6 +450,8 @@ applyGradient();
                             )
                     except:
                         pass
+        with solara.lab.Tab("Welch"):
+            pass
         with solara.lab.Tab("Popis & Download"):
             with solara.Card(style={'background-color':"#FBFBFB"}):
                 solara.Markdown("**Downloads**")

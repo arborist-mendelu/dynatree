@@ -28,6 +28,10 @@ df = df[df['measurement'] != 'M01']
 #     day=day, tree=tree, measurement=measurement, measurement_type=measurement_type
 #     )
 
+
+end=100
+end=10000
+
 def do_welch_spectra(m):
     fig, axs = plt.subplots(2,1, figsize=(12,6))
     dt = 0.0002
@@ -60,12 +64,13 @@ def do_welch_spectra(m):
     ax.grid()
 
     ax = axs[1]
-    welch = lib_dynasignal.do_welch(data, nperseg=2**13)
-    welch.loc[1:100,:].plot(ax=ax)
+    welch = lib_dynasignal.do_welch(data, nperseg=2**15)
+    welch.loc[1:end,:].plot(ax=ax)
     ax.set(yscale='log')
     ax.set(xlabel="Freq", ylabel="Power spectral density")
     ax.grid()
     return fig,axs
+
 #%%
 
 matplotlib.use('Agg')

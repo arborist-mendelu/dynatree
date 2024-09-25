@@ -149,11 +149,13 @@ def prehled():
             solara.display(df_checked[df_checked["tree"]==t])
     solara.FileDownload(graphs_regressions.read_data().to_csv(), filename="static_dynatree.csv", label="Download data")
 
+sort_ascending = solara.reactive(True)
+
 @solara.component
 def normalized_slope():
     df_merged = static_lib_pull_comparison.df_merged
     subdf = df_merged[df_merged["pullNo"]!=0].loc[:,
-        ["pullNo","Slope_normalized","tree", "Dependent","type","day"]]
+        ["type","day","tree","Dependent","pullNo","Slope_normalized"]]
     subdf = subdf[subdf["tree"]==s.tree.value].sort_values(by="day")
     cat_order = subdf["day"].drop_duplicates().tolist()
     fig = plx.box(
@@ -169,7 +171,22 @@ def normalized_slope():
         template =  "plotly_white", 
         )
     fig.update_layout(xaxis=dict(type='category'))
-    solara.FigurePlotly(fig)    
+    solara.FigurePlotly(fig)  
+#     solara.Text(
+# """
+# V tabulce jsou data seřazená podle normalizovnaé směrnice. 
+# Kliknutím na buňku se zobrazí link, který nahraje meření a přístroj do 
+# vedlejší záložky 'Volba proměnných a regrese'. Automaticky se zobrazí 
+# časový průběh, možná budeš chtít zatrhnout 'Ignore time restriction', 
+# aby se zobrazil celý pokus a ne jenom natahování.
+# """)
+    solara.Switch(label="řadit od nejmenšího", value=sort_ascending)
+    subdf = subdf.sort_values(by="Slope_normalized", ascending=sort_ascending.value)
+    solara.DataFrame(
+        subdf,
+        items_per_page=20,
+        # cell_actions=cell_actions
+        )
 
 @solara.component
 def Page():

@@ -28,12 +28,13 @@ def do_fft_image(signal_fft, dt, title="", restrict = None):
     ymax = df_fft.to_numpy().max()
     figFFT = px.line(df_fft, height = 400, width=1200,
                           title=f"FFT spectrum "+title, 
-                          log_y=True, range_x=[0,50], range_y=[ymax/100000, ymax*2]
+                          log_y=True, #range_x=[0,50], 
+                          range_y=[ymax/100000, ymax*2]
     )
     figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
     return {'fig': figFFT, 'df':df_fft}
 
-def do_welch(signal_welch, nperseg=2**14, fs = 5000):
+def do_welch(signal_welch, nperseg=2**20, fs = 5000):
     f, Pxx = signal.welch(x=signal_welch.iloc[:,0], fs=fs, nperseg=nperseg)
     df_welch = pd.DataFrame(index=f, data=Pxx, columns=[signal_welch.columns[0]])
     if len(signal_welch.columns)==1:
@@ -43,16 +44,16 @@ def do_welch(signal_welch, nperseg=2**14, fs = 5000):
         df_welch.loc[:,col] = Pxx
     return df_welch
 
-def do_welch_image(signal_fft, title="", restrict = None, nperseg=2**14, fs = 5000):
-    # print("welch enter", signal_fft.columns)
+def do_welch_image(signal_fft, title="", restrict = None, nperseg=2**10, fs = 5000):
     df_fft = do_welch(signal_fft, nperseg=nperseg, fs=fs)
     # print(df_fft.columns)
     if restrict is not None:
         df_fft = df_fft.loc[:restrict,:]
-    ymax = df_fft.to_numpy().max()
+    # ymax = df_fft.to_numpy().max()
     figFFT = px.line(df_fft, height = 400, width=1200,
                           title=f"Power spectrum "+title, 
-                          log_y=True, range_x=[0,50], range_y=[ymax/100000, ymax*2]
+                          log_y=True, #range_x=[0,50], 
+                          # range_y=[ymax/10000, ymax*2]
     )
     figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="Power")
     return {'fig': figFFT, 'df':df_fft}
