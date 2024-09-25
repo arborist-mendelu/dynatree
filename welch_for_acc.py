@@ -73,7 +73,6 @@ for i,row in tdf.iterrows():
     fig.savefig(filename)
     pbar.update(1)
     plt.close('all')
-    break
 
 pbar.close()
     
