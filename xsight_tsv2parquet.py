@@ -17,6 +17,7 @@ import pandas as pd
 import os.path
 import glob
 import re
+import config 
 
 def read_tsv_files(cesta, prefix="/mnt/ERC/ERC"):
     """
@@ -70,7 +71,7 @@ def main():
     else:
         print("File processing skipped.")
         return None
-    df_tsv = pd.read_csv("csv/tsv_dirs.csv")
+    df_tsv = pd.read_csv(config.file["tsv_dirs"])
     for index, row in df_tsv.iterrows():
         if "30fps" in row["directory"]:
             print (f"Skipping 30fps {row['directory']}")
