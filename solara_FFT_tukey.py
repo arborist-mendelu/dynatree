@@ -21,6 +21,7 @@ import seaborn as sns
 # import logging
 import time
 import os
+import config
 
 # lib_dynatree.logger.setLevel(logging.INFO)
 
@@ -43,9 +44,9 @@ filelogger.addHandler(filehandler)
 
 
 pd.options.display.float_format = '{:.3f}'.format
-df_komentare = pd.read_csv("csv/FFT_comments.csv", index_col=[0,1,2,3,4])
-df_failed = pd.read_csv("csv/FFT_failed.csv").values.tolist()
-df_fft_long = pd.read_csv("../outputs/FFT_csv_tukey.csv")
+df_komentare = pd.read_csv(config.file['FFT_comments'], index_col=[0,1,2,3,4])
+df_failed = pd.read_csv(config.file["FFT_failed"]).values.tolist()
+df_fft_long = pd.read_csv(config.file["outputs/FFT_csv_tukey"])
 df_fft_all = df_fft_long.pivot(
     index = ["type","day","tree","measurement"],
     values="peak",
@@ -207,7 +208,7 @@ f"""
 fft_freq = solara.reactive("")
 save_button_color = solara.reactive("none")
 
-df_manual_peaks = solara.reactive(pd.read_csv("csv/FFT_manual_peaks.csv", index_col=[0,1,2,3,4], dtype={'peaks':str}).fillna(""))
+df_manual_peaks = solara.reactive(pd.read_csv(config.file["FFT_manual_peaks"], index_col=[0,1,2,3,4], dtype={'peaks':str}).fillna(""))
 df_manual_peaks.value = df_manual_peaks.value.sort_index()
 
 def save_peaks():
@@ -469,8 +470,8 @@ applyGradient();
                     solara.FileDownload(df_fft_all.to_csv(), filename="fft_dynatree_wide.csv", label="Peaks in wide format")
                     solara.FileDownload(df_komentare.to_csv(), filename="FFT_comments.csv", label="Comments")
                     solara.FileDownload(pd.DataFrame(df_failed, columns=["type","day","tree","mesurement","probe"]).to_csv(index=None), filename="FFT_failed.csv", label="Failed")
-                    solara.FileDownload(pd.read_csv("csv/FFT_release.csv").to_csv(index=None), filename="FFT_release.csv", label="Manual release times")
-                    solara.FileDownload(pd.read_csv("csv/FFT_manual_peaks.csv").to_csv(index=None), filename="FFT_manual_peaks.csv", label="Manual peaks")
+                    solara.FileDownload(pd.read_csv(config.file["FFT_release"]).to_csv(index=None), filename="FFT_release.csv", label="Manual release times")
+                    solara.FileDownload(pd.read_csv(config.file["FFT_manual_peaks"]).to_csv(index=None), filename="FFT_manual_peaks.csv", label="Manual peaks")
                 
             solara.Markdown(
 f"""

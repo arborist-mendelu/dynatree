@@ -14,13 +14,14 @@ import pandas as pd
 from tqdm import tqdm
 import matplotlib
 import lib_FFT
+import config
 
 df = lib_find_measurements. get_all_measurements(method='all', type='all')
 df = df[df['measurement'] != 'M01']
 
 probe = "a03_z"
 
-failed_df = pd.read_csv("csv/FFT_failed.csv")
+failed_df = pd.read_csv(config.file["FFT_failed"])
 failed = failed_df[failed_df["probe"]==probe].drop(columns=["probe"]).values.tolist()
 
 def do_welch_spectra(row):
@@ -44,7 +45,7 @@ def do_welch_spectra(row):
             measurement_type=measurement_type
         )
         if [measurement_type, day, tree, measurement] in failed:
-            print(f"Skipping {measurement_type} {day} {tree} {measurement}")
+            #print(f"Skipping {measurement_type} {day} {tree} {measurement}")
             continue
         sig = lib_FFT.DynatreeSignal(m, probe)
         lb = min(lb, sig.signal.min())

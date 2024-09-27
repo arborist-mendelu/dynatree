@@ -10,9 +10,10 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import config
 
 def get_data(probe):
-    df = pd.read_csv("csv/solara_FFT.csv")
+    df = pd.read_csv(config.file["solara_FFT"])
     if probe in ["Inclino(80)", "Inclino(81)"]:
     
         df_axes = {}

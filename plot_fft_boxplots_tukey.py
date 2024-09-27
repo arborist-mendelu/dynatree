@@ -10,21 +10,21 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import config
 
 # df_long['diff'] = df_long['ori']-df_long['peak']
 #%%
 
 def get_data():
-    df_long = pd.read_csv("../outputs/FFT_csv_tukey.csv")
     # fix by manual peaks
-    df_fix = pd.read_csv("csv/FFT_manual_peaks.csv")
+    df_fix = pd.read_csv(config.file["FFT_manual_peaks"])
     df_fix["type"] = df_fix["measurement_type"]
     df_fix['peak'] = df_fix['peaks'].str.strip()  # Odstranění vedoucí mezery
     df_fix['peak'] = df_fix['peak'].str.split().str[0]  # Rozdělení a ponechání první části
     df_fix['peak'] = df_fix['peak'].astype(float)  # Převedení na float
     df_fix = df_fix.drop(['peaks'], axis=1)
     
-    df_long = pd.read_csv("../outputs/FFT_csv_tukey.csv")
+    df_long = pd.read_csv(config.file["outputs/FFT_csv_tukey"])
     df_fix = df_fix.set_index(['type', 'day', 'tree', 'measurement', 'probe'])
     df_long = df_long.set_index(['type', 'day', 'tree', 'measurement', 'probe'])
     # df_long['ori'] = df_long['peak']

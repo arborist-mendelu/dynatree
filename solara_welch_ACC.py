@@ -118,7 +118,11 @@ def Page():
         with solara.lab.Tab("Welch"):
             if nakresli.finished:
                 # solara.FigureMatplotlib(figB, format='png')
-                solara.SliderInt(label="n (where nperseg=2**n)", min=6, max=12, value=n)
+                # with solara.Column(align='left'):
+                with solara.Row():
+                    solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
+                    solara.ToggleButtonsSingle(values=list(range(6,13)), value=n, on_value=nakresli)
+                    
                 solara.FigurePlotly(figB)
                 # solara.FigurePlotly(figD)
         with solara.lab.Tab("Popis"):

@@ -52,12 +52,12 @@ def Page():
                     popis = _[0]
                     detail = ". ".join(_[1:])
                     with solara.Column(gap='20px'):
-                        lightgray = "#F4F4FF"
+                        lightgray = "#F4F4F4"
                         with solara.Card(style={"background-color": lightgray}):
                             with solara.Row(style={"background-color": lightgray}):
                                 solara.Button(
                                     label=f"Download ({velikost_souboru_v_mb('../outputs/'+k)})",
-                                    attributes={"href": f"/static/public/{k}", "target": "_blank"}, text=True, outlined=True)
+                                    attributes={"href": f"/static/public/{k}", "target": "_blank"}, color='primary')
                                 solara.Markdown(f"**{popis}.** {detail}")
 
 

@@ -19,3 +19,12 @@ file["outputs/regressions_static"] = "../outputs/regressions_static.csv"
 file['outputs/anotated_regressions_static'] = "../outputs/anotated_regressions_static.csv"
 
 file["tsv_dirs"] = "csv/tsv_dirs.csv"
+
+file["FFT_release"] = "csv/FFT_release.csv"
+file["FFT_failed"] = "csv/FFT_failed.csv"
+
+file['outputs/FFT_csv_tukey'] = "../outputs/FFT_csv_tukey.csv"
+file['FFT_manual_peaks'] = "csv/FFT_manual_peaks.csv"
+file['solara_FFT'] = "csv/solara_FFT.csv"
+file['FFT_comments'] = "csv/FFT_comments.csv"
+file['FFT_failed'] = "csv/FFT_failed.csv"

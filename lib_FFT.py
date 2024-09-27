@@ -18,13 +18,13 @@ import resource
 import matplotlib
 import multi_handlers_logger as mhl
 import logging
-
+import config
 
 length = 60  # the length of the signal
 # todo: make min and max different for each tree
 peak_min = .1 # do not look for the peak smaller than this value
 peak_max = 0.7 # do not look for the peak larger than this value
-df_manual_release_times = pd.read_csv("csv/FFT_release.csv", index_col=[0,1,2,3,4])
+df_manual_release_times = pd.read_csv(config.file["FFT_release"], index_col=[0,1,2,3,4])
 
 class DynatreeSignal:
 
@@ -95,7 +95,7 @@ class DynatreeSignal:
     # def welch(self, nperseg=2**13):
         
 
-df_failed_FFT_experiments=pd.read_csv("csv/FFT_failed.csv")
+df_failed_FFT_experiments=pd.read_csv(config.file["FFT_failed"])
     
 def process_one_probe(
         day='2021-03-22', tree='BK01', measurement='M03', measurement_type='normal', probe='Elasto(90)',

@@ -12,7 +12,7 @@ import pandas as pd
 import config
 
 df = pd.read_csv(config.file["outputs/regressions_static"], index_col=0)
-df_bad = pd.read_csv(config.file["static_fail.csv"])
+df_bad = pd.read_csv(config.file["static_fail"])
 
 dfs = {}
 for color in ["blue","yellow"]:
