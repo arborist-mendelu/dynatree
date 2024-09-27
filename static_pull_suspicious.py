@@ -11,10 +11,10 @@ import lib_dynatree
 import static_pull
 import matplotlib.pyplot as plt
 import matplotlib
+import config
 
 
-
-df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
+df = pd.read_csv(config.file["outputs/anotated_regressions_static"], index_col=0)
 df = df.dropna(subset=["Independent","Dependent"],how='all')
 df = df[df["lower_cut"]==0.3]
 df = df.dropna(how='all', axis=0)

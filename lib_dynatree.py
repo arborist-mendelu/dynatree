@@ -14,7 +14,7 @@ import glob
 import os
 from functools import wraps, lru_cache, cached_property
 import time
-
+import config
 # 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -46,32 +46,32 @@ except:
     logger.error("Log file not available for writing. Logs are on screen only.")
 
 df_scale_factors = pd.read_csv(
-    "csv/scale_factors.csv", index_col=[0,1,2]
+    config.file["scale_factors"], index_col=[0,1,2]
     ).sort_index()
 df_reset_inclinometers = pd.read_csv(
-    "csv/reset_inclinometers.csv", index_col=[0,1,2,3]
+    config.file["reset_inclinometers"], index_col=[0,1,2,3]
     ).sort_index()
 
 
-def get_notes():
-    """
-    Je potreba opracvit pripady, kdy misto Measurement je Measurement after 
-    RO nebo neco podobneho.
-    """
-    notes = pd.read_csv("csv_output/measurement_notes.csv", index_col=0)
-    notes['day'] = notes['day'].str.split("_").str[0]
+# def get_notes():
+#     """
+#     Je potreba opracvit pripady, kdy misto Measurement je Measurement after 
+#     RO nebo neco podobneho.
+#     """
+#     notes = pd.read_csv("csv_output/measurement_notes.csv", index_col=0)
+#     notes['day'] = notes['day'].str.split("_").str[0]
     
-    # # Přidání nuly ve sloupci 'measurement' (M1 -> M01)
-    notes['measurement'] = notes['measurement'].str.replace('M(\d)', lambda x: f"M0{x.group(1)}", regex=True)
+#     # # Přidání nuly ve sloupci 'measurement' (M1 -> M01)
+#     notes['measurement'] = notes['measurement'].str.replace('M(\d)', lambda x: f"M0{x.group(1)}", regex=True)
     
-    # # Transformace sloupce 'tree' (1 -> BK01)
-    notes['tree'] = notes['tree'].astype(str).str.zfill(2)
-    notes['tree'] = 'BK' + notes['tree']
+#     # # Transformace sloupce 'tree' (1 -> BK01)
+#     notes['tree'] = notes['tree'].astype(str).str.zfill(2)
+#     notes['tree'] = 'BK' + notes['tree']
     
-    notes = notes.set_index(['day', 'measurement', 'tree'])
-    notes = notes.dropna(how='all').fillna("")
-    notes["remark"] = notes["remark1"] + " " + notes["remark2"]
-    return notes
+#     notes = notes.set_index(['day', 'measurement', 'tree'])
+#     notes = notes.dropna(how='all').fillna("")
+#     notes["remark"] = notes["remark1"] + " " + notes["remark2"]
+#     return notes
 
 # notes = get_notes()
 
@@ -369,7 +369,8 @@ def find_finetune_synchro(date, tree, measurement, cols="delta time"):
         tree = f"BK{tree}"
     if not "M" in str(measurement):
         measurement = f"M0{measurement}"
-    df = pd.read_csv("csv/synchronization_finetune_inclinometers_fix.csv",header=[0,1], index_col=[0,1,2])     
+    df = pd.read_csv(config.file["synchronization_finetune_inclinometers_fix"],
+                     header=[0,1], index_col=[0,1,2])     
     df = df.sort_index()
     if not (date,tree,measurement) in df.index:
         if cols=="delta time":
@@ -466,7 +467,7 @@ def fix_inclinometers_sign(df_, measurement_type, day, tree):
     Fix the sign of the inclinometer. The function is used to ensure that 
     major axis has positive values of inclination.
     """
-    df_scale_factors = pd.read_csv("csv/scale_factors.csv", index_col=[0,1,2]
+    df_scale_factors = pd.read_csv(config.file["scale_factors"], index_col=[0,1,2]
                                    ).sort_index()
     df = df_.copy()
     coords = (measurement_type,day,tree)

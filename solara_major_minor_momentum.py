@@ -25,6 +25,8 @@ import static_lib_pull_comparison
 import plotly.graph_objects as go
 DATA_PATH = "../data"
 
+import config
+
 tightcols = {'gap': "0px"}
 regression_settings = {'color': 'gray', 'alpha': 0.5}
 
@@ -138,8 +140,8 @@ def prehled():
     # with solara.Row():
     #     solara.Button("Update Page", on_click=ShowRegressionsHere)
     images = graphs_regressions.main(trees=[s.tree.value])
-    df_failed = pd.read_csv("csv/static_fail.csv")
-    df_checked = pd.read_csv("csv/static_checked_OK.csv")
+    df_failed = pd.read_csv(config.file['static_fail'])
+    df_checked = pd.read_csv(config.file['static_checked_OK'])
     for t,f in images.items():
         with solara.Card():
             solara.FigurePlotly(f)

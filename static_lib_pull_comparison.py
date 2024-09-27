@@ -7,6 +7,7 @@ Created on Tue Sep 24 20:47:57 2024
 """
 
 import pandas as pd
+import config
 
 def add_leaves_info(df_):
     df = df_.copy()
@@ -29,7 +30,7 @@ def add_leaves_info(df_):
     df.loc[idx,"reductionNo"]=2
     return df
 
-df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
+df = pd.read_csv(config.file["outputs/anotated_regressions_static"], index_col=0)
 df = df.dropna(subset=["Independent","Dependent"],how='all')
 df = df[df["lower_cut"]==0.3]
 df = df.dropna(how='all', axis=0)

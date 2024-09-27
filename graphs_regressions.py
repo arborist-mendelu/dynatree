@@ -28,6 +28,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import lib_dynatree
+import config
 
 # ['2021-03-22',
 #  '2021-06-29',
@@ -53,7 +54,7 @@ def read_data():
     days_after_first_reduction = ['2024-01-16', '2024-04-10', '2024-09-02']
     
     # Načtení a vyčištění dat
-    df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
+    df = pd.read_csv(config.file["outputs/anotated_regressions_static"], index_col=0)
     
     df['evaluation'] = df.apply(lambda row: 1 if row['failed'] 
                                 else (2 if row['R^2'] < 0.5 else 0), axis=1)

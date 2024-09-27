@@ -26,6 +26,7 @@ import logging
 lib_dynatree.logger.setLevel(logging.ERROR)
 
 import multi_handlers_logger as mhl
+import config
 
 def read_tree_configuration():
     file_path = "../data/Popis_Babice_VSE_13082024.xlsx"
@@ -311,7 +312,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         return fig
 
 # csv_pull = pd.read_csv("csv/angles_from_pulling.csv", index_col=[0,1,2])
-csv_measure = pd.read_csv("csv/angles_measured.csv", index_col=[0,1,2])
+csv_measure = pd.read_csv(config.file["angles_measured"], index_col=[0,1,2])
 def find_rope_angle(measurement_type, day, tree):
     """
     Find rope angle. Try to match the data to the sheet "Hromadná tabulka"

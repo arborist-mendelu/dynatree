@@ -9,9 +9,10 @@ Adds info about failed static pullings data.
 """
 
 import pandas as pd
+import config
 
-df = pd.read_csv("../outputs/regressions_static.csv", index_col=0)
-df_bad = pd.read_csv("csv/static_fail.csv")
+df = pd.read_csv(config.file["outputs/regressions_static"], index_col=0)
+df_bad = pd.read_csv(config.file["static_fail.csv"])
 
 dfs = {}
 for color in ["blue","yellow"]:
@@ -38,5 +39,5 @@ df_combined['failed'] = df_combined['reason'].notna()
 df_combined['reason'] = df_combined['reason'].fillna('')
 
 # Výsledná tabulka
-df_combined[df_combined["failed"]]
-df_combined.to_csv("../outputs/anotated_regressions_static.csv")
+# df_combined[df_combined["failed"]]
+df_combined.to_csv(config.file["outputs/anotated_regressions_static"])
