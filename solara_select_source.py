@@ -54,6 +54,12 @@ def resetuj(x=None):
     measurement.set(measurements.value[0])
 
 @solara.component
+def Selection_trees_only(tree_action = lambda x:None):
+    with solara.Card(title="Tree choice"):
+        solara.ToggleButtonsSingle(value=tree, values=list(trees.value),
+                                   on_value=tree_action)
+
+@solara.component
 def Selection(
        method_action = get_measurements_list,
        day_action = resetuj,

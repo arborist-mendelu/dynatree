@@ -90,7 +90,7 @@ def read_data():
     df["state"] = df["leaves"].astype(str) + ", " +df["reductionNo"].astype(str)
     return df
 
-def main(remove_failed=False, trees=None):
+def main(remove_failed=False, trees=None, width=1000, height=500):
     df = read_data()        
     if trees is None:
         trees = df["tree"].drop_duplicates().values
@@ -112,7 +112,7 @@ def main(remove_failed=False, trees=None):
                          title = f"Slope in {i} versus {d}")
             for trace in f[I]['data']:
                 fig.add_trace(trace, row=1, col=1+I)
-        fig.update_layout(height=400, width=1200, title_text=f"Tree {tree}")
+        fig.update_layout(height=height, width=width, title_text=f"Tree {tree}")
         fig.update_layout(showlegend=False, template =  "plotly_white",)
         f_ans[tree] = fig
     return f_ans

@@ -306,8 +306,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
             ax.plot(j["Force(100)"], lw=4)
         ax.legend(["Síla", "Náběh síly", "Rozmezí 30 až 90\nprocent max."])
         ax.set(xlabel="Time", ylabel="Force",
-               title=f"Static {self.day} {self.tree} {
-                   self.measurement} {self.measurement_type}"
+               title=f"Static {self.day} {self.tree} {self.measurement} {self.measurement_type}"
                )
         return fig
 

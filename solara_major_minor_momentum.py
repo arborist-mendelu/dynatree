@@ -129,6 +129,8 @@ styles_css = """
 def prehled():
     solara.Markdown(
 """
+**Přehled dat pro jednotlivé veličiny a stromy**
+
 * Tady jsou směrnice z regresí M/blue, M/yellow a M_Elasto/Elasto. Pokud nějaká
   hodnota ulítává, je možné, že inklinometr nebo extenzometr špatně měřil. V takovém případě se 
   kontroluje asi časový průběh příslušného přístroje.
@@ -139,7 +141,7 @@ def prehled():
         )
     # with solara.Row():
     #     solara.Button("Update Page", on_click=ShowRegressionsHere)
-    images = graphs_regressions.main(trees=[s.tree.value])
+    images = graphs_regressions.main(trees=[s.tree.value], width=s.width.value, height=s.height.value)
     df_failed = pd.read_csv(config.file['static_fail'])
     df_checked = pd.read_csv(config.file['static_checked_OK'])
     for t,f in images.items():
@@ -152,6 +154,31 @@ def prehled():
     solara.FileDownload(graphs_regressions.read_data().to_csv(), filename="static_dynatree.csv", label="Download data")
 
 sort_ascending = solara.reactive(True)
+
+@solara.component
+def slope_trend():
+    df = static_lib_pull_comparison.df
+    dependent = probe.value
+    filtered_df = df[df['Dependent'] == dependent]
+    filtered_df = filtered_df[filtered_df["tree"]==s.tree.value]
+    subdf = filtered_df.sort_values(by="day")
+    cat_order = subdf["day"].drop_duplicates().tolist()
+    
+    # Vykreslení boxplotu
+    fig = plx.box(
+        filtered_df,
+        x='day',                # Kategorická osa X
+        y='Slope',             # Hodnota pro osy Y
+        color='type',          # Barvení podle sloupce 'type'
+        title=f'Slope by Day and Type, tree {s.tree.value}, slope for momentum and {probe.value}',
+        category_orders={"day": cat_order},
+        template =  "plotly_white", 
+        hover_data=["tree","type","day","pullNo", "Dependent"],
+        points='all', 
+    )
+    fig.update_layout(xaxis=dict(type='category'))
+    solara.FigurePlotly(fig)
+    solara.DataFrame(filtered_df.sort_values(by="Slope"))
 
 @solara.component
 def normalized_slope():
@@ -190,17 +217,26 @@ def normalized_slope():
         # cell_actions=cell_actions
         )
 
+probe = solara.reactive("Elasto-strain")
+probes = ["Elasto-strain", "blue", "blueMaj", "yellow", "yellowMaj"]
+
 @solara.component
 def Page():
         
     solara.Title(title)
     solara.Style(styles_css)
     with solara.Sidebar():
-        Selection()
-        if tab_index.value in [3,4]:
+        if tab_index.value in [3,4,5]:
+            s.Selection_trees_only()
+        if tab_index.value == 5:
+            solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
+        elif tab_index.value != 6:
+            Selection()
+
+        if tab_index.value in [3,4,5]:
             s.ImageSizes()
             s.width.value = 1200
-    with solara.lab.Tabs(value=tab_index):
+    with solara.lab.Tabs(value=tab_index, vertical=True):
         with solara.lab.Tab("Grafy"):
             with solara.Card():
                 try:
@@ -227,6 +263,8 @@ def Page():
             with solara.Card():
                 solara.Markdown(
 """
+**Srovnání následujících zatáhnutí s prvním**
+
 * V grafech je podíl směrnice z druhého nebo třetího zatáhnutí  směrnice z prvního zatáhnutí. Toto je v grafu vedeno jako Slope_normalized.
 * Pokud věříme, že při první zatáhnutí je systém tužší, měl by podíl být stabilně pod jedničkou.
 * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
@@ -245,6 +283,10 @@ def Page():
                         prehled()
                 except:
                     pass
+        with solara.lab.Tab("Trend"):
+            with solara.Column():
+                if tab_index.value == 5:
+                    slope_trend()
         with solara.lab.Tab("Komentáře & dwnl."):
             with solara.Card(title="Návod"):
                 Help()
