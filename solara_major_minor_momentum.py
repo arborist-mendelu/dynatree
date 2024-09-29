@@ -24,6 +24,9 @@ import graphs_regressions
 import static_lib_pull_comparison
 import plotly.graph_objects as go
 DATA_PATH = "../data"
+import logging
+
+# lib_dynatree.logger.setLevel(logging.INFO)
 
 import config
 
@@ -54,6 +57,7 @@ interactive_graph = solara.reactive(False)
 all_data = solara.reactive(False)
 force_interval = solara.reactive("None")
 tab_index = solara.reactive(0)
+subtab_index = solara.reactive(0)
 
 # data_from_url = solara.reactive(False)
 # 
@@ -221,73 +225,81 @@ probe = solara.reactive("Elasto-strain")
 probes = ["Elasto-strain", "blue", "blueMaj", "yellow", "yellowMaj"]
 
 @solara.component
-def Page():
-        
+def Page():        
     solara.Title(title)
     solara.Style(styles_css)
     with solara.Sidebar():
-        if tab_index.value in [3,4,5]:
+        if tab_index.value in [1]:
             s.Selection_trees_only()
-        if tab_index.value == 5:
-            solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
-        elif tab_index.value != 6:
+        if (tab_index.value, subtab_index.value) == (1,2):
+            with solara.Card():
+                solara.Markdown("**Variable**")
+                solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
+        if tab_index.value == 0:
             Selection()
+        if tab_index.value == 2:
+            solara.Markdown(
+"""
+* Na této záložce jsou ke stažení csv soubory, které řídí výpočet. 
+* Výsledky jsou ke stažení na 
+stránce Downloads.
+"""                
+                )
 
-        if tab_index.value in [3,4,5]:
+        if tab_index.value in [0,1]:
             s.ImageSizes()
             s.width.value = 1200
-    with solara.lab.Tabs(value=tab_index, vertical=True):
-        with solara.lab.Tab("Grafy"):
-            with solara.Card():
-                try:
-                    if tab_index.value == 0:
-                        Graphs()
-                except:
-                    pass
-        with solara.lab.Tab("Volba proměnných a regrese"):
-            with solara.Card(title="Increasing part of the time-force diagram"):
-                try:
-                    if tab_index.value == 1:
-                        Detail()
-                except:
-                    pass
-        with solara.lab.Tab("Polární graf"):
-            with solara.Card():
-                try:
-                    if tab_index.value == 2:
-                        Polarni()
-                except:
-                    pass
+    dark = {"background_color":"primary", "dark":True, "grow":True}
+    with solara.lab.Tabs(value=tab_index, **dark ):
+        with solara.lab.Tab("Jedno měření (detail, ...)", icon_name="mdi-chart-line"):
+            with solara.lab.Tabs(lazy=True, **dark):
+                with solara.lab.Tab("Průběh síly"):
+                    if (tab_index.value, subtab_index.value) == (0,0):
+                        lib_dynatree.logger.info("Zakladni graf")
+                        with solara.Card():
+                            Graphs()
+                with solara.lab.Tab("Volba proměnných a regrese"):
+                    if (tab_index.value, subtab_index.value) == (0,1):
+                        lib_dynatree.logger.info("Volba promennych a regrese")
+                        with solara.Card(title="Increasing part of the time-force diagram"):
+                            Detail()
+                with solara.lab.Tab("Polární graf"):
+                    if (tab_index.value, subtab_index.value) == (0,2):
+                        lib_dynatree.logger.info("Polarni graf")
+                        with solara.Card():
+                            Polarni()
 
-        with solara.lab.Tab("Srovnání s prvním zatáhnutím"):
-            with solara.Card():
-                solara.Markdown(
-"""
-**Srovnání následujících zatáhnutí s prvním**
-
-* V grafech je podíl směrnice z druhého nebo třetího zatáhnutí  směrnice z prvního zatáhnutí. Toto je v grafu vedeno jako Slope_normalized.
-* Pokud věříme, že při první zatáhnutí je systém tužší, měl by podíl být stabilně pod jedničkou.
-* V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
-""")
-                try:
-                    if tab_index.value == 3:
-                        normalized_slope()
-                except:
-                    pass
-
-                    # solara.FigurePlotly(figPl)                
-        with solara.lab.Tab("Přehled"):
-            with solara.Column():
-                try:
-                    if tab_index.value == 4:
-                        prehled()
-                except:
-                    pass
-        with solara.lab.Tab("Trend"):
-            with solara.Column():
-                if tab_index.value == 5:
-                    slope_trend()
-        with solara.lab.Tab("Komentáře & dwnl."):
+        with solara.lab.Tab("Jeden strom (trend, ...)", icon_name="mdi-pine-tree"):
+            with solara.lab.Tabs(lazy=True, value=subtab_index, **dark):
+                with solara.lab.Tab("Srovnání s prvním zatáhnutím"):
+                    with solara.Card():
+                        solara.Markdown(
+        """
+        **Srovnání následujících zatáhnutí s prvním**
+        
+        * V grafech je podíl směrnice z druhého nebo třetího zatáhnutí  směrnice z prvního zatáhnutí. Toto je v grafu vedeno jako Slope_normalized.
+        * Pokud věříme, že při první zatáhnutí je systém tužší, měl by podíl být stabilně pod jedničkou.
+        * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
+        """)
+                        try:
+                            if (tab_index.value, subtab_index.value) == (1,0):
+                                normalized_slope()
+                        except:
+                            pass
+        
+                            # solara.FigurePlotly(figPl)                
+                with solara.lab.Tab("Hledání odlehlých"):
+                    with solara.Column():
+                        try:
+                            if (tab_index.value, subtab_index.value) == (1,1):
+                                prehled()
+                        except:
+                            pass
+                with solara.lab.Tab("Trend"):
+                    with solara.Column():
+                        if (tab_index.value, subtab_index.value) == (1,2):
+                            slope_trend()
+        with solara.lab.Tab("Komentáře & dwnl.", icon_name="mdi-comment-outline"):
             with solara.Card(title="Návod"):
                 Help()
 
@@ -337,6 +349,7 @@ This card reports missing data.
 
 @solara.component
 def Graphs():
+    lib_dynatree.logger.info("Function Graph entered")
     solara.ProgressLinear(nakresli.pending)
     if s.measurement.value not in available_measurements(s.df.value, s.day.value, s.tree.value, s.method.value):
         with solara.Error():
@@ -396,6 +409,7 @@ msg = """
 * Nebo je nějaký jiný problém. Možná mrkni nejprve na záložku Grafy."""
 
 def Polarni():
+    lib_dynatree.logger.info("Function Polarni entered")
     global subdf
     if nakresli.not_called:
         solara.Info(
@@ -458,6 +472,7 @@ def Polarni():
     solara.FigureMatplotlib(fig)
 
 def Detail():
+    lib_dynatree.logger.info("Function Detail entered")
     global subdf
     if nakresli.not_called:
         solara.Info(

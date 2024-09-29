@@ -56,7 +56,8 @@ def resetuj(x=None):
 @solara.component
 def Selection_trees_only(tree_action = lambda x:None):
     with solara.Card(title="Tree choice"):
-        solara.ToggleButtonsSingle(value=tree, values=list(trees.value),
+        vals = get_all_measurements(method='all', type='all')["tree"].drop_duplicates().values
+        solara.ToggleButtonsSingle(value=tree, values=list(vals),
                                    on_value=tree_action)
 
 @solara.component

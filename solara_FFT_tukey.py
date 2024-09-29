@@ -22,6 +22,8 @@ import seaborn as sns
 import time
 import os
 import config
+from lib_dynasignal import do_welch
+
 
 # lib_dynatree.logger.setLevel(logging.INFO)
 
@@ -61,7 +63,8 @@ button_color = solara.reactive('primary')
 probe = solara.reactive("Elasto(90)")
 restrict = 50 # cut the FFT at 50Hz
 restrict = 5000
-tab_value = solara.reactive(2)
+tab_value = solara.reactive(0)
+subtab_value = solara.reactive(1)
 manual_release_time = solara.reactive(0.0)
 manual_end_time = solara.reactive(0.0)
 
@@ -93,7 +96,7 @@ def set_button_color(x=None):
     button_color.value = 'primary'    
 
 @lib_dynatree.timeit
-def zpracuj(x=None):
+def zpracuj(x=None, type='fft'):
     m = lib_dynatree.DynatreeMeasurement(day=s.day.value, 
         tree=s.tree.value, 
         measurement=s.measurement.value, 
@@ -102,7 +105,7 @@ def zpracuj(x=None):
     release_source = probename
     if probe.value in ["blueMaj","yellowMaj"]:
         probe_final = m.identify_major_minor[probe.value]
-        release_source="Elasto(90)"
+        release_source = "Elasto(90)"
     else:
         probe_final = probe.value
     sig = lib_FFT.DynatreeSignal(m, probe_final, release_source=release_source)
@@ -110,7 +113,12 @@ def zpracuj(x=None):
         sig.manual_release_time = manual_release_time.value
     if manual_end_time.value > 0.0:
         sig.signal_full = sig.signal_full[:manual_end_time.value]
-    return {'main_peak': sig.main_peak, 'signal':sig.signal, 'fft':sig.fft, 'signal_full':sig.signal_full}
+    ans = {'main_peak': sig.main_peak, 'signal':sig.signal, 'signal_full':sig.signal_full}
+    if type == 'fft':
+        ans['fft'] = sig.fft
+    if type == 'welch':
+        ans['welch'] = sig.welch()
+    return ans
 
 def spust_mereni(x=None):
     manual_release_time.value = 0
@@ -267,17 +275,20 @@ def Page():
     solara.Style(s.styles_css)
     solara.Style("td {padding-left: 1em !important;}")
     with solara.Sidebar():
-        if tab_value.value != 3:
-            s.Selection(exclude_M01=True, 
-                        optics_switch=False, 
-                        day_action = resetuj,
-                        tree_action = resetuj,
-                        measurement_action = spust_mereni, 
-                        )  
-            s.ImageSizes()
+        if ((tab_value.value, subtab_value.value) != (1,1) ) & (tab_value.value !=2):
+            if tab_value.value == 0:
+                s.Selection(exclude_M01=True, 
+                            optics_switch=False, 
+                            day_action = resetuj,
+                            tree_action = resetuj,
+                            measurement_action = spust_mereni, 
+                            )  
+                s.ImageSizes()
+                with solara.Column(align='center'):
+                    solara.Button(label='Redraw',on_click=nakresli_signal, color='primary')
+            else:
+                s.Selection_trees_only()
     
-            with solara.Column(align='center'):
-                solara.Button(label='Redraw',on_click=nakresli_signal, color='primary')
         # with solara.Card():
         #     with solara.Column():
         #         solara.Text(f'CPU: {psutil.cpu_percent(4)}%')
@@ -288,190 +299,218 @@ def Page():
         
     now = time.time()
     lib_dynatree.logger.info(f"Before choose probe after {now-initime}.")
-    ChooseProbe()
+    if tab_value.value == 0:
+        ChooseProbe()
     
-    with solara.lab.Tabs(value=tab_value):
-        with solara.lab.Tab("Static image"):
-            if tab_value.value == 0:
-                try:
-                    solara.ProgressLinear(nakresli_signal.pending)
-                    if nakresli_signal.not_called:
-                        nakresli_signal()
-                    if nakresli_signal.finished:
-                        solara.FigureMatplotlib(nakresli_signal.value, format='png')
-                        plt.close('all')
-                    with solara.Row():
-                        csv_line()
-                        with solara.Tooltip("You may enter manual release time and click Redraw. Zero value is for automatical determination of release time."):
-                            solara.InputFloat(
-                                "release time", 
-                                value=manual_release_time)
-                        with solara.Tooltip("You may enter manual end time and click Redraw. Zero value is for automatical determination (to the end, max 60 sec)."):
-                            solara.InputFloat(
-                                "end time", 
-                                value=manual_end_time)
-                    FFT_remark()
-                    with solara.Info():
-                        solara.Markdown(
-"""
-* Svislá červená čára je frekvence použitá do dalšího zpracování. Stanovena jako maximum na určitém frekvenčním 
-  intervalu. Numerická hodnota je i v nadpisu obrázku.
-* Pokud je toto měření pokažené, zkopíruj si řádek nad tímto rámečkem a přidá se mezi seznam zkažených.
-"""                            
-                            )
-                except:
-                    pass
-        with solara.lab.Tab("Interactive FFT image"):
-            if tab_value.value == 1:
-                try:
-                    solara.ProgressLinear(nakresli_signal.pending)
-                    if nakresli_signal.not_called:
-                        nakresli_signal()
-                        return
-                    if nakresli_signal.finished:
-                        data = zpracuj()
-                        df_fft = data['fft'].loc[:restrict]
-                        if isinstance(df_fft.name, tuple):
-                            df_fft.name = df_fft.name[0]
+    dark = {"background_color":"primary", "dark":True, "grow":True}
+
+    with solara.lab.Tabs(value=tab_value, **dark):
+        with solara.lab.Tab("Jedno měření", icon_name="mdi-chart-line"):
+            with solara.lab.Tabs(value=subtab_value, **dark):
+                with solara.lab.Tab("Time domain"):
+                    if (tab_value.value, subtab_value.value) == (0,0):
+                        try:
+                            solara.ProgressLinear(nakresli_signal.pending)
+                            if nakresli_signal.not_called:
+                                nakresli_signal()
+                            if nakresli_signal.finished:
+                                solara.FigureMatplotlib(nakresli_signal.value, format='png')
+                                plt.close('all')
+                            with solara.Row():
+                                csv_line()
+                                with solara.Tooltip("You may enter manual release time and click Redraw. Zero value is for automatical determination of release time."):
+                                    solara.InputFloat(
+                                        "release time", 
+                                        value=manual_release_time)
+                                with solara.Tooltip("You may enter manual end time and click Redraw. Zero value is for automatical determination (to the end, max 60 sec)."):
+                                    solara.InputFloat(
+                                        "end time", 
+                                        value=manual_end_time)
+                            FFT_remark()
+                            with solara.Info():
+                                solara.Markdown(
+        """
+        * Svislá červená čára je frekvence použitá do dalšího zpracování. Stanovena jako maximum na určitém frekvenčním 
+          intervalu. Numerická hodnota je i v nadpisu obrázku.
+        * Pokud je toto měření pokažené, zkopíruj si řádek nad tímto rámečkem a přidá se mezi seznam zkažených.
+        """                            
+                                    )
+                        except:
+                            pass
+                with solara.lab.Tab("Interactive FFT image"):
+                    if (tab_value.value, subtab_value.value) == (0,1):
+                        try:
+                            solara.ProgressLinear(nakresli_signal.pending)
+                            if nakresli_signal.not_called:
+                                nakresli_signal()
+                                return
+                            if nakresli_signal.finished:
+                                data = zpracuj()
+                                df_fft = data['fft'].loc[:restrict]
+                                if isinstance(df_fft.name, tuple):
+                                    df_fft.name = df_fft.name[0]
+                                ymax = df_fft.to_numpy().max()
+                                figFFT = px.line(df_fft, 
+                                                 height = s.height.value, width=s.width.value,
+                                                 title=f"FFT spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
+                                                 log_y=True, range_x=[0,10], range_y=[ymax/100000, ymax*2]
+                                )
+                                figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
+                                solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
+                                with solara.Row():
+                                    solara.Text(fft_freq.value)
+                                    solara.Button(label="Clear", on_click=clear_fft_freq)
+                                    SaveButton()
+                                    solara.FileDownload(df_manual_peaks.value.to_csv(), filename=f"FFT_manual_peaks.csv", label="Download csv")
+                                solara.display(df_manual_peaks.value)
+                        except:
+                            pass
+        
+                with solara.lab.Tab("Welch"):
+                    if (tab_value.value, subtab_value.value) == (0,2):
+                        data = zpracuj(type='welch')
+                        df_fft = data['welch']#.loc[:restrict]
                         ymax = df_fft.to_numpy().max()
                         figFFT = px.line(df_fft, 
                                          height = s.height.value, width=s.width.value,
-                                         title=f"FFT spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
-                                         log_y=True, range_x=[0,10], range_y=[ymax/100000, ymax*2]
+                                         title=f"Welch spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
+                                         log_y=True, #range_y=[ymax/1000000, ymax*2]
                         )
                         figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
                         solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
-                        with solara.Row():
-                            solara.Text(fft_freq.value)
-                            solara.Button(label="Clear", on_click=clear_fft_freq)
-                            SaveButton()
-                            solara.FileDownload(df_manual_peaks.value.to_csv(), filename=f"FFT_manual_peaks.csv", label="Download csv")
-                        solara.display(df_manual_peaks.value)
-                except:
-                    pass
-        with solara.lab.Tab("Přehled barevně"):
-            if tab_value.value == 2:
-                with solara.Card(title=f"All days for tree {s.tree.value}"):
-                    solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
-                    # try:
-                    subdfA = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
-                    subdfA = oprav_peaky(subdfA.copy())
-                    subdfA = ostyluj(subdfA)
-                    solara.display(subdfA)
-                        # subdf = subdf.reset_index()
-                        # solara.DataTable(subdf, items_per_page=100, format=myformat)
-                    # except:
-                        # pass
-                with solara.Info():
-                    solara.Markdown(
-f"""
-* Políčka jsou podbarvena podle hodnoty. V rámci jednoho dne (viz vodorovné čáry v tabulce) by měly být 
-  barvy plus minus stejné.
-* Krok mezi frekvencemi je 0.017Hz. Odchylka v mezích 0.02Hz nic neznamená, může se jednat o 
-  vedlejší bod u širokého peaku.
-* Vyjádření k některým měřením:
-"""                        
-                        )
-                    solara.display(df_komentare)
-        with solara.lab.Tab("Přehled s odkazy"):
-            if tab_value.value == 3:
-                with solara.Sidebar():
-                # with solara.Columns():
-                    with solara.Column():
-                        try:
-                            with solara.Column():
-                                csv_line()
-                                solara.ProgressLinear(nakresli_signal.pending)
-                                FFT_remark()
-                                if nakresli_signal.finished:
-                                    solara.FigureMatplotlib(nakresli_signal.value)
-                                    plt.close('all')
-                                    # data = zpracuj()
-                                    # print("zpracovano")
-                                    # df_fft = data['fft'].loc[:restrict]
-                                    # if isinstance(df_fft.name, tuple):
-                                    #     df_fft.name = df_fft.name[0]
-                                    # ymax = df_fft.to_numpy().max()
-                                    # figFFTB = px.line(df_fft, 
-                                    #                  # height = "300px", width="400px",
-                                    #                  title=f"FFT spectrum", 
-                                    #                  log_y=True, range_x=[0,2], range_y=[ymax/100000, ymax*2]
-                                    # )
-                                    # figFFTB.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
-                                    # solara.FigurePlotly(figFFTB)
-                            
-                        except:
-                            pass
-                with solara.Card(title=f"All days for tree {s.tree.value}"):
-                    # Does not work fine, the table is not updated.
-                    # solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
-                    try:
-                        subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
-                        # subdf = ostyluj(subdf)
-                        # solara.display(subdf)
-                        subdf = oprav_peaky(subdf.copy())
-                        subdf = subdf.reset_index()
-                        solara.DataTable(subdf, items_per_page=100, format=myformat,cell_actions=cell_actions)                        
+        
 
+        with solara.lab.Tab("Jeden strom", icon_name="mdi-pine-tree"):
+            with solara.lab.Tabs(value=subtab_value, **dark):
+        
+        
+                with solara.lab.Tab("Přehled barevně"):
+                    if (tab_value.value, subtab_value.value) == (1,0):
+                        with solara.Card(title=f"All days for tree {s.tree.value}"):
+                            solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
+                            # try:
+                            subdfA = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
+                            subdfA = oprav_peaky(subdfA.copy())
+                            subdfA = ostyluj(subdfA)
+                            solara.display(subdfA)
+                                # subdf = subdf.reset_index()
+                                # solara.DataTable(subdf, items_per_page=100, format=myformat)
+                            # except:
+                                # pass
                         with solara.Info():
                             solara.Markdown(
-        """
-        * Hodnoty v tabulce jsou zaokrouhlené. Co je jinde 0.69993 je zde jako 0.700. Pozor ať Tě to nezmate.
-        * Za položkama v tabulce jsou tři tečky, které po najetí umožní zobrazit statický graf a případnou 
-          poznámku v sidebaru. Toto je možné použít na na data, která patří k existujícím měřením, ale mají
-          v tabulce pomlčku, protože jsou tato měření vyhodnocena jako pokažená.
+        f"""
+        * Políčka jsou podbarvena podle hodnoty. V rámci jednoho dne (viz vodorovné čáry v tabulce) by měly být 
+          barvy plus minus stejné.
+        * Krok mezi frekvencemi je 0.017Hz. Odchylka v mezích 0.02Hz nic neznamená, může se jednat o 
+          vedlejší bod u širokého peaku.
+        * Vyjádření k některým měřením:
         """                        
                                 )
+                            solara.display(df_komentare)
+                with solara.lab.Tab("Přehled s odkazy"):
+                    if (tab_value.value, subtab_value.value) == (1,1):
+                        with solara.Sidebar():
+                        # with solara.Columns():
+                            with solara.Column():
+                                try:
+                                    with solara.Column():
+                                        csv_line()
+                                        solara.ProgressLinear(nakresli_signal.pending)
+                                        FFT_remark()
+                                        if nakresli_signal.finished:
+                                            solara.FigureMatplotlib(nakresli_signal.value)
+                                            plt.close('all')
+                                            # data = zpracuj()
+                                            # print("zpracovano")
+                                            # df_fft = data['fft'].loc[:restrict]
+                                            # if isinstance(df_fft.name, tuple):
+                                            #     df_fft.name = df_fft.name[0]
+                                            # ymax = df_fft.to_numpy().max()
+                                            # figFFTB = px.line(df_fft, 
+                                            #                  # height = "300px", width="400px",
+                                            #                  title=f"FFT spectrum", 
+                                            #                  log_y=True, range_x=[0,2], range_y=[ymax/100000, ymax*2]
+                                            # )
+                                            # figFFTB.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
+                                            # solara.FigurePlotly(figFFTB)
+                                    
+                                except:
+                                    pass
+                        with solara.Card(title=f"All days for tree {s.tree.value}"):
+                            # Does not work fine, the table is not updated.
+                            # solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
+                            try:
+                                subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
+                                # subdf = ostyluj(subdf)
+                                # solara.display(subdf)
+                                subdf = oprav_peaky(subdf.copy())
+                                subdf = subdf.reset_index()
+                                solara.DataTable(subdf, items_per_page=100, format=myformat,cell_actions=cell_actions)                        
+        
+                                with solara.Info():
+                                    solara.Markdown(
+                """
+                * Hodnoty v tabulce jsou zaokrouhlené. Co je jinde 0.69993 je zde jako 0.700. Pozor ať Tě to nezmate.
+                * Za položkama v tabulce jsou tři tečky, které po najetí umožní zobrazit statický graf a případnou 
+                  poznámku v sidebaru. Toto je možné použít na na data, která patří k existujícím měřením, ale mají
+                  v tabulce pomlčku, protože jsou tato měření vyhodnocena jako pokažená.
+                """                        
+                                        )
+        
+                                solara.HTML(tag="script", unsafe_innerHTML=
+        """
+        function applyGradient() {
+          const rows = document.querySelectorAll('tr');
+          const values = [];
+          // Najdi číselné hodnoty v atributech title buněk od pátého sloupce dál
+          rows.forEach(row => {
+            const cells = row.querySelectorAll('td:nth-child(n+5)');
+            cells.forEach(cell => {
+              const value = parseFloat(cell.getAttribute('title'));
+              if (!isNaN(value)) {
+                values.push(value);
+              }
+            });
+          });
+          // Zjisti minimum a maximum
+          const minValue = Math.min(...values);
+          const maxValue = Math.max(...values);
+          // Aplikuj barvy na základě hodnot
+          rows.forEach(row => {
+            const cells = row.querySelectorAll('td:nth-child(n+5)');
+            cells.forEach(cell => {
+              const value = parseFloat(cell.getAttribute('title'));
+              if (!isNaN(value)) {
+                const intensity = (value - minValue) / (maxValue - minValue); // Normalizace hodnoty
+                const colorIntensity = Math.floor(intensity * 255); // Přepočet na 0-255
+                cell.style.backgroundColor = `rgb(${255 - colorIntensity}, ${255 - colorIntensity}, ${255})`;
+              }
+            });
+          });
+        };
+        
+        applyGradient();
+        """
+                                    )
+                            except:
+                                pass
 
-                        solara.HTML(tag="script", unsafe_innerHTML=
-"""
-function applyGradient() {
-  const rows = document.querySelectorAll('tr');
-  const values = [];
-  // Najdi číselné hodnoty v atributech title buněk od pátého sloupce dál
-  rows.forEach(row => {
-    const cells = row.querySelectorAll('td:nth-child(n+5)');
-    cells.forEach(cell => {
-      const value = parseFloat(cell.getAttribute('title'));
-      if (!isNaN(value)) {
-        values.push(value);
-      }
-    });
-  });
-  // Zjisti minimum a maximum
-  const minValue = Math.min(...values);
-  const maxValue = Math.max(...values);
-  // Aplikuj barvy na základě hodnot
-  rows.forEach(row => {
-    const cells = row.querySelectorAll('td:nth-child(n+5)');
-    cells.forEach(cell => {
-      const value = parseFloat(cell.getAttribute('title'));
-      if (!isNaN(value)) {
-        const intensity = (value - minValue) / (maxValue - minValue); // Normalizace hodnoty
-        const colorIntensity = Math.floor(intensity * 255); // Přepočet na 0-255
-        cell.style.backgroundColor = `rgb(${255 - colorIntensity}, ${255 - colorIntensity}, ${255})`;
-      }
-    });
-  });
-};
 
-applyGradient();
-"""
-                            )
-                    except:
-                        pass
-        with solara.lab.Tab("Welch"):
-            pass
-        with solara.lab.Tab("Popis & Download"):
-            with solara.Card(style={'background-color':"#FBFBFB"}):
-                solara.Markdown("**Downloads**")
-                with solara.Row(justify="space-around",style={'background-color':"#FBFBFB"}):
-                    solara.FileDownload(df_fft_long.to_csv(), filename="fft_dynatree.csv", label="Peaks in long format")
-                    solara.FileDownload(df_fft_all.to_csv(), filename="fft_dynatree_wide.csv", label="Peaks in wide format")
-                    solara.FileDownload(df_komentare.to_csv(), filename="FFT_comments.csv", label="Comments")
-                    solara.FileDownload(pd.DataFrame(df_failed, columns=["type","day","tree","mesurement","probe"]).to_csv(index=None), filename="FFT_failed.csv", label="Failed")
-                    solara.FileDownload(pd.read_csv(config.file["FFT_release"]).to_csv(index=None), filename="FFT_release.csv", label="Manual release times")
-                    solara.FileDownload(pd.read_csv(config.file["FFT_manual_peaks"]).to_csv(index=None), filename="FFT_manual_peaks.csv", label="Manual peaks")
+        with solara.lab.Tab("Popis & Download", icon_name="mdi-comment-outline"):
+            if tab_value.value == 2:
+                with solara.Sidebar():
+                    with solara.Column():
+                        with solara.Card():
+                            solara.Markdown("**Downloads**")
+                            solara.FileDownload(df_fft_long.to_csv(), filename="fft_dynatree.csv", label="Peaks in long format")
+                            solara.FileDownload(df_fft_all.to_csv(), filename="fft_dynatree_wide.csv", label="Peaks in wide format")
+                            solara.FileDownload(df_komentare.to_csv(), filename="FFT_comments.csv", label="Comments")
+                            solara.FileDownload(pd.DataFrame(df_failed, columns=["type","day","tree","mesurement","probe"]).to_csv(index=None), filename="FFT_failed.csv", label="Failed")
+                            solara.FileDownload(pd.read_csv(config.file["FFT_release"]).to_csv(index=None), filename="FFT_release.csv", label="Manual release times")
+                            solara.FileDownload(pd.read_csv(config.file["FFT_manual_peaks"]).to_csv(index=None), filename="FFT_manual_peaks.csv", label="Manual peaks")
+                
+            
                 
             solara.Markdown(
 f"""

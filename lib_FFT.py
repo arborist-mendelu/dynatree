@@ -19,6 +19,7 @@ import matplotlib
 import multi_handlers_logger as mhl
 import logging
 import config
+import lib_dynasignal
 
 length = 60  # the length of the signal
 # todo: make min and max different for each tree
@@ -92,7 +93,12 @@ class DynatreeSignal:
     def main_peak(self):
         return self.fft.loc[peak_min:peak_max].idxmax()
     
-    # def welch(self, nperseg=2**13):
+    def welch(self, nperseg=2**8):
+        if self.dt == 0.01:
+            fs = 100
+        if self.dt == 0.0002:
+            fs = 5000
+        return lib_dynasignal.do_welch(pd.DataFrame(self.signal), nperseg=nperseg, fs=fs)        
         
 
 df_failed_FFT_experiments=pd.read_csv(config.file["FFT_failed"])
