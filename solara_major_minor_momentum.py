@@ -256,7 +256,7 @@ stránce Downloads.
     dark = {"background_color":"primary", "dark":True, "grow":True}
     with solara.lab.Tabs(value=tab_index, **dark ):
         with solara.lab.Tab("Jedno měření (detail, ...)", icon_name="mdi-chart-line"):
-            with solara.lab.Tabs(lazy=True, **dark):
+            with solara.lab.Tabs(lazy=True, value=subtab_index, **dark):
                 with solara.lab.Tab("Průběh síly"):
                     if (tab_index.value, subtab_index.value) == (0,0):
                         lib_dynatree.logger.info("Zakladni graf")
@@ -266,12 +266,18 @@ stránce Downloads.
                     if (tab_index.value, subtab_index.value) == (0,1):
                         lib_dynatree.logger.info("Volba promennych a regrese")
                         with solara.Card(title="Increasing part of the time-force diagram"):
-                            Detail()
+                            try:
+                                Detail()
+                            except:
+                                pass
                 with solara.lab.Tab("Polární graf"):
                     if (tab_index.value, subtab_index.value) == (0,2):
                         lib_dynatree.logger.info("Polarni graf")
                         with solara.Card():
-                            Polarni()
+                            try:
+                                Polarni()
+                            except:
+                                pass
 
         with solara.lab.Tab("Jeden strom (trend, ...)", icon_name="mdi-pine-tree"):
             with solara.lab.Tabs(lazy=True, value=subtab_index, **dark):
