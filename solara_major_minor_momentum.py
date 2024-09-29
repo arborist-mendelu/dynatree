@@ -161,7 +161,7 @@ sort_ascending = solara.reactive(True)
 
 @solara.component
 def slope_trend():
-    df = static_lib_pull_comparison.df
+    df = static_lib_pull_comparison.df_all_M
     dependent = probe.value
     filtered_df = df[df['Dependent'] == dependent]
     filtered_df = filtered_df[filtered_df["tree"]==s.tree.value]
@@ -177,8 +177,12 @@ def slope_trend():
         title=f'Slope by Day and Type, tree {s.tree.value}, slope for momentum and {probe.value}',
         category_orders={"day": cat_order},
         template =  "plotly_white", 
-        hover_data=["tree","type","day","pullNo", "Dependent"],
+        hover_data=["tree","type","day","pullNo", "Dependent", "measurement"],
         points='all', 
+        width = s.width.value,
+        height = s.height.value,
+        # box=True,
+        # symbol='measurement',      # Tvar bodů na základě sloupce 'measurement'
     )
     fig.update_layout(xaxis=dict(type='category'))
     solara.FigurePlotly(fig)

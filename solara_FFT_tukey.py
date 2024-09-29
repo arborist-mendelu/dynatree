@@ -337,7 +337,7 @@ def Page():
                                     )
                         except:
                             pass
-                with solara.lab.Tab("Interactive FFT image"):
+                with solara.lab.Tab("FFT (interactive)"):
                     if (tab_value.value, subtab_value.value) == (0,1):
                         try:
                             solara.ProgressLinear(nakresli_signal.pending)
@@ -366,7 +366,7 @@ def Page():
                         except:
                             pass
         
-                with solara.lab.Tab("Welch"):
+                with solara.lab.Tab("Welch (interactive)"):
                     if (tab_value.value, subtab_value.value) == (0,2):
                         data = zpracuj(type='welch')
                         df_fft = data['welch']#.loc[:restrict]

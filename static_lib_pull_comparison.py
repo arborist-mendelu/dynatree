@@ -52,7 +52,15 @@ df = df[
       (df["Independent"]=="M_Elasto"))
     ].drop(["optics"], axis=1)
 
+#%%
 
+df_all_M = oridf.copy()
+df_all_M = df_all_M[
+     ((df_all_M["Independent"]=="M") |
+      (df_all_M["Independent"]=="M_Elasto"))
+    ].drop(["optics"], axis=1)
+
+#%%
 # Nejprve vytáhneme hodnoty Slope pro pull=0
 df_zero_pull = df[df['pullNo'] == 0].copy()
 
