@@ -326,6 +326,7 @@ def Page():
                                     solara.InputFloat(
                                         "end time", 
                                         value=manual_end_time)
+                                solara.Button(label='Redraw',on_click=nakresli_signal, color='primary')
                             FFT_remark()
                             with solara.Info():
                                 solara.Markdown(
