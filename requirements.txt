@@ -21,3 +21,4 @@ openpyxl
 plotly-resampler
 jupytext
 nbconvert
+great_tables

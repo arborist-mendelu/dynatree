@@ -25,6 +25,7 @@ import static_lib_pull_comparison
 import plotly.graph_objects as go
 DATA_PATH = "../data"
 import logging
+from great_tables import GT, style, loc
 
 # lib_dynatree.logger.setLevel(logging.INFO)
 
@@ -186,7 +187,17 @@ def slope_trend():
     )
     fig.update_layout(xaxis=dict(type='category'))
     solara.FigurePlotly(fig)
-    solara.DataFrame(filtered_df.sort_values(by="Slope"))
+    # solara.DataFrame(filtered_df.sort_values(by="Slope"))
+    solara.display(GT(filtered_df[["type","day","tree","measurement","pullNo","Slope"]].sort_values(by="Slope"))
+                      .fmt_scientific("Slope")
+                      .tab_style(
+    style=[
+        style.fill(color="lightblue"),
+        style.text(weight="bold")
+    ],
+    locations=loc.body(columns="Slope")
+)
+                      )
 
 @solara.component
 def normalized_slope():

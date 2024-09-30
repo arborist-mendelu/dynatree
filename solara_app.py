@@ -22,7 +22,6 @@ from datetime import datetime
 import os
 import psutil
 
-
 def Naloguj_se():
     solara.Title("DYNATREE")
     solara.Warning(solara.Markdown(
@@ -223,6 +222,13 @@ def Page():
                 
                 df = pd.read_csv("csv_output/measurement_notes.csv", index_col=0).dropna(subset=["remark1","remark2"], how='all')
                 df = df.set_index(["day","tree","measurement"])
+    #             solara.display(GT(df.reset_index(),
+    #                               groupname_col="day", 
+    #                               rowname_col="tree", 
+    #                               ).tab_header(
+    #     title="Large Landmasses of the World",
+    #     subtitle="The top ten largest are presented"
+    # ))
                 solara.display(df)
             with solara.lab.Tab("Monitoring serveru"):
                 with solara.Card():

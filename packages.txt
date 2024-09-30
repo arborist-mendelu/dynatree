@@ -1,1 +1,1 @@
-mamba install pandas numpy matplotlib streamlit dash scipy solara spyder emd seaborn pywavelets sphinx sphinx_rtd_theme sphinx sphinx_rtd_theme openpyxl tqdm passlib plotly-resampler
+mamba install pandas numpy matplotlib streamlit dash scipy solara spyder emd seaborn pywavelets sphinx sphinx_rtd_theme sphinx sphinx_rtd_theme openpyxl tqdm passlib plotly-resampler great_tables
