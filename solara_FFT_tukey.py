@@ -344,7 +344,7 @@ def Page():
                             solara.ProgressLinear(nakresli_signal.pending)
                             if nakresli_signal.not_called:
                                 nakresli_signal()
-                                return
+                                # return
                             if nakresli_signal.finished:
                                 data = zpracuj()
                                 df_fft = data['fft'].loc[:restrict]
