@@ -448,7 +448,7 @@ def DoFFT():
                     xmin = df_fft.index[1]
                 else:
                     xmin = 0
-                figFFT = px.scatter(df_fft, height = s.height.value, width=s.width.value,
+                figFFT = px.line(df_fft, height = s.height.value, width=s.width.value,
                                       title=f"FFT spectrum for {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}<br>Limits: from {newdf.index[0]:.2f} to {newdf.index[-1]:.2f}", 
                                       log_x=log_x.value, range_x=[xmin,range_x.value], 
                                       log_y=True, range_y=[lower_b,upper_b],  

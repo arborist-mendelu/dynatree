@@ -16,6 +16,7 @@ import lib_FFT
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import solara.express as pxs
 import seaborn as sns
 # import psutil
 # import logging
@@ -67,6 +68,7 @@ tab_value = solara.reactive(0)
 subtab_value = solara.reactive(1)
 manual_release_time = solara.reactive(0.0)
 manual_end_time = solara.reactive(0.0)
+n = solara.reactive(8)
 
 def ChooseProbe():
     data_obj = lib_dynatree.DynatreeMeasurement(
@@ -117,7 +119,7 @@ def zpracuj(x=None, type='fft'):
     if type == 'fft':
         ans['fft'] = sig.fft
     if type == 'welch':
-        ans['welch'] = sig.welch()
+        ans['welch'] = sig.welch(nperseg=2**n.value)
     return ans
 
 def spust_mereni(x=None):
@@ -368,13 +370,18 @@ def Page():
         
                 with solara.lab.Tab("Welch (interactive)"):
                     if (tab_value.value, subtab_value.value) == (0,2):
+                        with solara.Row():
+                            solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
+                            solara.ToggleButtonsSingle(values=list(range(6,13)), value=n)
                         data = zpracuj(type='welch')
                         df_fft = data['welch']#.loc[:restrict]
                         ymax = df_fft.to_numpy().max()
+                        if probe.value in ["Pt3", "Pt4"]:
+                            df_fft.columns = [probe.value]
                         figFFT = px.line(df_fft, 
-                                         height = s.height.value, width=s.width.value,
-                                         title=f"Welch spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
-                                         log_y=True, #range_y=[ymax/1000000, ymax*2]
+                                          height = s.height.value, width=s.width.value, 
+                                          title=f"Welch spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
+                                          log_y=True, #range_y=[ymax/1000000, ymax*2]
                         )
                         figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
                         solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
