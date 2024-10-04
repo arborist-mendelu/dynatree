@@ -7,7 +7,7 @@ Created on Sat Sep 14 23:33:06 2024
 """
 
 import solara
-import solara_select_source as s
+import lib.solara.select_source as s
 import lib_dynatree
 from solara.lab import task
 import matplotlib.pyplot as plt

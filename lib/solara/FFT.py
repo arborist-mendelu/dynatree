@@ -8,7 +8,7 @@ Created on Wed May  1 17:24:26 2024
 
 import plotly.express as px
 import solara
-import solara_select_source as s
+import lib.solara.select_source as s
 import lib_dynatree
 import pandas as pd
 import numpy as np

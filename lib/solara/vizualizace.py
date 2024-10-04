@@ -12,7 +12,7 @@ import solara.lab
 import solara
 import pandas as pd
 import time
-import solara_select_source as s
+import lib.solara.select_source as s
 import matplotlib.pyplot as plt
 import matplotlib
 from plotly_resampler import FigureResampler

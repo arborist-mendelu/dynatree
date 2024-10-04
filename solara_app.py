@@ -8,13 +8,13 @@ Created on Wed Aug 28 18:41:25 2024
 
 import solara
 from solara.lab import task
-import solara_tahovky
-import solara_vizualizace
-import solara_force_elasto_inclino
-import solara_FFT
-import solara_welch_ACC
-import solara_FFT_tukey
-import solara_download
+import lib.solara.tahovky
+import lib.solara.vizualizace
+import lib.solara.force_elasto_inclino
+import lib.solara.FFT
+import lib.solara.welch_ACC
+import lib.solara.FFT_tukey
+import lib.solara.download
 from passlib.hash import pbkdf2_sha256
 import pandas as pd
 import time
@@ -252,11 +252,11 @@ def Page():
                 
 routes = [
     solara.Route(path="/", component=Ochrana(Page), label="home"),
-    solara.Route(path="vizualizace", component=Ochrana(solara_vizualizace.Page), label="vizualizace"),
-    solara.Route(path="tahovky", component=Ochrana(solara_tahovky.Page), label="tahovky"),
-    solara.Route(path="synchronizace", component=Ochrana(solara_force_elasto_inclino.Page), label="synchronizace"),
-    solara.Route(path="FFT_old", component=Ochrana(solara_FFT.Page), label="FFT1"),
-    solara.Route(path="Welch_ACC", component=Ochrana(solara_welch_ACC.Page), label="FFT2"),
-    solara.Route(path="FFT_Tukey_all", component=Ochrana(solara_FFT_tukey.Page), label="FFT3"),
-    solara.Route(path="Downloads", component=Ochrana(solara_download.Page), label="DWNL"),
+    solara.Route(path="vizualizace", component=Ochrana(lib.solara.vizualizace.Page), label="vizualizace"),
+    solara.Route(path="tahovky", component=Ochrana(lib.solara.tahovky.Page), label="tahovky"),
+    solara.Route(path="synchronizace", component=Ochrana(lib.solara.force_elasto_inclino.Page), label="synchronizace"),
+    solara.Route(path="FFT_old", component=Ochrana(lib.solara.FFT.Page), label="FFT1"),
+    solara.Route(path="Welch_ACC", component=Ochrana(lib.solara.welch_ACC.Page), label="FFT2"),
+    solara.Route(path="FFT_Tukey_all", component=Ochrana(lib.solara.FFT_tukey.Page), label="FFT3"),
+    solara.Route(path="Downloads", component=Ochrana(lib.solara.download.Page), label="DWNL"),
 ]

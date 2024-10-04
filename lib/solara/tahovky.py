@@ -19,7 +19,7 @@ import solara.lab
 from solara.lab import task
 import solara
 import time
-import solara_select_source as s
+import lib.solara.select_source as s
 import graphs_regressions
 import static_lib_pull_comparison
 import plotly.graph_objects as go
