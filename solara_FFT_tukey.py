@@ -24,7 +24,8 @@ import time
 import os
 import config
 from lib_dynasignal import do_welch
-
+from weasyprint import HTML, CSS
+from pathlib import Path
 
 # lib_dynatree.logger.setLevel(logging.INFO)
 
@@ -404,7 +405,15 @@ def Page():
                                 # subdf = subdf.reset_index()
                                 # solara.DataTable(subdf, items_per_page=100, format=myformat)
                             # except:
-                                # pass
+                                # pass                 
+                            css = CSS(string='''
+table {
+    transform: scale(0.75); 
+    transform-origin: top left; /* Nastaví počáteční bod transformace */
+}
+                                      ''')                                       
+                            solara.FileDownload(HTML(string=subdfA.to_html()).write_pdf(stylesheets=[css]), filename="solara-table.pdf", label="Download PDF")
+                            solara.FileDownload(subdfA.to_html(), filename="solara-table.html", label="Download html")
                         with solara.Info():
                             solara.Markdown(
         f"""
