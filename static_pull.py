@@ -4,7 +4,7 @@ Created on Wed Aug 14 13:25:19 2024
 Inputs the pulling data. Raw pullling data for M1, preprocessed pulling data 
 for M2 and higher (parquet_add_inclino.py script).
 
-Used in solara_major_minor_momentum.py  vit visualizations.
+Used in solara_tahovky.py  vit visualizations.
 
 Used to get regressions between variables in the phase of static pulling.
 

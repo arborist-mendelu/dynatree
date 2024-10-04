@@ -26,6 +26,8 @@ import plotly.graph_objects as go
 DATA_PATH = "../data"
 import logging
 from great_tables import GT, style, loc
+from weasyprint import HTML, CSS
+
 
 # lib_dynatree.logger.setLevel(logging.INFO)
 
@@ -188,8 +190,9 @@ def slope_trend():
     fig.update_layout(xaxis=dict(type='category'))
     solara.FigurePlotly(fig)
     # solara.DataFrame(filtered_df.sort_values(by="Slope"))
-    solara.display(
-        GT(filtered_df[["type","day","tree","measurement","pullNo","Slope"]].sort_values(by="Slope"))
+    great_table = (
+        GT(filtered_df[["type","day","tree","measurement","pullNo","Slope"]]
+                 .sort_values(by="Slope"))
            .fmt_scientific("Slope")
            .tab_style(
                 style=[
@@ -201,8 +204,11 @@ def slope_trend():
            .tab_header(title=f"Slope of momentum versus {dependent}")
            .tab_spanner(label="Measurement", columns=["type","day","tree","measurement","pullNo"])
            .cols_label({"type":"", "day":"", "measurement":"", "tree":"", "pullNo":""})
+           )
            # .fmt_nanoplot("Slope", plot_type="bar")
-                      )
+    solara.display(great_table)
+    solara.FileDownload(HTML(string=great_table.as_raw_html()).write_pdf(), filename=f"dynatree-tahovky-table.pdf", label="Download PDF")
+
 
 @solara.component
 def normalized_slope():

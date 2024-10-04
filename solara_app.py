@@ -8,7 +8,7 @@ Created on Wed Aug 28 18:41:25 2024
 
 import solara
 from solara.lab import task
-import solara_major_minor_momentum
+import solara_tahovky
 import solara_vizualizace
 import solara_force_elasto_inclino
 import solara_FFT
@@ -253,7 +253,7 @@ def Page():
 routes = [
     solara.Route(path="/", component=Ochrana(Page), label="home"),
     solara.Route(path="vizualizace", component=Ochrana(solara_vizualizace.Page), label="vizualizace"),
-    solara.Route(path="tahovky", component=Ochrana(solara_major_minor_momentum.Page), label="tahovky"),
+    solara.Route(path="tahovky", component=Ochrana(solara_tahovky.Page), label="tahovky"),
     solara.Route(path="synchronizace", component=Ochrana(solara_force_elasto_inclino.Page), label="synchronizace"),
     solara.Route(path="FFT_old", component=Ochrana(solara_FFT.Page), label="FFT1"),
     solara.Route(path="Welch_ACC", component=Ochrana(solara_welch_ACC.Page), label="FFT2"),
