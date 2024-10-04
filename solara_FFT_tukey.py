@@ -400,6 +400,7 @@ def Page():
                             # try:
                             subdfA = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
                             subdfA = oprav_peaky(subdfA.copy())
+                            subdfA_copy = subdfA.copy()
                             subdfA = ostyluj(subdfA)
                             solara.display(subdfA)
                                 # subdf = subdf.reset_index()
@@ -408,12 +409,14 @@ def Page():
                                 # pass                 
                             css = CSS(string='''
 table {
-    transform: scale(0.75); 
+    transform: scale(0.7); 
     transform-origin: top left; /* Nastaví počáteční bod transformace */
 }
-                                      ''')                                       
-                            solara.FileDownload(HTML(string=subdfA.to_html()).write_pdf(stylesheets=[css]), filename="solara-table.pdf", label="Download PDF")
-                            solara.FileDownload(subdfA.to_html(), filename="solara-table.html", label="Download html")
+                                      ''')                 
+                            with solara.Row():  
+                                solara.FileDownload(HTML(string=subdfA.to_html()).write_pdf(stylesheets=[css]), filename=f"dynatree-{s.tree.value}-table.pdf", label="Download PDF")
+                                solara.FileDownload(subdfA.to_html(), filename=f"dynatree-{s.tree.value}-table.html", label="Download html")
+                                solara.FileDownload(subdfA_copy.to_csv(), filename=f"dynatree-{s.tree.value}-table.csv", label="Download csv")
                         with solara.Info():
                             solara.Markdown(
         f"""
