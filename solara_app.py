@@ -22,26 +22,13 @@ from datetime import datetime
 import os
 import psutil
 
+import toml
+with open('solara_texts.toml', 'r') as f:
+    config = toml.load(f)
+
 def Naloguj_se():
     solara.Title("DYNATREE")
-    solara.Warning(solara.Markdown(
-        """
-        ## Naloguj se v bočním menu 
-        
-        * Tato část webu není veřejná
-        * Heslo je obvyklé. Pokud nevíš, zeptej se někoho kolem sebe.
-        * Pokud chceš používat vlastní heslo, napiš Robertovi.
-        * Pokud chceš nastavit vlastní **tajné** heslo, vygeneruj hash a pošli Robertovi. 
-          K tomu použij následující příkazy.
-        
-          ~~~
-          from passlib.hash import pbkdf2_sha256
-          hash = pbkdf2_sha256.hash("moje_super_tajne_heslo_ktere_nikomu_nereknu")
-          print(hash)
-          ~~~
-
-        
-        """))
+    solara.Warning(solara.Markdown(config['texts']['login_info']))
     with solara.Sidebar():
         Login()
 
@@ -142,65 +129,16 @@ def Page():
         """
         ) 
         with solara.lab.Tabs(vertical=True, background_color=None, dark=False):
-            with solara.lab.Tab("Obecné info"):
-                    
-                solara.Markdown(
-                """
-                ## Obecné info
-                
-                * Někdy se po přepnutí aplikací neaktualizuje menu v levém sidebaru. 
-                  To je možné opravit kliknutím na jinou položku v typu měření (normal/den/noc/...)
-                * Někdy se objeví chybová hláška, ale hned zmizí, to je neškodné. 
-                * U aplikací, které se spouští automaticky výběrem dne/stromu/měření může při rychlém klikání beh skončit chybou. Zatím není pořešeno odstřelování neaktuálních procesů.
-                """)
-            with solara.lab.Tab("Vizualizace"):
-                    
-                solara.Markdown(
-                """
-                ## Vizualizace            
-                
-                * Grafy z dat pro jednotlivá měření.
-                * Obsahuje 
-                    * optiku Pt3 a Pt4, 
-                    * tahovky, 
-                    * tahovky dointerpolované na data z optiky.
-                * U každého druhu dat si můžeš vybrat veličiny na svislou osu, grafy zoomovat apod.
-                * Použití: vykreslení jedné nebo několika položek, kontrola (např. vynulování u přistrojů, které se nulují), hledání peaků, hledání intervalů zájmu (dají se vybrat data nástrojem a souřadnice výběru uložit pro pozdější použití).
-                """
-                )    
+            with solara.lab.Tab("Obecné info"):                    
+                solara.Markdown(config['texts']['general_info'])
+            with solara.lab.Tab("Vizualizace"):                    
+                solara.Markdown(config['texts']['vizualizace'])    
             with solara.lab.Tab("Tahovky"):
-                solara.Markdown(
-                """
-                ## Tahovky
-                
-                * Obsahuje data z tahových zkoušek ze všech měření. 
-                * Je zpracovávána jedna nebo tři napínací fáze.
-                * Záložky obsahují základní přehled, možnost zobrazit si detail s vybranými
-                   veličinami na vodorovné a svislé ose a jsou vypočteny regresní koeficienty.
-                * Použití: vyexportujeme si všechny regrese, ale bude jich hodně. Záložka umožní kouknout se na data, která nás zajímají, protože vyšla například nějak divně. Případně k vizuální kontrole, jestli dostáváme to co chceme. 
-                """
-                )    
+                solara.Markdown(config['texts']['tahovky'])
             with solara.lab.Tab("Synchronizace"):
-                solara.Markdown(
-                """
-                ## Synchronizace
-                
-                * Obsahuje spojení dat z tahovek a optiky
-                * Používá se ke kontrole vynulování inklinometrů a ke kontrole synchronizace.
-                * Předpočítaná data se ignorují a zohledňují se data z csv souboru v podadreáři csv. Sem je možné ručně připsat potřebné opravy. Poté se data projedou skriptem, který vytvoří data synchroniozvaná s optikou a tato data se potom používají všude jinde.
-                * Obrázky se dají vyexportovat skriptem `plot_probes_inclino_force.py` k vizuální kontrole jako pdf nebo png.
-                * Použití: Aby se daly společně vyhodnocovat data z optiky a tahovek, je potřeba je mít seskupitelná dohromady.
-                """
-                )    
+                solara.Markdown(config['texts']['synchronizace'])
             with solara.lab.Tab("FFT"):
-                solara.Markdown(
-                """
-                ## FFT
-                
-                * Umožní udělat FFT na zvolelných datech. Obsahuje optiku (Pt3, Pt4, konce BL), extenzometr, inklinometry, akcelerometry.
-                * Použití: rychlé zobrazení spekter, vizuální porovnání, zjištění důvodů, proč se některá spektra liší (například kvůli krátkému sigálu, narušení oscilací apod.) 
-                """
-                  )
+                solara.Markdown(config['texts']['FFT'])
             with solara.lab.Tab("Downloads"):
                 solara.Markdown(
                 """

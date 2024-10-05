@@ -26,7 +26,7 @@ import plotly.graph_objects as go
 DATA_PATH = "../data"
 import logging
 from great_tables import GT, style, loc
-from weasyprint import HTML, CSS
+# from weasyprint import HTML, CSS
 
 
 # lib_dynatree.logger.setLevel(logging.INFO)
@@ -207,7 +207,7 @@ def slope_trend():
            )
            # .fmt_nanoplot("Slope", plot_type="bar")
     solara.display(great_table)
-    solara.FileDownload(HTML(string=great_table.as_raw_html()).write_pdf(), filename=f"dynatree-tahovky-table.pdf", label="Download PDF")
+    # solara.FileDownload(HTML(string=great_table.as_raw_html()).write_pdf(), filename=f"dynatree-tahovky-table.pdf", label="Download PDF")
 
 
 @solara.component
