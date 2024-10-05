@@ -240,11 +240,13 @@ def slope_trend_more():
       # .pivot(values="Slope", columns='pullNo', index=
       #        ['type', 'day', 'tree', 'measurement', 'Dependent'])
       )
+    # breakpoint()
     df["Slope × 1000"] = df["Slope"] * 1000
     df["id"] = df["day"] + " " + df["type"]
     fig = plx.strip(df, x="id", y="Slope × 1000", template="plotly_white",
                     color=color.value, hover_data=["pullNo", "Dependent"],
-                    title = f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship."
+                    title = f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship.",
+                    width=s.width.value, height=s.height.value
                     )
     solara.FigurePlotly(fig)
     solara.Markdown(
@@ -259,7 +261,7 @@ dávají stejné výstupy a podobně pro Yellow a YellowMaj.
     df["1000Slope"] = 1000*df["Slope"]
     df = df.pivot(index=["type","day"], columns=["Dependent", "pullNo"], values="1000Slope")
     solara.display(ostyluj(df))
-    
+    return
 
 @solara.component
 def normalized_slope():
@@ -353,7 +355,7 @@ stránce Downloads.
                                 pass
 
         with solara.lab.Tab("Jeden strom (trend, ...)", icon_name="mdi-pine-tree"):
-            with solara.lab.Tabs(lazy=True, value=subtab_index, **dark):
+            with solara.lab.Tabs(**dark):
                 with solara.lab.Tab("Srovnání s prvním zatáhnutím"):
                     with solara.Card():
                         solara.Markdown(
@@ -365,8 +367,7 @@ stránce Downloads.
         * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
         """)
                         try:
-                            if (tab_index.value, subtab_index.value) == (1,0):
-                                normalized_slope()
+                            normalized_slope()
                         except:
                             pass
         
@@ -374,18 +375,15 @@ stránce Downloads.
                 with solara.lab.Tab("Hledání odlehlých"):
                     with solara.Column():
                         try:
-                            if (tab_index.value, subtab_index.value) == (1,1):
-                                prehled()
+                            prehled()
                         except:
                             pass
                 with solara.lab.Tab("Trend (1 senzor)"):
                     with solara.Column():
-                        if (tab_index.value, subtab_index.value) == (1,2):
-                            slope_trend()
+                        slope_trend()
                 with solara.lab.Tab("Trend (více)"):
                     with solara.Column():
-                        if (tab_index.value, subtab_index.value) == (1,3):
-                            slope_trend_more()
+                        slope_trend_more()
         with solara.lab.Tab("Komentáře & dwnl.", icon_name="mdi-comment-outline"):
             with solara.Card(title="Návod"):
                 Help()
