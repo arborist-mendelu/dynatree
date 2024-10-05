@@ -26,6 +26,8 @@ import plotly.graph_objects as go
 DATA_PATH = "../data"
 import logging
 from great_tables import GT, style, loc
+import seaborn as sns
+
 # from weasyprint import HTML, CSS
 
 
@@ -209,6 +211,55 @@ def slope_trend():
     solara.display(great_table)
     # solara.FileDownload(HTML(string=great_table.as_raw_html()).write_pdf(), filename=f"dynatree-tahovky-table.pdf", label="Download PDF")
 
+color = solara.reactive("pullNo")
+
+def ostyluj(subdf):
+    cm = sns.light_palette("blue", as_cmap=True)
+    subdf = (subdf.style.format(precision=3).background_gradient(#cmap=cm, 
+                                             axis=None)
+             # .apply(add_horizontal_line, axis=None)
+             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+             .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+             )
+    return subdf
+
+@solara.component
+def slope_trend_more():
+    with solara.Row():
+        solara.Text("Barevně separovat podle:")
+        solara.ToggleButtonsSingle(value=color, values=["pullNo", "Dependent"])
+    df = (pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
+      .pipe(lambda x: x[x['lower_cut'] == 0.3])
+      .pipe(lambda x: x[x['tree'] == s.tree.value])
+      .pipe(lambda x: x[x['measurement'] == 'M01'])
+      .pipe(lambda x: x[~x['failed']])
+      .pipe(lambda x: x[~x['Dependent'].str.contains('Min')])
+      .pipe(lambda x: x[x['tree'].str.contains('BK')])
+      .pipe(lambda x: x[x['Independent'] == "M"])
+      .pipe(lambda x: x[["type", "day", "tree", "Dependent", "Slope", "pullNo"]])
+      # .pivot(values="Slope", columns='pullNo', index=
+      #        ['type', 'day', 'tree', 'measurement', 'Dependent'])
+      )
+    df["Slope × 1000"] = df["Slope"] * 1000
+    df["id"] = df["day"] + " " + df["type"]
+    fig = plx.strip(df, x="id", y="Slope × 1000", template="plotly_white",
+                    color=color.value, hover_data=["pullNo", "Dependent"],
+                    title = f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship."
+                    )
+    solara.FigurePlotly(fig)
+    solara.Markdown(
+"""
+* Barvné rozseparování podle pullNo (číslo zatáhnutí) umožní sledovat, jestli 
+se během experimentu liší první zatáhnutí od ostatních a jak. 
+* Barevné rozseparování podle senzoru (Dependent) umožní posoudit, jestli Blue a BlueMaj 
+dávají stejné výstupy a podobně pro Yellow a YellowMaj.
+"""        
+        )
+    # solara.DataFrame(df)
+    df["1000Slope"] = 1000*df["Slope"]
+    df = df.pivot(index=["type","day"], columns=["Dependent", "pullNo"], values="1000Slope")
+    solara.display(ostyluj(df))
+    
 
 @solara.component
 def normalized_slope():
@@ -327,10 +378,14 @@ stránce Downloads.
                                 prehled()
                         except:
                             pass
-                with solara.lab.Tab("Trend"):
+                with solara.lab.Tab("Trend (1 senzor)"):
                     with solara.Column():
                         if (tab_index.value, subtab_index.value) == (1,2):
                             slope_trend()
+                with solara.lab.Tab("Trend (více)"):
+                    with solara.Column():
+                        if (tab_index.value, subtab_index.value) == (1,3):
+                            slope_trend_more()
         with solara.lab.Tab("Komentáře & dwnl.", icon_name="mdi-comment-outline"):
             with solara.Card(title="Návod"):
                 Help()

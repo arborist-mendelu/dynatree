@@ -239,5 +239,19 @@ jednotlivé dny nebo stavy s listím a bez listí.
 Aplikace `streamlit_damping.py` umožňuje vybrat si den, strom a měření
 a zobrazí všechny tři výstupy plus Hilbertovu-Huangovu transformaci.
 
-## 
+# Solara
+
+Spuštění například takto
+~~~
+solara run solara_app.py --no-open --host=um-bc201.mendelu.cz --root-path=/dynatree --port=8766
+~~~
+a v apache konfiguraci treba um.mendelu.cz něco jako toto
+~~~
+RewriteEngine On
+RewriteCond %{HTTP:Upgrade} =websocket
+RewriteRule dynatree/(.*) ws://um-bc201.mendelu.cz:8766/dynatree/$1 [P]
+RewriteCond %{HTTP:Upgrade} !=websocket
+RewriteRule dynatree/(.*) http://um-bc201.mendelu.cz:8766/dynatree/$1 [P]
+ProxyPassReverse /dynatree http://um-bc201.mendelu.cz:8766
+~~~ 
 
