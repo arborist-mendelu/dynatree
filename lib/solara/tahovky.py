@@ -259,7 +259,8 @@ dávají stejné výstupy a podobně pro Yellow a YellowMaj.
         )
     # solara.DataFrame(df)
     df["1000Slope"] = 1000*df["Slope"]
-    df = df.pivot(index=["type","day"], columns=["Dependent", "pullNo"], values="1000Slope")
+    df = df.pivot(index=["day","type"], columns=["Dependent", "pullNo"], values="1000Slope")
+    
     solara.display(ostyluj(df))
     return
 
