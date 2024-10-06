@@ -282,6 +282,8 @@ dávají stejné výstupy a podobně pro Yellow a YellowMaj.
     df = df.pivot(index=["day","type"], columns=["Dependent", "pullNo"], values="Slope × 1000")
     df = df.sort_index(axis=1)
     solara.display(ostyluj(df))
+    solara.FileDownload(df.to_csv(), filename=f"tahovky_{s.tree.value}.csv", 
+                        label="Download data from this table")    
     return
 
 @solara.component
