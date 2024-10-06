@@ -213,11 +213,24 @@ def slope_trend():
 
 color = solara.reactive("pullNo")
 
+# Funkce pro stylování - přidání hranice, když se změní hodnota v úrovni 'tree'
+def add_vertical_line(df):
+    styles = pd.DataFrame('', index=df.index, columns=df.columns)
+    
+    # Projdi všechny řádky a přidej stylování
+    for i in range(1, len(df.columns)):
+        if df.columns[i][0] != df.columns[i - 1][0]:  # Pokud se změní 'tree'
+            styles.iloc[:, i] = 'border-left: 2px solid black'  # Přidej hranici
+    
+    return styles
+
 def ostyluj(subdf):
     cm = sns.light_palette("blue", as_cmap=True)
-    subdf = (subdf.style.format(precision=3).background_gradient(#cmap=cm, 
-                                             axis=None)
-             # .apply(add_horizontal_line, axis=None)
+    vmin=subdf.min(skipna=True).min()
+    subdf = (subdf.style.format(precision=3)
+             .background_gradient(vmin=vmin, axis=None)
+             .format(na_rep='')
+             .apply(add_vertical_line, axis=None)
              .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
              .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
              )
@@ -226,8 +239,16 @@ def ostyluj(subdf):
 @solara.component
 def slope_trend_more():
     with solara.Row():
-        solara.Text("Barevně separovat podle:")
-        solara.ToggleButtonsSingle(value=color, values=["pullNo", "Dependent"])
+        with solara.Tooltip(solara.Markdown(
+"""
+* Můžeš vybrat pullNo (číslo zatažení) a sledovat, jestli tečky jiných barev
+  vykayují nějaký trend, například jestli je tečka pro nulté zatažení stabilně pod 
+  nebo nad tečkou pro další zatažení.
+* Můžeš vybrat senzor (Dependent) a sledovat, jestli jsou tečky různých barev ve stejné 
+  výšce a tím pádem jsou informace z různých senzorů konzistentní.
+""", style={'color':'white'})):
+            solara.Text("Barevně separovat podle ⓘ:")
+            solara.ToggleButtonsSingle(value=color, values=["pullNo", "Dependent"])
     df = (pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
       .pipe(lambda x: x[x['lower_cut'] == 0.3])
       .pipe(lambda x: x[x['tree'] == s.tree.value])
@@ -258,9 +279,8 @@ dávají stejné výstupy a podobně pro Yellow a YellowMaj.
 """        
         )
     # solara.DataFrame(df)
-    df["1000Slope"] = 1000*df["Slope"]
-    df = df.pivot(index=["day","type"], columns=["Dependent", "pullNo"], values="1000Slope")
-    
+    df = df.pivot(index=["day","type"], columns=["Dependent", "pullNo"], values="Slope × 1000")
+    df = df.sort_index(axis=1)
     solara.display(ostyluj(df))
     return
 
