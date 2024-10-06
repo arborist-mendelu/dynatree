@@ -63,6 +63,7 @@ all_data = solara.reactive(False)
 force_interval = solara.reactive("None")
 tab_index = solara.reactive(0)
 subtab_index = solara.reactive(0)
+subtab_indexB = solara.reactive(0)
 
 # data_from_url = solara.reactive(False)
 # 
@@ -108,7 +109,7 @@ def get_data_object():
 
 @task
 def nakresli(reset_measurements=False):
-    start = time.time_ns()/1000000
+    # start = time.time_ns()/1000000
     # lib_dynatree.logger.info(f"Is {day.value} {tree.value} {measurement.value} nakresli current? {nakresli.is_current()}")
     if not nakresli.is_current():
         # lib_dynatree.logger.info("Interrupting non current function nakresli")
@@ -118,7 +119,7 @@ def nakresli(reset_measurements=False):
     figs = [data_object.plot()] 
     if include_details.value:
         figs = figs + [i.plot(n) for n,i in enumerate(data_object.pullings)]
-    end = time.time_ns()/1000000
+    # end = time.time_ns()/1000000
     # print(f"nakresli took {end-start}ms.")
     return figs
 
@@ -242,7 +243,7 @@ def slope_trend_more():
         with solara.Tooltip(solara.Markdown(
 """
 * Můžeš vybrat pullNo (číslo zatažení) a sledovat, jestli tečky jiných barev
-  vykayují nějaký trend, například jestli je tečka pro nulté zatažení stabilně pod 
+  vykazují nějaký trend, například jestli je tečka pro nulté zatažení stabilně pod 
   nebo nad tečkou pro další zatažení.
 * Můžeš vybrat senzor (Dependent) a sledovat, jestli jsou tečky různých barev ve stejné 
   výšce a tím pádem jsou informace z různých senzorů konzistentní.
@@ -273,9 +274,9 @@ def slope_trend_more():
     solara.Markdown(
 """
 * Barvné rozseparování podle pullNo (číslo zatáhnutí) umožní sledovat, jestli 
-se během experimentu liší první zatáhnutí od ostatních a jak. 
-* Barevné rozseparování podle senzoru (Dependent) umožní posoudit, jestli Blue a BlueMaj 
-dávají stejné výstupy a podobně pro Yellow a YellowMaj.
+  se během experimentu liší první zatáhnutí od ostatních a jak. 
+* Barevné rozseparování podle senzoru (Dependent) umožní posoudit, 
+  jestli Blue a BlueMaj dávají stejné výstupy a podobně pro Yellow a YellowMaj.
 """        
         )
     # solara.DataFrame(df)
@@ -378,7 +379,7 @@ stránce Downloads.
                                 pass
 
         with solara.lab.Tab("Jeden strom (trend, ...)", icon_name="mdi-pine-tree"):
-            with solara.lab.Tabs(**dark):
+            with solara.lab.Tabs(lazy=True,**dark):
                 with solara.lab.Tab("Srovnání s prvním zatáhnutím"):
                     with solara.Card():
                         solara.Markdown(
