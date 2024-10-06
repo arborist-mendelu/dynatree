@@ -343,10 +343,6 @@ def Page():
     with solara.Sidebar():
         if tab_index.value in [1]:
             s.Selection_trees_only()
-        if (tab_index.value, subtab_index.value) == (1,2):
-            with solara.Card():
-                solara.Markdown("**Variable**")
-                solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
         if tab_index.value == 0:
             Selection()
         if tab_index.value == 2:
@@ -412,6 +408,10 @@ stránce Downloads.
                         except:
                             pass
                 with solara.lab.Tab("Trend (1 senzor)"):
+                    with solara.Sidebar():
+                        with solara.Card():
+                            solara.Markdown("**Variable**")
+                            solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
                     with solara.Column():
                         slope_trend()
                 with solara.lab.Tab("Trend (více)"):
