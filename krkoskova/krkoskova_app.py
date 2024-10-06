@@ -36,9 +36,13 @@ sensors = ["ext01", "ext02"] + ['A01_z', 'A01_y', 'A02_z', 'A02_y', 'A03_z', 'A0
 n = solara.reactive(8)
 
 @solara.component
-def plot(df, msg=None, resample=False, title=None, **kw):
+def plot(df, msg=None, resample=False, title=None, xaxis="Time / s", **kw):
     # df = df_.copy()
-    fig = px.line(df, title=title, **kwds, **kw)    
+    fig = px.line(df, title=title, labels={'x': xaxis}, **kwds, **kw)   
+    fig.update_layout(
+        xaxis_title=xaxis,
+        yaxis_title="",
+        )
     if resample:
         fig_res = FigureResampler(fig)
         solara.FigurePlotly(fig_res)    
@@ -184,10 +188,14 @@ Here we consider release time {m.release_time}.
                 fft_image = s.fft
                 plot(fft_image, 
                      resample=False, title = f"FFT for dataset: {m.tree}, {m.measurement}, {sensor.value}",
-                     log_y=True, range_x=[0,10]
+                     log_y=True, range_x=[0,10],
+                     xaxis = "Frequency / Hz"
                      )
             with solara.Card():
-                plot(pd.DataFrame(data=sig_tukey, index=new_time), resample=True, title = f"Dataset: {m.tree}, {m.measurement}, {sensor.value}")
+                plot(pd.DataFrame(
+                    data=sig_tukey, index=new_time), 
+                    resample=True, 
+                    title = f"Dataset: {m.tree}, {m.measurement}, {sensor.value}")
 
         with solara.lab.Tab("Frequency domain (Welch)"):
             with solara.Row():
@@ -196,7 +204,7 @@ Here we consider release time {m.release_time}.
             welch_image = s.welch(n=n.value)
             plot(welch_image, 
                  resample=False, title = f"Welch spectrum for dataset: {m.tree}, {m.measurement}, {sensor.value}",
-                 log_y=True
+                 log_y=True, xaxis = "Frequency / Hz"
                  )
             
             
