@@ -116,7 +116,7 @@ class Measurement:
         if sensor in df.columns:
             return df[sensor]
         else:
-            return None
+            return pd.Series()
 
 class Signal():
     def __init__(self, data, time, dt):
