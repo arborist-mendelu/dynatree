@@ -216,14 +216,21 @@ color = solara.reactive("pullNo")
 
 # Funkce pro stylování - přidání hranice, když se změní hodnota v úrovni 'tree'
 def add_vertical_line(df):
+    
     styles = pd.DataFrame('', index=df.index, columns=df.columns)
     
     # Projdi všechny řádky a přidej stylování
     for i in range(1, len(df.columns)):
-        if df.columns[i][0] != df.columns[i - 1][0]:  # Pokud se změní 'tree'
-            styles.iloc[:, i] = 'border-left: 2px solid black'  # Přidej hranici
-    
+        if df.columns[i][0] != df.columns[i - 1][0]:  
+            styles.iloc[:, i] = 'border-left: 5px solid lightgray'  # Přidej hranici
     return styles
+
+# Funkce pro detekci změn v první úrovni MultiIndexu
+def highlight_changes(col):
+    first_level = col.columns.get_level_values(0)
+    # Porovnáme s předchozí hodnotou, kde je změna, tam vrátíme styl
+    return ['border-right: 3px solid black' if first_level[i] != first_level[i-1] else '' for i in range(len(first_level))]
+
 
 def ostyluj(subdf):
     cm = sns.light_palette("blue", as_cmap=True)
@@ -232,6 +239,7 @@ def ostyluj(subdf):
              .background_gradient(vmin=vmin, axis=None)
              .format(na_rep='')
              .apply(add_vertical_line, axis=None)
+             # .apply(highlight_changes, axis=0, subset=pd.IndexSlice[:, :])
              .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
              .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
              )
@@ -283,6 +291,7 @@ def slope_trend_more():
     df = df.pivot(index=["day","type"], columns=["Dependent", "pullNo"], values="Slope × 1000")
     df = df.sort_index(axis=1)
     solara.display(ostyluj(df))
+    solara.Style(".col_heading.level0 {text-align: center !important; background-color: lightgray; border-right: 5px solid white !important;}")
     solara.FileDownload(df.to_csv(), filename=f"tahovky_{s.tree.value}.csv", 
                         label="Download data from this table")    
     return
