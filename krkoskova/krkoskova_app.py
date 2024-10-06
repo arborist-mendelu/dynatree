@@ -89,7 +89,10 @@ class Measurement:
     def release_time(self, probe="ext02"):
         if "tuk" in self.measurement:
             return 0
-        df = self.data_extenso[probe]
+        df = self.data_extenso
+        if len(df) == 0:
+            return 0
+        df = df[probe]
         df = df - df.mean()
         df = df.abs()
         release_time = df.idxmax()
@@ -156,6 +159,8 @@ def Page():
 
     m = Measurement(tree.value, measurement.value)
     data = m.sensor_data(sensor.value)
+    if len(data) == 0:
+        return None
 
     with solara.lab.Tabs():
         with solara.lab.Tab("Time domain"):
