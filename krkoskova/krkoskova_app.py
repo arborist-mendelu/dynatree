@@ -114,7 +114,7 @@ Here we consider release time {m.release_time}.
                     solara.Markdown(
 """
 * Dvojklik cykluje mezi původním zobrazením a zobrazením celého grafu (včetně vysokých frekvencí)
-* Zpracovává se sifnál od vypuštění 60 sekund (lano), nebo celý signá lod začátku do konce (ťuk).
+* Zpracovává se signál od vypuštění 60 sekund (lano), nebo celý signá lod začátku do konce (ťuk).
 """)
             with solara.Card():
 
