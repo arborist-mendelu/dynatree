@@ -83,12 +83,13 @@ class Measurement:
         else:
             return pd.Series()
         
-    def signal(self, sensor):
+    def signal(self, sensor, extend=60):
         data = self.sensor_data(sensor).loc[self.release_time:]
-        return Signal(data.values, data.index, self.dt(sensor), sensor)
+        return Signal(data.values, data.index, self.dt(sensor), sensor, extend=extend)
     
 class Signal():
     def __init__(self, data_, time_, dt, sensor, extend=None):
+        data_ = data_ - np.mean(data_)
         if extend is not None:
             time = np.arange(time_[0], time_[0]+extend,dt)
             data = np.interp(time, time_, data_, right=0)

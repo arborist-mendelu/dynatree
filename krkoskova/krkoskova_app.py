@@ -93,7 +93,7 @@ Here we consider release time {m.release_time}.
                 title=f"Dataset: {m.tree}, {m.measurement}, {sensor.value}", 
                 labels={'x': "popisek"}, **kwds)   
             fig.update_layout(
-                yaxis_title=""
+                yaxis_title=""                
                 )
             fig_res = FigureResampler(fig)
             with solara.Card():
@@ -104,19 +104,20 @@ Here we consider release time {m.release_time}.
                     range_x=[0,10],
                     **kwds
                     )
-                # fig_fft.up
-                # ,
-                #     resample=False, title = f"FFT for dataset: {m.tree}, {m.measurement}, {sensor.value}",
-                #     og_y=True, range_x=[0,10],
-                #     xaxis = "Frequency / Hz"
-                #     )
+                fig_fft.update_layout(
+                    xaxis_title="Frequency / Hz",
+                    yaxis_title="",
+                    title=f"FFT: {m.tree}, {m.measurement}, {sensor.value}", 
+                    )
                 solara.FigurePlotly(fig_fft)
+                with solara.Info():
+                    solara.Markdown(
+"""
+* Dvojklik cykluje mezi původním zobrazením a zobrazením celého grafu (včetně vysokých frekvencí)
+* Zpracovává se sifnál od vypuštění 60 sekund (lano), nebo celý signá lod začátku do konce (ťuk).
+""")
             with solara.Card():
-                # fig = px.line(
-                #     pd.DataFrame(data = s.tukey, index = s.time, columns=[sensor.value]), 
-                #     title=f"Dataset: {m.tree}, {m.measurement}, {sensor.value}", 
-                #     labels={'x': "popisek"}, **kwds)   
-                # breakpoint()
+
                 if isinstance(m, lk.Tuk):
                     d = pd.DataFrame(index = m.peaks, data =np.zeros_like(m.peaks),
                                      columns=["Hammer hit"])
@@ -138,6 +139,10 @@ Here we consider release time {m.release_time}.
                 for i in out:
                     df_welch.loc[:,f"{i['start']:.2f}-{i['end']:.2f}"] = i['welch'].values.reshape(-1)
                 fig = px.line(df_welch, log_y=True, **kwds)
+                fig.update_layout(
+                    xaxis_title="Frequency / Hz",
+                    yaxis_title="",
+                    )
                 solara.FigurePlotly(fig)
             else:
                 welch_image = s.welch(n=n.value)
@@ -145,6 +150,12 @@ Here we consider release time {m.release_time}.
                      resample=False, title = f"Welch spectrum for dataset: {m.tree}, {m.measurement}, {sensor.value}",
                      log_y=True, xaxis = "Frequency / Hz"
                      )
+            with solara.Info():
+                solara.Markdown(
+"""
+* Pro meření 'lano' se uvažuje celý signál od vypuštění 60 sekund. 
+* Pro měření 'tuk' se uvažuje každý interval mezi dvěma ťuky.
+""")
             solara.FigurePlotly(fig_res)   
             resampled()
 
