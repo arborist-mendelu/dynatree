@@ -142,6 +142,7 @@ Here we consider release time {m.release_time}.
                 fig.update_layout(
                     xaxis_title="Frequency / Hz",
                     yaxis_title="",
+                    title=f"Welch spectrum: {m.tree}, {m.measurement}, {sensor.value}", 
                     )
                 solara.FigurePlotly(fig)
             else:
