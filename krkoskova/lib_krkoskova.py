@@ -84,11 +84,11 @@ class Measurement:
             return pd.Series()
         
     def signal(self, sensor):
-        data = self.sensor_data(sensor)[self.release_time:]
-        return Signal(data.values, data.index, self.dt(sensor))
+        data = self.sensor_data(sensor).loc[self.release_time:]
+        return Signal(data.values, data.index, self.dt(sensor), sensor)
     
 class Signal():
-    def __init__(self, data_, time_, dt, extend=None):
+    def __init__(self, data_, time_, dt, sensor, extend=None):
         if extend is not None:
             time = np.arange(time_[0], time_[0]+extend,dt)
             data = np.interp(time, time_, data_, right=0)
@@ -97,6 +97,7 @@ class Signal():
         self.data = data
         self.time = time
         self.dt = dt  
+        self.sensor = sensor
         if dt == 0.002:
             self.fs = 500
         elif dt == 0.0002:
@@ -121,7 +122,7 @@ class Signal():
             pass
         yf = fft(data)  # preform FFT analysis
         yf_r = 2.0/N * np.abs(yf[0:N//2])
-        df_fft = pd.DataFrame(data=yf_r, index=xf_r)
+        df_fft = pd.DataFrame(data=yf_r, index=xf_r, columns=[self.sensor])
         return df_fft
 
     def welch(self,n=8):
@@ -142,5 +143,6 @@ class Tuk(Measurement):
     def signal_on_intervals(self,sensor):
         d = self.sensor_data(sensor)
         return [
-            Signal(d[i:j], d[i:j].index, self.dt(sensor)) for i,j in zip(self.peaks[:-1], self.peaks[1:])
+            Signal(d[i:j], d[i:j].index, self.dt(sensor), sensor) 
+               for i,j in zip(self.peaks[:-1], self.peaks[1:])
             ]

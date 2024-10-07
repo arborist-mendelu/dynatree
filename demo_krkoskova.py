@@ -31,12 +31,17 @@ for _ in out:
     start = _['start']
     end = _['end']
     ax.plot(i.index, i.values, label=f"{start:.2f}-{end:.2f}")
+    print(len(i.index))
 
 ax.set(yscale='log', title="Welch spectrum")
 ax.legend(title="Time interval")
 ax.grid()
     
 plt.show()
+#%%
+
+pd.DataFrame({i: out[i]['welch'].values.reshape(-1) for i in range(len(out))},
+             index = out[0]['welch'].index)
 
 #%%
 
@@ -46,6 +51,7 @@ for _ in out:
     start = _['start']
     end = _['end']
     ax.plot(i.index, i.values, label=f"{start:.2f}-{end:.2f}")
+    print(len(i.index))
 
 ax.set(yscale='log', title="FFT spectrum")
 ax.legend(title="Time interval")

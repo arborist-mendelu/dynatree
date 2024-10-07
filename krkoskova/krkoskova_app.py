@@ -4,8 +4,12 @@ import solara
 import pandas as pd
 import glob
 import plotly.express as px
+import plotly.graph_objects as go
 from plotly_resampler import FigureResampler
 from scipy import signal
+
+import hvplot.pandas  # noqa
+hvplot.extension('plotly')
 
 import krkoskova.lib_krkoskova as lk
 
@@ -46,15 +50,14 @@ def plot(df, msg=None, resample=False, title=None, xaxis="Time / s", **kw):
         solara.FigurePlotly(fig_res)    
     else:
         solara.FigurePlotly(fig)    
-    if resample:
-        solara.Info(
+
+def resampled():
+    solara.Info(
 """
 Data jsou s příliš vysokou samplovací frekvencí. Kvůli plynulosti 
 zobrazování jsou zde přesamplována pomocí knihovny `plotly_resampler`. 
 Do výpočtů již vstupují data všechna.
 """)
-    if msg is not None:
-        msg
 
 @solara.component
 def Page():
@@ -87,27 +90,65 @@ Here we consider release time {m.release_time}.
 """)
 
         with solara.lab.Tab("Frequency domain (FFT)"):
+            s = m.signal(sensor=sensor.value)
+            fig = px.line(
+                pd.DataFrame(data = s.tukey, index = s.time, columns=[sensor.value]), 
+                title=f"Dataset: {m.tree}, {m.measurement}, {sensor.value}", 
+                labels={'x': "popisek"}, **kwds)   
+            fig.update_layout(
+                yaxis_title=""
+                )
+            fig_res = FigureResampler(fig)
             with solara.Card():
-                fft_image = m.signal(sensor=sensor.value).fft
-                plot(fft_image, 
-                     resample=False, title = f"FFT for dataset: {m.tree}, {m.measurement}, {sensor.value}",
-                     log_y=True, range_x=[0,10],
-                     xaxis = "Frequency / Hz"
-                     )
+                fft_image = s.fft
+                fig_fft = px.line(
+                    pd.DataFrame(fft_image),
+                    log_y=True,
+                    range_x=[0,10],
+                    **kwds
+                    )
+                # fig_fft.up
+                # ,
+                #     resample=False, title = f"FFT for dataset: {m.tree}, {m.measurement}, {sensor.value}",
+                #     og_y=True, range_x=[0,10],
+                #     xaxis = "Frequency / Hz"
+                #     )
+                solara.FigurePlotly(fig_fft)
             with solara.Card():
-                s = m.signal(sensor=sensor.value)
-                plot(pd.DataFrame(data = s.tukey, index = s.time), 
-                    resample=True, 
-                    title = f"Dataset: {m.tree}, {m.measurement}, {sensor.value}")
+                # fig = px.line(
+                #     pd.DataFrame(data = s.tukey, index = s.time, columns=[sensor.value]), 
+                #     title=f"Dataset: {m.tree}, {m.measurement}, {sensor.value}", 
+                #     labels={'x': "popisek"}, **kwds)   
+                # breakpoint()
+                if isinstance(m, lk.Tuk):
+                    d = pd.DataFrame(index = m.peaks, data =np.zeros_like(m.peaks),
+                                     columns=["Hammer hit"])
+                    fig2 = px.scatter(d, color_discrete_sequence=['red'], **kwds)
+                    fig2.update_traces(marker=dict(size=10))
+                    fig = go.Figure(data = fig.data + fig2.data)
+                    fig_res = FigureResampler(fig)
+
+                solara.FigurePlotly(fig_res)   
+                resampled()
 
         with solara.lab.Tab("Frequency domain (Welch)"):
             with solara.Row():
                 solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
                 solara.ToggleButtonsSingle(values=list(range(6,13)), value=n)
-            welch_image = m.signal(sensor=sensor.value).welch(n=n.value)
-            plot(welch_image, 
-                 resample=False, title = f"Welch spectrum for dataset: {m.tree}, {m.measurement}, {sensor.value}",
-                 log_y=True, xaxis = "Frequency / Hz"
-                 )
-            
+            if isinstance(m, lk.Tuk):
+                out = [{'welch': i.welch(n.value), 'start':i.time[0], 'end':i.time[-1]} for i in m.signal_on_intervals(sensor.value)]
+                df_welch = pd.DataFrame(index=out[0]['welch'].index)
+                for i in out:
+                    df_welch.loc[:,f"{i['start']:.2f}-{i['end']:.2f}"] = i['welch'].values.reshape(-1)
+                fig = px.line(df_welch, log_y=True, **kwds)
+                solara.FigurePlotly(fig)
+            else:
+                welch_image = s.welch(n=n.value)
+                plot(welch_image, 
+                     resample=False, title = f"Welch spectrum for dataset: {m.tree}, {m.measurement}, {sensor.value}",
+                     log_y=True, xaxis = "Frequency / Hz"
+                     )
+            solara.FigurePlotly(fig_res)   
+            resampled()
+
             
