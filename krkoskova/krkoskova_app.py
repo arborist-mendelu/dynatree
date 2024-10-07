@@ -5,19 +5,17 @@ import pandas as pd
 import glob
 import plotly.express as px
 from plotly_resampler import FigureResampler
-
-from scipy.signal import find_peaks
 from scipy import signal
-from scipy.fft import fft, fftfreq
 
-data_directory = "../data/krkoskova"
+import krkoskova.lib_krkoskova as lk
+
+
+data_directory = lk.data_directory
 
 names = glob.glob(f"{data_directory}/*acc.parquet")
 names = [i.replace("_acc.parquet","").replace(data_directory,"").replace("/","") for i in names]
 names.sort()
 names = {i.split("_")[0] : [j.split("_")[1] for j in names if i.split("_")[0] in j] for i  in names}
-
-
 
 styles_css = """
         .widget-image{width:100%;} 
@@ -58,97 +56,6 @@ Do výpočtů již vstupují data všechna.
     if msg is not None:
         msg
 
-class Measurement:
-    def __init__(self, tree, measurement):
-        self.tree = tree
-        self.measurement = measurement
-        
-    @property
-    def data_extenso(self):
-        """
-        Returns dataframe with data from extensometers. Sampling is 500Hz.
-        """
-        try:
-            df = pd.read_parquet(f"{data_directory}/{self.tree}_{self.measurement}_ext.parquet")
-        except:
-            return pd.DataFrame()
-        df.index = np.arange(0,len(df))*0.002
-        df.index.name = "Time"
-        return df
-
-    @property
-    def data_acc(self):
-        """
-        Returns dataframe with data from accelerometers. Sampling is 5000Hz.
-        """
-        try:
-            df = pd.read_parquet(f"{data_directory}/{self.tree}_{self.measurement}_acc.parquet")
-        except:
-            return pd.DataFrame()
-        df.index = np.arange(0,len(df))*0.0002
-        df.index.name = "Time"
-        return df
-    
-    @property
-    def release_time(self, probe="ext02"):
-        if "tuk" in self.measurement:
-            return 0
-        df = self.data_extenso
-        if len(df) == 0:
-            return 0
-        df = df[probe]
-        df = df - df.mean()
-        df = df.abs()
-        release_time = df.idxmax()
-        return release_time
-    
-    def sensor_sampling(self, sensor):
-        if "ext" in sensor:
-            return 500
-        else:
-            return 5000
-
-    def dt(self, sensor):
-        if "ext" in sensor:
-            return 0.002
-        else:
-            return 0.0002
-
-
-    def sensor_data(self, sensor):
-        if "ext" in sensor:
-            df = self.data_extenso
-        else:
-            df = self.data_acc
-        if sensor in df.columns:
-            return df[sensor]
-        else:
-            return pd.Series()
-
-class Signal():
-    def __init__(self, data, time, dt):
-        self.data = data
-        self.time = time
-        self.dt = dt  
-        if dt == 0.002:
-            self.fs = 500
-        elif dt == 0.0002:
-            self.fs = 5000
-        
-    @property
-    def fft(self):
-        N = len(self.data)  # get the number of points
-        xf_r = fftfreq(N, self.dt)[:N//2]
-        yf = fft(self.data)  # preform FFT analysis
-        yf_r = 2.0/N * np.abs(yf[0:N//2])
-        return pd.DataFrame(data=yf_r, index=xf_r)
-
-    def welch(self,n=8):
-        nperseg = 2**n
-        f, Pxx = signal.welch(x=self.data, fs=self.fs, nperseg=nperseg)
-        df_welch = pd.DataFrame(index=f, data=Pxx)
-        return df_welch
-
 @solara.component
 def Page():
     solara.Style(styles_css)
@@ -161,7 +68,10 @@ def Page():
         solara.Markdown("**Sensor**")
         solara.ToggleButtonsSingle(value=sensor, values = sensors)
 
-    m = Measurement(tree.value, measurement.value)
+    if "tuk" in measurement.value:
+        m = lk.Tuk(tree.value, measurement.value)
+    else:
+        m = lk.Measurement(tree.value, measurement.value)
     data = m.sensor_data(sensor.value)
     if len(data) == 0:
         return None
@@ -175,25 +85,18 @@ f"""
 Release time is established as a maximum of ext02 for "lano0X" and as zero for "tuk0X".
 Here we consider release time {m.release_time}.
 """)
-        sig = data.loc[m.release_time:]
-        sig = sig - sig.mean()
-        new_time = np.arange(sig.index[0], sig.index[0]+60,m.dt(sensor.value))
-        sig = np.interp(new_time, sig.index, sig, right=0)
-        tukey_window = signal.windows.tukey(len(sig), alpha=0.1, sym=False)
-        sig_tukey = sig * tukey_window
-        s = Signal(sig, new_time, m.dt(sensor.value))
 
         with solara.lab.Tab("Frequency domain (FFT)"):
             with solara.Card():
-                fft_image = s.fft
+                fft_image = m.signal(sensor=sensor.value).fft
                 plot(fft_image, 
                      resample=False, title = f"FFT for dataset: {m.tree}, {m.measurement}, {sensor.value}",
                      log_y=True, range_x=[0,10],
                      xaxis = "Frequency / Hz"
                      )
             with solara.Card():
-                plot(pd.DataFrame(
-                    data=sig_tukey, index=new_time), 
+                s = m.signal(sensor=sensor.value)
+                plot(pd.DataFrame(data = s.tukey, index = s.time), 
                     resample=True, 
                     title = f"Dataset: {m.tree}, {m.measurement}, {sensor.value}")
 
@@ -201,7 +104,7 @@ Here we consider release time {m.release_time}.
             with solara.Row():
                 solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
                 solara.ToggleButtonsSingle(values=list(range(6,13)), value=n)
-            welch_image = s.welch(n=n.value)
+            welch_image = m.signal(sensor=sensor.value).welch(n=n.value)
             plot(welch_image, 
                  resample=False, title = f"Welch spectrum for dataset: {m.tree}, {m.measurement}, {sensor.value}",
                  log_y=True, xaxis = "Frequency / Hz"
