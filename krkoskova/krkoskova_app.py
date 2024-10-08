@@ -8,9 +8,9 @@ import plotly.graph_objects as go
 from plotly_resampler import FigureResampler
 from scipy import signal
 from scipy.fft import fft, fftfreq
-# import hvplot
-# import hvplot.pandas  # noqa
-# hvplot.extension('plotly')
+import hvplot
+import hvplot.pandas  # noqa
+hvplot.extension('plotly')
 
 import krkoskova.lib_krkoskova as lk
 
@@ -80,7 +80,6 @@ def nakresli_po_tuku(b=None):
     
     # fig1 = df.hvplot(title = f"Časový průběh zrychlení po úderu kladivem,<br>{tree} {measurement} {sensor}", xlabel="Čas / s", **kwds)
     # fig2 = df_fft.hvplot(title = f"FFT signálu,<br>{tree} {measurement} {sensor}", xlabel="Frekvence / Hz", **kwds)
-    
     # plots = (fig1+fig2)
     # plots.opts(shared_axes=False, width=200,)
     fig1 = px.line(df)
@@ -96,6 +95,7 @@ def nakresli_po_tuku(b=None):
     solara.FigurePlotly(fig2)
     solara.Info(solara.Markdown(
 """
+* Křivek je tolik, kolik je ťuknutí. Každá křivka představuje kmity krátký okamžik po ťuknutí.
 * Kliknutí na legendu vypne nebo zapne příslušnou křivku.
 * Dvojklik na legendu vypne nebo zapne ostatní křivky.
 """                
