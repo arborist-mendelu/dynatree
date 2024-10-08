@@ -89,6 +89,12 @@ class Measurement:
     
 class Signal():
     def __init__(self, data_, time_, dt, sensor, extend=None):
+        """
+        data_ is 1D numpy field
+        time_ is 1D numpy field
+        dt is sampling frequency
+        extend governs the possible extension of signal by zeros
+        """
         data_ = data_ - np.mean(data_)
         if extend is not None:
             time = np.arange(time_[0], time_[0]+extend,dt)
@@ -132,14 +138,28 @@ class Signal():
         df_welch = pd.DataFrame(index=f, data=Pxx)
         return df_welch
     
+    def restrict_signal(self, length=None):
+        if length is not None:
+            mask = self.time < self.time[0]+length
+            self.data = self.data[mask]
+            self.time = self.time[mask]
+            
+    def plot(self):
+        fig, ax = plt.subplots()
+        ax.plot(self.time, self.data)
+        return fig, ax
+    
 class Tuk(Measurement):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        peaks,_ = (self.data_acc["A01_z"]
-            .abs()
-            .pipe(find_peaks, height=10, distance=1000)
-        )
-        self.peaks = self.data_acc["A01_z"].index[peaks]
+        if "A01_z" in self.data_acc.columns:
+            peaks,_ = (self.data_acc["A01_z"]
+                .abs()
+                .pipe(find_peaks, height=10, distance=1000)
+            )
+            self.peaks = self.data_acc["A01_z"].index[peaks]
+        else:
+            self.peaks = []
     
     def signal_on_intervals(self,sensor):
         d = self.sensor_data(sensor)

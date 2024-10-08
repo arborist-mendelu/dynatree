@@ -159,5 +159,16 @@ Here we consider release time {m.release_time}.
 """)
             solara.FigurePlotly(fig_res)   
             resampled()
+            
+        with solara.lab.Tab("Spectrogram"):
+            with solara.Row():
+                solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
+                solara.ToggleButtonsSingle(values=list(range(3,13)), value=n)
+            f, t, Sxx = signal.spectrogram(data, s.fs, nperseg=2**n.value)
+            fig, ax = plt.subplots(figsize=(15,8))
+            ax.pcolormesh(t, f, Sxx, shading='gouraud')
+            ax.set( ylabel ='Frequency / Hz', xlabel='Time / s', title=f"Spectrogram of {m.tree}, {m.measurement}, {sensor.value}, n={n.value}")
+            solara.FigureMatplotlib(fig, format='png')
+            plt.close('all')
 
             
