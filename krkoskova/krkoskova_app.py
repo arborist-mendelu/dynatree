@@ -56,6 +56,31 @@ zobrazování jsou zde přesamplována pomocí knihovny `plotly_resampler`.
 Do výpočtů již vstupují data všechna.
 """)
 
+fft_freq = solara.reactive(pd.DataFrame(columns=["tree","measurement","sensor","frequency"]))
+def save_freq_on_click(x=None):
+    fft_freq.value=pd.concat([
+        pd.DataFrame(
+            data = [[tree.value, measurement.value, sensor.value,x['points']['xs'][0]]],
+            columns = fft_freq.value.columns
+            ),
+            fft_freq.value]
+        ).reset_index(drop=True)
+
+def remove_first_line(x=None):
+    fft_freq.value = fft_freq.value.iloc[1:,:].reset_index(drop=True)
+
+@solara.component
+def tabulka():
+    if len(fft_freq.value)>0:
+        with solara.Card():
+            solara.Markdown("**Frekvence z FFT**")
+            solara.display(fft_freq.value)
+            with solara.Row():
+                solara.FileDownload(fft_freq.value.to_csv(), 
+                                    filename=f"Krkoskova_FFT.csv", label="Download as csv")
+                solara.Button(label="Drop first line", on_click=remove_first_line)
+    
+
 @solara.component
 def Page():
     solara.Style(styles_css)
@@ -109,13 +134,18 @@ Here we consider release time {m.release_time}.
                     yaxis_title="",
                     title=f"FFT: {m.tree}, {m.measurement}, {sensor.value}", 
                     )
-                solara.FigurePlotly(fig_fft)
+                solara.FigurePlotly(fig_fft, on_click=save_freq_on_click)
                 with solara.Info():
                     solara.Markdown(
 """
 * Dvojklik cykluje mezi původním zobrazením a zobrazením celého grafu (včetně vysokých frekvencí)
 * Zpracovává se signál od vypuštění 60 sekund (lano), nebo celý signál od začátku do konce (ťuk).
+* Kliknutí do grafu uloží frekvenci do tabulky. Ta je jenom v paměti a musíš si ji stáhnout.
+* Tabulka s FFT frekvencemi je v sidebaru aby se mohla zobrazovat vedle grafu. Plní se daty shora
+  a první hodnotu je možno smazat tlačítkem.
 """)
+                with solara.Sidebar():
+                    tabulka()                
             with solara.Card():
 
                 if isinstance(m, lk.Tuk):
