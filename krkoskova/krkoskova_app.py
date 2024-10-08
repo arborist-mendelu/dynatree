@@ -7,9 +7,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly_resampler import FigureResampler
 from scipy import signal
+from scipy.fft import fft, fftfreq
+import hvplot
+import hvplot.pandas  # noqa
+hvplot.extension('plotly')
 
 import krkoskova.lib_krkoskova as lk
-
 
 data_directory = lk.data_directory
 
@@ -31,7 +34,9 @@ trees = list(names.keys())
 tree = solara.reactive(trees[0])
 measurement = solara.reactive("lano01")
 sensor = solara.reactive("ext01")
-sensors = ["ext01", "ext02"] + ['A01_z', 'A01_y', 'A02_z', 'A02_y', 'A03_z', 'A03_y']
+sensors_ext = ["ext01", "ext02"]
+sensors_acc = ['A01_z', 'A01_y', 'A02_z', 'A02_y', 'A03_z', 'A03_y'] 
+sensors = solara.reactive(sensors_ext + sensors_acc)
 n = solara.reactive(8)
 
 @solara.component
@@ -48,6 +53,56 @@ def plot(df, msg=None, resample=False, title=None, xaxis="Time / s", **kw):
     else:
         solara.FigurePlotly(fig)    
 
+@solara.component
+def nakresli_po_tuku(b=None):
+    length = 500
+    m = lk.Tuk(tree.value, measurement.value)
+    sig = m.signal(sensor.value)
+    
+    df = pd.DataFrame(index = sig.time[:length])
+    
+    N = length  # get the number of points
+    xf_r = fftfreq(N, m.dt(sensor.value))[:N//2]
+    df_fft = pd.DataFrame(index = xf_r)
+    
+    for i,peak in enumerate(m.peaks):
+        mask = np.argmax(sig.time > peak)
+        mask = range(mask, mask+length)
+        data = sig.data[mask]
+        df.loc[:,i] = data
+    
+        data = data - np.mean(data)
+        yf = fft(data)  # preform FFT analysis
+        yf_r = 2.0/N * np.abs(yf[0:N//2])
+        df_fft.loc[:,i] = yf_r
+    
+    
+    
+    # fig1 = df.hvplot(title = f"Časový průběh zrychlení po úderu kladivem,<br>{tree} {measurement} {sensor}", xlabel="Čas / s", **kwds)
+    # fig2 = df_fft.hvplot(title = f"FFT signálu,<br>{tree} {measurement} {sensor}", xlabel="Frekvence / Hz", **kwds)
+    
+    # plots = (fig1+fig2)
+    # plots.opts(shared_axes=False, width=200,)
+    fig1 = px.line(df)
+    fig1.update_layout (xaxis_title="Čas /s", yaxis_title="", 
+                        title=f"Časový vývoj {tree.value} {measurement.value} {sensor.value}")
+    solara.FigurePlotly(fig1)
+    
+    fig2 = px.line(df_fft.iloc[1:,:], log_y=True, )
+    fig2.update_layout(
+                    xaxis_title=f"Frekvence / Hz", yaxis_title="", 
+                    title=f"FFT  {tree.value} {measurement.value} {sensor.value}"               
+                    )
+    solara.FigurePlotly(fig2)
+    solara.Info(solara.Markdown(
+"""
+* Kliknutí na legendu vypne nebo zapne příslušnou křivku.
+* Dvojklik na legendu vypne nebo zapne ostatní křivky.
+"""                
+                ))
+    # solara.display(df)
+    # solara.FigurePlotly(fig2)
+
 def resampled():
     solara.Info(
 """
@@ -58,13 +113,14 @@ Do výpočtů ale již vstupují data všechna.
 
 fft_freq = solara.reactive(pd.DataFrame(columns=["tree","measurement","sensor","frequency"]))
 def save_freq_on_click(x=None):
-    fft_freq.value=pd.concat([
-        pd.DataFrame(
-            data = [[tree.value, measurement.value, sensor.value,x['points']['xs'][0]]],
-            columns = fft_freq.value.columns
-            ),
-            fft_freq.value]
-        ).reset_index(drop=True)
+    new_df = pd.DataFrame(
+        data = [[tree.value, measurement.value, sensor.value,x['points']['xs'][0]]],
+        columns = fft_freq.value.columns
+        )
+    if len(fft_freq.value) == 0:
+        fft_freq.value = new_df
+    else:
+        fft_freq.value=pd.concat([new_df, fft_freq.value]).reset_index(drop=True)
 
 def remove_first_line(x=None):
     fft_freq.value = fft_freq.value.iloc[1:,:].reset_index(drop=True)
@@ -91,7 +147,7 @@ def Page():
         solara.Markdown("**Measurement**")
         solara.ToggleButtonsSingle(value=measurement, values = names[tree.value])
         solara.Markdown("**Sensor**")
-        solara.ToggleButtonsSingle(value=sensor, values = sensors)
+        solara.ToggleButtonsSingle(value=sensor, values = sensors.value)
 
     if "tuk" in measurement.value:
         m = lk.Tuk(tree.value, measurement.value)
@@ -105,6 +161,7 @@ def Page():
     with solara.lab.Tabs(lazy=True, value=krkoskova_tab_number):
         with solara.lab.Tab("Time domain"):
             if data is not None:
+                # sensors.value = sensors_ext + sensors_acc
                 plot(data, resample="A" in sensor.value, title = f"Dataset: {m.tree}, {m.measurement}, {sensor.value}")
                 solara.Text(
 f"""
@@ -114,6 +171,7 @@ Here we consider release time {m.release_time}.
 
         with solara.lab.Tab("Frequency domain (FFT)"):
             if krkoskova_tab_number.value == 1:
+                # sensors.value = sensors_ext + sensors_acc
                 fig = px.line(
                     pd.DataFrame(data = s.tukey, index = s.time, columns=[sensor.value]), 
                     title=f"Dataset: {m.tree}, {m.measurement}, {sensor.value}", 
@@ -125,7 +183,7 @@ Here we consider release time {m.release_time}.
                 with solara.Card():
                     fft_image = s.fft
                     fig_fft = px.line(
-                        pd.DataFrame(fft_image),
+                        pd.DataFrame(fft_image).iloc[1:,:],
                         log_y=True,
                         range_x=[0,10],
                         **kwds
@@ -144,7 +202,7 @@ Here we consider release time {m.release_time}.
     * Kliknutí do grafu uloží frekvenci do tabulky. Ta je jenom v paměti a musíš si ji stáhnout.
     * Na peak najížděj shora, potom se to chytne k nejvyšší hodnotě.
     * Tabulka s FFT frekvencemi je v sidebaru aby se mohla zobrazovat vedle grafu. Plní se daty shora
-      a první hodnotu je možno smazat tlačítkem.
+      a první hodnotu je možno smazat tlačítkem. Dokud je tabulka prázdná, nic se nezobrazuje.
     """)
                     with solara.Sidebar():
                         tabulka()                
@@ -163,6 +221,7 @@ Here we consider release time {m.release_time}.
     
         with solara.lab.Tab("Frequency domain (Welch)"):
             if krkoskova_tab_number.value == 2:
+                # sensors.value = sensors_ext + sensors_acc
                 with solara.Row():
                     solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
                     solara.ToggleButtonsSingle(values=list(range(6,13)), value=n)
@@ -190,19 +249,25 @@ Here we consider release time {m.release_time}.
     * Pro meření 'lano' se uvažuje celý signál od vypuštění 60 sekund. 
     * Pro měření 'tuk' se uvažuje každý interval mezi dvěma ťuky.
     """)
-                solara.FigurePlotly(fig_res)   
-                resampled()
+                # fig_res = FigureResampler(fig)
+                # solara.FigurePlotly(fig_res)   
+                # resampled()
             
-        with solara.lab.Tab("Spectrogram"):
+        with solara.lab.Tab("Po ťuku"):
             if krkoskova_tab_number.value == 3:
-                with solara.Row():
-                    solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
-                    solara.ToggleButtonsSingle(values=list(range(3,13)), value=n)
-                f, t, Sxx = signal.spectrogram(data, s.fs, nperseg=2**n.value)
-                fig, ax = plt.subplots(figsize=(15,8))
-                ax.pcolormesh(t, f, Sxx, shading='gouraud')
-                ax.set( ylabel ='Frequency / Hz', xlabel='Time / s', title=f"Spectrogram of {m.tree}, {m.measurement}, {sensor.value}, n={n.value}")
-                solara.FigureMatplotlib(fig, format='png')
-                plt.close('all')
+                # sensors.value = sensors_acc
+                if not "A" in sensor.value or not "tuk" in measurement.value:
+                    solara.Error("Vyber nějaký ťuk a akcelerometr. Ne lano ani extensometr.")
+                else:
+                    nakresli_po_tuku()                
+                # with solara.Row():
+                #     solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
+                #     solara.ToggleButtonsSingle(values=list(range(3,13)), value=n)
+                # f, t, Sxx = signal.spectrogram(data, s.fs, nperseg=2**n.value)
+                # fig, ax = plt.subplots(figsize=(15,8))
+                # ax.pcolormesh(t, f, Sxx, shading='gouraud')
+                # ax.set( ylabel ='Frequency / Hz', xlabel='Time / s', title=f"Spectrogram of {m.tree}, {m.measurement}, {sensor.value}, n={n.value}")
+                # solara.FigureMatplotlib(fig, format='png')
+                # plt.close('all')
 
             
