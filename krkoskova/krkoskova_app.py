@@ -8,9 +8,9 @@ import plotly.graph_objects as go
 from plotly_resampler import FigureResampler
 from scipy import signal
 from scipy.fft import fft, fftfreq
-import hvplot
-import hvplot.pandas  # noqa
-hvplot.extension('plotly')
+# import hvplot
+# import hvplot.pandas  # noqa
+# hvplot.extension('plotly')
 
 import krkoskova.lib_krkoskova as lk
 
