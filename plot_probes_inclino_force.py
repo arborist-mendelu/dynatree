@@ -188,7 +188,7 @@ def plot_one_measurement(
     ax = axes[2]
 
     f = df[(f'Pt{fix_target}', f'{plot_coordiante}0')].copy()
-    f = f-f[0]
+    f = f-f.iloc[0]
     fmax = np.nanmax(f.values)
     fmin = np.nanmin(f.values)
     if np.abs(fmax) > np.abs(fmin):
