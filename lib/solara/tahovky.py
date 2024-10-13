@@ -263,6 +263,7 @@ def slope_trend_more():
       .pipe(lambda x: x[x['tree'] == s.tree.value])
       .pipe(lambda x: x[x['measurement'] == 'M01'])
       .pipe(lambda x: x[~x['failed']])
+      .pipe(lambda x: x[~x['optics']])
       .pipe(lambda x: x[~x['Dependent'].str.contains('Min')])
       .pipe(lambda x: x[x['tree'].str.contains('BK')])
       .pipe(lambda x: x[x['Independent'] == "M"])
@@ -288,6 +289,7 @@ def slope_trend_more():
 """        
         )
     # solara.DataFrame(df)
+    
     df = df.pivot(index=["day","type"], columns=["Dependent", "pullNo"], values="Slope × 1000")
     df = df.sort_index(axis=1)
     solara.display(ostyluj(df))

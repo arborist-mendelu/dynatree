@@ -600,7 +600,7 @@ def main():
         measurement_type = row['type']
         msg = f"Processing {day} {tree} {measurement}, {measurement_type}, optics availability is {optics}"
         logger.info(msg)
-        for cut in [.10,.30]:
+        for cut in [.30]:
             for use_optics in [True, False]:
                 # try:
                     # get regressions for two cut-out values and merge

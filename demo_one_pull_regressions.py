@@ -12,7 +12,7 @@ import logging
 
 lib_dynatree.logger.setLevel(logging.DEBUG)
 
-day, tree, measurement = "2021-03-22", "BK01", "M03"
+day, tree, measurement = "2021-03-22", "BK04", "M01"
 # day, tree, measurement = "2023-07-17", "BK01", "M03"
 cut = 0.3
 use_optics = True
