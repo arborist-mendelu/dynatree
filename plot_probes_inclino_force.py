@@ -187,7 +187,7 @@ def plot_one_measurement(
     # plot force and strain
     ax = axes[2]
 
-    f = df[(f'Pt{fix_target}', f'{plot_coordiante}0')].copy()
+    f = df[(f'Pt{fix_target}', f'{plot_coordiante}0')].copy().dropna()
     f = f-f.iloc[0]
     fmax = np.nanmax(f.values)
     fmin = np.nanmin(f.values)
@@ -250,6 +250,7 @@ def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
         filename = file.split("/")[-1].replace(".parquet","")
         # print(filename,", ",end="", flush=True)
         tree, measurement = filename.split("_")
+        pbar.set_description(f"{tree} {measurement}")
         plot_one_measurement(
             date=date, 
             path=path, 
