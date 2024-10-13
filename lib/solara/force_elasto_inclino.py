@@ -142,7 +142,9 @@ def Interaktivni_grafy():
         df_pt = m.data_optics
         df_pt = df_pt - df_pt.iloc[0,:]
     except:
-        solara.Error("Není dostupný")
+        solara.Error("Měření se nepodařlo zpracovat.")
+        if not m.is_optics_available:
+            solara.Error("Data pro optiku nejsou k dispozici.")
         return
 
 
@@ -151,7 +153,8 @@ def Interaktivni_grafy():
         with solara.Card():
             solara.InputFloat(label="ruční doladění synchronizace", 
                               value=delta_time_manual, )
-            solara.Switch(label="Použít pro synchronizaci manuální hodnotu místo předdefinované", value=use_manual_delta)
+            solara.Switch(label="Použít pro synchronizaci manuální hodnotu místo předdefinované hodnoty v csv souboru.", value=use_manual_delta)
+            solara.Text(f"{s.day.value},{s.tree.value},{s.measurement.value},{delta_time_manual.value},,,,,,,,,,")
         with solara.Column():
             solara.Text(f"'release time' síla (maximum neposunuté síly): {m.release_time_force}")
             solara.Text(f"'release time' optika (maximum Pt3): {m.release_time_optics}")
@@ -230,9 +233,12 @@ def Grafy():
 """
 * Grafy vznikají za běhu. **Jsou použita předpočítaná data**, 
   aby bylo vidět přesně to, co jde do zpracování. 
-* Nezohledňují se případné posuny v synchronizaci nebo instrukce pro 
-  nulování inklinometrů. Tato data jdou vidět na sousední záložce (Interaktivní graf). Po změnách v 
-  `csv/synchronization_finetune_inclinometers_fix.csv` spusť `parquet_add_inclino.py` a změny se projeví i zde a ve výpočtech.
+* Nezohledňují se případné následné posuny v synchronizaci nebo instrukce pro 
+  nulování inklinometrů, které byly zaneseny po posledním spuštění skriptu 
+  `parquet_add_inclino.py`. Tato data jdou vidět na sousední záložce 
+  (Interaktivní graf). 
+* Po změnách v `csv/synchronization_finetune_inclinometers_fix.csv` 
+  spusť `parquet_add_inclino.py` a změny se projeví i zde a ve výpočtech.
 """))
     # if measurement.value not in available_measurements(df, day.value, tree.value):
     #     solara.Error(f"Measurement {measurement.value} not available for this tree.")

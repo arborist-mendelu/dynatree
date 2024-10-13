@@ -75,6 +75,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         super().__init__(**kwargs)
         self.optics = optics
         self.restricted = restricted
+        self.parent = lib_dynatree.DynatreeMeasurement(**kwargs)
 
     @cached_property    
     def pullings(self): 
@@ -109,6 +110,32 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         ans.loc[:,"optics"] = self.optics
         ans.loc[:,["lower_bound","upper_bound"]] = self.restricted
         return ans
+    
+    @property
+    def release_time_force(self):
+        """
+        For M01 returns the maximum of the Force during the first pull.
+        
+        For other cases returns the same property of the parent class.
+        """
+        if self.measurement != "M01":
+            return self.parent.release_time_force
+        times = self._split_df_static_pulling()
+        data = self.data_pulling["Force(100)"]
+        return data.loc[:times[1]['minimum']].idxmax()
+
+    @property
+    def release_time_optics(self):
+        if self.measurement != "M01":
+            return self.parent.release_time_optics
+        times = self._split_df_static_pulling()
+        data = self.data_optics[("Pt3","Y0")]
+        data = data - data.iloc[0]
+        data = (data
+                .loc[:times[1]['minimum']]
+                .pipe(np.abs)
+                )
+        return data.idxmax()
 
     def __str__(self):
         ans = super(DynatreeStaticMeasurement,self).__str__()

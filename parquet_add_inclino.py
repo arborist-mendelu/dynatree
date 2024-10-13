@@ -4,7 +4,9 @@
 Created on Tue Nov  7 12:52:38 2023
 
 POZN: 8.8.2024 byly upraveny cesty pro nove ulozeni souboru. 
-
+POZN: 13.10.2024 přidáno M01, ostatní kousky kódu částečně refaktorizovány, ale 
+      na funkci by to nemělo mít vliv.
+    
 Načte inklinoměry, sílu a elastometr, přeškáluje čas na stejné časy
 jako v optice, synchronizuje okamžiky vypuštění podle maxima síly a
 maxima Pt3.
@@ -45,11 +47,15 @@ import numpy as np
 import warnings
 from scipy import interpolate
 from lib_dynatree import read_data, find_release_time_optics
-from lib_dynatree import read_data_inclinometers, find_finetune_synchro, directory2date
+from lib_dynatree import find_finetune_synchro, directory2date
 from lib_dynatree import DynatreeMeasurement
 from static_pull import DynatreeStaticMeasurement
 import lib_dynatree
+from dynatree_util import read_data_inclinometers
+from tqdm import tqdm
 
+import logging
+lib_dynatree.logger.setLevel(logging.WARNING)
 
 def fix_data_by_points_on_ground(df):
     """
@@ -149,20 +155,23 @@ def extend_one_file(
     df_fixed = df.copy().pipe(fix_data_by_points_on_ground) 
     # df s daty z inklinoměrů, synchronizuje a interpoluje na stejné časové okamžiky
     if measurement == "1":
-        release_time_optics = 0
+        lib_dynatree.logger.debug("Measurement is M01")
         m = DynatreeStaticMeasurement(day=date, tree=tree, measurement=measurement)
-        delta_time = 0
+        release_time_optics = m.release_time_optics
     else:
+        lib_dynatree.logger.debug("Measurement is not M01")
         release_time_optics = find_release_time_optics(df)
-        delta_time = find_finetune_synchro(directory2date(date), tree,measurement)
+        m = DynatreeMeasurement(date, tree, measurement)
+
+    lib_dynatree.logger.debug(f"release time optics: {m.release_time_optics}")
+    delta_time = find_finetune_synchro(directory2date(date), tree,measurement)
     
     if delta_time != 0:
-        print(f"\n  info: Fixing data, nonzero delta time {delta_time} found.")
+        lib_dynatree.logger.debug(f"    Fixing data, nonzero delta time {delta_time} found.")
         
     lib_dynatree.logger.debug(f"    delta time {delta_time} release optics time {release_time_optics}")
     
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
-    m = DynatreeMeasurement(date, tree, measurement)
     df_pulling_tests_ = read_data_inclinometers(
         m, 
         release=release_time_optics, 
@@ -178,7 +187,7 @@ def extend_one_file(
         if bounds is None or np.isnan(bounds).any():
             continue
         start,end = bounds
-        print(f"\n  info: Fixing inclinometer {inclino}, setting to zero from {start} to {end}.")
+        lib_dynatree.logger.debug(f"  Fixing inclinometer {inclino}, setting to zero from {start} to {end}.")
         inclino_mean = df_pulling_tests.loc[start:end,inclino].mean()
         df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean                
 
@@ -194,25 +203,31 @@ def main(path="../data"):
     if answer.upper() in ["Y", "YES"]:
         pass
     else:
-        print("File processing skipped.")
+        lib_dynatree.logger.info("File processing skipped.")
         return None
     files = glob.glob(f"{path}/parquet/*/*.parquet")
     files.sort()
+    pbar = tqdm(total=len(files))
     for file in files:
         date = file.split()
         date,filename = file.split("/")[-2:]
-        if not "M01" in filename:
-            continue
-        print(f"{date}/{filename}, ",end="", flush=True)
+        # if not "M01" in filename:
+        #     continue
+        lib_dynatree.logger.info(f"{date}/{filename}")
         tree = filename[2:4]
         measurement = filename[7]
+
+        pbar.update(1)
+        pbar.set_description(f"{date} {tree} {measurement}")
+
         extend_one_file(
             date=date, 
             path=path, 
             tree=tree, 
             measurement=measurement,
             write_file=True)
-    print(f"Konec zpracování")
+    lib_dynatree.logger.info(f"Konec zpracování")
+    pbar.close()
 
 if __name__ == "__main__":
     main()
