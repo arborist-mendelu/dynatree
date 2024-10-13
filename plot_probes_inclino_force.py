@@ -251,16 +251,19 @@ def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
         # print(filename,", ",end="", flush=True)
         tree, measurement = filename.split("_")
         pbar.set_description(f"{tree} {measurement}")
-        plot_one_measurement(
-            date=date, 
-            path=path, 
-            tree=tree[-2:], 
-            measurement=measurement[-1], 
-            save_figure=True, 
-            return_figure=False, 
-            major_minor=True, 
-            release_detail=release_detail
-            )
+        try:
+            plot_one_measurement(
+                date=date, 
+                path=path, 
+                tree=tree[-2:], 
+                measurement=measurement[-1], 
+                save_figure=True, 
+                return_figure=False, 
+                major_minor=True, 
+                release_detail=release_detail
+                )
+        except:
+            pass
         pbar.update(1)
 
     pbar.close()
