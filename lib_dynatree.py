@@ -337,7 +337,9 @@ def read_data_inclinometers(m, release=None, delta_time=0):
     if df_pulling_tests["Force(100)"].isna().all():
         release_time_force = release
     else:
-        release_time_force = df_pulling_tests["Force(100)"].idxmax()
+        release_time_force = m.release_time_force
+    if release == 0:
+        release_time_force = 0
         
     # Sync the dataframe from inclino to optics    
     # if delta_time != 0:
@@ -701,3 +703,15 @@ class DynatreeMeasurement:
     @property
     def is_optics_available(self):
         return os.path.isfile(self.file_optics_name)
+    
+    @property
+    def release_time_optics(self):
+        if self.measurement == "M01":
+            return 0
+        return find_release_time_optics(self.data_optics)
+    
+    @property
+    def release_time_force(self):
+        if self.measurement == "M01":
+            return 0
+        return self.data_pulling["Force(100)"].idxmax()

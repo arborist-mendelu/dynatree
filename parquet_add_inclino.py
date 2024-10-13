@@ -47,6 +47,9 @@ from scipy import interpolate
 from lib_dynatree import read_data, find_release_time_optics
 from lib_dynatree import read_data_inclinometers, find_finetune_synchro, directory2date
 from lib_dynatree import DynatreeMeasurement
+from static_pull import DynatreeStaticMeasurement
+import lib_dynatree
+
 
 def fix_data_by_points_on_ground(df):
     """
@@ -129,6 +132,7 @@ def extend_one_file(
     The dataframe with fixes, inclinometers, force , ...
 
     """
+    lib_dynatree.logger.debug(f"Funkce extend_one_file")
     
     # accept both M02 and 2 as a measurement number
     measurement = measurement[-1]
@@ -144,11 +148,18 @@ def extend_one_file(
     # df se sploupci s odectenim pohybu bodu na zemi
     df_fixed = df.copy().pipe(fix_data_by_points_on_ground) 
     # df s daty z inklinoměrů, synchronizuje a interpoluje na stejné časové okamžiky
-    release_time_optics = find_release_time_optics(df)
+    if measurement == "1":
+        release_time_optics = 0
+        m = DynatreeStaticMeasurement(day=date, tree=tree, measurement=measurement)
+        delta_time = 0
+    else:
+        release_time_optics = find_release_time_optics(df)
+        delta_time = find_finetune_synchro(directory2date(date), tree,measurement)
     
-    delta_time = find_finetune_synchro(directory2date(date), tree,measurement)
     if delta_time != 0:
         print(f"\n  info: Fixing data, nonzero delta time {delta_time} found.")
+        
+    lib_dynatree.logger.debug(f"    delta time {delta_time} release optics time {release_time_optics}")
     
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     m = DynatreeMeasurement(date, tree, measurement)
@@ -190,6 +201,8 @@ def main(path="../data"):
     for file in files:
         date = file.split()
         date,filename = file.split("/")[-2:]
+        if not "M01" in filename:
+            continue
         print(f"{date}/{filename}, ",end="", flush=True)
         tree = filename[2:4]
         measurement = filename[7]

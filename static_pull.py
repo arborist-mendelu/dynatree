@@ -143,7 +143,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
             )
         ]).reshape(-1, 2)
 
-    def _split_df_static_pulling(self, intervals='auto'):
+    def _split_df_static_pulling(self, intervals='auto', probe="Force(100)"):
         """
         Analyzes data in static tests, with three pulls. Inputs the dataframe, 
         outputs the dictionary. 
@@ -163,36 +163,43 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         """
         if intervals == 'auto':
             intervals = self._find_intervals_to_split_measurements_from_csv()
-        df= self.data_pulling
-        df = df[["Force(100)"]].dropna()
+        if probe in ["Pt3","Pt4"]:
+            df = self.data_optics
+            df = df[[(probe,"Y0")]].dropna()
+            df.columns = [probe]
+            df = df - df.iloc[0,:]
+            df = df * np.sign(df.sum())
+        else:
+            df= self.data_pulling
+            df = df[[probe]].dropna()
 
         # Interpolace a vyhlazeni
         new_index = np.arange(df.index[0],df.index[-1],0.1)
         window_length = 100
         polyorder = 3
-        newdf = df[["Force(100)"]].dropna()
-        interpolation_function = interp1d(newdf.index, newdf["Force(100)"], kind='linear')
-        df_interpolated = pd.DataFrame(interpolation_function(new_index), index=new_index, columns=["Force(100)"])
-        df_interpolated['Force_smoothed'] = savgol_filter(df_interpolated['Force(100)'], window_length=window_length, polyorder=polyorder)
+        newdf = df[[probe]].dropna()
+        interpolation_function = interp1d(newdf.index, newdf[probe], kind='linear')
+        df_interpolated = pd.DataFrame(interpolation_function(new_index), index=new_index, columns=[probe])
+        df_interpolated['probe_smoothed'] = savgol_filter(df_interpolated[probe], window_length=window_length, polyorder=polyorder)
 
         steps_down=None
         if intervals is None:
             # Divide domain into interval where force is large and small
-            maximum = df_interpolated["Force(100)"].max()
-            df_interpolated["Force_step"] = (df_interpolated["Force(100)"]>0.5*maximum).astype(int)
+            maximum = df_interpolated[probe].max()
+            df_interpolated["probe_step"] = (df_interpolated[probe]>0.5*maximum).astype(int)
 
             # identify jumps down
-            diff_d1 = df_interpolated["Force_step"].diff()
+            diff_d1 = df_interpolated["probe_step"].diff()
             steps_down = list(diff_d1.index[diff_d1<0])
             intervals = zip([0]+steps_down[:-1],steps_down)
 
         time = []
         for start,end in intervals:
-            df_subset = df.loc[(df.index > start) & (df.index < end),"Force(100)"]
+            df_subset = df.loc[(df.index > start) & (df.index < end),probe]
             maximum_idx = np.argmax(df_subset)
             t = {'maximum': df_subset.index[maximum_idx]}
 
-            df_subset = df.loc[(df.index > start) & (df.index < t['maximum']),"Force(100)"]
+            df_subset = df.loc[(df.index > start) & (df.index < t['maximum']),probe]
             idxmin = df_subset.idxmin()
             t['minimum'] = idxmin
 
@@ -253,20 +260,22 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         if optics and not self.is_optics_available:
             lib_dynatree.logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement}")
             return []
-        if  (not optics) or (self.measurement == "M01"):
+        if not optics:
             df = self.data_pulling_interpolated
-            if self.measurement == "M01":
-                times = self._split_df_static_pulling()
-            else:
-                times = [{"minimum":0, "maximum": self.data_pulling["Force(100)"].idxmax()}]                
         else:
-            dfA = self.data_optics_extra_reduced
+            dfA = self.data_optics_extra
             dfB = self.data_optics_pt34.loc[:,[("Pt3","Y0"),("Pt4","Y0")]].copy()
             dfB = dfB - dfB.iloc[0,:]
             df = pd.concat([dfA,dfB], axis=1)
-            times = [{"minimum":0, "maximum": df["Force(100)"].idxmax().iloc[0]}]
             df = df.drop([i for i in df.columns if i[1]=='X0'], axis=1)
             df.columns = [i[0] for i in df.columns]
+
+        if  self.measurement == "M01":
+            times = self._split_df_static_pulling()
+        else:
+            times = [{"minimum":0, "maximum": self.data_pulling["Force(100)"].idxmax()}]
+
+
         df["Elasto-strain"] = df["Elasto(90)"]/200000
         if restricted == 'get_all':
             return df

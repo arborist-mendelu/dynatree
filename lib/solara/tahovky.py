@@ -71,7 +71,7 @@ def fix_input(a):
     """
     The input is a list. 
 
-    The output is ["Force(100)"] is the input is empty. If not empty, the 
+    The output is ["Force(100)"] if the input is empty. If not empty, the 
     input is copied to output.
 
     Used for drawing. If no value is selected for the graph, the Force(100) 
@@ -719,7 +719,7 @@ def Detail():
                 """)
     except:
         solara.Error(
-            "Něco se pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny. Pokud tato hláška během chvíle zmizí, je neškodná.")
+            "Něco se (možná) pokazilo při hledání regresí. Nahlaš prosím problém. Pro další práci vyber jiné veličiny. Pokud tato hláška během chvíle zmizí, je neškodná.")
 
     title = f"{s.day.value} {s.tree.value} {s.measurement.value} {s.method.value} Pull {pull_value}"
     if interactive_graph.value:

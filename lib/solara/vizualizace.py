@@ -235,7 +235,7 @@ def Page():
                         solara.Warning(solara.Markdown("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná."))
                 except:
                     pass
-        with solara.lab.Tab("Tahovky@100Hz"):
+        with solara.lab.Tab("Tahovky@optika_freq"):
             with solara.Card():
                 try:
                     if (data_object.is_optics_available) and (tab_index.value==2):

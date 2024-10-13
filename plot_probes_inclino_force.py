@@ -85,12 +85,19 @@ def plot_one_measurement(
     if draw_to == None:
         draw_to = df.index.max()
 
-
     bounds_for_fft = df_remarks[
         (df_remarks["tree"] == f"BK{tree}") & 
         (df_remarks["measurement"] == f"M0{measurement}") & 
         (df_remarks["date"] == date.replace("_","-"))
             ]
+    if len(bounds_for_fft)>0:
+        lower_bound = bounds_for_fft["start"].values[0]
+        upper_bound = bounds_for_fft["end"].values[0] 
+        description = bounds_for_fft['remark'].values[0]
+    else:
+        lower_bound = 0
+        upper_bound = 0
+        description = "Static measurement"
     fix_target = 3
     plot_coordiante = "Y"
     fixes = [
@@ -120,7 +127,7 @@ def plot_one_measurement(
     ax.grid()
     t = ax.text(
         0, 0, 
-        bounds_for_fft['remark'].values[0],
+        description,
         ha='left', 
         va='bottom',
         transform=ax.transAxes,
@@ -128,8 +135,7 @@ def plot_one_measurement(
         backgroundcolor="white",
         wrap=True)
     t.set_bbox(dict(facecolor='white', alpha=0.5, edgecolor='white'))
-    lower_bound = bounds_for_fft["start"].values[0]
-    upper_bound = bounds_for_fft["end"].values[0] 
+
     if upper_bound == np.inf:
         upper_bound = df["Time"].max()
     ax.axvspan(lower_bound, upper_bound, alpha=0.5, color="gray")
@@ -138,9 +144,15 @@ def plot_one_measurement(
     ax = axes[1]    
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     delta_time = find_finetune_synchro(date, tree,measurement) 
+    # print("delta time",delta_time)
 
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
-    release_time_optics = find_release_time_optics(df)
+    if measurement == "1":
+        release_time_optics = 0
+    else:
+        release_time_optics = find_release_time_optics(df)
+    # print ("release time",release_time_optics, "measurement",measurement)
+    
     df_pulling_tests = read_data_inclinometers(
         m, 
         release=release_time_optics, 
