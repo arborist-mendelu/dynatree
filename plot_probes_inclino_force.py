@@ -176,7 +176,7 @@ def plot_one_measurement(
             df_pulling_tests[i] = df_pulling_tests[
                 axes_major[i.replace("blue","Inclino(80)").replace("yellow","Inclino(81)")]]
         # df_major_minor = process_inclinometers_major_minor(df_pulling_tests)
-        df_major_minor.loc[draw_from:draw_to,list_major_minor].plot(ax=ax, style=".")
+        df_major_minor.loc[draw_from:min([draw_to,df_major_minor.index[-1]]),list_major_minor].plot(ax=ax, style=".")
         ax.legend(list_major_minor, title="", loc=3)
     else:
         df_pulling_tests.loc[draw_from:draw_to,list_inclino].plot(ax=ax, style=".")
@@ -251,19 +251,16 @@ def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
         # print(filename,", ",end="", flush=True)
         tree, measurement = filename.split("_")
         pbar.set_description(f"{tree} {measurement}")
-        try:
-            plot_one_measurement(
-                date=date, 
-                path=path, 
-                tree=tree[-2:], 
-                measurement=measurement[-1], 
-                save_figure=True, 
-                return_figure=False, 
-                major_minor=True, 
-                release_detail=release_detail
-                )
-        except:
-            pass
+        plot_one_measurement(
+            date=date, 
+            path=path, 
+            tree=tree[-2:], 
+            measurement=measurement[-1], 
+            save_figure=True, 
+            return_figure=False, 
+            major_minor=True, 
+            release_detail=release_detail
+            )
         pbar.update(1)
 
     pbar.close()

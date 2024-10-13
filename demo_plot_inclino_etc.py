@@ -23,9 +23,26 @@ import logging
 lib_dynatree.logger.setLevel(logging.DEBUG)
 
 measurement = "M01"
-tree = "BK11"
-date = "2021-03-22"
+tree = "BK09"
+date = "2022-04-05"
 # DF = read_data("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
+
+
+f = plot_one_measurement(
+        date=date,
+        tree=tree, 
+        measurement=measurement, 
+        # xlim=(0,50),
+        # df_extra=df_ext,
+        # df=DF,
+        return_figure=True, 
+        major_minor=True
+        ) 
+plt.grid()
+plt.show()
+
+
+#%%
 
 
 m = DynatreeStaticMeasurement(day=date, tree=tree, measurement=measurement)
@@ -63,8 +80,8 @@ f = plot_one_measurement(
         tree=tree, 
         measurement=measurement, 
         # xlim=(0,50),
-        df_extra=df_ext,
-        df=DF,
+        # df_extra=df_ext,
+        # df=DF,
         return_figure=True, 
         major_minor=True
         ) 
