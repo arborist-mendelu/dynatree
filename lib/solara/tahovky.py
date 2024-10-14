@@ -18,18 +18,17 @@ import plotly.express as plx
 import solara.lab
 from solara.lab import task
 import solara
-import time
 import lib.solara.select_source as s
 import graphs_regressions
 import static_lib_pull_comparison
-import plotly.graph_objects as go
+
 DATA_PATH = "../data"
-import logging
 from great_tables import GT, style, loc
 import seaborn as sns
 import dynatree_util as du
 
 # from weasyprint import HTML, CSS
+# import logging
 # lib_dynatree.logger.setLevel(logging.INFO)
 
 import config
@@ -43,12 +42,12 @@ include_details = solara.reactive(False)
 
 # Create data object when initialized
 data_object = lib_dynatree.DynatreeMeasurement(
-    s.day.value, 
-    s.tree.value, 
+    s.day.value,
+    s.tree.value,
     s.measurement.value,
     measurement_type=s.method.value,
     # use_optics=use_optics.value
-    )
+)
 
 data_possible_restrictions = ["0-100%", "10%-90%", "30%-90%"]
 
@@ -63,6 +62,7 @@ force_interval = solara.reactive("None")
 tab_index = solara.reactive(0)
 subtab_index = solara.reactive(0)
 subtab_indexB = solara.reactive(0)
+
 
 # data_from_url = solara.reactive(False)
 # 
@@ -80,8 +80,10 @@ def fix_input(a):
         return ["Force(100)"]
     return a
 
+
 def resetuj_a_nakresli(reset_measurements=False):
     return nakresli()
+
 
 # def get_data_object(day, tree, measuemrent, measurement_type, optics):
 def get_data_object():
@@ -97,7 +99,7 @@ def get_data_object():
         measurement_type=s.method.value,
         optics=False
         # optics = use_optics.value
-        )
+    )
     if data_object.is_optics_available and s.use_optics.value == True:
         data_object = static_pull.DynatreeStaticMeasurement(
             day=s.day.value, tree=s.tree.value,
@@ -105,6 +107,7 @@ def get_data_object():
             measurement_type=s.method.value,
             optics=True)
     return data_object
+
 
 @task
 def nakresli(reset_measurements=False):
@@ -115,12 +118,13 @@ def nakresli(reset_measurements=False):
         nakresli.cancel()
         return None
     data_object = get_data_object()
-    figs = [data_object.plot()] 
+    figs = [data_object.plot()]
     if include_details.value:
-        figs = figs + [i.plot(n) for n,i in enumerate(data_object.pullings)]
+        figs = figs + [i.plot(n) for n, i in enumerate(data_object.pullings)]
     # end = time.time_ns()/1000000
     # print(f"nakresli took {end-start}ms.")
     return figs
+
 
 styles_css = """
         .widget-image{width:100%;} 
@@ -130,6 +134,7 @@ styles_css = """
         .v-btn__content { text-transform: none;}
         """
 
+
 # first_pass = True
 # http://localhost:8765/tahovky?tree=BK04&method=normal&measurement=M02&use_optics=True&day=2022-08-16
 # http://localhost:8765/tahovky?tree=BK08&method=den&measurement=M03&use_optics=False&day=2022-08-16
@@ -137,55 +142,57 @@ styles_css = """
 @solara.component
 def prehled():
     solara.Markdown(
-"""
-**Přehled dat pro jednotlivé veličiny a stromy**
-
-* Tady jsou směrnice z regresí M/blue, M/yellow a M_Elasto/Elasto. Pokud nějaká
-  hodnota ulítává, je možné, že inklinometr nebo extenzometr špatně měřil. V takovém případě se 
-  kontroluje asi časový průběh příslušného přístroje.
-* True/False se vztahuje k přítomnosti listů. 
-* Číslo 0 až 2 se vztahuje k počtu ořezů.
-* V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
-"""
-        )
+        """
+        **Přehled dat pro jednotlivé veličiny a stromy**
+        
+        * Tady jsou směrnice z regresí M/blue, M/yellow a M_Elasto/Elasto. Pokud nějaká
+          hodnota ulítává, je možné, že inklinometr nebo extenzometr špatně měřil. V takovém případě se 
+          kontroluje asi časový průběh příslušného přístroje.
+        * True/False se vztahuje k přítomnosti listů. 
+        * Číslo 0 až 2 se vztahuje k počtu ořezů.
+        * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
+        """
+    )
     # with solara.Row():
     #     solara.Button("Update Page", on_click=ShowRegressionsHere)
     images = graphs_regressions.main(trees=[s.tree.value], width=s.width.value, height=s.height.value)
     df_failed = pd.read_csv(config.file['static_fail'])
     df_checked = pd.read_csv(config.file['static_checked_OK'])
-    for t,f in images.items():
+    for t, f in images.items():
         with solara.Card():
             solara.FigurePlotly(f)
             solara.Markdown(f"Failed experiments")
-            solara.display(df_failed[df_failed["tree"]==t])
+            solara.display(df_failed[df_failed["tree"] == t])
             solara.Markdown(f"Succesfully checked experiments")
-            solara.display(df_checked[df_checked["tree"]==t])
+            solara.display(df_checked[df_checked["tree"] == t])
     solara.FileDownload(graphs_regressions.read_data().to_csv(), filename="static_dynatree.csv", label="Download data")
 
+
 sort_ascending = solara.reactive(True)
+
 
 @solara.component
 def slope_trend():
     df = static_lib_pull_comparison.df_all_M
     dependent = probe.value
     filtered_df = df[df['Dependent'] == dependent]
-    filtered_df = filtered_df[filtered_df["tree"]==s.tree.value]
+    filtered_df = filtered_df[filtered_df["tree"] == s.tree.value]
     subdf = filtered_df.sort_values(by="day")
     cat_order = subdf["day"].drop_duplicates().tolist()
-    
+
     # Vykreslení boxplotu
     fig = plx.box(
         filtered_df,
-        x='day',                # Kategorická osa X
-        y='Slope',             # Hodnota pro osy Y
-        color='type',          # Barvení podle sloupce 'type'
+        x='day',  # Kategorická osa X
+        y='Slope',  # Hodnota pro osy Y
+        color='type',  # Barvení podle sloupce 'type'
         title=f'Slope by Day and Type, tree {s.tree.value}, slope for momentum and {probe.value}',
         category_orders={"day": cat_order},
-        template =  "plotly_white", 
-        hover_data=["tree","type","day","pullNo", "Dependent", "measurement"],
-        points='all', 
-        width = s.width.value,
-        height = s.height.value,
+        template="plotly_white",
+        hover_data=["tree", "type", "day", "pullNo", "Dependent", "measurement"],
+        points='all',
+        width=s.width.value,
+        height=s.height.value,
         # box=True,
         # symbol='measurement',      # Tvar bodů na základě sloupce 'measurement'
     )
@@ -193,47 +200,50 @@ def slope_trend():
     solara.FigurePlotly(fig)
     # solara.DataFrame(filtered_df.sort_values(by="Slope"))
     great_table = (
-        GT(filtered_df[["type","day","tree","measurement","pullNo","Slope"]]
-                 .sort_values(by="Slope"))
-           .fmt_scientific("Slope")
-           .tab_style(
-                style=[
-                    style.fill(color="lightblue"),
-                    style.text(weight="bold")
-                ],
-                locations=loc.body(columns="Slope")
-                )
-           .tab_header(title=f"Slope of momentum versus {dependent}")
-           .tab_spanner(label="Measurement", columns=["type","day","tree","measurement","pullNo"])
-           .cols_label({"type":"", "day":"", "measurement":"", "tree":"", "pullNo":""})
-           )
-           # .fmt_nanoplot("Slope", plot_type="bar")
+        GT(filtered_df[["type", "day", "tree", "measurement", "pullNo", "Slope"]]
+           .sort_values(by="Slope"))
+        .fmt_scientific("Slope")
+        .tab_style(
+            style=[
+                style.fill(color="lightblue"),
+                style.text(weight="bold")
+            ],
+            locations=loc.body(columns="Slope")
+        )
+        .tab_header(title=f"Slope of momentum versus {dependent}")
+        .tab_spanner(label="Measurement", columns=["type", "day", "tree", "measurement", "pullNo"])
+        .cols_label({"type": "", "day": "", "measurement": "", "tree": "", "pullNo": ""})
+    )
+    # .fmt_nanoplot("Slope", plot_type="bar")
     solara.display(great_table)
     # solara.FileDownload(HTML(string=great_table.as_raw_html()).write_pdf(), filename=f"dynatree-tahovky-table.pdf", label="Download PDF")
 
+
 color = solara.reactive("pullNo")
+
 
 # Funkce pro stylování - přidání hranice, když se změní hodnota v úrovni 'tree'
 def add_vertical_line(df):
-    
     styles = pd.DataFrame('', index=df.index, columns=df.columns)
-    
+
     # Projdi všechny řádky a přidej stylování
     for i in range(1, len(df.columns)):
-        if df.columns[i][0] != df.columns[i - 1][0]:  
+        if df.columns[i][0] != df.columns[i - 1][0]:
             styles.iloc[:, i] = 'border-left: 5px solid lightgray'  # Přidej hranici
     return styles
+
 
 # Funkce pro detekci změn v první úrovni MultiIndexu
 def highlight_changes(col):
     first_level = col.columns.get_level_values(0)
     # Porovnáme s předchozí hodnotou, kde je změna, tam vrátíme styl
-    return ['border-right: 3px solid black' if first_level[i] != first_level[i-1] else '' for i in range(len(first_level))]
+    return ['border-right: 3px solid black' if first_level[i] != first_level[i - 1] else '' for i in
+            range(len(first_level))]
 
 
 def ostyluj(subdf):
     cm = sns.light_palette("blue", as_cmap=True)
-    vmin=subdf.min(skipna=True).min()
+    vmin = subdf.min(skipna=True).min()
     subdf = (subdf.style.format(precision=3)
              .background_gradient(vmin=vmin, axis=None)
              .format(na_rep='')
@@ -244,99 +254,104 @@ def ostyluj(subdf):
              )
     return subdf
 
+
 @solara.component
 def slope_trend_more():
     with solara.Row():
         with solara.Tooltip(solara.Markdown(
-"""
-* Můžeš vybrat pullNo (číslo zatažení) a sledovat, jestli tečky jiných barev
-  vykazují nějaký trend, například jestli je tečka pro nulté zatažení stabilně pod 
-  nebo nad tečkou pro další zatažení.
-* Můžeš vybrat senzor (Dependent) a sledovat, jestli jsou tečky různých barev ve stejné 
-  výšce a tím pádem jsou informace z různých senzorů konzistentní.
-""", style={'color':'white'})):
+                """
+                * Můžeš vybrat pullNo (číslo zatažení) a sledovat, jestli tečky jiných barev
+                  vykazují nějaký trend, například jestli je tečka pro nulté zatažení stabilně pod 
+                  nebo nad tečkou pro další zatažení.
+                * Můžeš vybrat senzor (Dependent) a sledovat, jestli jsou tečky různých barev ve stejné 
+                  výšce a tím pádem jsou informace z různých senzorů konzistentní.
+                """, style={'color': 'white'})):
             solara.Text("Barevně separovat podle ⓘ:")
             solara.ToggleButtonsSingle(value=color, values=["pullNo", "Dependent"])
     df = (pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
-      .pipe(lambda x: x[x['lower_cut'] == 0.3])
-      .pipe(lambda x: x[x['tree'] == s.tree.value])
-      .pipe(lambda x: x[x['measurement'] == 'M01'])
-      .pipe(lambda x: x[~x['failed']])
-      .pipe(lambda x: x[~x['optics']])
-      .pipe(lambda x: x[~x['Dependent'].str.contains('Min')])
-      .pipe(lambda x: x[x['tree'].str.contains('BK')])
-      .pipe(lambda x: x[x['Independent'] == "M"])
-      .pipe(lambda x: x[["type", "day", "tree", "Dependent", "Slope", "pullNo"]])
-      # .pivot(values="Slope", columns='pullNo', index=
-      #        ['type', 'day', 'tree', 'measurement', 'Dependent'])
-      )
+          .pipe(lambda x: x[x['lower_cut'] == 0.3])
+          .pipe(lambda x: x[x['tree'] == s.tree.value])
+          .pipe(lambda x: x[x['measurement'] == 'M01'])
+          .pipe(lambda x: x[~x['failed']])
+          .pipe(lambda x: x[~x['optics']])
+          .pipe(lambda x: x[~x['Dependent'].str.contains('Min')])
+          .pipe(lambda x: x[x['tree'].str.contains('BK')])
+          .pipe(lambda x: x[x['Independent'] == "M"])
+          .pipe(lambda x: x[["type", "day", "tree", "Dependent", "Slope", "pullNo"]])
+          # .pivot(values="Slope", columns='pullNo', index=
+          #        ['type', 'day', 'tree', 'measurement', 'Dependent'])
+          )
     # breakpoint()
     df["Slope × 1000"] = df["Slope"] * 1000
     df["id"] = df["day"] + " " + df["type"]
     fig = plx.strip(df, x="id", y="Slope × 1000", template="plotly_white",
                     color=color.value, hover_data=["pullNo", "Dependent"],
-                    title = f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship.",
+                    title=f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship.",
                     width=s.width.value, height=s.height.value
                     )
     solara.FigurePlotly(fig)
     solara.Markdown(
-"""
-* Barvné rozseparování podle pullNo (číslo zatáhnutí) umožní sledovat, jestli 
-  se během experimentu liší první zatáhnutí od ostatních a jak. 
-* Barevné rozseparování podle senzoru (Dependent) umožní posoudit, 
-  jestli Blue a BlueMaj dávají stejné výstupy a podobně pro Yellow a YellowMaj.
-"""        
-        )
+        """
+        * Barvné rozseparování podle pullNo (číslo zatáhnutí) umožní sledovat, jestli 
+          se během experimentu liší první zatáhnutí od ostatních a jak. 
+        * Barevné rozseparování podle senzoru (Dependent) umožní posoudit, 
+          jestli Blue a BlueMaj dávají stejné výstupy a podobně pro Yellow a YellowMaj.
+        """
+    )
     # solara.DataFrame(df)
-    
-    df = df.pivot(index=["day","type"], columns=["Dependent", "pullNo"], values="Slope × 1000")
+
+    df = df.pivot(index=["day", "type"], columns=["Dependent", "pullNo"], values="Slope × 1000")
     df = df.sort_index(axis=1)
     solara.display(ostyluj(df))
-    solara.Style(".col_heading.level0 {text-align: center !important; background-color: lightgray; border-right: 5px solid white !important;}")
-    solara.FileDownload(df.to_csv(), filename=f"tahovky_{s.tree.value}.csv", 
-                        label="Download data from this table")    
+    solara.Style(
+        ".col_heading.level0 {text-align: center !important; background-color: lightgray; border-right: 5px solid white !important;}")
+    solara.FileDownload(df.to_csv(), filename=f"tahovky_{s.tree.value}.csv",
+                        label="Download data from this table")
     return
+
 
 @solara.component
 def normalized_slope():
     df_merged = static_lib_pull_comparison.df_merged
-    subdf = df_merged[df_merged["pullNo"]!=0].loc[:,
-        ["type","day","tree","Dependent","pullNo","Slope_normalized"]]
-    subdf = subdf[subdf["tree"]==s.tree.value].sort_values(by="day")
+    subdf = df_merged[df_merged["pullNo"] != 0].loc[:,
+            ["type", "day", "tree", "Dependent", "pullNo", "Slope_normalized"]]
+    subdf = subdf[subdf["tree"] == s.tree.value].sort_values(by="day")
     cat_order = subdf["day"].drop_duplicates().tolist()
     fig = plx.box(
-        subdf, 
-        x="day", 
-        y="Slope_normalized", 
-        color='type', 
-        points='all', 
-        hover_data=["tree","type","pullNo", "Dependent"],
+        subdf,
+        x="day",
+        y="Slope_normalized",
+        color='type',
+        points='all',
+        hover_data=["tree", "type", "pullNo", "Dependent"],
         category_orders={"day": cat_order},
-        height = s.height.value, width=s.width.value,
-        title=f"Tree {s.tree.value}", 
-        template =  "plotly_white", 
-        )
+        height=s.height.value, width=s.width.value,
+        title=f"Tree {s.tree.value}",
+        template="plotly_white",
+    )
     fig.update_layout(xaxis=dict(type='category'))
-    solara.FigurePlotly(fig)  
-#     solara.Text(
-# """
-# V tabulce jsou data seřazená podle normalizovnaé směrnice. 
-# Kliknutím na buňku se zobrazí link, který nahraje meření a přístroj do 
-# vedlejší záložky 'Volba proměnných a regrese'. Automaticky se zobrazí 
-# časový průběh, možná budeš chtít zatrhnout 'Ignore time restriction', 
-# aby se zobrazil celý pokus a ne jenom natahování.
-# """)
+    solara.FigurePlotly(fig)
+    #     solara.Text(
+    # """
+    # V tabulce jsou data seřazená podle normalizovnaé směrnice.
+    # Kliknutím na buňku se zobrazí link, který nahraje meření a přístroj do
+    # vedlejší záložky 'Volba proměnných a regrese'. Automaticky se zobrazí
+    # časový průběh, možná budeš chtít zatrhnout 'Ignore time restriction',
+    # aby se zobrazil celý pokus a ne jenom natahování.
+    # """)
     solara.Switch(label="řadit od nejmenšího", value=sort_ascending)
     subdf = subdf.sort_values(by="Slope_normalized", ascending=sort_ascending.value)
     solara.DataFrame(
         subdf,
         items_per_page=20,
         # cell_actions=cell_actions
-        )
+    )
+
 
 probe = solara.reactive("Elasto-strain")
 probes = ["Elasto-strain", "blue", "blueMaj", "yellow", "yellowMaj"]
 how_to_colorize = solara.reactive("All data")
+
 
 def custom_display(df, all_data=True, second_level=False):
     if all_data:
@@ -350,8 +365,9 @@ def custom_display(df, all_data=True, second_level=False):
                 # Zobrazíme tabulku s aplikovaným gradientem pro tuto skupinu
                 solara.display(ostyluj(group_df))
 
+
 @solara.component
-def Page():        
+def Page():
     solara.Title(title)
     solara.Style(styles_css)
     with solara.Sidebar():
@@ -361,27 +377,27 @@ def Page():
             Selection()
         if tab_index.value == 3:
             solara.Markdown(
-"""
-* Na této záložce jsou ke stažení csv soubory, které řídí výpočet. 
-* Výsledky jsou ke stažení na 
-stránce Downloads.
-"""                
-                )
+                """
+                * Na této záložce jsou ke stažení csv soubory, které řídí výpočet. 
+                * Výsledky jsou ke stažení na 
+                stránce Downloads.
+                """
+            )
 
-        if tab_index.value in [0,1]:
+        if tab_index.value in [0, 1]:
             s.ImageSizes()
             s.width.value = 1200
-    dark = {"background_color":"primary", "dark":True, "grow":True}
-    with solara.lab.Tabs(value=tab_index, **dark ):
+    dark = {"background_color": "primary", "dark": True, "grow": True}
+    with solara.lab.Tabs(value=tab_index, **dark):
         with solara.lab.Tab("Jedno měření (detail, ...)", icon_name="mdi-chart-line"):
             with solara.lab.Tabs(lazy=True, value=subtab_index, **dark):
                 with solara.lab.Tab("Průběh síly"):
-                    if (tab_index.value, subtab_index.value) == (0,0):
+                    if (tab_index.value, subtab_index.value) == (0, 0):
                         lib_dynatree.logger.info("Zakladni graf")
                         with solara.Card():
                             Graphs()
                 with solara.lab.Tab("Volba proměnných a regrese"):
-                    if (tab_index.value, subtab_index.value) == (0,1):
+                    if (tab_index.value, subtab_index.value) == (0, 1):
                         lib_dynatree.logger.info("Volba promennych a regrese")
                         with solara.Card(title="Increasing part of the time-force diagram"):
                             try:
@@ -389,7 +405,7 @@ stránce Downloads.
                             except:
                                 pass
                 with solara.lab.Tab("Polární graf"):
-                    if (tab_index.value, subtab_index.value) == (0,2):
+                    if (tab_index.value, subtab_index.value) == (0, 2):
                         lib_dynatree.logger.info("Polarni graf")
                         with solara.Card():
                             try:
@@ -398,22 +414,22 @@ stránce Downloads.
                                 pass
 
         with solara.lab.Tab("Jeden strom (trend, ...)", icon_name="mdi-pine-tree"):
-            with solara.lab.Tabs(lazy=True,**dark):
+            with solara.lab.Tabs(lazy=True, **dark):
                 with solara.lab.Tab("Srovnání s prvním zatáhnutím"):
                     with solara.Card():
                         solara.Markdown(
-        """
-        **Srovnání následujících zatáhnutí s prvním**
-        
-        * V grafech je podíl směrnice z druhého nebo třetího zatáhnutí  směrnice z prvního zatáhnutí. Toto je v grafu vedeno jako Slope_normalized.
-        * Pokud věříme, že při první zatáhnutí je systém tužší, měl by podíl být stabilně pod jedničkou.
-        * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
-        """)
+                            """
+                            **Srovnání následujících zatáhnutí s prvním**
+                            
+                            * V grafech je podíl směrnice z druhého nebo třetího zatáhnutí  směrnice z prvního zatáhnutí. Toto je v grafu vedeno jako Slope_normalized.
+                            * Pokud věříme, že při první zatáhnutí je systém tužší, měl by podíl být stabilně pod jedničkou.
+                            * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
+                            """)
                         try:
                             normalized_slope()
                         except:
                             pass
-        
+
                             # solara.FigurePlotly(figPl)                
                 with solara.lab.Tab("Hledání odlehlých"):
                     with solara.Column():
@@ -436,15 +452,15 @@ stránce Downloads.
             if tab_index.value == 2:
                 with solara.Sidebar():
                     solara.Markdown("**Gradient**")
-                    solara.ToggleButtonsSingle(value=how_to_colorize, values=["All data","Within tree"])
+                    solara.ToggleButtonsSingle(value=how_to_colorize, values=["All data", "Within tree"])
                     solara.Markdown(
-    """
-    * **All data**: jako rozsah se berou všechna data. Tužší stromy jsou jinou barvou než poddajnější. 
-      Dobré pro kontrolu, jestli v rámci stromu jsou data plus minus stejná.
-    * **Within tree**: jako rozsah se berou data pro daný strom. Slouží k nalezení měření, kdy strom 
-      byl tužší nebo poddajnější než obvykle a ve srovnání se všemi daty by tento rozdíl zapadl.
-    """
-    )
+                        """
+                        * **All data**: jako rozsah se berou všechna data. Tužší stromy jsou jinou barvou než poddajnější. 
+                          Dobré pro kontrolu, jestli v rámci stromu jsou data plus minus stejná.
+                        * **Within tree**: jako rozsah se berou data pro daný strom. Slouží k nalezení měření, kdy strom 
+                          byl tužší nebo poddajnější než obvykle a ve srovnání se všemi daty by tento rozdíl zapadl.
+                        """
+                    )
                 with solara.lab.Tabs(lazy=True, **dark):
                     with solara.lab.Tab("Blue"):
                         show_regression_data_inclino("blue")
@@ -459,82 +475,93 @@ stránce Downloads.
         with solara.lab.Tab("Komentáře & dwnl.", icon_name="mdi-comment-outline"):
             with solara.Card(title="Návod"):
                 Help()
-                
-def read_regression_data():            
+
+
+def read_regression_data():
     df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
     df["M"] = df["measurement"]
-    mask = df["measurement"]=="M01"
-    df.loc[mask,"M"] = df.loc[mask,"measurement"]+"_"+df.loc[mask,"pullNo"].astype("str")
+    mask = df["measurement"] == "M01"
+    df.loc[mask, "M"] = df.loc[mask, "measurement"] + "_" + df.loc[mask, "pullNo"].astype("str")
     df = df[df["tree"].str.contains("BK")]
-    df = df[(df["lower_cut"]==0.3) & (~df["failed"])]
+    df = df[(df["lower_cut"] == 0.3) & (~df["failed"])]
     return df
+
+
 @solara.component
 def show_regression_data_inclino(color):
     df = read_regression_data()
-    df = df[df["Dependent"]==color]
-    df["Slope x 1e3"] = 1e3*df["Slope"]
+    df = df[df["Dependent"] == color]
+    df["Slope x 1e3"] = 1e3 * df["Slope"]
     df = df[~df["optics"]]
-    df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e3"], columns="M")
-    custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
+    df_final = df.pivot(index=["tree", "type", "day"], values=["Slope x 1e3"], columns="M")
+    custom_display(df_final, how_to_colorize.value == "All data", second_level=True)
+
+
 @solara.component
 def show_regression_data_elasto():
     df = read_regression_data()
-    df = df[df["Dependent"]=="Elasto-strain"]
+    df = df[df["Dependent"] == "Elasto-strain"]
     df = df[~df["optics"]]
-    df["Slope x 1e6"] = 1e6*df["Slope"]
-    df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e6"], columns="M")
-    custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
+    df["Slope x 1e6"] = 1e6 * df["Slope"]
+    df_final = df.pivot(index=["tree", "type", "day"], values=["Slope x 1e6"], columns="M")
+    custom_display(df_final, how_to_colorize.value == "All data", second_level=True)
+
+
 @solara.component
 def show_regression_data_pt(pt):
     df = read_regression_data()
-    df = df[df["Dependent"]==pt]
-    df["Slope"] = np.abs(df["Slope"])                    
-    df_final = df.pivot(index=["tree","day"], values=["Slope"], columns="M")
-    custom_display(df_final, how_to_colorize.value=="All data")
+    df = df[df["Dependent"] == pt]
+    df["Slope"] = np.abs(df["Slope"])
+    df_final = df.pivot(index=["tree", "day"], values=["Slope"], columns="M")
+    custom_display(df_final, how_to_colorize.value == "All data")
+
 
 @solara.component
 def Selection():
     s.Selection()
     data_object = lib_dynatree.DynatreeMeasurement(
-        s.day.value, s.tree.value, s.measurement.value,measurement_type=s.method.value)
+        s.day.value, s.tree.value, s.measurement.value, measurement_type=s.method.value)
     with solara.Column(align='center'):
         solara.Button("Run calculation", on_click=nakresli, color="primary")
 
+
 def fixdf(df):
-    df.columns = [f"{i[0]}" if i[1]=='nan' else f"{i[0]}_{i[1]}" for i in df.columns]
+    df.columns = [f"{i[0]}" if i[1] == 'nan' else f"{i[0]}_{i[1]}" for i in df.columns]
     df = df[[i for i in df.columns if "_" not in i]]
     return df
+
 
 def Statistics():
     data_object = get_data_object()
     solara.Markdown(
-"""
-This card reports missing data.
-
-* Rope(100) is never used
-* Inclino(80) and Inclino(81) are claculated from the other data
-""")
+        """
+        This card reports missing data.
+        
+        * Rope(100) is never used
+        * Inclino(80) and Inclino(81) are claculated from the other data
+        """)
     if data_object.is_optics_available:
         l = [fixdf(data_object.data_optics_extra), data_object.data_pulling]
         titles = ["Pulling data interpolated to optics time", "Pulling data"]
     else:
         l = [data_object.data_pulling]
         titles = ["Pulling data"]
-    with solara.Columns([6,6]):
-        for df,title in zip(l,titles):
+    with solara.Columns([6, 6]):
+        for df, title in zip(l, titles):
             with solara.Card():
                 solara.Markdown(f"**{title}**")
                 df = df[[i for i in df.columns if "fixed" not in i[0]]]
                 nans = pd.DataFrame(df.isna().sum())
-                nans.loc[:,"name"] = df.columns
+                nans.loc[:, "name"] = df.columns
                 nans.columns = ["#nan", "name"]
-                nans = nans[["name","#nan"]]
+                nans = nans[["name", "#nan"]]
                 solara.Markdown(f"Shape: {df.shape}")
                 solara.DataFrame(nans)
     # try:
     #     solara.DataFrame(pd.concat([pd.DataFrame(subdf.index),subdf], axis=1))
     # except:
     #     pass
+
 
 @solara.component
 def Graphs():
@@ -569,7 +596,8 @@ def Graphs():
             """)
             solara.SpinnerSolara(size="100px")
     else:
-        solara.Markdown("Na obrázku je průběh experimentu (časový průběh síly). Volitelně můžeš zobrazit detaily pro rozmezí 30%-90% maxima síly. \n\n V detailech je časový průběh síly, časový průběh na inklinometrech a grafy inklinometry versus síla nebo moment.")
+        solara.Markdown(
+            "Na obrázku je průběh experimentu (časový průběh síly). Volitelně můžeš zobrazit detaily pro rozmezí 30%-90% maxima síly. \n\n V detailech je časový průběh síly, časový průběh na inklinometrech a grafy inklinometry versus síla nebo moment.")
         with solara.Tooltip("Allows to show details of the pulls on this page. Slows down the computation, however."):
             solara.Switch(label="Show details", value=include_details, on_value=nakresli)
         f = nakresli.value
@@ -590,12 +618,14 @@ def Graphs():
         # solara.DataFrame(data['dataframe'], items_per_page=20)
         # cols = data['dataframe'].columns
 
+
 msg = """
 ### Něco se nepovedlo. 
                      
 * Možná není vybráno nic pro svislou osu. 
 * Možná je vybrána stejná veličina pro vodorovnou a svislou osu. 
 * Nebo je nějaký jiný problém. Možná mrkni nejprve na záložku Grafy."""
+
 
 def Polarni():
     lib_dynatree.logger.info("Function Polarni entered")
@@ -629,7 +659,7 @@ def Polarni():
             with solara.Column(**tightcols):
                 solara.ToggleButtonsSingle(
                     values=data_possible_restrictions, value=restrict_data)
-        
+
         if restrict_data.value == data_possible_restrictions[0]:
             restricted = None
         elif restrict_data.value == data_possible_restrictions[1]:
@@ -639,15 +669,15 @@ def Polarni():
 
     d_obj = static_pull.DynatreeStaticMeasurement(
         day=s.day.value, tree=s.tree.value,
-        measurement=s.measurement.value, 
+        measurement=s.measurement.value,
         measurement_type=s.method.value,
-        optics=s.use_optics.value, 
+        optics=s.use_optics.value,
         restricted=restricted)
     dataset = d_obj.pullings[pull_value]
     subdf = dataset.data
-    fig,ax = plt.subplots()
-    ax.plot(subdf['blueMaj'],subdf['blueMin'], label="blue")
-    ax.plot(subdf['yellowMaj'],subdf['yellowMin'], label="yellow")
+    fig, ax = plt.subplots()
+    ax.plot(subdf['blueMaj'], subdf['blueMin'], label="blue")
+    ax.plot(subdf['yellowMaj'], subdf['yellowMin'], label="yellow")
     ax.set_aspect('equal')
     ax.legend()
     bound = [*ax.get_xlim(), *ax.get_ylim()]
@@ -655,10 +685,12 @@ def Polarni():
     title = f"{d_obj.measurement_type} {d_obj.day} {d_obj.tree} {d_obj.measurement}"
     if d_obj.measurement == "M01":
         title = f"{title}, PullNo {pull_value}"
-    ax.set(xlim=(-bound,bound), ylim=(-bound,bound), title=title, xlabel="Major inclinometer", ylabel="Minor inclinometer")
+    ax.set(xlim=(-bound, bound), ylim=(-bound, bound), title=title, xlabel="Major inclinometer",
+           ylabel="Minor inclinometer")
     ax.grid(which='both')
 
     solara.FigureMatplotlib(fig)
+
 
 def Detail():
     lib_dynatree.logger.info("Function Detail entered")
@@ -694,12 +726,13 @@ def Detail():
                 values=cols[1:], value=ydata, dense=True)
         with solara.Card(title="Second vertical axis"):
             with solara.VBox():
-                with solara.Tooltip("Choose one variable for second vertical axis, shown on the right. (Only limited support in interactive plots. In interactive plots we plot rescaled data. The scale factor is determined from maxima.) You cannot choose the variable used for horizontal axis."):
+                with solara.Tooltip(
+                        "Choose one variable for second vertical axis, shown on the right. (Only limited support in interactive plots. In interactive plots we plot rescaled data. The scale factor is determined from maxima.) You cannot choose the variable used for horizontal axis."):
                     with solara.VBox():
                         solara.Text("🛈 (hover here for description)")
 
                 solara.ToggleButtonsSingle(
-                    values=[None]+cols[1:], value=ydata2, dense=True)
+                    values=[None] + cols[1:], value=ydata2, dense=True)
     with solara.Row():
 
         if not s.use_optics.value:
@@ -713,7 +746,7 @@ def Detail():
             if new != ydata.value:
                 ydata.value = new
                 return
-        
+
         temp_data_object = static_pull.DynatreeStaticMeasurement(
             day=s.day.value, tree=s.tree.value,
             measurement=s.measurement.value, measurement_type=s.method.value,
@@ -738,13 +771,14 @@ def Detail():
                     values=data_possible_restrictions, value=restrict_data)
         with solara.Card():
             with solara.Column(**tightcols):
-                with solara.Tooltip("Umožní zobrazit graf pomocí knihovny Plotly. Bude možné zoomovat, odečítat hodnoty, klikáním na legendu skrývat a odkrývat proměnné apod. Nebudou zobrazeny regresní prímky."):
+                with solara.Tooltip(
+                        "Umožní zobrazit graf pomocí knihovny Plotly. Bude možné zoomovat, odečítat hodnoty, klikáním na legendu skrývat a odkrývat proměnné apod. Nebudou zobrazeny regresní prímky."):
                     solara.Switch(label="Interactive graph",
                                   value=interactive_graph)
                 with solara.Tooltip("Umožní zobrazit grafy veličin pro celý časový průběh."):
                     solara.Switch(
                         label="Ignore time restriction", value=all_data)
-                    
+
     if restrict_data.value == data_possible_restrictions[0]:
         restricted = None
     elif restrict_data.value == data_possible_restrictions[1]:
@@ -754,19 +788,20 @@ def Detail():
 
     d_obj = static_pull.DynatreeStaticMeasurement(
         day=s.day.value, tree=s.tree.value,
-        measurement=s.measurement.value, 
+        measurement=s.measurement.value,
         measurement_type=s.method.value,
-        optics=s.use_optics.value, 
+        optics=s.use_optics.value,
         restricted=restricted)
     dataset = d_obj.pullings[pull_value]
     subdf = dataset.data
     if all_data.value:
         _ = d_obj._get_static_pulling_data(optics=s.use_optics.value, restricted='get_all')
         _["Time"] = _.index
-        subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value, measurement_type=s.method.value,  extra_columns={"blue":"Inclino(80)", "yellow":"Inclino(81)",
-        **d_obj.identify_major_minor})
+        subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value, measurement_type=s.method.value,
+                                                  extra_columns={"blue": "Inclino(80)", "yellow": "Inclino(81)",
+                                                                 **d_obj.identify_major_minor})
         subdf = subdf.data
-    
+
     try:
         # find regresions
         if (xdata.value != "Time") and not all_data.value:
@@ -778,10 +813,10 @@ def Detail():
                 target = ydata.value
             else:
                 target = ydata.value + [ydata2.value]
-            reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value]+target], )
+            reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value] + target], )
             solara.DataFrame(reg_df.iloc[:, :5])
             # solara.display(reg_df.iloc[:, :5])
-            df_subj_reg = subdf[[xdata.value]+target]
+            df_subj_reg = subdf[[xdata.value] + target]
         else:
             solara.Info(
                 """
@@ -801,7 +836,7 @@ def Detail():
                     subdf[fix_input(ydata.value)].values)
                 maximum_ori = np.nanmax(subdf[ydata2.value].values)
                 subdf.loc[:, f"{ydata2.value}_rescaled"] = subdf.loc[:,
-                                                                      ydata2.value]/np.abs(maximum_ori/maximum_target)
+                                                           ydata2.value] / np.abs(maximum_ori / maximum_target)
                 extradata = [f"{ydata2.value}_rescaled"]
             else:
                 extradata = []
@@ -831,7 +866,7 @@ def Detail():
                         continue
                     d = reg_df[reg_df["Dependent"] ==
                                y].loc[:, ["Slope", "Intercept"]]
-                    ax.plot(t, t*d.iat[0, 0]+d.iat[0, 1],
+                    ax.plot(t, t * d.iat[0, 0] + d.iat[0, 1],
                             **regression_settings)
         except:
             pass
@@ -851,7 +886,7 @@ def Detail():
         ax.set(title=title)
         with solara.Card(
                 style={"max-width": "1000px"}
-                ):
+        ):
             solara.FigureMatplotlib(fig)
     try:
         with solara.Card():
@@ -861,20 +896,23 @@ def Detail():
         pass
     plt.close('all')
 
+
 def stahni_csv(file, label="Download", msg=None):
     with solara.Row():
         solara.FileDownload(
-            pd.read_csv(file).to_csv(index=None), 
+            pd.read_csv(file).to_csv(index=None),
             label=label,
             filename=file.split("/")[-1])
         solara.Text(msg)
-    
+
+
 def Help():
     with solara.Card():
         with solara.Column():
             solara.Text("Použité parametry")
             stahni_csv("csv/static_fail.csv", msg="Zkoušky klasifikované jako nepovedené")
-            stahni_csv("csv/static_checked_OK.csv", msg="Zkoušky klasifikované jako OK, i když se hodnoty liší od ostatních")
+            stahni_csv("csv/static_checked_OK.csv",
+                       msg="Zkoušky klasifikované jako OK, i když se hodnoty liší od ostatních")
             stahni_csv("csv/reset_inclinometers.csv", msg="Ručně vynulované inklinometry")
     solara.Markdown(
         """
