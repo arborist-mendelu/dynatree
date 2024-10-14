@@ -27,6 +27,7 @@ DATA_PATH = "../data"
 import logging
 from great_tables import GT, style, loc
 import seaborn as sns
+import dynatree_util as du
 
 # from weasyprint import HTML, CSS
 
@@ -337,6 +338,19 @@ def normalized_slope():
 
 probe = solara.reactive("Elasto-strain")
 probes = ["Elasto-strain", "blue", "blueMaj", "yellow", "yellowMaj"]
+how_to_colorize = solara.reactive("All data")
+
+def custom_display(df, all_data=True, second_level=False):
+    if all_data:
+        solara.display(du.ostyluj(df, second_level=second_level))
+    else:
+        for category in df.index.get_level_values(0).unique():
+            # Získáme řádky odpovídající dané skupině
+            group_df = df.xs(category, level=0)
+            with solara.Card(margin=4):
+                solara.Markdown(f"###{category}")
+                # Zobrazíme tabulku s aplikovaným gradientem pro tuto skupinu
+                solara.display(ostyluj(group_df))          
 
 @solara.component
 def Page():        
@@ -347,7 +361,7 @@ def Page():
             s.Selection_trees_only()
         if tab_index.value == 0:
             Selection()
-        if tab_index.value == 2:
+        if tab_index.value == 3:
             solara.Markdown(
 """
 * Na této záložce jsou ke stažení csv soubory, které řídí výpočet. 
@@ -419,6 +433,59 @@ stránce Downloads.
                 with solara.lab.Tab("Trend (více)"):
                     with solara.Column():
                         slope_trend_more()
+        with solara.lab.Tab("Všechny stromy.", icon_name="mdi-file-table-box-multiple-outline"):
+            if tab_index.value == 2:
+                with solara.Sidebar():
+                    solara.Markdown("**Gradient**")
+                    solara.ToggleButtonsSingle(value=how_to_colorize, values=["All data","Within tree"])
+                    solara.Markdown(
+    """
+    * **All data**: jako rozsah se berou všechna data. Tužší stromy jsou jinou barvou než poddajnější. 
+      Dobré pro kontrolu, jestli v rámci stromu jsou data plus minus stejná.
+    * **Within tree**: jako rozsah se berou data pro daný strom. Slouží k nalezení měření, kdy strom 
+      byl tužší nebo poddajnější než obvykle a ve srovnání se všemi daty by tento rozdíl zapadl.
+    """
+    )
+            def read_df():
+                df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
+                df["M"] = df["measurement"]+"_"+df["pullNo"].astype("str")
+                df = df[df["tree"].str.contains("BK")]
+                df = df[(df["lower_cut"]==0.3) & (~df["failed"])]
+                return df
+            with solara.lab.Tabs(lazy=True, **dark):
+                with solara.lab.Tab("Blue"):
+                    df = read_df()
+                    df = df[df["Dependent"]=="blue"]
+                    df["Slope x 1e3"] = 1e3*df["Slope"]
+                    df = df[~df["optics"]]
+                    df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e3"], columns="M")
+                    custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
+                with solara.lab.Tab("Yellow"):
+                    df = read_df()
+                    df = df[df["Dependent"]=="yellow"]
+                    df["Slope x 1e3"] = 1e3*df["Slope"]
+                    df = df[~df["optics"]]
+                    df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e3"], columns="M")
+                    custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
+                with solara.lab.Tab("Elasto"):
+                    df = read_df()
+                    df = df[df["Dependent"]=="Elasto-strain"]
+                    df = df[~df["optics"]]
+                    df["Slope x 1e6"] = 1e6*df["Slope"]
+                    df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e6"], columns="M")
+                    custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
+                with solara.lab.Tab("Pt3"):
+                    df = read_df()
+                    df = df[df["Dependent"]=="Pt3"]
+                    df["Slope"] = np.abs(df["Slope"])                    
+                    df_final = df.pivot(index=["tree","day"], values=["Slope"], columns="M")
+                    custom_display(df_final, how_to_colorize.value=="All data")
+                with solara.lab.Tab("Pt4"):
+                    df = read_df()
+                    df = df[df["Dependent"]=="Pt4"]
+                    df["Slope"] = np.abs(df["Slope"])                    
+                    df_final = df.pivot(index=["tree","day"], values=["Slope"], columns="M")
+                    custom_display(df_final, how_to_colorize.value=="All data")
         with solara.lab.Tab("Komentáře & dwnl.", icon_name="mdi-comment-outline"):
             with solara.Card(title="Návod"):
                 Help()

@@ -73,9 +73,9 @@ def main():
         return None
     df_tsv = pd.read_csv(config.file["tsv_dirs"])
     for index, row in df_tsv.iterrows():
-        if "30fps" in row["directory"]:
-            print (f"Skipping 30fps {row['directory']}")
-            continue
+        # if "30fps" in row["directory"]:
+        #     print (f"Skipping 30fps {row['directory']}")
+        #     continue
         print(row["date"])
         date = row['date']
         tree = row['tree']

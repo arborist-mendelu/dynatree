@@ -7,6 +7,7 @@ Created on Sun Oct 13 11:08:02 2024
 """
 
 import lib_dynatree
+import pandas as pd
 
 def read_data_inclinometers(m, release=None, delta_time=0):
     """
@@ -44,3 +45,29 @@ def read_data_inclinometers(m, release=None, delta_time=0):
     df_pulling_tests["Time"] = df_pulling_tests.index
 
     return df_pulling_tests
+
+
+def add_horizontal_line(df, second_level=False):
+    styles = pd.DataFrame('', index=df.index, columns=df.columns)
+
+    if second_level:
+        # Projdi všechny řádky a přidej stylování
+        for i in range(1, len(df)):
+            if df.index[i][1] != df.index[i - 1][1]:  # Pokud se změní druhý sloupec
+                styles.iloc[i, :] = 'border-top: 1px solid black'  # Přidej hranici    
+    
+    # Projdi všechny řádky a přidej stylování
+    for i in range(1, len(df)):
+        if df.index[i][0] != df.index[i - 1][0]:  # Pokud se změní první sloupec
+            styles.iloc[i, :] = 'border-top: 3px solid red'  # Přidej hranici
+    return styles
+
+def ostyluj(subdf, second_level=False):
+    vmin=subdf.min(skipna=True).min()
+    subdf = (subdf.style.format(precision=3)
+             .background_gradient(vmin=vmin, axis=None)
+             .apply(lambda x:add_horizontal_line(x, second_level=second_level), axis=None)
+             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+             .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+             )
+    return subdf
