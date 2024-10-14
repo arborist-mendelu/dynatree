@@ -352,6 +352,8 @@ def custom_display(df, all_data=True, second_level=False):
                 # Zobrazíme tabulku s aplikovaným gradientem pro tuto skupinu
                 solara.display(ostyluj(group_df))          
 
+
+
 @solara.component
 def Page():        
     solara.Title(title)
@@ -446,42 +448,43 @@ stránce Downloads.
       byl tužší nebo poddajnější než obvykle a ve srovnání se všemi daty by tento rozdíl zapadl.
     """
     )
-                def read_df():
+                with solara.lab.Tabs(lazy=True, **dark):
                     df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
-                    df["M"] = df["measurement"]+"_"+df["pullNo"].astype("str")
+                    df["M"] = df["measurement"]
+                    mask = df["measurement"]=="M01"
+                    df.loc[mask,"M"] = df.loc[mask,"measurement"]+"_"+df.loc[mask,"pullNo"].astype("str")
                     df = df[df["tree"].str.contains("BK")]
                     df = df[(df["lower_cut"]==0.3) & (~df["failed"])]
-                    return df
-                with solara.lab.Tabs(lazy=True, **dark):
+                    DF = df.copy()
                     with solara.lab.Tab("Blue"):
-                        df = read_df()
+                        df = DF.copy()
                         df = df[df["Dependent"]=="blue"]
                         df["Slope x 1e3"] = 1e3*df["Slope"]
                         df = df[~df["optics"]]
                         df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e3"], columns="M")
                         custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
                     with solara.lab.Tab("Yellow"):
-                        df = read_df()
+                        df = DF.copy()
                         df = df[df["Dependent"]=="yellow"]
                         df["Slope x 1e3"] = 1e3*df["Slope"]
                         df = df[~df["optics"]]
                         df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e3"], columns="M")
                         custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
                     with solara.lab.Tab("Elasto"):
-                        df = read_df()
+                        df = DF.copy()
                         df = df[df["Dependent"]=="Elasto-strain"]
                         df = df[~df["optics"]]
                         df["Slope x 1e6"] = 1e6*df["Slope"]
                         df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e6"], columns="M")
                         custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
                     with solara.lab.Tab("Pt3"):
-                        df = read_df()
+                        df = DF.copy()
                         df = df[df["Dependent"]=="Pt3"]
                         df["Slope"] = np.abs(df["Slope"])                    
                         df_final = df.pivot(index=["tree","day"], values=["Slope"], columns="M")
                         custom_display(df_final, how_to_colorize.value=="All data")
                     with solara.lab.Tab("Pt4"):
-                        df = read_df()
+                        df = DF.copy()
                         df = df[df["Dependent"]=="Pt4"]
                         df["Slope"] = np.abs(df["Slope"])                    
                         df_final = df.pivot(index=["tree","day"], values=["Slope"], columns="M")
