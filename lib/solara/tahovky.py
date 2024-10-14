@@ -449,49 +449,53 @@ stránce Downloads.
     """
     )
                 with solara.lab.Tabs(lazy=True, **dark):
-                    df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
-                    df["M"] = df["measurement"]
-                    mask = df["measurement"]=="M01"
-                    df.loc[mask,"M"] = df.loc[mask,"measurement"]+"_"+df.loc[mask,"pullNo"].astype("str")
-                    df = df[df["tree"].str.contains("BK")]
-                    df = df[(df["lower_cut"]==0.3) & (~df["failed"])]
-                    DF = df.copy()
                     with solara.lab.Tab("Blue"):
-                        df = DF.copy()
-                        df = df[df["Dependent"]=="blue"]
-                        df["Slope x 1e3"] = 1e3*df["Slope"]
-                        df = df[~df["optics"]]
-                        df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e3"], columns="M")
-                        custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
+                        show_regression_data_inclino("blue")
                     with solara.lab.Tab("Yellow"):
-                        df = DF.copy()
-                        df = df[df["Dependent"]=="yellow"]
-                        df["Slope x 1e3"] = 1e3*df["Slope"]
-                        df = df[~df["optics"]]
-                        df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e3"], columns="M")
-                        custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
-                    with solara.lab.Tab("Elasto"):
-                        df = DF.copy()
-                        df = df[df["Dependent"]=="Elasto-strain"]
-                        df = df[~df["optics"]]
-                        df["Slope x 1e6"] = 1e6*df["Slope"]
-                        df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e6"], columns="M")
-                        custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
+                        show_regression_data_inclino("yellow")
+                    with solara.lab.Tab("Elasto strain"):
+                        show_regression_data_elasto()
                     with solara.lab.Tab("Pt3"):
-                        df = DF.copy()
-                        df = df[df["Dependent"]=="Pt3"]
-                        df["Slope"] = np.abs(df["Slope"])                    
-                        df_final = df.pivot(index=["tree","day"], values=["Slope"], columns="M")
-                        custom_display(df_final, how_to_colorize.value=="All data")
+                        show_regression_data_pt("Pt3")
                     with solara.lab.Tab("Pt4"):
-                        df = DF.copy()
-                        df = df[df["Dependent"]=="Pt4"]
-                        df["Slope"] = np.abs(df["Slope"])                    
-                        df_final = df.pivot(index=["tree","day"], values=["Slope"], columns="M")
-                        custom_display(df_final, how_to_colorize.value=="All data")
+                        show_regression_data_pt("Pt4")
         with solara.lab.Tab("Komentáře & dwnl.", icon_name="mdi-comment-outline"):
             with solara.Card(title="Návod"):
                 Help()
+                
+def read_regression_data():            
+    df = pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
+    df["M"] = df["measurement"]
+    mask = df["measurement"]=="M01"
+    df.loc[mask,"M"] = df.loc[mask,"measurement"]+"_"+df.loc[mask,"pullNo"].astype("str")
+    df = df[df["tree"].str.contains("BK")]
+    df = df[(df["lower_cut"]==0.3) & (~df["failed"])]
+    return df
+@solara.component
+def show_regression_data_inclino(color):
+    df = read_regression_data()
+    df = df[df["Dependent"]==color]
+    df["Slope x 1e3"] = 1e3*df["Slope"]
+    df = df[~df["optics"]]
+    df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e3"], columns="M")
+    custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
+@solara.component
+def show_regression_data_elasto():
+    df = read_regression_data()
+    df = df[df["Dependent"]=="Elasto-strain"]
+    df = df[~df["optics"]]
+    df["Slope x 1e6"] = 1e6*df["Slope"]
+    df_final = df.pivot(index=["tree","type","day"], values=["Slope x 1e6"], columns="M")
+    custom_display(df_final, how_to_colorize.value=="All data", second_level=True)
+@solara.component
+def show_regression_data_pt(pt):
+    df = read_regression_data()
+    df = df[df["Dependent"]==pt]
+    df["Slope"] = np.abs(df["Slope"])                    
+    df_final = df.pivot(index=["tree","day"], values=["Slope"], columns="M")
+    custom_display(df_final, how_to_colorize.value=="All data")
+
+
 
 @solara.component
 def Selection():
