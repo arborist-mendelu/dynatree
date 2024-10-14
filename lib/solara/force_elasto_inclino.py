@@ -19,20 +19,13 @@ navod = """
 
 """
 
-# import glob
-# import matplotlib.pyplot as plt
-import pandas as pd
 import solara
 from solara.lab import task
-from parquet_add_inclino import extend_one_file
 from plot_probes_inclino_force import plot_one_measurement
-# from lib_dynatree import read_data
 from lib_dynatree import timeit
-# from lib_dynatree import fix_inclinometers_sign
 from lib_dynatree import DynatreeMeasurement, find_finetune_synchro
 import lib.solara.select_source as s
 from static_pull import DynatreeStaticMeasurement
-import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 major_minor = solara.reactive(True)
@@ -78,14 +71,7 @@ def nakresli():
     if not nakresli.is_current():
         print("Interrupting non current function nakresli")
         return None
-    # DF = m.data_optics
-    # df_ext = extend_one_file(date=s.day.value, 
-    #         tree=s.tree.value, 
-    #         measurement=s.measurement.value, 
-    #         # path=DATA_PATH, 
-    #         write_file=False,
-    #         # df=DF
-    #         )        
+
     if not nakresli.is_current():
         print("Interrupting non current function nakresli")
         return None
@@ -227,8 +213,8 @@ def Sidebar():
     
 
 @solara.component
-def Grafy():    
-    solara.ProgressLinear(nakresli.pending)    
+def Grafy():
+    solara.ProgressLinear(nakresli.pending)
     solara.Warning(solara.Markdown(
 """
 * Grafy vznikají za běhu. **Jsou použita předpočítaná data**, 

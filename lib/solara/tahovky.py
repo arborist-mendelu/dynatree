@@ -30,8 +30,6 @@ import seaborn as sns
 import dynatree_util as du
 
 # from weasyprint import HTML, CSS
-
-
 # lib_dynatree.logger.setLevel(logging.INFO)
 
 import config
@@ -348,11 +346,9 @@ def custom_display(df, all_data=True, second_level=False):
             # Získáme řádky odpovídající dané skupině
             group_df = df.xs(category, level=0)
             with solara.Card(margin=4):
-                solara.Markdown(f"###{category}")
+                solara.Markdown(f"##{category}")
                 # Zobrazíme tabulku s aplikovaným gradientem pro tuto skupinu
-                solara.display(ostyluj(group_df))          
-
-
+                solara.display(ostyluj(group_df))
 
 @solara.component
 def Page():        
@@ -427,9 +423,10 @@ stránce Downloads.
                             pass
                 with solara.lab.Tab("Trend (1 senzor)"):
                     with solara.Sidebar():
-                        with solara.Card():
-                            solara.Markdown("**Variable**")
-                            solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
+                        if tab_index.value == 1:
+                            with solara.Card():
+                                solara.Markdown("**Variable**")
+                                solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
                     with solara.Column():
                         slope_trend()
                 with solara.lab.Tab("Trend (více)"):
@@ -494,8 +491,6 @@ def show_regression_data_pt(pt):
     df["Slope"] = np.abs(df["Slope"])                    
     df_final = df.pivot(index=["tree","day"], values=["Slope"], columns="M")
     custom_display(df_final, how_to_colorize.value=="All data")
-
-
 
 @solara.component
 def Selection():
