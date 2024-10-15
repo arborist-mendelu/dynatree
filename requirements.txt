@@ -1,9 +1,6 @@
 pandas
 matplotlib
 numpy
-dash
-dash-bootstrap-components
-spyder
 jupyterlab
 scipy
 streamlit
@@ -18,6 +15,7 @@ openpyxl
 passlib
 tqdm
 openpyxl
+plotly
 plotly-resampler
 jupytext
 nbconvert

@@ -6,6 +6,7 @@ Created on Thu Aug 29 10:15:06 2024
 @author: marik
 """
 
+#%%
 import static_pull
 import lib_dynatree
 import logging
@@ -20,10 +21,10 @@ use_optics = True
 data_obj = static_pull.DynatreeStaticMeasurement(
     day=day, tree=tree, measurement=measurement,
     restricted=(cut,0.9), optics=use_optics
-    ) 
-
+    )
+#%%
 print(data_obj)
-
+#%%
 if (not data_obj.is_optics_available) and use_optics:
     lib_dynatree.logger.error(f"{data_obj.date} {data_obj.tree} {data_obj.measurement}: Pozadujes zpracovat optiku, ale data nejsou dostupna.")
     

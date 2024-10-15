@@ -448,7 +448,7 @@ def Page():
                 with solara.lab.Tab("Trend (více)"):
                     with solara.Column():
                         slope_trend_more()
-        with solara.lab.Tab("Všechny stromy.", icon_name="mdi-file-table-box-multiple-outline"):
+        with solara.lab.Tab("Všechny stromy", icon_name="mdi-file-table-box-multiple-outline"):
             if tab_index.value == 2:
                 with solara.Sidebar():
                     solara.Markdown("**Gradient**")
@@ -649,7 +649,7 @@ def Polarni():
             with solara.Card():
                 solara.Markdown("**Pull No. of M01:**")
                 with solara.Column(**tightcols):
-                    pulls = list(range(len(temp_data_object.pullings)))
+                    pulls = list(range(len(temp_data_object.pullings)))+["All"]
                     solara.ToggleButtonsSingle(values=pulls, value=pull)
                 pull_value = pull.value
         else:
@@ -673,11 +673,18 @@ def Polarni():
         measurement_type=s.method.value,
         optics=s.use_optics.value,
         restricted=restricted)
-    dataset = d_obj.pullings[pull_value]
-    subdf = dataset.data
+    if pull_value == "All":
+        pull_list = pulls
+    else:
+        pull_list = [pull_value]
     fig, ax = plt.subplots()
-    ax.plot(subdf['blueMaj'], subdf['blueMin'], label="blue")
-    ax.plot(subdf['yellowMaj'], subdf['yellowMin'], label="yellow")
+    for i,one_pull in enumerate(pull_list):
+        if one_pull == "All":
+            continue
+        dataset = d_obj.pullings[one_pull]
+        subdf = dataset.data
+        ax.plot(subdf['blueMaj'], subdf['blueMin'], label=f"blue{i}")
+        ax.plot(subdf['yellowMaj'], subdf['yellowMin'], label=f"yellow{i}")
     ax.set_aspect('equal')
     ax.legend()
     bound = [*ax.get_xlim(), *ax.get_ylim()]
@@ -688,8 +695,8 @@ def Polarni():
     ax.set(xlim=(-bound, bound), ylim=(-bound, bound), title=title, xlabel="Major inclinometer",
            ylabel="Minor inclinometer")
     ax.grid(which='both')
-
     solara.FigureMatplotlib(fig)
+    plt.close('all')
 
 
 def Detail():

@@ -60,8 +60,7 @@ def plot_row(row):
     plt.suptitle(f"{pull.measurement_type} {pull.day} {pull.tree} {row['measurement']} pullNo={row['pullNo']} R^2={row['R^2']:.4f}")
     plt.tight_layout()
     return fig,ax
-
-#%%            
+#%%
 
 #%%
 def main():

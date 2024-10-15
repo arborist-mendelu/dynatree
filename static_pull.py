@@ -300,7 +300,11 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         if  self.measurement == "M01":
             times = self._split_df_static_pulling()
         else:
-            times = [{"minimum":0, "maximum": self.data_pulling["Force(100)"].idxmax()}]
+            if self.data_pulling["Force(100)"].isna().all():
+                maximum = 0
+            else:
+                maximum = self.data_pulling["Force(100)"].idxmax()
+            times = [{"minimum":0, "maximum": maximum}]
 
 
         df["Elasto-strain"] = df["Elasto(90)"]/200000
@@ -392,9 +396,10 @@ class DynatreeStaticPulling:
     If ini_forces or ini_regress are False, do not evaluate the forces
     and regressions. In this case the variable tree is not important.
     """
-    def __init__(self, data, tree=None, ini_forces=True, ini_regress=True, measurement_type="normal", day=None, extra_columns=None, parent_experiment=None):
+    def __init__(self, data_, tree=None, ini_forces=True, ini_regress=True, measurement_type="normal", day=None, extra_columns=None, parent_experiment=None):
         if tree is not None:
             treeNo = int(tree[-2:])
+        data = data_.copy()
         if extra_columns is not None:
             for i in extra_columns.keys():
                 data.loc[:,i] = data.loc[:,extra_columns[i]]
