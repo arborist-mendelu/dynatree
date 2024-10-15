@@ -255,3 +255,13 @@ RewriteRule dynatree/(.*) http://um-bc201.mendelu.cz:8766/dynatree/$1 [P]
 ProxyPassReverse /dynatree http://um-bc201.mendelu.cz:8766
 ~~~ 
 
+
+Kopie souboru:
+
+~~~
+rsync -zarv -P outputs jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/
+rsync -zarv -P dynatree-optika/*py jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/
+rsync -zarv -P dynatree-optika/csv jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/
+rsync -zarv -P dynatree-optika/csv_output jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/
+rsync -zarv -P dynatree-optika/lib/solara/*py jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/lib/solara/
+~~~
