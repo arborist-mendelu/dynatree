@@ -551,12 +551,12 @@ class DynatreeStaticPulling:
             [
             ["M","blue", "yellow", "blueMaj", "blueMin", "yellowMaj", "yellowMin"],
             ["M_Elasto", "Elasto-strain"],
-            ]+pt_reg
+            ]+pt_reg, msg=f"{self.parent_experiment.parent}"
             )
         return reg
     
     @staticmethod
-    def _get_regressions(df, collist):
+    def _get_regressions(df, collist, msg=""):
         """
         Return regression in dataframe. 
         
@@ -565,11 +565,11 @@ class DynatreeStaticPulling:
         evaluated.
         """
         data = [DynatreeStaticPulling._get_regressions_for_one_column(
-            df.loc[:, i], i[0]) for i in collist]
+            df.loc[:, i], i[0], msg=msg) for i in collist]
         return pd.concat(data)
     
     @staticmethod
-    def _get_regressions_for_one_column(df, independent):
+    def _get_regressions_for_one_column(df, independent, msg=""):
         regrese = {}
         dependent = [_ for _ in df.columns if _ !=independent]
         lib_dynatree.logger.debug(f"Regressions on dataframe of shape {df.shape}\n    independent {independent}, dependent {dependent}")        
@@ -582,7 +582,7 @@ class DynatreeStaticPulling:
                 reg = linregress(cleandf[independent],cleandf[i])
                 regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
             except:
-                lib_dynatree.logger.error(f"Linear regression failed for {independent} versus {i}.")
+                lib_dynatree.logger.error(f"Linear regression failed for {independent} versus {i}. {msg}")
                 pass
 
         ans_df = pd.DataFrame(regrese, index=["Independent", "Dependent", "Slope", "Intercept", "R^2", "p-value", "stderr", "intercept_stderr"], columns=dependent).T
