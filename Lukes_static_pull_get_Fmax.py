@@ -8,6 +8,14 @@ import pandas as pd
 from static_pull import DynatreeStaticMeasurement
 
 df = get_all_measurements(method='all', type='all')
+df = df[
+    df["day"].isin(["2021-03-22", "2021-06-29"])
+    & df['tree'].str.contains("BK")
+    & df['measurement'].str.contains("M01")
+    ]
+
+df
+
 
 
 #%%
@@ -21,7 +29,12 @@ for _,row in df.iloc[:,:].iterrows():
 #%%
 
 ans = pd.DataFrame(data, index=["Fmax"]).T
+ans
+#%%
 
+grouped = ans.groupby(level=[0, 1, 2, 3]).max()
+grouped.to_csv("F_max.csv")
+grouped
 
 
 

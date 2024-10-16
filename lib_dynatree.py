@@ -525,6 +525,7 @@ class DynatreeMeasurement:
                 self.day, self.tree, 
                 "M01", measurement_type=self.measurement_type).identify_major_minor
         list_inclino = ["Inclino(80)", "Inclino(81)"]
+        # TODO: někdy jsou prohozené barvy. Podle fotek se projde a změní se přiřazení mezi 80/81 a blue/yellow.
         colors = {"Inclino(80)":"blue", "Inclino(81)":"yellow"}
         df = pd.read_parquet(self.file_pulling_name)
         df = fix_inclinometers_sign(
