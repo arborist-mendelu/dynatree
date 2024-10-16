@@ -88,8 +88,8 @@ def get_all_measurements(method='optics', type='normal', *args, **kwargs):
     
     df_o = get_all_measurements_optics()
     df_o["optics"] = True
-    df_p = get_all_measurements_pulling()
-    # df_p = pd.concat([get_all_measurements_pulling(), get_all_measurements_acc()]).drop_duplicates()
+    # df_p = get_all_measurements_pulling()
+    df_p = pd.concat([get_all_measurements_pulling(), get_all_measurements_acc()]).drop_duplicates()
     df = pd.merge(df_p, df_o,
                 on=['date', 'tree', 'measurement', "type"], 
                 how='left')
