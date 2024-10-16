@@ -33,6 +33,25 @@ def get_all_measurements_pulling(cesta=DIRECTORY, suffix='parquet', directory='p
     df = df.reset_index(drop=True)
     return df
 
+def get_all_measurements_acc(cesta=DIRECTORY, suffix='parquet', directory='parquet_acc'):
+    """
+    Gets all static measurements. Makes use of data from pulling experiments.
+    """
+    files = glob.glob(cesta + f"/{directory}/*.{suffix}")
+    files = [i.replace(cesta + f"/{directory}/", "").replace(f".{suffix}", "").replace("_5000", "")
+             for i in files]
+    s = pd.Series(files)
+    info = s.str.split('_', expand=True)
+    ans = {
+        'date': info.iloc[:,1].str.replace("_", "-"),
+        'tree': info.iloc[:, 2],
+        'measurement': info.iloc[:, 3],
+        'type': info.iloc[:, 0],
+    }
+    df = pd.DataFrame(ans).sort_values(by=["date", "tree", "measurement"])
+    df = df.reset_index(drop=True)
+    return df
+
 def get_all_measurements_optics(cesta=DIRECTORY, suffix='parquet', directory='parquet'):
     """
     Gets all measurements with optics.
@@ -70,7 +89,8 @@ def get_all_measurements(method='optics', type='normal', *args, **kwargs):
     df_o = get_all_measurements_optics()
     df_o["optics"] = True
     df_p = get_all_measurements_pulling()
-    df = pd.merge(df_p, df_o, 
+    # df_p = pd.concat([get_all_measurements_pulling(), get_all_measurements_acc()]).drop_duplicates()
+    df = pd.merge(df_p, df_o,
                 on=['date', 'tree', 'measurement', "type"], 
                 how='left')
     if type != 'all':

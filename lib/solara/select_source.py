@@ -14,7 +14,7 @@ DATA_PATH = "../data"
 tightcols = {'gap': "0px"}
 regression_settings = {'color': 'gray', 'alpha': 0.5}
 
-methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'afterro2', 'mraz'])
+methods = solara.reactive(['normal', 'den', 'noc', 'afterro', 'afterro2', 'mraz', 'mokro'])
 method = solara.reactive(methods.value[0])
 
 

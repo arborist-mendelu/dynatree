@@ -343,7 +343,7 @@ def Page():
                             pass
                 with solara.lab.Tab("FFT (interactive)"):
                     if (tab_value.value, subtab_value.value) == (0,1):
-                        try:
+                        # try:
                             solara.ProgressLinear(nakresli_signal.pending)
                             if nakresli_signal.not_called:
                                 nakresli_signal()
@@ -367,27 +367,15 @@ def Page():
                                     SaveButton()
                                     solara.FileDownload(df_manual_peaks.value.to_csv(), filename=f"FFT_manual_peaks.csv", label="Download csv")
                                 solara.display(df_manual_peaks.value)
-                        except:
-                            pass
+                        # except:
+                        #     pass
         
                 with solara.lab.Tab("Welch (interactive)"):
                     if (tab_value.value, subtab_value.value) == (0,2):
-                        with solara.Row():
-                            solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
-                            solara.ToggleButtonsSingle(values=list(range(6,13)), value=n)
-                        data = zpracuj(type='welch')
-                        df_fft = data['welch']#.loc[:restrict]
-                        ymax = df_fft.to_numpy().max()
-                        if probe.value in ["Pt3", "Pt4"]:
-                            df_fft.columns = [probe.value]
-                        figFFT = px.line(df_fft, 
-                                          height = s.height.value, width=s.width.value, 
-                                          title=f"Welch spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
-                                          log_y=True, #range_y=[ymax/1000000, ymax*2]
-                        )
-                        figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
-                        solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
-        
+                        try:
+                            Welch_interactive()
+                        except:
+                            solara.Error("Něco se nepodařilo. Možná není dostupné měření.")
 
         with solara.lab.Tab("Jeden strom", icon_name="mdi-pine-tree"):
             with solara.lab.Tabs(value=subtab_value, **dark):
@@ -592,4 +580,22 @@ f"""
 """                
                 )
             solara.display(df_komentare)
+
+
+def Welch_interactive():
+    with solara.Row():
+        solara.Markdown(r"$n$ (where $\text{nperseg}=2^n$)")
+        solara.ToggleButtonsSingle(values=list(range(6, 13)), value=n)
+    data = zpracuj(type='welch')
+    df_fft = data['welch']  # .loc[:restrict]
+    ymax = df_fft.to_numpy().max()
+    if probe.value in ["Pt3", "Pt4"]:
+        df_fft.columns = [probe.value]
+    figFFT = px.line(df_fft,
+                     height=s.height.value, width=s.width.value,
+                     title=f"Welch spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}",
+                     log_y=True,  # range_y=[ymax/1000000, ymax*2]
+                     )
+    figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
+    solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
             
