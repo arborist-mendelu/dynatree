@@ -112,6 +112,8 @@ def zpracuj(x=None, type='fft'):
     else:
         probe_final = probe.value
     sig = lib_FFT.DynatreeSignal(m, probe_final, release_source=release_source)
+    if sig.signal_full is None:
+        return
     if manual_release_time.value > 0.0:
         sig.manual_release_time = manual_release_time.value
     if manual_end_time.value > 0.0:
@@ -311,6 +313,7 @@ def Page():
         with solara.lab.Tab("Jedno měření", icon_name="mdi-chart-line"):
             with solara.lab.Tabs(value=subtab_value, **dark):
                 with solara.lab.Tab("Time domain"):
+                    solara.Markdown("# Time domain static explorer")
                     if (tab_value.value, subtab_value.value) == (0,0):
                         try:
                             solara.ProgressLinear(nakresli_signal.pending)
@@ -342,6 +345,7 @@ def Page():
                         except:
                             pass
                 with solara.lab.Tab("FFT (interactive)"):
+                    solara.Markdown("# FFT interactive explorer")
                     if (tab_value.value, subtab_value.value) == (0,1):
                         # try:
                             solara.ProgressLinear(nakresli_signal.pending)
@@ -350,6 +354,8 @@ def Page():
                                 # return
                             if nakresli_signal.finished:
                                 data = zpracuj()
+                                if data is None:
+                                    return
                                 df_fft = data['fft'].loc[:restrict]
                                 if isinstance(df_fft.name, tuple):
                                     df_fft.name = df_fft.name[0]
@@ -371,6 +377,8 @@ def Page():
                         #     pass
         
                 with solara.lab.Tab("Welch (interactive)"):
+                    solara.Markdown("# Welch spectrum interactive explorer")
+
                     if (tab_value.value, subtab_value.value) == (0,2):
                         try:
                             Welch_interactive()

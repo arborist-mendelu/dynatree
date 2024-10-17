@@ -70,7 +70,7 @@ def plot(df, var, msg=None, id=None, resample=False):
     else:
         solara.FigurePlotly(fig, on_selection=set_selection_data)    
     if msg is not None:
-        msg
+        solara.Info(msg)
 
 # @solara.component
 # def plot_img(df, var, msg=None, id=None):
@@ -213,14 +213,17 @@ def Page():
             with solara.Card():
                 try:
                     if tab_index.value == 0:
-                        major_minor = data_object.identify_major_minor
-                        # solara.display(major_minor)
-                        df = data_object.data_pulling
-                        for i in major_minor.keys():
-                            df[i] = df[major_minor[i]]
-                        plot(df, dependent_pull, id="tahovky")
-                        solara.Text(f"Row for csv with zeroing at given time: {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},,,,")
-                        investigate(df, dependent_pull)
+                        if data_object.file_pulling_name is None:
+                            solara.Warning("Data pro tuto kombinaci měření a senzoru nejsou k dispozici.")
+                        else:
+                            major_minor = data_object.identify_major_minor
+                            # solara.display(major_minor)
+                            df = data_object.data_pulling
+                            for i in major_minor.keys():
+                                df[i] = df[major_minor[i]]
+                            plot(df, dependent_pull, id="tahovky")
+                            solara.Text(f"Row for csv with zeroing at given time: {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},,,,")
+                            investigate(df, dependent_pull)
                 except:
                     pass
         with solara.lab.Tab("Optika Pt3 a Pt4"):
@@ -231,7 +234,7 @@ def Page():
                         df2 = df2-df2.iloc[0,:]
                         df2.columns = [i[0] for i in df2.columns]
                         df2 = df2[[i for i in df2.columns if "Time" not in i]]
-                        plot(df2, dependent_pt34, msg=solara.Info(solara.Markdown("The data are shifted to start from zero.")), id="optika")
+                        plot(df2, dependent_pt34, msg="The data are shifted to start from zero.", id="optika")
                         investigate(df2, dependent_pt34)                        
                         pass
                     else:
@@ -262,30 +265,30 @@ def Page():
                         df2 = df2-df2.iloc[0,:]
                         df2.columns = [i[0] for i in df2.columns]
                         df2 = df2[[i for i in df2.columns if "Time" not in i]]
-                        plot(df2, dependent_bl, msg=solara.Info(solara.Markdown("The data are shifted to start from zero. The value of Y0 is considered.")), id="BL")                        
+                        plot(df2, dependent_bl, msg="The data are shifted to start from zero. The value of Y0 is considered.", id="BL")
                         investigate(df2, dependent_bl)                        
                     else:
-                        solara.Warning(solara.Markdown("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná."))
+                        solara.Warning("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná.")
                 except:
                     pass
 
 
-        with solara.lab.Tab("ACC@100Hz"):
-            with solara.Card():
-                try:
-                    if (tab_index.value==4):
-                        df4 = data_object.data_acc
-                        plot(df4, dependent_acc)                        
-                        investigate(df4, dependent_acc)                        
-                    else:
-                        solara.Warning(solara.Markdown("Acc pro toto měření nejsou dostupné. Buď neexistuje, nebo ještě není zpracovaná."))
-                except:
-                    pass
+        # with solara.lab.Tab("ACC@100Hz"):
+        #     with solara.Card():
+        #         try:
+        #             if (tab_index.value==4):
+        #                 df4 = data_object.data_acc
+        #                 plot(df4, dependent_acc)
+        #                 investigate(df4, dependent_acc)
+        #             else:
+        #                 solara.Warning(solara.Markdown("Acc pro toto měření nejsou dostupné. Buď neexistuje, nebo ještě není zpracovaná."))
+        #         except:
+        #             pass
 
         with solara.lab.Tab("ACC@5000Hz"):
             with solara.Card():
                 try:
-                    if (tab_index.value==5):
+                    if (tab_index.value==4):
                         df5 = data_object.data_acc5000
                         solara.Warning(
 """
@@ -296,8 +299,8 @@ nedalo pracovat. Downsamplování je pouze při zobrazování, nepoužívá se p
                         plot(df5, dependent_acc, resample=True)                        
                         # plot(df5, dependent_acc)                        
                     #     investigate(df5, dependent_acc)                        
-                    else:
-                        solara.Warning(solara.Markdown("Data pro toto měření není dostupá. Buď neexistují, nebo ještě nejsou zpracovaná."))
+                    # else:
+                    #     solara.Warning(solara.Markdown("Data pro toto měření není dostupá. Buď neexistují, nebo ještě nejsou zpracovaná."))
                 except:
                     pass
                 # pass
