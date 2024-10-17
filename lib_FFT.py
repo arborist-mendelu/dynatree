@@ -35,7 +35,7 @@ class DynatreeSignal:
         self.release_source = release_source
         if self.release_source is None:
             self.release_source = signal_source
-        if self.signal_source in self.measurement.data_pulling.columns:
+        if self.measurement.data_pulling is not None and self.signal_source in self.measurement.data_pulling.columns:
             self.signal_full = self.measurement.data_pulling[self.signal_source]
             self.release_full = self.measurement.data_pulling[self.release_source]
         elif self.signal_source in self.measurement.data_acc5000.columns:

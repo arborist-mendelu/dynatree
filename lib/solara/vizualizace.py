@@ -58,6 +58,8 @@ data_object = lib_dynatree.DynatreeMeasurement(
 @solara.component
 def plot(df, var, msg=None, id=None, resample=False):
     # df = df_.copy()
+    if df is None:
+        return None
     solara.ToggleButtonsMultiple(value=var, values=list(df.columns))    
     fig = px.scatter(df, y=var.value,  height = s.height.value, width=s.width.value,
                      title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
@@ -87,7 +89,8 @@ def plot(df, var, msg=None, id=None, resample=False):
 
 @solara.component
 def investigate(df_, var):
-    
+    if df_ is None:
+        return None
     def current_selection():
         ans = {
             'measurement_type': [s.method.value],

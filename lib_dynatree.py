@@ -652,7 +652,7 @@ class DynatreeMeasurement:
 
     @cached_property
     def data_optics(self):
-        if self.file_optics_name None:
+        if self.file_optics_name is None:
             return None
         logger.debug("loading optics data")
         ans = pd.read_parquet(self.file_optics_name)
@@ -695,7 +695,8 @@ class DynatreeMeasurement:
 
     @property
     def is_optics_available(self):
-        return os.path.isfile(self.file_optics_name)
+        if self.file_optics_name is not None:
+            return os.path.isfile(self.file_optics_name)
     
     @property
     def release_time_optics(self):
