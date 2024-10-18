@@ -553,7 +553,7 @@ class DynatreeStaticPulling:
             [
             ["M","blue", "yellow", "blueMaj", "blueMin", "yellowMaj", "yellowMin"],
             ["M_Elasto", "Elasto-strain"],
-            ]+pt_reg, msg=f"{self.parent_experiment.parent}"
+            ]+pt_reg, msg=f"{self.parent_experiment.parent if self.parent_experiment  is not None else None}"
             )
         return reg
     
