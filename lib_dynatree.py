@@ -15,6 +15,7 @@ import os
 from functools import wraps, lru_cache, cached_property
 import time
 import config
+from pathlib import Path
 
 # 
 import logging
@@ -477,7 +478,10 @@ class DynatreeMeasurement:
         The name of the file with Force+Elasto+Inclino.
         Raw data from the device converted from txt files to parquet.
         """
-        return f"{self.datapath}/parquet_pulling/{self.day.replace('-','_')}/{self.measurement_type}_{self.tree}_{self.measurement}.parquet"
+        file = f"{self.datapath}/parquet_pulling/{self.day.replace('-','_')}/{self.measurement_type}_{self.tree}_{self.measurement}.parquet"
+        if Path(file).is_file():
+            return file
+
     @property
     def file_optics_name(self):
         """
@@ -485,9 +489,11 @@ class DynatreeMeasurement:
         """
         if self.measurement_type != "normal":
             logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
-            return ""
-        return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}.parquet"
-    
+            return None
+        file = f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}.parquet"
+        if Path(file).is_file():
+            return file
+
     @property
     def file_optics_extra_name(self):
         """
@@ -497,9 +503,11 @@ class DynatreeMeasurement:
         """
         if self.measurement_type != "normal":
             logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
-            return ""
-        return f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}_pulling.parquet"
-    
+            return None
+        file = f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}_pulling.parquet"
+        if Path(file).is_file():
+            return file
+
     @property
     def file_acc_name(self):
         """
@@ -507,7 +515,9 @@ class DynatreeMeasurement:
         interpolated to the frequency 100Hz.
         Renames columns and adds time to index.
         """
-        return f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}.parquet"
+        file = f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}.parquet"
+        if Path(file).is_file():
+            return file
 
     @property
     def file_acc5000_name(self):
@@ -516,7 +526,9 @@ class DynatreeMeasurement:
         sampled at 5000Hz.
         Renames columns and adds time to index.
         """
-        return f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}_5000.parquet"
+        file = f"{self.datapath}/parquet_acc/{self.measurement_type}_{self.day}_{self.tree}_{self.measurement}_5000.parquet"
+        if Path(file).is_file():
+            return file
 
     @property
     def identify_major_minor(self):
@@ -581,6 +593,8 @@ class DynatreeMeasurement:
         
         Major axis is rescaled such that the main peak is positive.
         """
+        if self.file_pulling_name is None:
+            return None
         logger.debug("loading pulling data")
         df = pd.read_parquet(self.file_pulling_name)
         df = fix_inclinometers_sign(df, self.measurement_type, self.day, self.tree)
@@ -598,6 +612,8 @@ class DynatreeMeasurement:
     
     @cached_property
     def data_acc(self):
+        if self.file_acc_name is None:
+            return None
         logger.debug("loading acc data")
         df = pd.read_parquet(self.file_acc_name)
         df.columns = [i.replace("Data1_","").replace("ACC","A0").replace("_axis","").lower() for i in df.columns]
@@ -607,6 +623,8 @@ class DynatreeMeasurement:
 
     @cached_property
     def data_acc5000(self):
+        if self.file_acc5000_name is None:
+            return None
         logger.debug("loading acc data at 5000Hz")
         df = pd.read_parquet(self.file_acc5000_name)
         df.columns = [i.replace("Data1_","").replace("ACC","A0").replace("_axis","").lower() for i in df.columns]
@@ -617,6 +635,8 @@ class DynatreeMeasurement:
     @cached_property
     def data_pulling_interpolated(self):
         logger.debug("interpolating pulling data")
+        if self.data_pulling is None:
+            return None
         df = self.data_pulling
         ans = df.interpolate(method='index')
         return  ans
@@ -624,12 +644,16 @@ class DynatreeMeasurement:
     @cached_property
     def data_acc_interpolated(self):
         logger.debug("interpolating acc data")
+        if self.data_acc is None:
+            return None
         df = self.data_acc
         ans = df.interpolate(method='index')
         return  ans
 
     @cached_property
     def data_optics(self):
+        if self.file_optics_name is None:
+            return None
         logger.debug("loading optics data")
         ans = pd.read_parquet(self.file_optics_name)
         ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
@@ -650,6 +674,8 @@ class DynatreeMeasurement:
         extra columns where we try to fix the movement of cameras.
         """
         logger.debug("loading optics extra")
+        if self.file_optics_extra_name is None:
+            return None
         ans = pd.read_parquet(self.file_optics_extra_name)
         ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
         # the sign is already fixed in the parquet_add_inclino.py
@@ -669,7 +695,8 @@ class DynatreeMeasurement:
 
     @property
     def is_optics_available(self):
-        return os.path.isfile(self.file_optics_name)
+        if self.file_optics_name is not None:
+            return os.path.isfile(self.file_optics_name)
     
     @property
     def release_time_optics(self):

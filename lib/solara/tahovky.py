@@ -26,7 +26,7 @@ DATA_PATH = "../data"
 from great_tables import GT, style, loc
 import seaborn as sns
 import dynatree_util as du
-
+import rich
 # from weasyprint import HTML, CSS
 # import logging
 # lib_dynatree.logger.setLevel(logging.INFO)
@@ -118,6 +118,8 @@ def nakresli(reset_measurements=False):
         nakresli.cancel()
         return None
     data_object = get_data_object()
+    if data_object.file_pulling_name is None:
+        return None
     figs = [data_object.plot()]
     if include_details.value:
         figs = figs + [i.plot(n) for n, i in enumerate(data_object.pullings)]
@@ -601,6 +603,9 @@ def Graphs():
         with solara.Tooltip("Allows to show details of the pulls on this page. Slows down the computation, however."):
             solara.Switch(label="Show details", value=include_details, on_value=nakresli)
         f = nakresli.value
+        if f is None:
+            solara.Error("Obrázek/obrázky se nepodařilo vytvořit.")
+            return
         if include_details.value:
             ncols = 6
         else:

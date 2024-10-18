@@ -35,15 +35,18 @@ class DynatreeSignal:
         self.release_source = release_source
         if self.release_source is None:
             self.release_source = signal_source
-        if self.signal_source in self.measurement.data_pulling.columns:
+        if self.measurement.data_pulling is not None and self.signal_source in self.measurement.data_pulling.columns:
             self.signal_full = self.measurement.data_pulling[self.signal_source]
             self.release_full = self.measurement.data_pulling[self.release_source]
-        elif self.signal_source in self.measurement.data_acc5000.columns:
+        elif self.measurement.data_acc5000 is not None and self.signal_source in self.measurement.data_acc5000.columns:
             self.signal_full = self.measurement.data_acc5000[self.signal_source]
             self.release_full = self.measurement.data_acc5000[self.release_source]
         elif self.signal_source in ["Pt3", "Pt4"]:
             self.signal_full = self.measurement.data_optics_pt34[(self.signal_source, "Y0")]
             self.release_full = self.measurement.data_optics_pt34[(self.release_source, "Y0")]
+        else:
+            self.signal_full = None
+            self.release_full = None
         if "a0" in self.signal_source:
             self.dt = 0.0002
         else:
@@ -67,6 +70,8 @@ class DynatreeSignal:
     
     @property
     def signal(self):
+        if self.signal_full is None:
+            return
         signal = self.signal_full.loc[self.release_time:self.release_time+length]
         signal = signal.dropna()
         signal = signal - signal.mean()
@@ -82,6 +87,8 @@ class DynatreeSignal:
     
     @property 
     def fft(self):
+        if self.signal_full is None:
+            return
         N = self.signal.shape[0]  # get the number of points
         xf_r = fftfreq(N, self.dt)[:N//2]
         yf = fft(self.signal.values)  # preform FFT analysis
@@ -91,9 +98,13 @@ class DynatreeSignal:
     
     @property
     def main_peak(self):
+        if self.signal_full is None:
+            return
         return self.fft.loc[peak_min:peak_max].idxmax()
     
     def welch(self, nperseg=2**8):
+        if self.signal_full is None:
+            return
         if self.dt == 0.01:
             fs = 100
         if self.dt == 0.0002:
