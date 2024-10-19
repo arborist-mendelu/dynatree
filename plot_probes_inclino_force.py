@@ -71,7 +71,6 @@ def plot_one_measurement(
     # accept both BK04 and 04 as a tree number
     tree = tree[-2:]
     date = date.replace("-","_")
-    
     if df is None:
         df = m.data_optics_pt34
     else:
@@ -173,7 +172,7 @@ def plot_one_measurement(
             df_pulling_tests, ini_forces=False, ini_regress=False
             ).data
         for i in list_major_minor:
-            df_pulling_tests[i] = df_pulling_tests[
+            df_major_minor[i] = df_major_minor[
                 axes_major[i.replace("blue","Inclino(80)").replace("yellow","Inclino(81)")]]
         # df_major_minor = process_inclinometers_major_minor(df_pulling_tests)
         df_major_minor.loc[draw_from:min([draw_to,df_major_minor.index[-1]]),list_major_minor].plot(ax=ax, style=".")

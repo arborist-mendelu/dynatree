@@ -23,7 +23,7 @@ import logging
 lib_dynatree.logger.setLevel(logging.DEBUG)
 
 measurement = "M01"
-tree = "BK09"
+tree = "BK04"
 date = "2022-04-05"
 # DF = read_data("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
 
@@ -36,7 +36,7 @@ f = plot_one_measurement(
         # df_extra=df_ext,
         # df=DF,
         return_figure=True, 
-        major_minor=True
+        major_minor=False
         ) 
 plt.grid()
 plt.show()
