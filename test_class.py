@@ -6,20 +6,28 @@ Created on Mon Aug 26 12:35:00 2024
 @author: marik
 """
 
-import lib_dynatree
-import logging
+
+import unittest
 import static_pull
 
-lib_dynatree.logger.setLevel(logging.DEBUG)
+class Test1(unittest.TestCase):
+    def test_vzniku_objektu(self):
+        do = static_pull.DynatreeStaticMeasurement(
+            day="2022-04-05",
+            tree="BK04",
+            measurement="M02",
+            optics=False
+        )
+        self.assertEqual(do.tree,"BK04")
 
-do = static_pull.DynatreeStaticMeasurement(
-    day="2022-04-05", 
-    tree="BK04", 
-    measurement="M02", 
-    optics=False
-    )
+if __name__ == '__main__':
+    unittest.main()
 
-[do.plot()] + [i.plot(n) for n,i in enumerate(do.pullings)]
+# import logging
+# lib_dynatree.logger.setLevel(logging.DEBUG)
+
+
+# [do.plot()] + [i.plot(n) for n,i in enumerate(do.pullings)]
 # for i in m.pullings:
 #     i.plot()
 # a = m.get_static_pulling_data()
@@ -27,7 +35,7 @@ do = static_pull.DynatreeStaticMeasurement(
 # # %%
 # aa.plot()
 # %%
-do.data_optics
+# do.data_optics
 # %%
 # m.measurement
 # a = {}
