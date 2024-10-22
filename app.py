@@ -25,9 +25,9 @@ app.register_blueprint(solara.server.flask.blueprint, url_prefix="/dynatree")
 def home():
 #    logger.warning(f"Home entered {session}")
     if not 'logged_in' in session or not session['logged_in']:
-        return redirect('/dynatree/login')
+        return redirect('/login')
         # return render_template('index.html')
-    return redirect('/dynatree/dynatree/')
+    return redirect('/dynatree/')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -51,7 +51,7 @@ def logout():
 @app.before_request
 def check_if_logged_in():
     if not 'logged_in' in session or not session['logged_in']:
-        if request.endpoint not in ['login', 'register','static']:
+        if request.endpoint not in ['login', 'register', 'static']:
             # Přesměruj na přihlašovací stránku, pokud uživatel není přihlášen
             return redirect('./login')
 
