@@ -279,12 +279,11 @@ RewriteEngine On
 RewriteCond %{HTTP:Upgrade} =websocket
 RewriteRule dynatree/(.*) ws://um-bc201.mendelu.cz:5000/dynatree/$1 [P]
 RewriteCond %{HTTP:Upgrade} !=websocket
-RewriteRule dynatree/logout http://um-bc201.mendelu.cz:5000/logout [P]
-#RewriteRule dynatree/logout/(.*) http://um-bc201.mendelu.cz:5000/logout [P]
+RewriteRule /logout http://um-bc201.mendelu.cz:5000/logout [P]
+RewriteRule /login http://um-bc201.mendelu.cz:5000/login [P]
 RewriteRule dynatree/login/(.*) http://um-bc201.mendelu.cz:5000/login/$1 [P]
 RewriteRule dynatree/login http://um-bc201.mendelu.cz:5000/login [P]
 RewriteRule dynatree/(.*) http://um-bc201.mendelu.cz:5000/dynatree/$1 [P]
 RewriteRule static/(.*) http://um-bc201.mendelu.cz:5000/static/$1 [P]
 ProxyPassReverse /dynatree http://um-bc201.mendelu.cz:5000
-
 ~~~
