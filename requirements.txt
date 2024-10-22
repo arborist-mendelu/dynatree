@@ -23,3 +23,5 @@ great_tables
 weasyprint
 toml
 bioconda::snakemake
+passlib
+gunicorn
