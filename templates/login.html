@@ -6,17 +6,40 @@
     <title>Přihlášení</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .form-section {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .description-section img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-              <h2 class="text-center mt-5">Dynatree přihlášení</h2>
-	      <div class="alert alert-primary" role="alert">
-		<p>Pro přístup k datům zpracovávaným v projektu Dynatree je nutné se příhlásit. Heslo je obvyklé.</p>
-		</div>
-                <div class="card mt-3">
-                    <div class="card-body">
+
+
+<div class="container">
+    <div class="row">
+        <!-- Left Column: Description and Image -->
+        <div class="col-md-6 description-section">
+            <h2 class="mb-4">Přihlášení do projektu Dynatree</h2>
+            <img src="../static/trees.jpg" alt="Obrázek Dynatree" class="d-none d-lg-block">
+        </div>
+
+        <!-- Right Column: Login Form -->
+        <div class="col-md-6 form-section">
+                  <div class="alert alert-primary" role="alert">
+		    Web na který se snažíte přistoupit je chráněný heslem. Heslo je obvyklé, používané v projektu.</div>
                         {% if error %}
                             <div class="alert alert-danger" role="alert">
                                 {{ error }}
@@ -29,11 +52,11 @@
                             </div>
                             <button type="submit" class="btn btn-primary btn-block">Přihlásit se</button>
                         </form>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
+</div>
+
+
     <!-- Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
