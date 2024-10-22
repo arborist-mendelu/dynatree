@@ -24,3 +24,4 @@ weasyprint
 toml
 bioconda::snakemake
 passlib
+gunicorn
