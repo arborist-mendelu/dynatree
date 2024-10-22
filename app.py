@@ -51,7 +51,7 @@ def logout():
 @app.before_request
 def check_if_logged_in():
     if not 'logged_in' in session or not session['logged_in']:
-        if request.endpoint not in ['login', 'register']:
+        if request.endpoint not in ['login', 'register','static']:
             # Přesměruj na přihlašovací stránku, pokud uživatel není přihlášen
             return redirect('./login')
 
