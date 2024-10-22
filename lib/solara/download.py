@@ -57,7 +57,7 @@ def Page():
                             with solara.Row(style={"background-color": lightgray}):
                                 solara.Button(
                                     label=f"Download ({velikost_souboru_v_mb('../outputs/'+k)})",
-                                    attributes={"href": f"/static/public/{k}", "target": "_blank"}, color='primary')
+                                    attributes={"href": f"./static/public/{k}", "target": "_blank"}, color='primary')
                                 solara.Markdown(f"**{popis}.** {detail}")
 
 

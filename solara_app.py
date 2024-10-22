@@ -62,23 +62,23 @@ def Login():
             test_login = [True]  # auto login for everybody on local host
     except:
         pass
-    if True in test_login:
-        user_accepted.value = True
-        solara.Success(solara.Markdown("Acess granted"))
-        password_attempt.value=""
-    else:
-        if password_attempt.value != "":
-            solara.Error(solara.Markdown(
-                f"""
-                * Enter valid password.
-                * Login failed.
-                * {time.ctime()}
-                """))
-            # solara.Info(solara.Markdown(
-            #     f"""
-            #     **Your input was not recognised as a valid password.**
-            #     """
-            #     ))
+    # if True in test_login:
+    user_accepted.value = True
+    solara.Success(solara.Markdown("Acess granted"))
+    password_attempt.value=""
+    # else:
+    #     if password_attempt.value != "":
+    #         solara.Error(solara.Markdown(
+    #             f"""
+    #             * Enter valid password.
+    #             * Login failed.
+    #             * {time.ctime()}
+    #             """))
+    #         # solara.Info(solara.Markdown(
+    #         #     f"""
+    #         #     **Your input was not recognised as a valid password.**
+    #         #     """
+    #         #     ))
 
 def Logout():
     with solara.AppBar():
@@ -89,7 +89,9 @@ def Logout():
                 pass
             with solara.Tooltip("Logout"):
                 solara.Button(icon_name="mdi-logout",
-                              icon=True, on_click=lambda: user_accepted.set(False))    
+                              icon=True,
+                              attributes={"href": f"../logout"},
+                              )
 
 @task
 def monitoring():
