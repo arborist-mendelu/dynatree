@@ -265,3 +265,26 @@ rsync -zarv -P dynatree-optika/csv jupyter.mendelu.cz:/babice/Mereni_Babice_zpra
 rsync -zarv -P dynatree-optika/csv_output jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/
 rsync -zarv -P dynatree-optika/lib/solara/*py jupyter.mendelu.cz:/babice/Mereni_Babice_zpracovani/skripty/lib/solara/
 ~~~
+
+# Solara plus Flask
+
+Spusteni
+~~~
+SOLARA_APP=solara_app.py flask run --debug --host=0.0.0.0
+~~~
+
+Nastaveni apache
+~~~
+RewriteEngine On
+RewriteCond %{HTTP:Upgrade} =websocket
+RewriteRule dynatree/(.*) ws://um-bc201.mendelu.cz:5000/dynatree/$1 [P]
+RewriteCond %{HTTP:Upgrade} !=websocket
+RewriteRule dynatree/logout http://um-bc201.mendelu.cz:5000/logout [P]
+#RewriteRule dynatree/logout/(.*) http://um-bc201.mendelu.cz:5000/logout [P]
+RewriteRule dynatree/login/(.*) http://um-bc201.mendelu.cz:5000/login/$1 [P]
+RewriteRule dynatree/login http://um-bc201.mendelu.cz:5000/login [P]
+RewriteRule dynatree/(.*) http://um-bc201.mendelu.cz:5000/dynatree/$1 [P]
+RewriteRule static/(.*) http://um-bc201.mendelu.cz:5000/static/$1 [P]
+ProxyPassReverse /dynatree http://um-bc201.mendelu.cz:5000
+
+~~~

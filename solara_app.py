@@ -87,10 +87,11 @@ def Logout():
                 solara.Text(f"Solara on {os.environ['SERVER_NAME']}")
             except:
                 pass
-            # with solara.Link("../logout"):
-            #     solara.Button(icon_name="mdi-logout",
-            #                   icon=True
-            #                   )
+            with solara.Tooltip("Logout"):
+                solara.Button(icon_name="mdi-logout",
+                              icon=True,
+                              attributes={"href": f"./logout"},
+                              )
 
 @task
 def monitoring():
