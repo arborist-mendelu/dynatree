@@ -90,7 +90,7 @@ def Logout():
             with solara.Tooltip("Logout"):
                 solara.Button(icon_name="mdi-logout",
                               icon=True,
-                              attributes={"href": f"./logout"},
+                              attributes={"href": f"../logout"},
                               )
 
 @task

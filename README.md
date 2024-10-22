@@ -272,6 +272,10 @@ Spusteni
 ~~~
 SOLARA_APP=solara_app.py flask run --debug --host=0.0.0.0
 ~~~
+Nebo (produkcni server) 
+~~~
+SOLARA_APP=solara_app.py gunicorn --workers 4 --threads=20 -b 0.0.0.0:5000 app:app
+~~~
 
 Nastaveni apache
 ~~~
@@ -288,3 +292,5 @@ RewriteRule static/(.*) http://um-bc201.mendelu.cz:5000/static/$1 [P]
 ProxyPassReverse /dynatree http://um-bc201.mendelu.cz:5000
 
 ~~~
+
+
