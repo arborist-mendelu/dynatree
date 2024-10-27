@@ -23,6 +23,18 @@
             max-width: 100%;
             height: auto;
         }
+
+        /* CSS pro efekt zobrazení a skrytí */
+        .hidden {
+            opacity: 0.5;
+        }
+        .fade-out {
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        .fade-out.hidden {
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -36,7 +48,7 @@
         </div>
 
         <!-- Right Column: Login Form -->
-        <div class="col-md-6 form-section">
+        <div class="col-md-6 form-section fade-out" id="content">
             <h2 class="mb-4">Přihlášení do projektu Dynatree</h2>
                   <div class="alert alert-primary" role="alert">
 		    Web na který se snažíte přistoupit je chráněný heslem. Heslo je obvyklé, používané v projektu.</div>
@@ -61,6 +73,13 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Před odesláním formuláře skryje obsah stránky
+        document.querySelector('form').addEventListener('submit', function() {
+            document.getElementById('content').classList.add('hidden');
+        });
+    </script>
 </body>
 </html>
 
