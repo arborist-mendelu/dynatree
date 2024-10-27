@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, request, session
 from passlib.hash import pbkdf2_sha256
 import solara.server.flask
+import random
 #import logging
 #logger = logging.getLogger("flask")
 
@@ -32,28 +33,35 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 #    logger.warning(f"Login entered {session}")
+#     next_page = request.args.get('next')  # Získání cílové stránky
+#     print (f"Next page is {next_page}")
     if request.method == 'POST':
         heslo = request.form['password']
         if  True in [pbkdf2_sha256.verify(heslo, i) for i in valid_hashes]:
             session['logged_in'] = True
+            next_page = request.args.get('next')  # Načti `next` parametr z URL
+            return redirect(next_page or '/dynatree/')  # Přesměrování na původní stránku nebo na domovskou
             # return render_template('index.html')
-            return redirect('/dynatree/')
+            # return redirect('/dynatree/')
         else:
             return render_template('login.html', error="Špatné heslo. Zkuste to znovu.")
-    return render_template('login.html')
+    image_number = random.randint(0, 2)
+    return render_template('login.html', image=image_number)
 
 @app.route('/logout')
 def logout():
 #    logger.warning(session)
     session.pop('logged_in', None)
-    return redirect('./login')
+    return redirect(url_for('login'))
 
 @app.before_request
 def check_if_logged_in():
+    target_url = request.path
+    print(f"target url is {request.path}")
     if not 'logged_in' in session or not session['logged_in']:
-        if request.endpoint not in ['login', 'register', 'static']:
+        if request.endpoint not in ['login', 'register', 'static', 'blueprint-solara.public']:
             # Přesměruj na přihlašovací stránku, pokud uživatel není přihlášen
-            return redirect('./login')
+            return redirect(url_for('login', next=target_url))
 
 
 if __name__ == '__main__':
