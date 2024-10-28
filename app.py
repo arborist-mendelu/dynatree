@@ -45,7 +45,7 @@ def login():
             # return redirect('/dynatree/')
         else:
             return render_template('login.html', error="Špatné heslo. Zkuste to znovu.")
-    image_number = random.randint(0, 3)
+    image_number = random.randint(0, 5)
     return render_template('login.html', image=image_number)
 
 @app.route('/logout')
