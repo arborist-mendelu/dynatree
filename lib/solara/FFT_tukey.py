@@ -278,7 +278,7 @@ def Page():
     initime = time.time()
     solara.Title("DYNATREE: FFT s automatickou detekci vypuštění a tukey oknem")
     solara.Style(s.styles_css)
-    solara.Style("td {padding-left: 1em !important;}")
+    solara.Style("td {padding-left: 1em !important;} .widget-image {width: auto;}")
     with solara.Sidebar():
         if ((tab_value.value, subtab_value.value) != (1,1) ) & (tab_value.value !=2):
             if tab_value.value == 0:
