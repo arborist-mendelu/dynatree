@@ -15,6 +15,7 @@ import lib.solara.FFT
 import lib.solara.welch_ACC
 import lib.solara.FFT_tukey
 import lib.solara.download
+import lib.solara.damping
 import krkoskova.krkoskova_app
 import pulling_tests.solara_app
 from passlib.hash import pbkdf2_sha256
@@ -127,6 +128,7 @@ routes = [
     solara.Route(path="FFT_old", component=lib.solara.FFT.Page, label="FFT1"),
     solara.Route(path="Welch_ACC", component=lib.solara.welch_ACC.Page, label="FFT2"),
     solara.Route(path="FFT_Tukey_all", component=lib.solara.FFT_tukey.Page, label="FFT3"),
+    solara.Route(path="Damping", component=lib.solara.damping.Page, label="damping"),
     solara.Route(path="Downloads", component=lib.solara.download.Page, label="DWNL"),
     solara.Route(path="Krkoskova", component=krkoskova.krkoskova_app.Page, label="K"),
     solara.Route(path="EMA", component=pulling_tests.solara_app.Page, label="EMA"),
