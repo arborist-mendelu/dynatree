@@ -16,6 +16,7 @@ import lib.solara.welch_ACC
 import lib.solara.FFT_tukey
 import lib.solara.download
 import krkoskova.krkoskova_app
+import pulling_tests.solara_app
 from passlib.hash import pbkdf2_sha256
 import pandas as pd
 import time
@@ -128,4 +129,5 @@ routes = [
     solara.Route(path="FFT_Tukey_all", component=lib.solara.FFT_tukey.Page, label="FFT3"),
     solara.Route(path="Downloads", component=lib.solara.download.Page, label="DWNL"),
     solara.Route(path="Krkoskova", component=krkoskova.krkoskova_app.Page, label="K"),
+    solara.Route(path="EMA", component=pulling_tests.solara_app.Page, label="EMA"),
 ]
