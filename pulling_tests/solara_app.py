@@ -2,6 +2,7 @@ import pandas as pd
 import solara
 import os
 from io import BytesIO
+import plotly.express as px
 
 from pulling_tests.pulling import PullingTest
 
@@ -146,17 +147,19 @@ def grafy(t,intervals,title):
             height=height.value,  # Nastavení výšky grafu na 600 pixelů
             width=width.value,  # Nastavení výšky grafu na 600 pixelů
             title=title,
-            template="plotly_white"
-        )
+            template="plotly_white")
         solara.FigurePlotly(fig)
+    solara.FileDownload(t.data.to_csv(), filename=f"data_{file.value}.csv", label="Download data as csv")
 
 def regresni_grafy(t,intervals):
-    for a,b in intervals:
+    for i,[a,b] in enumerate(intervals):
         inclinometers = df_majorminor.loc[file.value,:]
-        subdf = t.data.loc[a:b, ["Force(100)",*inclinometers]].abs().interpolate(method='index')
-        fig = subdf.plot(x="Force(100)", y=inclinometers,  kind="scatter", width=width.value, height=height.value,
+        subdf = t.data.loc[a:b, ["Force(100)",*inclinometers]].abs().copy()
+        subdf = subdf.interpolate(method='index')
+        fig = px.scatter(data_frame=subdf, x="Force(100)", y=inclinometers,  width=width.value, height=height.value,
                          template="plotly_white"
                          )
         solara.FigurePlotly(fig)
+        solara.FileDownload(subdf.to_csv(), filename=f"data_{file.value}_pull{i}.csv", label="Download data as csv")
 
 
