@@ -3,9 +3,6 @@ import solara
 import os
 from io import BytesIO
 
-from numpy.core.defchararray import title
-from soupsieve import select
-
 from pulling_tests.pulling import PullingTest
 
 
@@ -90,14 +87,28 @@ def Page():
         except:
             solara.Info("Upload the file please.")
             return
+    intervals = t.intervals_of_interest()
+    with solara.lab.Tabs():
+        with solara.lab.Tab("Grafy"):
+            grafy(t, intervals,title)
+        with solara.lab.Tab("Regrese"):
+            regresni_grafy(t,intervals)
+
+def grafy(t,intervals,title):
 
     if draw_force.value:
         solara.Markdown("**Force**")
         fig = t.data.plot(y="Force(100)")
+        for a,b in intervals:
+            fig.add_vrect(x0=a, x1=b,
+                          fillcolor="gray", opacity=0.2,
+                          layer="below", line_width=0)
+
         fig.update_layout(
             height=height.value,  # Nastavení výšky grafu na 600 pixelů
             width=width.value,  # Nastavení výšky grafu na 600 pixelů
-            title = title
+            title = title,
+            template="plotly_white"
         )
         solara.FigurePlotly(fig)
 
@@ -105,10 +116,15 @@ def Page():
         solara.Markdown("**Extensometer**")
         elasto_columns = [col for col in t.data.columns if col.startswith("Elasto")]
         fig = t.data[elasto_columns].plot()
+        for a, b in intervals:
+            fig.add_vrect(x0=a, x1=b,
+                          fillcolor="gray", opacity=0.2,
+                          layer="below", line_width=0)
         fig.update_layout(
             height=height.value,  # Nastavení výšky grafu na 600 pixelů
             width=width.value,  # Nastavení výšky grafu na 600 pixelů
-            title=title
+            title=title,
+            template="plotly_white"
         )
         solara.FigurePlotly(fig)
 
@@ -122,10 +138,25 @@ def Page():
             else:
                 inclino_columns = df_majorminor.loc[file.value,:]
         fig = t.data[inclino_columns].plot()
+        for a,b in intervals:
+            fig.add_vrect(x0=a, x1=b,
+                          fillcolor="gray", opacity=0.2,
+                          layer="below", line_width=0)
         fig.update_layout(
             height=height.value,  # Nastavení výšky grafu na 600 pixelů
             width=width.value,  # Nastavení výšky grafu na 600 pixelů
-            title=title
+            title=title,
+            template="plotly_white"
         )
         solara.FigurePlotly(fig)
+
+def regresni_grafy(t,intervals):
+    for a,b in intervals:
+        inclinometers = df_majorminor.loc[file.value,:]
+        subdf = t.data.loc[a:b, ["Force(100)",*inclinometers]].abs().interpolate(method='index')
+        fig = subdf.plot(x="Force(100)", y=inclinometers,  kind="scatter", width=width.value, height=height.value,
+                         template="plotly_white"
+                         )
+        solara.FigurePlotly(fig)
+
 
