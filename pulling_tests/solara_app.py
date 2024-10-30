@@ -1,3 +1,4 @@
+import pandas as pd
 import solara
 import os
 from io import BytesIO
@@ -9,11 +10,21 @@ from pulling_tests.pulling import PullingTest
 
 
 DIRECTORY = '../data/ema'
-files = [f.replace(".TXT","") for f in os.listdir(DIRECTORY) if os.path.isfile(os.path.join(DIRECTORY, f))]
+files = [f.replace(".TXT","") for f in os.listdir(DIRECTORY) if os.path.isfile(os.path.join(DIRECTORY, f)) and 'TXT' in f]
 files.sort()
+files_short = [f for f in files if len(f) < 3]
+
+df_majorminor = pd.read_csv(f'{DIRECTORY}/ema-tahovky-major.csv', index_col=0, sep=";")
+
+# Funkce pro úpravu buňky do formátu "Inclino(column_letter)"
+def update_cell(value, column):
+    return f"Inclino({column}){value}" if pd.notna(value) else value
+
+# Použití funkce na každý sloupec a buňku
+for column in df_majorminor.columns:
+    df_majorminor[column] = df_majorminor[column].apply(lambda x: update_cell(x, column))
 
 file = solara.reactive(files[0])
-
 styles_css = """
         .widget-image{width:100%;} 
         .v-btn-toggle{display:inline;}  
@@ -29,8 +40,10 @@ height = solara.reactive(400)
 
 draw_force = solara.reactive(True)
 draw_elasto = solara.reactive(False)
-draw_inclino = solara.reactive(True)
+draw_inclino_major = solara.reactive(True)
+draw_inclino = solara.reactive(False)
 use_custom_file = solara.reactive(False)
+static_restriction = solara.reactive(True)
 
 @solara.component
 def ImageSizes():
@@ -44,14 +57,20 @@ content = solara.reactive(None)
 def on_file(f):
     content.value = f["file_obj"].read()
 
+
 @solara.component
 def Page():
     solara.Style(styles_css)
     with solara.Sidebar():
-        solara.ToggleButtonsSingle(values=files, value=file)
+        solara.Switch(label = "Consider only static data", value = static_restriction)
+        if static_restriction.value:
+            solara.ToggleButtonsSingle(values=files_short, value=file)
+        else:
+            solara.ToggleButtonsSingle(values=files, value=file)
         solara.Switch(label = "Draw force", value = draw_force)
         solara.Switch(label = "Draw extensometers", value = draw_elasto)
-        solara.Switch(label = "Draw inclinometers", value = draw_inclino)
+        solara.Switch(label = "Draw major inclinometers (taken from the table, available only for predefined data)", value = draw_inclino_major)
+        solara.Switch(label = "Draw all inclinometers", value = draw_inclino)
         ImageSizes()
 
         with solara.Card(title = "Input my own file"):
@@ -93,9 +112,15 @@ def Page():
         )
         solara.FigurePlotly(fig)
 
-    if draw_inclino.value:
+    if draw_inclino.value or draw_inclino_major.value:
         solara.Markdown("**Inclinometers**")
-        inclino_columns = [col for col in t.data.columns if col.startswith("Inclino")]
+        if use_custom_file.value:
+            inclino_columns = [col for col in t.data.columns if col.startswith("Inclino")]
+        else:
+            if draw_inclino.value:
+                inclino_columns = [col for col in t.data.columns if col.startswith("Inclino")]
+            else:
+                inclino_columns = df_majorminor.loc[file.value,:]
         fig = t.data[inclino_columns].plot()
         fig.update_layout(
             height=height.value,  # Nastavení výšky grafu na 600 pixelů
