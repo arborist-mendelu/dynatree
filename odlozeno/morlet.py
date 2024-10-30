@@ -19,6 +19,7 @@ df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 df = read_data(f"../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M03.csv")
 df = df[df["Time"]>42]
 
+
 #%%
 
 df[("Pt3","Y0")].plot()

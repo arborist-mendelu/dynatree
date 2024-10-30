@@ -70,6 +70,10 @@ class DynatreeSignal:
     
     @property
     def signal(self):
+        """
+        Returns interpolated signal with zero mean value
+        multiplied by tukey window.
+        """
         if self.signal_full is None:
             return
         signal = self.signal_full.loc[self.release_time:self.release_time+length]
