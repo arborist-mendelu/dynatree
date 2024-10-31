@@ -7,6 +7,8 @@ import os
 
 pd.options.plotting.backend = "plotly"
 
+DIRECTORY = '../data/ema'
+
 def read_csvdata_inclinometers(file):
     """
     Read data from pulling tests. Used to save parquet files.
@@ -116,7 +118,6 @@ def major_minor_axes():
 
 
 def main():
-    DIRECTORY = '../data/ema'
     files = [f.replace(".TXT", "") for f in os.listdir(DIRECTORY) if
              os.path.isfile(os.path.join(DIRECTORY, f)) and 'TXT' in f]
     files.sort()
