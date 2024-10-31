@@ -38,6 +38,7 @@ class PullingTest:
         self.measurement = file.replace(".TXT","")
     @property
     def major_inclinometers(self):
+        df_majorminor = major_minor_axes()
         inclinometers = df_majorminor.loc[self.measurement, :]
         return inclinometers
 
@@ -122,8 +123,6 @@ def major_minor_axes():
     for column in df_majorminor.columns:
         df_majorminor[column] = df_majorminor[column].apply(lambda x: update_cell(x, column))
     return df_majorminor
-
-df_majorminor = major_minor_axes()
 
 def main():
     files = [f.replace(".TXT", "") for f in os.listdir(DIRECTORY) if
