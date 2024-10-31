@@ -94,7 +94,7 @@ def Page():
 
 @solara.component
 def koeficienty():
-    ansdata = main()
+    ansdata = slopes()
     solara.FileDownload(ansdata.to_csv(), filename="regresni_koeficienty.csv", label="Download data as csv")
     solara.display(ansdata.sort_index().style.background_gradient(axis=0))
 
