@@ -5,7 +5,7 @@ from io import BytesIO
 import plotly.express as px
 
 from lib.solara.FFT_tukey import df_manual_peaks
-from lib_pulling import PullingTest, major_minor_axes
+from lib_pulling import PullingTest, major_minor_axes, main
 
 
 DIRECTORY = '../data/ema'
@@ -44,10 +44,11 @@ def ImageSizes():
             solara.SliderValue(label="height", value=height, values=heights)
 
 content = solara.reactive(None)
+external_file = solara.reactive("")
 
 def on_file(f):
     content.value = f["file_obj"].read()
-
+    external_file.value = f["name"]
 
 @solara.component
 def Page():
@@ -75,18 +76,27 @@ def Page():
         t = PullingTest(file.value+".TXT", directory=DIRECTORY, localfile=True)
         title = f"Data from {file.value}.TXT"
     else:
+        draw_inclino.value = True
         try:
             t = PullingTest(BytesIO(content.value), localfile=False)
-            title = f"Data from user file"
+            title = f"Data from user file {external_file.value}"
         except:
             solara.Info("Upload the file please.")
             return
     intervals = t.intervals_of_interest()
-    with solara.lab.Tabs():
+    with solara.lab.Tabs(lazy=True):
         with solara.lab.Tab("Grafy"):
             grafy(t, intervals,title)
         with solara.lab.Tab("Regrese"):
             regresni_grafy(t,intervals)
+        with solara.lab.Tab("Regresní koeficienty"):
+            koeficienty()
+
+@solara.component
+def koeficienty():
+    ansdata = main()
+    solara.FileDownload(ansdata.to_csv(), filename="regresni_koeficienty.csv", label="Download data as csv")
+    solara.display(ansdata.style.background_gradient(axis=0))
 
 def grafy(t,intervals,title):
 
@@ -145,11 +155,18 @@ def grafy(t,intervals,title):
     solara.FileDownload(t.data.to_csv(), filename=f"data_{file.value}.csv", label="Download data as csv")
 
 def regresni_grafy(t,intervals):
+    try:
+        inclinometers = df_majorminor.loc[file.value, :]
+        df = t.data.loc[:, ["Force(100)", *inclinometers]].abs()
+    except:
+        inclinometers = [f for f in t.data.columns if "Inclino" in f]
+        df = t.data.loc[:, ["Force(100)", *inclinometers]].abs()
+    df = df.interpolate(method='index').dropna()
     for i,[a,b] in enumerate(intervals):
-        inclinometers = df_majorminor.loc[file.value,:]
-        subdf = t.data.loc[a:b, ["Force(100)",*inclinometers]].abs().copy()
-        subdf = subdf.interpolate(method='index')
-        fig = px.scatter(data_frame=subdf, x="Force(100)", y=inclinometers,  width=width.value, height=height.value,
+        subdf = df.loc[a:b,:]
+        subdf = subdf.set_index("Force(100)")
+
+        fig = px.scatter(data_frame=subdf,  width=width.value, height=height.value,
                          template="plotly_white"
                          )
         solara.FigurePlotly(fig)

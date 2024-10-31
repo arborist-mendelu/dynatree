@@ -16,13 +16,11 @@ import lib.solara.welch_ACC
 import lib.solara.FFT_tukey
 import lib.solara.download
 import lib.solara.damping
+import lib.solara.pulling_tests
 import krkoskova.krkoskova_app
-import pulling_tests.solara_app
-from passlib.hash import pbkdf2_sha256
 import pandas as pd
 import time
 from datetime import datetime
-import os
 import psutil
 
 import toml
@@ -131,5 +129,5 @@ routes = [
     solara.Route(path="Damping", component=lib.solara.damping.Page, label="damping"),
     solara.Route(path="Downloads", component=lib.solara.download.Page, label="DWNL"),
     solara.Route(path="Krkoskova", component=krkoskova.krkoskova_app.Page, label="K"),
-    solara.Route(path="EMA", component=pulling_tests.solara_app.Page, label="EMA"),
+    solara.Route(path="EMA", component=lib.solara.pulling_tests.Page, label="EMA"),
 ]

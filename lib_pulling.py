@@ -5,6 +5,8 @@ from scipy.signal import savgol_filter
 from scipy.stats import linregress
 import os
 
+from solara.website.pages.documentation.examples.general.deploy_model import slope
+
 pd.options.plotting.backend = "plotly"
 
 DIRECTORY = '../data/ema'
@@ -33,6 +35,11 @@ class PullingTest:
             self.data = read_csvdata_inclinometers(self.filename)
         else:
             self.data = read_csvdata_inclinometers(file)
+        self.measurement = file.replace(".TXT","")
+    @property
+    def major_inclinometers(self):
+        inclinometers = df_majorminor.loc[self.measurement, :]
+        return inclinometers
 
     def _split_df_static_pulling(self, intervals='auto', probe="Force(100)"):
         """
@@ -68,7 +75,7 @@ class PullingTest:
         if True or intervals is None:
             # Divide domain into interval where force is large and small
             maximum = df_interpolated[probe].max()
-            df_interpolated["probe_step"] = (df_interpolated[probe]>0.55*maximum).astype(int)
+            df_interpolated["probe_step"] = (df_interpolated["probe_smoothed"]>0.4*maximum).astype(int)
 
             # identify jumps down
             diff_d1 = df_interpolated["probe_step"].diff()
@@ -116,16 +123,32 @@ def major_minor_axes():
         df_majorminor[column] = df_majorminor[column].apply(lambda x: update_cell(x, column))
     return df_majorminor
 
+df_majorminor = major_minor_axes()
 
 def main():
     files = [f.replace(".TXT", "") for f in os.listdir(DIRECTORY) if
              os.path.isfile(os.path.join(DIRECTORY, f)) and 'TXT' in f]
     files.sort()
-    df_majorminor = pd.read_csv(f'{DIRECTORY}/ema-tahovky-major.csv', index_col=0, sep=";")
+    df_majorminor = major_minor_axes()
 
+    ans = {}
     for file in files:
         t = PullingTest(file+".TXT", directory=DIRECTORY, localfile=True)
-        title = f"Data from {file}.TXT"
+        df = t.data.loc[:,["Force(100)",*t.major_inclinometers]]
+        df = df.interpolate(method='index').dropna().abs()
+        intervals = t.intervals_of_interest()
+        for i,interval in enumerate(intervals):
+            # print(interval)
+            subdf = df.loc[interval[0]:interval[1],:]
+            # print(subdf.head())
+            for column in subdf.columns:
+                if column=="Force(100)":
+                    continue
+                slope, intercept, r, *a = linregress(subdf.loc[:,"Force(100)"], subdf.loc[:,column])
+                ans[(file, i, column)] = slope, r**2
+    ans = pd.DataFrame.from_dict(ans, orient='index', columns=['slope', 'R^2'])
+    return(ans)
 
 if __name__ ==  "__main__":
-    main()
+    ans = main()
+    print(ans)
