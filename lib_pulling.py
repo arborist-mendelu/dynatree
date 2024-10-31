@@ -3,6 +3,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 from scipy.stats import linregress
+import os
 
 pd.options.plotting.backend = "plotly"
 
@@ -99,3 +100,31 @@ class PullingTest:
             ub = np.argmax(df.loc[i['minimum']:i['maximum'],probe]>upper_bound)
             ans = ans + [[df.loc[i['minimum']:i['maximum'],probe].index[lb], df.loc[i['minimum']:i['maximum'],probe].index[ub]]]
         return ans
+
+
+def major_minor_axes():
+    df_majorminor = pd.read_csv(f'{DIRECTORY}/ema-tahovky-major.csv', index_col=0, sep=";")
+
+    # Funkce pro úpravu buňky do formátu "Inclino(column_letter)"
+    def update_cell(value, column):
+        return f"Inclino({column}){value}" if pd.notna(value) else value
+
+    # Použití funkce na každý sloupec a buňku
+    for column in df_majorminor.columns:
+        df_majorminor[column] = df_majorminor[column].apply(lambda x: update_cell(x, column))
+    return df_majorminor
+
+
+def main():
+    DIRECTORY = '../data/ema'
+    files = [f.replace(".TXT", "") for f in os.listdir(DIRECTORY) if
+             os.path.isfile(os.path.join(DIRECTORY, f)) and 'TXT' in f]
+    files.sort()
+    df_majorminor = pd.read_csv(f'{DIRECTORY}/ema-tahovky-major.csv', index_col=0, sep=";")
+
+    for file in files:
+        t = PullingTest(file+".TXT", directory=DIRECTORY, localfile=True)
+        title = f"Data from {file}.TXT"
+
+if __name__ ==  "__main__":
+    main()

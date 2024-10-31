@@ -4,7 +4,8 @@ import os
 from io import BytesIO
 import plotly.express as px
 
-from pulling_tests.pulling import PullingTest
+from lib.solara.FFT_tukey import df_manual_peaks
+from lib_pulling import PullingTest, major_minor_axes
 
 
 DIRECTORY = '../data/ema'
@@ -12,15 +13,7 @@ files = [f.replace(".TXT","") for f in os.listdir(DIRECTORY) if os.path.isfile(o
 files.sort()
 files_short = [f for f in files if len(f) < 3]
 
-df_majorminor = pd.read_csv(f'{DIRECTORY}/ema-tahovky-major.csv', index_col=0, sep=";")
-
-# Funkce pro úpravu buňky do formátu "Inclino(column_letter)"
-def update_cell(value, column):
-    return f"Inclino({column}){value}" if pd.notna(value) else value
-
-# Použití funkce na každý sloupec a buňku
-for column in df_majorminor.columns:
-    df_majorminor[column] = df_majorminor[column].apply(lambda x: update_cell(x, column))
+df_majorminor = major_minor_axes()
 
 file = solara.reactive(files[0])
 styles_css = """
