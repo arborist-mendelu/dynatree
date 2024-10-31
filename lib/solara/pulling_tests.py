@@ -4,8 +4,7 @@ import os
 from io import BytesIO
 import plotly.express as px
 
-from lib.solara.FFT_tukey import df_manual_peaks
-from lib_pulling import PullingTest, major_minor_axes, main
+from lib_pulling import PullingTest, major_minor_axes, slopes
 
 
 DIRECTORY = '../data/ema'
