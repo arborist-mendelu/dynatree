@@ -124,7 +124,7 @@ def major_minor_axes():
         df_majorminor[column] = df_majorminor[column].apply(lambda x: update_cell(x, column))
     return df_majorminor
 
-def main():
+def slopes():
     files = [f.replace(".TXT", "") for f in os.listdir(DIRECTORY) if
              os.path.isfile(os.path.join(DIRECTORY, f)) and 'TXT' in f]
     files.sort()
@@ -148,6 +148,9 @@ def main():
     ans = pd.DataFrame.from_dict(ans, orient='index', columns=['slope', 'R^2'])
     return(ans)
 
-if __name__ ==  "__main__":
-    ans = main()
+def main()
+    ans = slopes()
     print(ans)
+
+if __name__ ==  "__main__":
+    main()
