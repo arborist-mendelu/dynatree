@@ -148,7 +148,7 @@ def slopes():
     ans = pd.DataFrame.from_dict(ans, orient='index', columns=['slope', 'R^2'])
     return(ans)
 
-def main()
+def main():
     ans = slopes()
     print(ans)
 
