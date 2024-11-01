@@ -6,7 +6,6 @@ import plotly.express as px
 
 from lib_pulling import PullingTest, major_minor_axes, slopes
 
-
 DIRECTORY = '../data/ema'
 files = [f.replace(".TXT","") for f in os.listdir(DIRECTORY) if os.path.isfile(os.path.join(DIRECTORY, f)) and 'TXT' in f]
 files.sort()
@@ -101,7 +100,7 @@ def grafy(t,intervals,title):
 
     if draw_force.value:
         solara.Markdown("**Force**")
-        fig = t.data.plot(y="Force(100)")
+        fig = t.data.plot(y="Force(100)", backend="plotly")
         for a,b in intervals:
             fig.add_vrect(x0=a, x1=b,
                           fillcolor="gray", opacity=0.2,
@@ -118,7 +117,7 @@ def grafy(t,intervals,title):
     if draw_elasto.value:
         solara.Markdown("**Extensometer**")
         elasto_columns = [col for col in t.data.columns if col.startswith("Elasto")]
-        fig = t.data[elasto_columns].plot()
+        fig = t.data[elasto_columns].plot(backend="plotly")
         for a, b in intervals:
             fig.add_vrect(x0=a, x1=b,
                           fillcolor="gray", opacity=0.2,
@@ -140,7 +139,7 @@ def grafy(t,intervals,title):
                 inclino_columns = [col for col in t.data.columns if col.startswith("Inclino")]
             else:
                 inclino_columns = df_majorminor.loc[file.value,:]
-        fig = t.data[inclino_columns].plot()
+        fig = t.data[inclino_columns].plot(backend="plotly")
         for a,b in intervals:
             fig.add_vrect(x0=a, x1=b,
                           fillcolor="gray", opacity=0.2,

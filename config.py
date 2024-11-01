@@ -28,3 +28,5 @@ file['FFT_manual_peaks'] = "csv/FFT_manual_peaks.csv"
 file['solara_FFT'] = "csv/solara_FFT.csv"
 file['FFT_comments'] = "csv/FFT_comments.csv"
 file['FFT_failed'] = "csv/FFT_failed.csv"
+
+file['logfile'] = '/tmp/dynatree.log'

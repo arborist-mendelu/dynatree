@@ -7,8 +7,6 @@ import os
 
 from solara.website.pages.documentation.examples.general.deploy_model import slope
 
-pd.options.plotting.backend = "plotly"
-
 DIRECTORY = '../data/ema'
 
 def read_csvdata_inclinometers(file):

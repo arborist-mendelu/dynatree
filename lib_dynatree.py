@@ -20,7 +20,7 @@ from pathlib import Path
 # 
 import logging
 from logging.handlers import RotatingFileHandler
-logFile = '/tmp/dynatree.log'
+logFile = config.file['logfile']
 
 try:
     logger = logging.getLogger("lib_dynatree")
