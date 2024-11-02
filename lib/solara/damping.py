@@ -10,7 +10,7 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import lib_dynatree
 import logging
-lib_dynatree.logger.setLevel(logging.INFO)
+lib_dynatree.logger.setLevel(logging.ERROR)
 
 def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1 ):
     signal, time = s.damped_signal.reshape(-1), s.damped_time
