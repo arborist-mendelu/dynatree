@@ -31,14 +31,13 @@ class DynatreeDampedSignal(DynatreeSignal):
         # Ořízni Series od první záporné hodnoty do konce
         data = data[first_negative_index:]
         data = data - data.mean()
-        # return data
         if "a0" in self.signal_source:
             self.dt = 0.01
             df = pd.DataFrame(decimate(data.values, 50))
             df.index = np.arange(0, len(df))*0.01 + data.index[0]
             data = df.copy()
         self.damped_data = data
-        self.damped_signal = data.values
+        self.damped_signal = data.values.reshape(-1)
         self.damped_time = data.index
 
     @property
@@ -119,10 +118,12 @@ class DynatreeDampedSignal(DynatreeSignal):
         scale = pywt.frequency2scale(wavelet, [freq * dt])
         coef, freqs = pywt.cwt(data, scale, wavelet,
                                sampling_period=dt)
+        coef = coef.reshape(-1)
+        logger.info(f"data.shape = {data.shape}, coef.shape = {coef.shape}")
         logger.info(f"CWT finished in {time.time() - start}")
         wavlet_norm = normalizace_waveletu(freq=freq, dt=dt)
         logger.info(f"wavelet normalize finished in {time.time() - start}, the norm is {wavlet_norm}")
-        coef = np.abs(coef)[0, :] / wavlet_norm
+        coef = np.abs(coef) / wavlet_norm
         maximum = np.argmax(coef)
         logger.info(f"Coef normalization finished in {time.time() - start}")
         try:
@@ -132,22 +133,3 @@ class DynatreeDampedSignal(DynatreeSignal):
         return {'data': coef, 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft}
 
 
-def draw_signal_with_envelope(s, envelope=None, k=0, q=0, ):
-    signal, time = s.damped_signal, s.damped_time
-    fig = go.Figure()
-    x = time
-    y = np.exp(k * time + q)
-    fig.add_trace(go.Scatter(x=np.concatenate([x, x[::-1]]),
-                             y=np.concatenate([y, -y[::-1]]),
-                             fill='toself',
-                             fillcolor='lightblue',
-                             line=dict(color='lightblue'),
-                             showlegend=False))
-    fig.add_trace(go.Scatter(x=time, y=signal, mode='lines', name='signal', line=dict(color='blue')))
-    if envelope is not None:
-        fig.add_trace(
-            go.Scatter(x=time, y=envelope, mode='lines', name='envelope', line=dict(color='red'), legendgroup='obalka'))
-        fig.add_trace(go.Scatter(x=time, y=-envelope, mode='lines', showlegend=False, line=dict(color='red'),
-                                 legendgroup='obalka'))
-    fig.update_layout(xaxis_title="Čas", yaxis_title="Signál")
-    return fig

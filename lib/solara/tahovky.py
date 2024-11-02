@@ -127,16 +127,6 @@ def nakresli(reset_measurements=False):
     # print(f"nakresli took {end-start}ms.")
     return figs
 
-
-styles_css = """
-        .widget-image{width:100%;} 
-        .v-btn-toggle{display:inline;}  
-        .v-btn {display:inline; text-transform: none;} 
-        .vuetify-styles .v-btn-toggle {display:inline;} 
-        .v-btn__content { text-transform: none;}
-        """
-
-
 # first_pass = True
 # http://localhost:8765/tahovky?tree=BK04&method=normal&measurement=M02&use_optics=True&day=2022-08-16
 # http://localhost:8765/tahovky?tree=BK08&method=den&measurement=M03&use_optics=False&day=2022-08-16
@@ -371,7 +361,7 @@ def custom_display(df, all_data=True, second_level=False):
 @solara.component
 def Page():
     solara.Title(title)
-    solara.Style(styles_css)
+    solara.Style(s.styles_css)
     with solara.Sidebar():
         if tab_index.value in [1]:
             s.Selection_trees_only()
