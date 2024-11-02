@@ -115,7 +115,7 @@ def Selection(
                     "❎ Optics is **not** available for this measurement.")
 
 styles_css = """
-        .widget-image{width:100%;} 
+        .widget-image{width:auto;} 
         .v-btn-toggle{display:inline;}  
         .v-btn {display:inline; text-transform: none;} 
         .vuetify-styles .v-btn-toggle {display:inline;} 

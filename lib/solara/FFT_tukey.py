@@ -275,6 +275,7 @@ use_manual_peaks = solara.reactive(True)
 @lib_dynatree.timeit
 def Page():
     global subdf
+
     initime = time.time()
     solara.Title("DYNATREE: FFT s automatickou detekci vypuštění a tukey oknem")
     solara.Style(s.styles_css)
