@@ -39,7 +39,7 @@ def login():
 #     print (f"Next page is {next_page}")
     if request.method == 'POST':
         heslo = request.form['password']
-        remember = request.form['remember']
+        remember = request.form.get('remember')
         if  True in [pbkdf2_sha256.verify(heslo, i) for i in valid_hashes]:
             session['logged_in'] = True
             if remember:
