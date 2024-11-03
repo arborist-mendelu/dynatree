@@ -37,8 +37,10 @@ def login():
 #     print (f"Next page is {next_page}")
     if request.method == 'POST':
         heslo = request.form['password']
+        remember = request.form['remember']
         if  True in [pbkdf2_sha256.verify(heslo, i) for i in valid_hashes]:
             session['logged_in'] = True
+            session.permanent = remember
             next_page = request.args.get('next')  # Načti `next` parametr z URL
             return redirect(next_page or '/dynatree/')  # Přesměrování na původní stránku nebo na domovskou
             # return render_template('index.html')
