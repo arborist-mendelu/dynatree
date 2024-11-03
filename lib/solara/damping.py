@@ -1,4 +1,5 @@
 import solara
+from solara.lab import task
 
 import lib.solara.select_source as s
 from lib_dynatree import DynatreeMeasurement
@@ -24,17 +25,21 @@ def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1 ):
                              showlegend=False), row=row, col=col)
     fig.add_trace(go.Scatter(x=time, y=signal, mode='lines', name='signal', line=dict(color='blue')), row=row, col=col)
     if envelope is not None:
+        env_time = time
+        if isinstance(envelope, pd.Series):
+            lib_dynatree.logger.info("Series to data in envelope function")
+            env_time = envelope.index
+            envelope = envelope.values
         fig.add_trace(
-            go.Scatter(x=time, y=envelope, mode='lines', name='envelope', line=dict(color='red'), legendgroup='obalka'), row=row, col=col)
-        fig.add_trace(go.Scatter(x=time, y=-envelope, mode='lines', showlegend=False, line=dict(color='red'),
+            go.Scatter(x=env_time, y=envelope, mode='lines', name='envelope', line=dict(color='red'), legendgroup='obalka'), row=row, col=col)
+        fig.add_trace(go.Scatter(x=env_time, y=-envelope, mode='lines', showlegend=False, line=dict(color='red'),
                                  legendgroup='obalka'), row=row, col=col)
     # fig.update_layout(xaxis_title="Čas", yaxis_title="Signál")
     return fig
 
 def resetuj(x=None):
-    # Srovnani(resetuj=True)
     s.measurement.set(s.measurements.value[0])
-    # generuj_obrazky()
+    draw_images()
 
 data_source = solara.reactive("Pt3")
 data_sources = ["Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "a01_y", "a02_y", "a03_y"]
@@ -49,25 +54,44 @@ def Page():
                         optics_switch=False,
                         day_action=resetuj,
                         tree_action=resetuj,
-                        # measurement_action=generuj_obrazky
+                        measurement_action=draw_images
                         )
             # s.ImageSizes()
             with solara.Card(title="Signal source choice"):
-                solara.ToggleButtonsSingle(value=data_source, values=data_sources)
-    # draw_images()
-    try:
+                solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value = draw_images)
+    solara.ProgressLinear(draw_images.pending)
+    if draw_images.not_called:
         draw_images()
-    except:
-        solara.Warning("Někde nastala chyba.")
+        return
+    if not draw_images.finished:
+        solara.Error("""
+        Probíhá výpočet. Trvá řádově vteřiny.Pokud se tato zpráva zobrazuje déle, něco je špatně. 
+        Možná je vybrán probe pro optiku, ale optika není k dispozici. 
+        V takovém případě vyber jiný den nebo jiný probe.
+        """)
+        solara.SpinnerSolara(size="100px")
+        return
+    ans = draw_images.value
+    if ans is None:
+        solara.Error("Nekde nastala chyba")
+    else:
+        df, fig = ans
+        solara.display(df)
+        solara.FigurePlotly(fig)
 
-def draw_images():
-
+@task
+def draw_images(temp=None):
     m = DynatreeMeasurement(day=s.day.value,
                             tree=s.tree.value,
                             measurement=s.measurement.value,
                             measurement_type=s.method.value)
+    lib_dynatree.logger.info(f"Measurement {m}")
     if "Pt" in data_source.value:
         dt = 0.01
+        if not m.is_optics_available:
+            solara.Warning(f"No optics for {m}")
+            print(f"Neni optika pro {m}")
+            return None
     else:
         dt = 0.0002
     sig = DynatreeDampedSignal(m, data_source.value, dt=dt)
@@ -85,6 +109,8 @@ def draw_images():
     data['extrema'] = [k]
 
     envelope, k, q, freq, fft_data = sig.wavelet_envelope.values()
+    maximum = np.argmax(envelope)
+    lib_dynatree.logger.info(f"Maximum obalky je pro {maximum}")
     fig = draw_signal_with_envelope(sig, fig, envelope, k=k, q=q, row=3)
     data['wavelets'] = [k]
 
@@ -98,6 +124,5 @@ def draw_images():
 
     df = pd.DataFrame.from_dict(data)
     df.index = ['k']
-    solara.display(df)
-    solara.FigurePlotly(fig)
+    return df,fig
 

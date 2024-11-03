@@ -115,21 +115,26 @@ class DynatreeDampedSignal(DynatreeSignal):
             return coef.max()
 
         dt = self.dt
+        wavlet_norm = normalizace_waveletu(freq=freq, dt=dt)
+
         scale = pywt.frequency2scale(wavelet, [freq * dt])
         coef, freqs = pywt.cwt(data, scale, wavelet,
                                sampling_period=dt)
         coef = coef.reshape(-1)
         logger.info(f"data.shape = {data.shape}, coef.shape = {coef.shape}")
         logger.info(f"CWT finished in {time.time() - start}")
-        wavlet_norm = normalizace_waveletu(freq=freq, dt=dt)
         logger.info(f"wavelet normalize finished in {time.time() - start}, the norm is {wavlet_norm}")
         coef = np.abs(coef) / wavlet_norm
         maximum = np.argmax(coef)
-        logger.info(f"Coef normalization finished in {time.time() - start}")
+        logger.info(f"""
+            Coef normalization finished in {time.time() - start}, 
+            maximal coefficient at {maximum}, data are {data.index[maximum:-maximum]}
+            and coef values are {coef[maximum:-maximum]} 
+            """)
         try:
             k, q = np.polyfit(data.index[maximum:-maximum], np.log(coef[maximum:-maximum]), 1)
         except:
             k, q = 0, 0
-        return {'data': coef, 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft}
+        return {'data': pd.Series(coef, index=data.index), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft}
 
 
