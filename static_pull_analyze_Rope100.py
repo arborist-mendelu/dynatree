@@ -27,6 +27,10 @@ for i,row in df.iterrows():
         # get regressions for two cut-out values and merge
     
     data_obj = sp.DynatreeStaticMeasurement(day=row['day'], tree=row['tree'], measurement=row['measurement'], measurement_type=row['type'], optics=use_optics, restricted=(cut,0.9))
+    if data_obj.parent.data_pulling is None:
+        print(f"There are no data for pulling tests for this case. {data_obj.parent}")
+        continue
+    
     for i,pull in enumerate(data_obj._get_static_pulling_data(restricted=(0.3,0.9), optics=False)):
         ans = {}
         ans["day"] = row['day']

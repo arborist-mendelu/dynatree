@@ -23,7 +23,7 @@ import lib_dynatree
 from lib_find_measurements import get_all_measurements
 
 import logging
-lib_dynatree.logger.setLevel(logging.ERROR)
+lib_dynatree.logger.setLevel(logging.INFO)
 
 import multi_handlers_logger as mhl
 import config
@@ -593,7 +593,7 @@ class DynatreeStaticPulling:
 
 def main():
     logger = mhl.setup_logger(prefix="static_pull_")
-    logger.setLevel(logging.ERROR)
+    logger.setLevel(logging.INFO)
     logger.info("========== INITIALIZATION OF static-pull.py  ============")
     df = get_all_measurements(method='all', type='all')
     # drop missing optics
@@ -612,6 +612,9 @@ def main():
                 # try:
                     # get regressions for two cut-out values and merge
                 data_obj = DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type, optics=use_optics, restricted=(cut,0.9))
+                if data_obj.parent.data_pulling is None:
+                    logger.warning("There are no data for pulling tests for this case: {day} {tree} {measurement}, {measurement_type}.")
+                    continue
                 for i,pull in enumerate(data_obj.pullings):
                     regressions = pull.regressions
                     regressions["optics"] = use_optics
