@@ -6,6 +6,12 @@ Created on Fri Sep 27 07:03:03 2024
 @author: marik
 """
 
+import os
+try:
+    PREFIX = os.environ["PREFIX_DYNATREE"]
+except:
+    PREFIX = ""
+
 file = {}
 
 file['static_fail'] = "csv/static_fail.csv"
@@ -28,5 +34,10 @@ file['FFT_manual_peaks'] = "csv/FFT_manual_peaks.csv"
 file['solara_FFT'] = "csv/solara_FFT.csv"
 file['FFT_comments'] = "csv/FFT_comments.csv"
 file['FFT_failed'] = "csv/FFT_failed.csv"
+
+for key in file.keys():
+    file[key] = PREFIX + file[key]
+
+
 
 file['logfile'] = '/tmp/dynatree.log'
