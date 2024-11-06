@@ -6,9 +6,7 @@ Created on Mon Nov  6 19:31:14 2023
 @author: marik
 """
 
-import pandas as pd
-
-import lib_dynatree
+from dynatree import dynatree
 
 data = lib_dynatree.DynatreeMeasurement("2021-03-22", "BK01", "M03")
 

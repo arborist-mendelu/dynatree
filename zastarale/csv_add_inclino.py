@@ -47,8 +47,8 @@ import pandas as pd
 import numpy as np
 import warnings
 from scipy import interpolate
-from lib_dynatree import read_data, find_release_time_optics
-from lib_dynatree import read_data_inclinometers, find_finetune_synchro, directory2date
+from dynatree.dynatree import read_data, find_release_time_optics
+from dynatree.dynatree import read_data_inclinometers, find_finetune_synchro, directory2date
 
 def fix_data_by_points_on_ground(df):
     """

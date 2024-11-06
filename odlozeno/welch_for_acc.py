@@ -6,14 +6,11 @@ Created on Mon Sep 16 11:24:56 2024
 @author: marik
 """
 
-import lib_dynatree 
-import lib_dynasignal
-import lib_find_measurements
+from dynatree import dynasignal, dynatree, FFT, find_measurements
 import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 import matplotlib
-import lib_FFT
 import config
 
 df = lib_find_measurements. get_all_measurements(method='all', type='all')
@@ -56,7 +53,7 @@ def do_welch_spectra(row):
         sig.signal.plot(ax=ax, alpha=0.5)
     
         ax = axs[1]
-        ans = lib_dynasignal.do_welch(pd.DataFrame(sig.signal),  nperseg=2**8)
+        ans = lib_dynasignal.do_welch(pd.DataFrame(sig.signal), nperseg=2 ** 8)
         ans.plot(ax=ax)
         
     axs[0].set(ylim=(lb,ub), ylabel="Acceleration", xlabel="Time / s")

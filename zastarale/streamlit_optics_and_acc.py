@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
 import FFT_spectrum as fftdt
-import lib_dynatree as dt
+from dynatree import dynatree as dt
 import lib_streamlit
 from PIL import Image, ImageDraw, ImageFont
 import plotly.graph_objs as go

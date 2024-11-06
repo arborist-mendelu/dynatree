@@ -48,7 +48,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-import lib_dynatree
+from dynatree import dynatree
 
 measurements_with_leaves_true = ["2021-06-29", "2022-08-16"]
 

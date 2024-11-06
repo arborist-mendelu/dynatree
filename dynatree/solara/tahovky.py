@@ -6,9 +6,8 @@ Created on Thu Aug 15 14:00:04 2024
 @author: marik
 """
 
-from lib_find_measurements import get_all_measurements, available_measurements
-import static_pull
-import lib_dynatree
+from dynatree.find_measurements import available_measurements
+from dynatree import static_pull, dynatree_util as du
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -18,15 +17,14 @@ import plotly.express as plx
 import solara.lab
 from solara.lab import task
 import solara
-import lib.solara.select_source as s
+import dynatree.solara.select_source as s
 import graphs_regressions
 import static_lib_pull_comparison
+import dynatree.dynatree as dynatree
 
 DATA_PATH = "../data"
 from great_tables import GT, style, loc
 import seaborn as sns
-import dynatree_util as du
-import rich
 # from weasyprint import HTML, CSS
 # import logging
 # lib_dynatree.logger.setLevel(logging.INFO)
@@ -41,7 +39,7 @@ title = "DYNATREE: pulling, force, inclinometers, extensometer, optics, ..."
 include_details = solara.reactive(False)
 
 # Create data object when initialized
-data_object = lib_dynatree.DynatreeMeasurement(
+data_object = dynatree.DynatreeMeasurement(
     s.day.value,
     s.tree.value,
     s.measurement.value,
@@ -385,12 +383,12 @@ def Page():
             with solara.lab.Tabs(lazy=True, value=subtab_index, **dark):
                 with solara.lab.Tab("Průběh síly"):
                     if (tab_index.value, subtab_index.value) == (0, 0):
-                        lib_dynatree.logger.info("Zakladni graf")
+                        dynatree.logger.info("Zakladni graf")
                         with solara.Card():
                             Graphs()
                 with solara.lab.Tab("Volba proměnných a regrese"):
                     if (tab_index.value, subtab_index.value) == (0, 1):
-                        lib_dynatree.logger.info("Volba promennych a regrese")
+                        dynatree.logger.info("Volba promennych a regrese")
                         with solara.Card(title="Increasing part of the time-force diagram"):
                             try:
                                 Detail()
@@ -398,7 +396,7 @@ def Page():
                                 pass
                 with solara.lab.Tab("Polární graf"):
                     if (tab_index.value, subtab_index.value) == (0, 2):
-                        lib_dynatree.logger.info("Polarni graf")
+                        dynatree.logger.info("Polarni graf")
                         with solara.Card():
                             try:
                                 Polarni()
@@ -511,7 +509,7 @@ def show_regression_data_pt(pt):
 @solara.component
 def Selection():
     s.Selection()
-    data_object = lib_dynatree.DynatreeMeasurement(
+    data_object = dynatree.DynatreeMeasurement(
         s.day.value, s.tree.value, s.measurement.value, measurement_type=s.method.value)
     with solara.Column(align='center'):
         solara.Button("Run calculation", on_click=nakresli, color="primary")
@@ -557,7 +555,7 @@ def Statistics():
 
 @solara.component
 def Graphs():
-    lib_dynatree.logger.info("Function Graph entered")
+    dynatree.logger.info("Function Graph entered")
     solara.ProgressLinear(nakresli.pending)
     if s.measurement.value not in available_measurements(s.df.value, s.day.value, s.tree.value, s.method.value):
         with solara.Error():
@@ -623,7 +621,7 @@ msg = """
 
 
 def Polarni():
-    lib_dynatree.logger.info("Function Polarni entered")
+    dynatree.logger.info("Function Polarni entered")
     global subdf
     if nakresli.not_called:
         solara.Info(
@@ -695,7 +693,7 @@ def Polarni():
 
 
 def Detail():
-    lib_dynatree.logger.info("Function Detail entered")
+    dynatree.logger.info("Function Detail entered")
     global subdf
     if nakresli.not_called:
         solara.Info(

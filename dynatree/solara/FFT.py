@@ -8,13 +8,12 @@ Created on Wed May  1 17:24:26 2024
 
 import plotly.express as px
 import solara
-import lib.solara.select_source as s
-import lib_dynatree
+import dynatree.solara.select_source as s
+from dynatree import dynatree, plot_spectra_for_probe
 import pandas as pd
 import numpy as np
 from scipy.fft import fft, fftfreq
 from scipy import signal
-import lib_plot_spectra_for_probe
 from solara.lab import task
 import matplotlib.pyplot as plt
 import os
@@ -54,7 +53,7 @@ def save_freq_on_click(x=None):
     save_button_color.value = "red"
 
 def plot():
-    data_obj = lib_dynatree.DynatreeMeasurement(
+    data_obj = dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
     if len(probe_inclino.value)>0:
         logger.debug("Using Dataframe for pulling")
@@ -257,7 +256,7 @@ def ChooseProbe():
             """, style={'color':'white'})):
         with solara.Column():
             solara.Markdown("**Probesⓘ**")
-    data_obj = lib_dynatree.DynatreeMeasurement(
+    data_obj = dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
     probes_inclino = ["Elasto(90)","Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     probes_optics = ["Pt3","Pt4"] + [f"BL{i}" for i in range(44,68)]

@@ -1,13 +1,12 @@
 # %%
-from lib_dynatree import DynatreeMeasurement
-from lib_damping import DynatreeDampedSignal
+from dynatree.dynatree import DynatreeMeasurement
+from dynatree.damping import DynatreeDampedSignal
 import matplotlib.pyplot as plt
 import numpy as np
-import lib_dynatree
+from dynatree import dynatree
 import logging
-import pywt
 
-lib_dynatree.logger.setLevel(logging.INFO)
+dynatree.logger.setLevel(logging.INFO)
 
 m = DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M02", measurement_type="normal", datapath="../data")
 #

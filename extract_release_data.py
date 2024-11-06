@@ -18,9 +18,9 @@ import glob
 import numpy as np
 import pandas as pd
 
-from lib_dynatree import read_data, read_data_selected
-from lib_dynatree import directory2date, find_release_time_interval
-from lib_dynatree import filename2tree_and_measurement_numbers
+from dynatree.dynatree import read_data, read_data_selected
+from dynatree.dynatree import find_release_time_interval
+from dynatree.dynatree import filename2tree_and_measurement_numbers
 
 
 def find_release_data_one_measurement(

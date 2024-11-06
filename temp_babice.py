@@ -7,7 +7,6 @@ Created on Thu Nov  2 14:09:25 2023
 @author: marik
 """
 
-import os
 # PATH = "/mnt/ERC/ERC/"
 # PATH = "../"
 
@@ -21,14 +20,12 @@ import numpy as np
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-import warnings
-from scipy import interpolate
 import re
 
-from lib_dynatree import read_data
-from lib_dynatree import directory2date
-from lib_dynatree import find_release_time_optics
-from lib_dynatree import filename2tree_and_measurement_numbers
+from dynatree.dynatree import read_data
+from dynatree.dynatree import directory2date
+from dynatree.dynatree import find_release_time_optics
+from dynatree.dynatree import filename2tree_and_measurement_numbers
 
 
 def plot_points_on_ground(df, figsize=(15,10), suptitle=""):

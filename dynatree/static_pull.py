@@ -17,15 +17,13 @@ import numpy as np
 from scipy.signal import savgol_filter
 from scipy.stats import linregress
 from scipy.interpolate import interp1d
-# from lib_dynatree import timeit
-from functools import lru_cache, cached_property
-import lib_dynatree
-from lib_find_measurements import get_all_measurements
-
+from functools import cached_property
+from dynatree.find_measurements import get_all_measurements
+import dynatree.dynatree as dynatree
 import logging
-lib_dynatree.logger.setLevel(logging.INFO)
+dynatree.logger.setLevel(logging.INFO)
 
-import multi_handlers_logger as mhl
+import dynatree.multi_handlers_logger as mhl
 import config
 
 def read_tree_configuration():
@@ -62,7 +60,7 @@ def arctand(value):
     return np.rad2deg(np.arctan(value))    
 
 
-class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
+class DynatreeStaticMeasurement(dynatree.DynatreeMeasurement):
     """
     Like DynatreeMeasurement, adds more properties and methods.
     
@@ -75,7 +73,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         super().__init__(**kwargs)
         self.optics = optics
         self.restricted = restricted
-        self.parent = lib_dynatree.DynatreeMeasurement(**kwargs)
+        self.parent = dynatree.DynatreeMeasurement(**kwargs)
 
     @cached_property    
     def pullings(self): 
@@ -90,9 +88,9 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
             ]
     @cached_property
     def regresions(self):
-        lib_dynatree.logger.debug("Calculating regressionsfor static measurement")
+        dynatree.logger.debug("Calculating regressionsfor static measurement")
         if self.optics and not self.is_optics_available:
-            lib_dynatree.logger.info(f"{self.date} {self.tree} {self.measurement}: Optics used but optics is not available.")
+            dynatree.logger.info(f"{self.date} {self.tree} {self.measurement}: Optics used but optics is not available.")
             return None
         ans = pd.concat(
             [
@@ -258,7 +256,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         lower = mask.iloc[::-1].idxmax()
         return lower,upper
 
-    # @lib_dynatree.timeit
+    # @dynatree.timeit
     def _get_static_pulling_data(self, optics=False, restricted=(0.3,0.9)):
         """
         Uniform method to extract the data. The data are obtained 
@@ -285,7 +283,7 @@ class DynatreeStaticMeasurement(lib_dynatree.DynatreeMeasurement):
         If restricted is get_all, return the whole dataset.
         """
         if optics and not self.is_optics_available:
-            lib_dynatree.logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement}")
+            dynatree.logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement}")
             return []
         if not optics:
             df = self.data_pulling_interpolated
@@ -574,7 +572,7 @@ class DynatreeStaticPulling:
     def _get_regressions_for_one_column(df, independent, msg=""):
         regrese = {}
         dependent = [_ for _ in df.columns if _ !=independent]
-        lib_dynatree.logger.debug(f"Regressions on dataframe of shape {df.shape}\n    independent {independent}, dependent {dependent}")        
+        dynatree.logger.debug(f"Regressions on dataframe of shape {df.shape}\n    independent {independent}, dependent {dependent}")
         for i in dependent:
             # remove nan valules, if any
             cleandf = df.loc[:,[independent,i]].dropna()
@@ -584,7 +582,7 @@ class DynatreeStaticPulling:
                 reg = linregress(cleandf[independent],cleandf[i])
                 regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue**2, reg.pvalue, reg.stderr, reg.intercept_stderr]
             except:
-                lib_dynatree.logger.error(f"Linear regression failed for {independent} versus {i}. {msg}")
+                dynatree.logger.error(f"Linear regression failed for {independent} versus {i}. {msg}")
                 pass
 
         ans_df = pd.DataFrame(regrese, index=["Independent", "Dependent", "Slope", "Intercept", "R^2", "p-value", "stderr", "intercept_stderr"], columns=dependent).T

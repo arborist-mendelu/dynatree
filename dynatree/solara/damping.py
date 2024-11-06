@@ -1,17 +1,16 @@
 import solara
 from solara.lab import task
 
-import lib.solara.select_source as s
-from lib_dynatree import DynatreeMeasurement
-from lib_damping import DynatreeDampedSignal
+import dynatree.solara.select_source as s
+from dynatree.dynatree import DynatreeMeasurement
+from dynatree.damping import DynatreeDampedSignal
 import plotly.graph_objects as go
 import numpy as np
-import plotly.express as px
 from plotly.subplots import make_subplots
 import pandas as pd
-import lib_dynatree
+from dynatree import dynatree
 import logging
-lib_dynatree.logger.setLevel(logging.ERROR)
+dynatree.logger.setLevel(logging.ERROR)
 
 def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1 ):
     signal, time = s.damped_signal.reshape(-1), s.damped_time
@@ -27,7 +26,7 @@ def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1 ):
     if envelope is not None:
         env_time = time
         if isinstance(envelope, pd.Series):
-            lib_dynatree.logger.info("Series to data in envelope function")
+            dynatree.logger.info("Series to data in envelope function")
             env_time = envelope.index
             envelope = envelope.values
         fig.add_trace(
@@ -85,7 +84,7 @@ def draw_images(temp=None):
                             tree=s.tree.value,
                             measurement=s.measurement.value,
                             measurement_type=s.method.value)
-    lib_dynatree.logger.info(f"Measurement {m}")
+    dynatree.logger.info(f"Measurement {m}")
     if "Pt" in data_source.value:
         dt = 0.01
         if not m.is_optics_available:
@@ -110,7 +109,7 @@ def draw_images(temp=None):
 
     envelope, k, q, freq, fft_data = sig.wavelet_envelope.values()
     maximum = np.argmax(envelope)
-    lib_dynatree.logger.info(f"Maximum obalky je pro {maximum}")
+    dynatree.logger.info(f"Maximum obalky je pro {maximum}")
     fig = draw_signal_with_envelope(sig, fig, envelope, k=k, q=q, row=3)
     data['wavelets'] = [k]
 

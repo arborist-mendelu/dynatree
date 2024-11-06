@@ -6,7 +6,7 @@ Created on Sun Oct 13 11:08:02 2024
 @author: marik
 """
 
-import lib_dynatree
+import dynatree
 import pandas as pd
 
 def read_data_inclinometers(m, release=None, delta_time=0):
@@ -39,7 +39,7 @@ def read_data_inclinometers(m, release=None, delta_time=0):
     #     print(f"  info: Using time fix {delta_time} when reading data from inclino/force/elasto")
     df_pulling_tests["Time_inclino"] = df_pulling_tests.index
     shift = - release_time_force + release + delta_time
-    lib_dynatree.logger.debug(f"Total shift is {shift}, {release_time_force} (Force), {release} (optics), {delta_time} (delta)")
+    dynatree.logger.debug(f"Total shift is {shift}, {release_time_force} (Force), {release} (optics), {delta_time} (delta)")
     df_pulling_tests["Time"] = df_pulling_tests["Time_inclino"] + shift
     df_pulling_tests.set_index("Time", inplace=True)
     df_pulling_tests["Time"] = df_pulling_tests.index

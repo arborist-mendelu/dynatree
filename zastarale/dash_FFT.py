@@ -12,9 +12,8 @@ import plotly.io as pio
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
-import numpy as np
 import dash_bootstrap_components as dbc
-from lib_dynatree import do_fft, do_welch, read_data_selected
+from dynatree.dynatree import do_fft, do_welch, read_data_selected
 import lib_analyze_filenames as laf
 import os
 from lib_dash import csv_selection, make_graph

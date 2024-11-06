@@ -7,10 +7,9 @@ Created on Fri Apr 26 10:00:36 2024
 """
 
 import numpy as np
-import scipy as sci
 import matplotlib.pyplot as plt
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-from lib_dynatree import read_data
+from dynatree.dynatree import read_data
 
 import pywt
 wavelet = 'cmor1-1.5'

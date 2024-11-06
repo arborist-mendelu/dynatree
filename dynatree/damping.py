@@ -1,4 +1,4 @@
-from lib_FFT import DynatreeSignal
+from dynatree.FFT import DynatreeSignal
 import numpy as np
 from scipy.signal import hilbert
 from scipy.signal import savgol_filter
@@ -7,9 +7,9 @@ import pywt
 import pandas as pd
 from scipy.fft import fft, fftfreq
 import plotly.graph_objects as go
-from lib_dynatree import timeit
+from dynatree.dynatree import timeit
 import time
-from lib_dynatree import logger
+from dynatree.dynatree import logger
 from scipy.signal import decimate
 
 class DynatreeDampedSignal(DynatreeSignal):

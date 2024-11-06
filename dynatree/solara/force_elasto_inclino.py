@@ -21,11 +21,11 @@ navod = """
 
 import solara
 from solara.lab import task
-from plot_probes_inclino_force import plot_one_measurement
-from lib_dynatree import timeit
-from lib_dynatree import DynatreeMeasurement, find_finetune_synchro
-import lib.solara.select_source as s
-from static_pull import DynatreeStaticMeasurement
+from dynatree.plot_probes_inclino_force import plot_one_measurement
+from dynatree.dynatree import timeit
+from dynatree.dynatree import DynatreeMeasurement, find_finetune_synchro
+import dynatree.solara.select_source as s
+from dynatree.static_pull import DynatreeStaticMeasurement
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 major_minor = solara.reactive(True)
@@ -57,6 +57,7 @@ def nakresli():
 #    if measurement.value not in available_measurements(df, day.value, tree.value):
 #        fig, ax = plt.subplots()
 #        return fig
+    print("AAAA")
     if probe.value=="Pt3 with Pt4":
         plot_fixes = False
         plot_Pt4 = True
@@ -75,7 +76,8 @@ def nakresli():
     if not nakresli.is_current():
         print("Interrupting non current function nakresli")
         return None
-    try:
+    # try:
+    if True:
         fig = plot_one_measurement(
                 date=s.day.value,
                 tree=s.tree.value, 
@@ -89,8 +91,8 @@ def nakresli():
                 return_figure=True,
                 major_minor=major_minor.value
                 )    
-    except:
-        return None
+    # except:
+    #     return None
     return fig
     
 

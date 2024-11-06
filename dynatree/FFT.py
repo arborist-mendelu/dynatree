@@ -6,20 +6,19 @@ Created on Thu Sep 19 14:02:32 2024
 @author: marik
 """
 
-import lib_dynatree as dt
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal
 from scipy.fft import fft, fftfreq
-import lib_find_measurements
+# import find_measurements
 from tqdm import tqdm
-import resource
 import matplotlib
-import multi_handlers_logger as mhl
+import dynatree.multi_handlers_logger as mhl
 import logging
 import config
-import lib_dynasignal
+from dynatree import dynasignal, dynatree as dt
+from dynatree import find_measurements
 
 length = 60  # the length of the signal
 # todo: make min and max different for each tree
@@ -113,7 +112,7 @@ class DynatreeSignal:
             fs = 100
         if self.dt == 0.0002:
             fs = 5000
-        return lib_dynasignal.do_welch(pd.DataFrame(self.signal), nperseg=nperseg, fs=fs)        
+        return dynasignal.do_welch(pd.DataFrame(self.signal), nperseg=nperseg, fs=fs)
         
 
 df_failed_FFT_experiments=pd.read_csv(config.file["FFT_failed"])
@@ -187,7 +186,7 @@ if __name__ == '__main__':
     except:
         matplotlib.use('Agg')
     out = {}
-    df = lib_find_measurements.get_all_measurements(method='all', type='all')  
+    df = find_measurements.get_all_measurements(method='all', type='all')
     df = df[df["measurement"]!="M01"]
     
     

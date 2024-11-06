@@ -1,4 +1,4 @@
-from static_pull import DynatreeStaticMeasurement
+from dynatree.static_pull import DynatreeStaticMeasurement
 
 day = "2022-08-16"
 tree = "BK04"

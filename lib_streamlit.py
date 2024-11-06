@@ -7,7 +7,7 @@ Created on Sat Aug  3 10:55:03 2024
 """
 
 import streamlit as st
-from lib_dynatree import get_all_measurements
+from dynatree.dynatree import get_all_measurements
 
 df = get_all_measurements()
 

@@ -10,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import FFT_spectrum as fftdt
-import lib_dynatree as dt
+from dynatree import dynatree as dt
 from PIL import Image, ImageDraw, ImageFont
 import resource
 import shutil

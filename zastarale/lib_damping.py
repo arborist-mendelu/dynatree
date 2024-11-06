@@ -8,7 +8,6 @@ Created on Sun Apr 21 21:24:29 2024
 
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import glob
 import os
 import matplotlib.pyplot as plt
 from scipy.signal import hilbert
@@ -16,7 +15,7 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 import pywt
 
-from lib_dynatree import get_data, get_all_measurements
+from dynatree.dynatree import get_data, get_all_measurements
 
 date2color = {"2021-03-22": "C0", "2021-06-29": "C1", "2022-04-05": "C2", 
              "2022-08-16": "C3"}

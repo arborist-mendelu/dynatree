@@ -1,10 +1,9 @@
-import pandas as pd
 import solara
 import os
 from io import BytesIO
 import plotly.express as px
 
-from lib_pulling import PullingTest, major_minor_axes, slopes
+from dynatree.pulling import PullingTest, major_minor_axes, slopes
 
 DIRECTORY = '../data/ema'
 files = [f.replace(".TXT","") for f in os.listdir(DIRECTORY) if os.path.isfile(os.path.join(DIRECTORY, f)) and 'TXT' in f]
