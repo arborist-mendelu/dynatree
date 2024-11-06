@@ -16,6 +16,7 @@ import numpy as np
 from scipy.fft import fft, fftfreq
 import matplotlib
 from tqdm import tqdm
+from config import file
 
 @dynatree.timeit
 def plot_spectra_for_all_probes(
@@ -39,7 +40,7 @@ def plot_spectra_for_all_probes(
         measurement_type=measurement_type)
     
     if fft_results is None:
-        fft_results = pd.read_csv("../csv/solara_FFT.csv", index_col=[0, 1, 2, 3, 4])
+        fft_results = pd.read_csv(file["solara_FFT"], index_col=[0, 1, 2, 3, 4])
     
     try:
         subset_fft_results = fft_results.loc[(measurement_type, day, tree, measurement, slice(None)),:]
@@ -126,7 +127,7 @@ def main():
         matplotlib.use('TkAgg') # https://stackoverflow.com/questions/39270988/ice-default-io-error-handler-doing-an-exit-pid-errno-32-when-running
     except:
         matplotlib.use('Agg')
-    all = lib_find_measurements.get_all_measurements(method='all', type='normal',)
+    all = find_measurements.get_all_measurements(method='all', type='normal',)
     pbar = tqdm(total=len(all))
     for i,row in all.iterrows():
         if row['measurement'] == "M01":

@@ -13,7 +13,7 @@ from tqdm import tqdm
 import matplotlib
 import config
 
-df = lib_find_measurements. get_all_measurements(method='all', type='all')
+df = find_measurements.get_all_measurements(method='all', type='all')
 df = df[df['measurement'] != 'M01']
 
 probe = "a03_z"
@@ -36,7 +36,7 @@ def do_welch_spectra(row):
     ub = 0
 
     for measurement in measurements:
-        m = lib_dynatree.DynatreeMeasurement(
+        m = dynatree.DynatreeMeasurement(
             day=day, 
             tree=tree, measurement=measurement, 
             measurement_type=measurement_type
@@ -44,7 +44,7 @@ def do_welch_spectra(row):
         if [measurement_type, day, tree, measurement] in failed:
             #print(f"Skipping {measurement_type} {day} {tree} {measurement}")
             continue
-        sig = lib_FFT.DynatreeSignal(m, probe)
+        sig = FFT.DynatreeSignal(m, probe)
         lb = min(lb, sig.signal.min())
         ub = max(ub, sig.signal.max())
 
@@ -53,7 +53,7 @@ def do_welch_spectra(row):
         sig.signal.plot(ax=ax, alpha=0.5)
     
         ax = axs[1]
-        ans = lib_dynasignal.do_welch(pd.DataFrame(sig.signal), nperseg=2 ** 8)
+        ans = dynasignal.do_welch(pd.DataFrame(sig.signal), nperseg=2 ** 8)
         ans.plot(ax=ax)
         
     axs[0].set(ylim=(lb,ub), ylabel="Acceleration", xlabel="Time / s")

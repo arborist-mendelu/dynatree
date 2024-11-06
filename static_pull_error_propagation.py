@@ -10,8 +10,8 @@ Created on Tue Sep 10 07:38:52 2024
 # BK 01 ma nejvetsi uhel (22 stupnu)
 
 
-import lib_dynatree as ld
-import static_pull as sp
+import dynatree.dynatree as ld
+import dynatree.static_pull as sp
 import pandas as pd
 pd.set_option('display.float_format', '{:.6e}'.format)
 

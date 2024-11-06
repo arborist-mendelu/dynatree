@@ -103,7 +103,7 @@ tab_index = solara.reactive(0)
 @task
 def prepare_images_for_comparison(): 
     logger.debug(f"prepare_images_for_comparison started, experiment_changed.value is {experiment_changed.value}")
-    ans = lib_plot_spectra_for_probe.plot_spectra_for_all_probes(
+    ans = plot_spectra_for_probe.plot_spectra_for_all_probes(
         measurement_type=s.method.value, 
         day=s.day.value, 
         tree=s.tree.value,

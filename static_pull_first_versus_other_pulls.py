@@ -5,7 +5,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import lib_dynatree
+import dynatree
 from scipy.stats import ttest_1samp
 from scipy import stats
 

@@ -6,7 +6,7 @@ Created on Sun Oct 13 11:08:02 2024
 @author: marik
 """
 
-import dynatree
+import dynatree.dynatree as dynatree
 import pandas as pd
 
 def read_data_inclinometers(m, release=None, delta_time=0):

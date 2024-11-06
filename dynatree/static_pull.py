@@ -611,7 +611,7 @@ def main():
                     # get regressions for two cut-out values and merge
                 data_obj = DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type, optics=use_optics, restricted=(cut,0.9))
                 if data_obj.parent.data_pulling is None:
-                    logger.warning("There are no data for pulling tests for this case: {day} {tree} {measurement}, {measurement_type}.")
+                    logger.warning(f"There are no data for pulling tests for this case: {day} {tree} {measurement}, {measurement_type}.")
                     continue
                 for i,pull in enumerate(data_obj.pullings):
                     regressions = pull.regressions

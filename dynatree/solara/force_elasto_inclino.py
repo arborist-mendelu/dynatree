@@ -57,7 +57,6 @@ def nakresli():
 #    if measurement.value not in available_measurements(df, day.value, tree.value):
 #        fig, ax = plt.subplots()
 #        return fig
-    print("AAAA")
     if probe.value=="Pt3 with Pt4":
         plot_fixes = False
         plot_Pt4 = True

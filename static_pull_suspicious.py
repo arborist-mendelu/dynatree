@@ -7,8 +7,7 @@ Created on Sat Sep 14 12:37:02 2024
 """
 
 import pandas as pd
-import lib_dynatree
-import static_pull
+from dynatree import dynatree, static_pull
 import matplotlib.pyplot as plt
 import matplotlib
 import config
