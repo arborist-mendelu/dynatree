@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import os
 import logging
 from io import BytesIO
-from FFT_spectrum import extend_dataframe_with_zeros
+from dynatree.FFT_spectrum import extend_dataframe_with_zeros
 # from lib_dynasignal import do_fft, process_signal
 
 logger = logging.getLogger("Solara_FFT")
