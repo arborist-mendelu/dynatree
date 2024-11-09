@@ -55,6 +55,12 @@ df_reset_inclinometers = pd.read_csv(
     ).sort_index()
 
 
+try:
+    datapath = os.environ["DYNATREE_DATAPATH"]
+except:
+    datapath = "../data"
+
+
 # def get_notes():
 #     """
 #     Je potreba opracvit pripady, kdy misto Measurement je Measurement after 
@@ -449,8 +455,11 @@ def fix_inclinometers_sign(df_, measurement_type, day, tree):
 
 class DynatreeMeasurement:
     """
-    Třída pro práci s daty. Povinné parametry jsou day, tree, measurement. Nepovinne measurement_type
-    a datapath. Day může být například "2021-03-22"
+    Třída pro práci s daty. Povinné parametry jsou day, tree, measurement. Nepovinne jsou
+    measurement_type a datapath. Day může být například "2021-03-22"
+
+    Datapath je možno nastavit pomocí proměnné prostředí DYNATREE_DATAPTH. Pokud tato proměnná
+    neexistuje, použije se ../data.
 
     Třída má přístup ke všem datům, souborům atd. Vrací okamžiky vypuštění podle optiky a podle síly.
     Seznam metod například pomocí následujícího
@@ -461,7 +470,7 @@ class DynatreeMeasurement:
     >>> df.data_pulling["Elasto(90)"].plot()
     >>> plt.show()
     """
-    def __init__(self, day, tree, measurement, measurement_type='normal', datapath="../data"):
+    def __init__(self, day, tree, measurement, measurement_type='normal', datapath=datapath):
         if not isinstance(tree, str):
             tree = f"{tree:02}"
         if not isinstance(measurement, str):
