@@ -12,7 +12,7 @@ program, dělá FFT analýzu pro všechna měření ve všech dnech.
 
 import pandas as pd
 from dynatree.dynatree import read_data_selected
-from dynatree.dynatree import get_all_measurements
+from dynatree.dynatree import get_all_measurements, datapath
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -70,7 +70,7 @@ def extend_series_with_zeros(data, tail=2):
     return df[df.columns[0]]
 
 def load_data_for_FFT(
-        file="../data/parquet/2021_03_22/BK04_M02.parquet", 
+        file=f"{datapath}/parquet/2021_03_22/BK04_M02.parquet",
         start=100, 
         end=120, 
         dt=0.01, 
@@ -103,7 +103,7 @@ def load_data_for_FFT(
 # %% Create subdirectories
 
 def do_fft_for_file(
-        path="../data", 
+        path=datapath,
         date="2021-03-22",
         csvdir="csv",
         tree="01",
@@ -267,7 +267,7 @@ def main():
             continue
         print(f"{date} BK{tree} M0{measurement} from {start} to {end}, ", end="")        
         data = load_data_for_FFT(
-            file=f"../data/parquet/{date.replace('-','_')}/{tree}_{measurement}.parquet",
+            file=f"{datapath}/parquet/{date.replace('-','_')}/{tree}_{measurement}.parquet",
             start=start,end=end)
         print(", ",round(data.index[-1]-data.index[0],1)," sec.")
         for probe in probes:

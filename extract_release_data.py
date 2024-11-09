@@ -18,14 +18,14 @@ import glob
 import numpy as np
 import pandas as pd
 
-from dynatree.dynatree import read_data, read_data_selected
+from dynatree.dynatree import read_data, read_data_selected, datapath
 from dynatree.dynatree import find_release_time_interval
 from dynatree.dynatree import filename2tree_and_measurement_numbers
 
 
 def find_release_data_one_measurement(
         date="2021-03-22",
-        path="../data",
+        path=datapath,
         tree="01",
         measurement="2",
         ):
@@ -63,7 +63,7 @@ def find_release_data_one_measurement(
             df_means[f"{inclino}_{lb}_{ub}"]=np.mean(df_notna.loc[lb:ub,inclino])
     return df_means
 
-def find_release_data_one_day(date="2021-03-22", path="../data"):
+def find_release_data_one_day(date="2021-03-22", path=datapath):
     output = {}
     # Find csv files
     files =  glob.glob(f"{path}/parquet/{date.replace('-','_')}/*.parquet")

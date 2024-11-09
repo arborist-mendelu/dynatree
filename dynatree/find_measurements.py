@@ -12,7 +12,8 @@ import glob
 import pandas as pd
 import numpy as np
 
-DIRECTORY = "../data"
+import dynatree.dynatree
+DIRECTORY = dynatree.dynatree.datapath
 
 def get_all_measurements_pulling(cesta=DIRECTORY, suffix='parquet', directory='parquet_pulling'):
     """

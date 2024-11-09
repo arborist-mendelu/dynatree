@@ -23,13 +23,14 @@ from dynatree.dynatree import find_finetune_synchro, DynatreeMeasurement
 from dynatree.dynatree_util import read_data_inclinometers
 from dynatree.static_pull import DynatreeStaticPulling
 from dynatree.dynatree import logger
+from dynatree.dynatree import datapath
 import pathlib
 from tqdm import tqdm
 from config import file
 
 def plot_one_measurement(
         date="2021-03-22",
-        path="../data",
+        path=datapath,
         tree="01",
         measurement="2",
         df_remarks=None,
@@ -242,9 +243,9 @@ def plot_one_measurement(
     else:
         plt.close(fig)
 
-def plot_one_day(date="2021-03-22", path="../data", release_detail=False):
+def plot_one_day(date="2021-03-22", path=datapath, release_detail=False):
     
-    files =  glob.glob(f"../data/parquet/{date.replace('-','_')}/BK??_M??.parquet")
+    files =  glob.glob(f"{path}/parquet/{date.replace('-','_')}/BK??_M??.parquet")
     files.sort()
     pbar = tqdm(total=len(files))
     for file in files:

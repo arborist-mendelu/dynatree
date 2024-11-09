@@ -153,7 +153,7 @@ def get_data(date, tree, measurement):
     """
     Loads the data file corresponding to date, tree and measurement
     """
-    file = f"../data/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet"
+    file = f"{datapath}/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet"
     return read_data(file)
 
 
@@ -413,7 +413,7 @@ def split_path(file, suffix="parquet"):
     data[-1] = data[-1].replace(f".{suffix}","")
     return [file,data[-2].replace("_","-")] + data[-1].split("_")
 
-def get_all_measurements(cesta="../data", suffix="parquet", directory="parquet"):
+def get_all_measurements(cesta=datapath, suffix="parquet", directory="parquet"):
     """
     Get dataframe with all measurements. The dataframe has columns
     date, tree and measurement.
