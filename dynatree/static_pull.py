@@ -27,7 +27,7 @@ import dynatree.multi_handlers_logger as mhl
 import config
 
 def read_tree_configuration():
-    file_path = "../data/Popis_Babice_VSE_13082024.xlsx"
+    file_path = f"{dynatree.datapath}/Popis_Babice_VSE_13082024.xlsx"
     sheet_name = "Prehledova tabulka_zakludaje"
     
     # Načtení dat s vynecháním druhého řádku a nastavením sloupce D jako index
