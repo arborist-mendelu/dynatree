@@ -20,6 +20,9 @@ file['scale_factors'] = "csv/scale_factors.csv"
 file['reset_inclinometers'] = "csv/reset_inclinometers.csv"
 file['synchronization_finetune_inclinometers_fix'] = "csv/synchronization_finetune_inclinometers_fix.csv"
 file['angles_measured'] = "csv/angles_measured.csv"
+file['oscillation_times_remarks'] = "csv/oscillation_times_remarks.csv"
+file["solara_FFT"] = "csv/solara_FFT.csv"
+
 
 file["outputs/regressions_static"] = "../outputs/regressions_static.csv"
 file['outputs/anotated_regressions_static'] = "../outputs/anotated_regressions_static.csv"

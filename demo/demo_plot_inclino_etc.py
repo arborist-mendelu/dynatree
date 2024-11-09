@@ -7,17 +7,14 @@ Created on Sat Dec  2 22:11:07 2023
 @author: marik
 """
 
-from lib_dynatree import read_data, find_release_time_optics
+from dynatree.dynatree import find_release_time_optics
 
 # from csv_add_inclino import extend_one_csv
-from plot_probes_inclino_force import plot_one_measurement
+from dynatree.plot_probes_inclino_force import plot_one_measurement
 from parquet_add_inclino import extend_one_file
 
-from lib_dynatree import DynatreeMeasurement
-from static_pull import DynatreeStaticMeasurement
+from dynatree.static_pull import DynatreeStaticMeasurement
 import matplotlib.pyplot as plt
-import rich
-import lib_dynatree
 
 import logging
 lib_dynatree.logger.setLevel(logging.DEBUG)

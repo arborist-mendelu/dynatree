@@ -448,6 +448,19 @@ def fix_inclinometers_sign(df_, measurement_type, day, tree):
     return df
 
 class DynatreeMeasurement:
+    """
+    Třída pro práci s daty. Povinné parametry jsou day, tree, measurement. Nepovinne measurement_type
+    a datapath. Day může být například "2021-03-22"
+
+    Třída má přístup ke všem datům, souborům atd. Vrací okamžiky vypuštění podle optiky a podle síly.
+    Seznam metod například pomocí následujícího
+
+    >>> import dynatree.dynatree as dt
+    >>> import matplotlib.pyplot as plt
+    >>> df = dt.DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M02")
+    >>> df.data_pulling["Elasto(90)"].plot()
+    >>> plt.show()
+    """
     def __init__(self, day, tree, measurement, measurement_type='normal', datapath="../data"):
         if not isinstance(tree, str):
             tree = f"{tree:02}"

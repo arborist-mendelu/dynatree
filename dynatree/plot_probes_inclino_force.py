@@ -18,12 +18,14 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 import matplotlib
 import argparse
-from lib_dynatree import read_data, read_data_selected, find_release_time_optics, find_release_time_interval
-from lib_dynatree import find_finetune_synchro, DynatreeMeasurement
-from dynatree_util import read_data_inclinometers
-from static_pull import DynatreeStaticPulling
+from dynatree.dynatree import find_release_time_optics, find_release_time_interval
+from dynatree.dynatree import find_finetune_synchro, DynatreeMeasurement
+from dynatree.dynatree_util import read_data_inclinometers
+from dynatree.static_pull import DynatreeStaticPulling
+from dynatree.dynatree import logger
 import pathlib
 from tqdm import tqdm
+from config import file
 
 def plot_one_measurement(
         date="2021-03-22",
@@ -64,7 +66,7 @@ def plot_one_measurement(
       
     m = DynatreeMeasurement(date, tree, measurement)
     if df_remarks is None:
-        df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
+        df_remarks = pd.read_csv(file['oscillation_times_remarks'])
     
     # accept both M02 and 2 as a measurement number
     measurement = measurement[-1]

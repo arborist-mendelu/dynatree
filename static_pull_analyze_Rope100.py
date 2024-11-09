@@ -11,7 +11,7 @@ Created on Mon Sep  9 21:28:09 2024
 @author: marik
 """
 
-import static_pull as sp
+from dynatree import static_pull as sp
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt

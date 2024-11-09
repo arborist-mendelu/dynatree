@@ -25,3 +25,4 @@ toml
 bioconda::snakemake
 passlib
 gunicorn
+statsmodels

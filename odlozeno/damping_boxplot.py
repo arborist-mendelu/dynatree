@@ -11,9 +11,8 @@ Created on Sun Apr 21 17:37:18 2024
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import numpy as np
 import glob
-import lib_dynatree as ld
+from dynatree import dynatree as ld
 import os
 
 fft_files = glob.glob("fft_data*.xlsx")

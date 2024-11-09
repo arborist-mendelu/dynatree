@@ -7,7 +7,7 @@ Created on Sat Dec  2 17:34:22 2023
 """
 
 from csv_add_inclino import extend_one_csv
-from plot_probes_inclino_force import plot_one_measurement
+from dynatree.plot_probes_inclino_force import plot_one_measurement
 import lib_analyze_filenames as laf
 from lib_dash import csv_selection
 from dash import Dash, html, callback, Output, Input, State, dcc, ctx
@@ -15,7 +15,7 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import dash_bootstrap_components as dbc
 import matplotlib.pyplot as plt
-from lib_dynatree import read_data_selected, read_data
+from dynatree.dynatree import read_data_selected
 
 import io
 import base64

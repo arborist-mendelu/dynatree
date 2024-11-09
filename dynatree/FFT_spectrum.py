@@ -11,8 +11,8 @@ program, dělá FFT analýzu pro všechna měření ve všech dnech.
 """
 
 import pandas as pd
-from lib_dynatree import read_data_selected
-from lib_dynatree import get_all_measurements
+from dynatree.dynatree import read_data_selected
+from dynatree.dynatree import get_all_measurements
 
 import matplotlib.pyplot as plt
 import numpy as np

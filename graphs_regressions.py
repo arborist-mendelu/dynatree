@@ -24,10 +24,7 @@ else:
     prefix = '..'
 
 import pandas as pd
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-import lib_dynatree
+import dynatree.dynatree as dynatree
 import config
 
 # ['2021-03-22',

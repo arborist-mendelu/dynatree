@@ -5,16 +5,13 @@ Created on Thu Aug 15 14:00:04 2024
 @author: marik
 """
 
-from lib_find_measurements import get_all_measurements, available_measurements
-import lib_dynatree
+from dynatree.find_measurements import available_measurements
+from dynatree import dynatree
 import plotly.express as px
 import solara.lab
 import solara
 import pandas as pd
-import time
-import lib.solara.select_source as s
-import matplotlib.pyplot as plt
-import matplotlib
+import dynatree.solara.select_source as s
 from plotly_resampler import FigureResampler
 
 DATA_PATH = "../data"
@@ -48,7 +45,7 @@ selection_data = solara.reactive(None)
 def set_selection_data(x=None):
     selection_data.value = x
 
-data_object = lib_dynatree.DynatreeMeasurement(
+data_object = dynatree.DynatreeMeasurement(
     s.day.value, 
     s.tree.value, 
     s.measurement.value,
@@ -190,7 +187,7 @@ def generuj_obrazky(x=None):
 
 @solara.component
 def Page():
-    data_object = lib_dynatree.DynatreeMeasurement(
+    data_object = dynatree.DynatreeMeasurement(
         s.day.value, 
         s.tree.value, 
         s.measurement.value,
@@ -344,7 +341,7 @@ def Selection():
                                            df.value, day.value, tree.value, method.value),
                                        on_value=nakresli
                                        )
-        data_object = lib_dynatree.DynatreeMeasurement(
+        data_object = dynatree.DynatreeMeasurement(
             day.value, tree.value, measurement.value,measurement_type=method.value)
         solara.Markdown(
             f"**Selected**: {day.value}, {tree.value}, {measurement.value}")

@@ -7,14 +7,14 @@ Created on Sat Sep 14 23:33:06 2024
 """
 
 import solara
-import lib.solara.select_source as s
-import lib_dynatree
+import dynatree.solara.select_source as s
 from solara.lab import task
 import matplotlib.pyplot as plt
-from lib_dynasignal import do_welch
+from dynatree.dynasignal import do_welch
 import pandas as pd
-import lib_FFT
 import plotly.express as px
+import dynatree.dynatree as dynatree
+import dynatree.FFT as FFT
 
 # https://stackoverflow.com/questions/37470734/matplotlib-giving-error-overflowerror-in-draw-path-exceeded-cell-block-limit
 import matplotlib as mpl
@@ -38,14 +38,14 @@ n = solara.reactive(8)
 
 @task
 def nakresli(x=None):
-    m = lib_dynatree.DynatreeMeasurement(day=s.day.value, 
-        tree=s.tree.value, 
-        measurement=s.measurement.value, 
-        measurement_type=s.method.value)
+    m = dynatree.DynatreeMeasurement(day=s.day.value,
+                                         tree=s.tree.value,
+                                         measurement=s.measurement.value,
+                                         measurement_type=s.method.value)
     title = (f"{s.method.value} {s.day.value} {s.tree.value} {s.measurement.value}")
     axis = acc_fft_axis.value
     title = title + ": " + acc_fft_axis.value
-    sig = lib_FFT.DynatreeSignal(m, axis)
+    sig = FFT.DynatreeSignal(m, axis)
 
     fig, ax = plt.subplots()
     sig.signal_full.plot(ax=ax)

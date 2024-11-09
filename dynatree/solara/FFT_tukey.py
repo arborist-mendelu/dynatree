@@ -7,25 +7,21 @@ Created on Sat Sep 14 23:33:06 2024
 """
 
 import solara
-import lib.solara.select_source as s
-import lib_dynatree
+import dynatree.solara.select_source as s
+from dynatree import dynatree, FFT
 from solara.lab import task
 import matplotlib.pyplot as plt
 # from lib_dynasignal import do_fft_image, process_signal, do_welch_image
-import lib_FFT
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import solara.express as pxs
 import seaborn as sns
 # import psutil
 # import logging
 import time
 import os
 import config
-from lib_dynasignal import do_welch
 # from weasyprint import HTML, CSS
-from pathlib import Path
 
 # lib_dynatree.logger.setLevel(logging.INFO)
 
@@ -72,7 +68,7 @@ manual_end_time = solara.reactive(0.0)
 n = solara.reactive(8)
 
 def ChooseProbe():
-    data_obj = lib_dynatree.DynatreeMeasurement(
+    data_obj = dynatree.DynatreeMeasurement(
         day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
     probes = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3","Pt4", 'a01_z', 'a02_z', 'a03_z', 'a04_z', 'a01_y', 'a02_y', 'a03_y', 'a04_y']
     with solara.Row():        
@@ -98,12 +94,12 @@ def resetuj(x=None):
 def set_button_color(x=None):
     button_color.value = 'primary'    
 
-@lib_dynatree.timeit
+@dynatree.timeit
 def zpracuj(x=None, type='fft'):
-    m = lib_dynatree.DynatreeMeasurement(day=s.day.value, 
-        tree=s.tree.value, 
-        measurement=s.measurement.value, 
-        measurement_type=s.method.value)
+    m = dynatree.DynatreeMeasurement(day=s.day.value,
+                                         tree=s.tree.value,
+                                         measurement=s.measurement.value,
+                                         measurement_type=s.method.value)
     probename = probe.value
     release_source = probename
     if probe.value in ["blueMaj","yellowMaj"]:
@@ -111,7 +107,7 @@ def zpracuj(x=None, type='fft'):
         release_source = "Elasto(90)"
     else:
         probe_final = probe.value
-    sig = lib_FFT.DynatreeSignal(m, probe_final, release_source=release_source)
+    sig = FFT.DynatreeSignal(m, probe_final, release_source=release_source)
     if sig.signal_full is None:
         return
     if manual_release_time.value > 0.0:
@@ -132,7 +128,7 @@ def spust_mereni(x=None):
     nakresli_signal()
 
 @task
-@lib_dynatree.timeit
+@dynatree.timeit
 def nakresli_signal(x=None):
     output = zpracuj()
     
@@ -272,7 +268,7 @@ def load_fft_freq():
 use_manual_peaks = solara.reactive(True)
 
 @solara.component
-@lib_dynatree.timeit
+@dynatree.timeit
 def Page():
     global subdf
 
@@ -304,7 +300,7 @@ def Page():
                 
         
     now = time.time()
-    lib_dynatree.logger.info(f"Before choose probe after {now-initime}.")
+    dynatree.logger.info(f"Before choose probe after {now - initime}.")
     if tab_value.value == 0:
         ChooseProbe()
     
@@ -556,7 +552,7 @@ f"""
         {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value}
         
 * Pokud chceš projít a vynechat více nebo hodně měření, je efektivnější si vygenerovat 
-  offline obrázky (Robert). Postup: V souboru `lib_FFT.py` opravit volbu `plot='failed'` na
+  offline obrázky (Robert). Postup: V souboru `dynatree/FFT.py` opravit volbu `plot='failed'` na
   `plot='all'`, spustit (pojede dlouho takže pomocí `nohup` nebo `screen`), stáhnout výstup 
   (`outputs/FFT_spectra.zip`), projít obrázky, odmazávat co se nehodí, 
   potom v koši najít jména odmazaných souborů a ta jednoduchým najdi 

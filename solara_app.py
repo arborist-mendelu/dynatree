@@ -8,15 +8,15 @@ Created on Wed Aug 28 18:41:25 2024
 
 import solara
 from solara.lab import task
-import lib.solara.tahovky
-import lib.solara.vizualizace
-import lib.solara.force_elasto_inclino
-import lib.solara.FFT
-import lib.solara.welch_ACC
-import lib.solara.FFT_tukey
-import lib.solara.download
-import lib.solara.damping
-import lib.solara.pulling_tests
+import dynatree.solara.tahovky
+import dynatree.solara.vizualizace
+import dynatree.solara.force_elasto_inclino
+import dynatree.solara.FFT
+import dynatree.solara.welch_ACC
+import dynatree.solara.FFT_tukey
+import dynatree.solara.download
+import dynatree.solara.damping
+import dynatree.solara.pulling_tests
 import krkoskova.krkoskova_app
 import pandas as pd
 import time
@@ -120,14 +120,14 @@ def Page():
                 
 routes = [
     solara.Route(path="/", component=Page, label="home"),
-    solara.Route(path="vizualizace", component=lib.solara.vizualizace.Page, label="vizualizace"),
-    solara.Route(path="tahovky", component=lib.solara.tahovky.Page, label="tahovky"),
-    solara.Route(path="synchronizace", component=lib.solara.force_elasto_inclino.Page, label="synchronizace"),
-    solara.Route(path="FFT_old", component=lib.solara.FFT.Page, label="FFT1"),
-    solara.Route(path="Welch_ACC", component=lib.solara.welch_ACC.Page, label="FFT2"),
-    solara.Route(path="FFT_Tukey_all", component=lib.solara.FFT_tukey.Page, label="FFT3"),
-    solara.Route(path="Damping", component=lib.solara.damping.Page, label="damping"),
-    solara.Route(path="Downloads", component=lib.solara.download.Page, label="DWNL"),
+    solara.Route(path="vizualizace", component=dynatree.solara.vizualizace.Page, label="vizualizace"),
+    solara.Route(path="tahovky", component=dynatree.solara.tahovky.Page, label="tahovky"),
+    solara.Route(path="synchronizace", component=dynatree.solara.force_elasto_inclino.Page, label="synchronizace"),
+    solara.Route(path="FFT_old", component=dynatree.solara.FFT.Page, label="FFT1"),
+    solara.Route(path="Welch_ACC", component=dynatree.solara.welch_ACC.Page, label="FFT2"),
+    solara.Route(path="FFT_Tukey_all", component=dynatree.solara.FFT_tukey.Page, label="FFT3"),
+    solara.Route(path="Damping", component=dynatree.solara.damping.Page, label="damping"),
+    solara.Route(path="Downloads", component=dynatree.solara.download.Page, label="DWNL"),
     solara.Route(path="Krkoskova", component=krkoskova.krkoskova_app.Page, label="K"),
-    solara.Route(path="EMA", component=lib.solara.pulling_tests.Page, label="EMA"),
+    solara.Route(path="EMA", component=dynatree.solara.pulling_tests.Page, label="EMA"),
 ]

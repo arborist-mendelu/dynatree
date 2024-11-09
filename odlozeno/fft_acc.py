@@ -11,14 +11,10 @@ a data uklada do podadresare temp_figs.
 
 import pandas as pd
 import glob
-import scipy.io
-import os
-from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import numpy as np
-import streamlit as st
 import FFT_spectrum as fftdt
-import lib_dynatree as dt
+from dynatree import dynatree as dt
 import pickle 
 
 

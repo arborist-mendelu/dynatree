@@ -4,7 +4,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import lib_dynatree
+from dynatree import dynatree
 from scipy.stats import ttest_1samp
 from scipy import stats
 
@@ -62,7 +62,7 @@ df = (df[df["Dependent"].str.contains(color)]
      )
 
 def nakresli_inklino(row, i=""):
-    m = lib_dynatree.DynatreeMeasurement(
+    m = dynatree.DynatreeMeasurement(
         day=row['day'], tree=row['tree'], measurement=row['measurement'], 
         measurement_type=row['type']
     )
@@ -153,7 +153,7 @@ df = (df[df["Dependent"].str.contains(color)]
      )
 
 def nakresli_inklino(row, i=""):
-    m = lib_dynatree.DynatreeMeasurement(
+    m = dynatree.DynatreeMeasurement(
         day=row['day'], tree=row['tree'], measurement=row['measurement'], 
         measurement_type=row['type']
     )

@@ -6,8 +6,8 @@ Created on Sun Sep  1 17:01:24 2024
 @author: marik
 """
 import solara
-from lib_find_measurements import get_all_measurements, available_measurements
-import lib_dynatree
+from dynatree.find_measurements import get_all_measurements, available_measurements
+from dynatree import dynatree
 
 DATA_PATH = "../data"
 
@@ -37,7 +37,7 @@ use_optics = solara.reactive(False)
 include_details = solara.reactive(False)
 
 # Create data object when initialized
-data_object = lib_dynatree.DynatreeMeasurement(
+data_object = dynatree.DynatreeMeasurement(
     day.value, 
     tree.value, 
     measurement.value,
@@ -90,7 +90,7 @@ def Selection(
                                            exclude_M01=exclude_M01),
                                        on_value=measurement_action
                                        )
-        data_object = lib_dynatree.DynatreeMeasurement(
+        data_object = dynatree.DynatreeMeasurement(
             day.value, tree.value, measurement.value,measurement_type=method.value)
         if optics_switch:
             with solara.Tooltip("Umožní použít preprocessing udělaný na tahovkách M02 a více. Tím sice nebude stejná metodika jako pro M01 (tam se preprocessing nedělal), ale máme časovou synchronizaci s optikou, o opravu vynulování inklinometrů a pohyb bodů Pt3 a Pt4."):

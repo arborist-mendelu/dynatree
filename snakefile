@@ -51,7 +51,7 @@ rule fft_boxplots:
         "dynatree"        
     shell:
         """
-        python plot_fft_boxplots.py
+        python -m dynatree.plot_fft_boxplots
         """
 
 rule fft_spectra:
@@ -61,7 +61,7 @@ rule fft_spectra:
     human and is more peaks are present, all are included. 
     Comments are also included to the image.
     
-    Runs the script lib_plot_spectra_for_probe.py to create pdf files as in solara
+    Runs the script plot_spectra_for_probe.py to create pdf files as in solara
     app (signal above and FFT below). Adds remark and peak info to the image. 
     """
     input:
@@ -74,7 +74,7 @@ rule fft_spectra:
         """
         rm -rf ../temp_spectra || true
         mkdir ../temp_spectra
-        python lib_plot_spectra_for_probe.py
+        python -m dynatree.plot_spectra_for_probe
         cd ../temp_spectra
         zip {output.zip} *.pdf
         """
@@ -115,7 +115,7 @@ rule static_pull_create_regressions:
     experiment.
     """
     input:
-        script = "static_pull.py",
+        script = "dynatree/static_pull.py",
         xls = "../data/Popis_Babice_VSE_13082024.xlsx",
         csv = "csv/intervals_split_M01.csv",
         csv_angles_measured = "csv/angles_measured.csv"
@@ -127,7 +127,7 @@ rule static_pull_create_regressions:
     shell:
         """
         mkdir -p csv_output
-        python {input.script} > {log.stdout} 2> {log.stderr}
+        python -m dynatree.static_pull > {log.stdout} 2> {log.stderr}
         cp ./csv_output/regressions_static.csv {output.csv}
         """
 
@@ -137,7 +137,7 @@ rule synchronization_check:
     Both variants, with full timeline and with detail around the release.
     """
     input:
-        script = "plot_probes_inclino_force.py"
+        script = "dynatree/plot_probes_inclino_force.py"
     output:
         "../outputs/synchro_optics_inclino.pdf",
         "../outputs/synchro_optics_inclino_detail.pdf"
@@ -147,11 +147,11 @@ rule synchronization_check:
         """
         rm -rf ../temp/optics_with_inclino || true
         mkdir -p ../temp/optics_with_inclino
-        python {input.script}
+        python -m dynatree.plot_probes_inclino_force
         pdfunite ../temp/optics_with_inclino/*.pdf ../outputs/synchro_optics_inclino.pdf
         rm -rf ../temp/optics_with_inclino || true
         mkdir -p ../temp/optics_with_inclino
-        python {input.script} --release_detail
+        python -m dynatree.plot_probes_inclino_force --release_detail
         pdfunite ../temp/optics_with_inclino/*.pdf ../outputs/synchro_optics_inclino_detail.pdf
         """
         
@@ -301,7 +301,7 @@ rule fft_all_probes:
         """
         rm -r ../temp/fft_tukey || true
         mkdir ../temp/fft_tukey
-        python lib_FFT.py
+        python -m dynatree.FFT
         cd ../temp/fft_tukey/
         echo "fft images" > readme
         rm ../{output.zip} || true

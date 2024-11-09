@@ -9,14 +9,11 @@ Created on Sun Nov  5 16:15:16 2023
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import os
-from lib_dynatree import read_data, get_chains_of_bendlines, find_release_time_optics, read_data_selected
-from lib_dynatree import find_release_time_optics
+from dynatree.dynatree import get_chains_of_bendlines, read_data_selected
+from dynatree.dynatree import find_release_time_optics
 from scipy import interpolate
 from scipy.fft import rfft, rfftfreq, irfft
-import shutil
 import scipy.signal as signal
-import matplotlib.animation as animation
 
 DATE, TREE, MEASUREMENT = "2021-03-22", "BK21", "M03"
 MEASUREMENT = "M02"

@@ -9,7 +9,7 @@ Created on Wed May  1 17:24:26 2024
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import streamlit as st
-from lib_dynatree import date2color
+from dynatree.dynatree import date2color
 from FFT_spectrum import df_remarks, load_data_for_FFT, do_fft_for_one_column, create_fft_image, extend_series_with_zeros
 import lib_streamlit as stl
 

@@ -11,11 +11,9 @@ spuštění :  streamlit run streamlit_damping.py
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import streamlit as st
-import glob
-import lib_dynatree as ld
 import matplotlib.pyplot as plt
-from lib_dynatree import get_all_measurements, get_data
-from lib_damping import find_damping, get_limits
+from dynatree.dynatree import get_all_measurements, get_data
+from dynatree.damping import find_damping, get_limits
 import emd
 import lib_streamlit as stl
 
