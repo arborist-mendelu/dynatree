@@ -1,3 +1,9 @@
+"""
+Samostatne zpracovani tahovek.
+
+Data od Emy.
+"""
+
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
