@@ -478,7 +478,7 @@ class DynatreeMeasurement:
         self.measurement_type = measurement_type.lower()
         self.datapath = datapath
         self.date = self.day
-            
+
     def __str__(self):
         return (f"[Dynatree measurement {self.day} {self.tree} {self.measurement} {self.measurement_type}]")
         
@@ -548,7 +548,8 @@ class DynatreeMeasurement:
         if self.measurement != "M01":
             return DynatreeMeasurement(
                 self.day, self.tree, 
-                "M01", measurement_type=self.measurement_type).identify_major_minor
+                "M01", measurement_type=self.measurement_type,
+                datapath=self.datapath).identify_major_minor
         list_inclino = ["Inclino(80)", "Inclino(81)"]
         # TODO: někdy jsou prohozené barvy. Podle fotek se projde a změní se přiřazení mezi 80/81 a blue/yellow.
         colors = {"Inclino(80)":"blue", "Inclino(81)":"yellow"}
