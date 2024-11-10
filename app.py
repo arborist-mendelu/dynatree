@@ -1,5 +1,3 @@
-from operator import truediv
-
 from flask import Flask, render_template, redirect, url_for, request, session
 from passlib.hash import pbkdf2_sha256
 import solara.server.flask
