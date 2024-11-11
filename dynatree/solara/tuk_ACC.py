@@ -15,7 +15,7 @@ from solara.lab import task
 
 # from dynatree.plot_fft_boxplots import plot_data
 import logging
-dynatree.logger.setLevel(logging.ERROR)
+dynatree.logger.setLevel(logging.INFO)
 
 class SignalTuk():
 
@@ -36,37 +36,8 @@ class SignalTuk():
         df_fft = pd.Series(index=xf_r, data=yf_r, name=self.probe)
         return df_fft
 
-peak_times = []
+# def  hledani_peaku():
 
-@solara.component
-def  hledani_peaku(m,df):
-    global peak_times
-    dynatree.logger.info("Hledani Peaku entered")
-    fig, ax = plt.subplots()
-    df.plot(ax=ax)
-    ax.grid()
-    solara.FigureMatplotlib(fig)
-
-    peaks, _ = find_peaks(df.abs(), threshold=10, distance=75)
-    peak_times = df.index[peaks]
-    display(pd.DataFrame(peak_times, columns=["Čas ťuku"]).T)
-    solara.Markdown(
-    """
-    ## Signál po ťuku
-
-    Ťuknutí je stavnoveno automaticky podle jedné z os jednoho akcelerometru.
-    """)
-
-    # solara.ProgressLinear(plot_all.pending)
-    # solara.display(peak_times.value)
-
-    answer = plot_all(m, df)
-    for time, fig in answer.items():
-        # solara.Markdown(f"## Ťuk v čase {time}")
-        with solara.Row():
-            solara.FigureMatplotlib(fig[0])
-            solara.FigureMatplotlib(fig[1])
-    plt.close('all')
 
 @solara.component
 def Page():
@@ -75,7 +46,10 @@ def Page():
     solara.Title("DYNATREE: ACC ťuknutí")
     solara.Style(s.styles_css)
     with solara.Sidebar():
-        s.Selection()
+        s.Selection(
+            optics_switch=False,
+            report_optics_availability=False,
+        )
 
     solara.Markdown(
 """
@@ -84,18 +58,64 @@ def Page():
 Akcelerometr a02_z pro stanovení časů ťuknutí
 """)
 
+    dynatree.logger.info("Hledani Peaku entered")
+    m = dynatree.DynatreeMeasurement(day=s.day.value, tree=s.tree.value, measurement=s.measurement.value,
+                                     measurement_type=s.method.value)
+    if m.data_acc5000 is None:
+        solara.Error(f"Měření {m} není dostupné")
+        return
+    df = m.data_acc5000.loc[:, "a02_z"]
+    fig, ax = plt.subplots(figsize=(8,3))
+    df.plot(ax=ax)
+    fig.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, a02_z")
+    ax.grid()
+    plt.tight_layout()
+    solara.FigureMatplotlib(fig, format='png')
 
+    peaks, _ = find_peaks(df.abs(), threshold=10, distance=75)
+    peak_times = df.index[peaks]
+    display(pd.DataFrame(peak_times, columns=["Čas ťuku"]).T)
+    solara.Markdown(
+    """
+    ## Signál po ťuku
+
+    Ťuknutí je stavnoveno automaticky podle jedné z os jednoho akcelerometru. Po změně parametrů klikněte
+    na tlačítko pro překreslení.
+    """)
+    solara.Button("Plot", on_click=plot_all)
+    solara.ProgressLinear(plot_all.pending)
+
+    # solara.ProgressLinear(plot_all.pending)
+    # solara.display(peak_times.value)
+
+
+    # plot_all()
+    if plot_all.finished:
+        images = plot_all.value
+        for time, fig in images.items():
+            # solara.Markdown(f"## Ťuk v čase {time}")
+            with solara.Row():
+                solara.FigureMatplotlib(fig[0], format='png')
+                solara.FigureMatplotlib(fig[1], format='png')
+        plt.close('all')
+    else:
+        solara.SpinnerSolara(size="100px")
+        if m.measurement == "M01":
+            solara.Info("Generují se obrázky. Pro M01, výpočet trvá dlouho, několik sekund.")
+        else:
+            solara.Info("Generují se obrázky. Ale mělo by to být rychlé.")
+
+
+@task
+def plot_all():
+    dynatree.logger.info("Plot All entered")
     m = dynatree.DynatreeMeasurement(day=s.day.value, tree=s.tree.value, measurement=s.measurement.value,
                                      measurement_type=s.method.value)
     df = m.data_acc5000.loc[:, "a02_z"]
+    peaks, _ = find_peaks(df.abs(), threshold=10, distance=75)
+    peak_times = df.index[peaks]
 
-    hledani_peaku(m, df)
-
-
-def plot_all(m, df):
-    dynatree.logger.info("Plot All entered")
     answer = {}
-    print(peak_times)
     for start in peak_times:
         # fig, ax = plt.subplots()
         # solara.Markdown(f"## Ťuk v čase {df.index[peak]:.2f}")
@@ -110,6 +130,7 @@ def plot_all(m, df):
         [_.grid() for _ in ax]
         fig1 = plt.gcf()
         fig1.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, at {start}s")
+        plt.tight_layout()
 
         ffts = pd.concat([i.fft for i in a], axis=1)
         ax = ffts.plot(subplots=True)
@@ -118,6 +139,8 @@ def plot_all(m, df):
             a.grid()
         fig2 = plt.gcf()
         fig2.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, at {start}s")
+        plt.tight_layout()
+
         answer[start] = [fig1, fig2]
     return answer
 
