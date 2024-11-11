@@ -1,4 +1,9 @@
 # %%
+import os
+os.environ["PREFIX_DYNATREE"] = "/home/marik/babice/skripty/"
+os.environ["DYNATREE_DATAPATH"] = "/home/marik/babice/data/"
+
+# %%
 from dynatree.dynatree import DynatreeMeasurement
 from dynatree.damping import DynatreeDampedSignal
 import matplotlib.pyplot as plt
@@ -8,7 +13,7 @@ import logging
 
 dynatree.logger.setLevel(logging.INFO)
 
-m = DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M02", measurement_type="normal", datapath="../data")
+m = DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M02", measurement_type="normal")
 #
 # m.data_acc5000.plot()
 # plt.show()
@@ -55,6 +60,8 @@ m = DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M02", measur
 # plt.ylabel("Amplitude")
 # plt.title("Wavelet cmor1-1.5")
 # plt.show()
+# %%
+
 
 # %%
 s = DynatreeDampedSignal(measurement=m, signal_source="a02_z", #dt=0.0002,

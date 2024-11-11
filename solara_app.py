@@ -17,6 +17,7 @@ import dynatree.solara.FFT_tukey
 import dynatree.solara.download
 import dynatree.solara.damping
 import dynatree.solara.pulling_tests
+import dynatree.solara.tuk_ACC
 import krkoskova.krkoskova_app
 import pandas as pd
 import time
@@ -126,6 +127,7 @@ routes = [
     solara.Route(path="FFT_old", component=dynatree.solara.FFT.Page, label="FFT1"),
     solara.Route(path="Welch_ACC", component=dynatree.solara.welch_ACC.Page, label="FFT2"),
     solara.Route(path="FFT_Tukey_all", component=dynatree.solara.FFT_tukey.Page, label="FFT3"),
+    solara.Route(path="ACC_Tuk", component=dynatree.solara.tuk_ACC.Page, label="ACC_TUK"),
     solara.Route(path="Damping", component=dynatree.solara.damping.Page, label="damping"),
     solara.Route(path="Downloads", component=dynatree.solara.download.Page, label="DWNL"),
     solara.Route(path="Krkoskova", component=krkoskova.krkoskova_app.Page, label="K"),

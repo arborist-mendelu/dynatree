@@ -14,11 +14,8 @@ import pandas as pd
 import dynatree.solara.select_source as s
 from plotly_resampler import FigureResampler
 
-DATA_PATH = "../data"
-
 tightcols = {'gap': "0px"}
 regression_settings = {'color': 'gray', 'alpha': 0.5}
-
 
 title = "DYNATREE: vizualizace dat, se kterými se pracuje"
 
@@ -45,6 +42,14 @@ selection_data = solara.reactive(None)
 def set_selection_data(x=None):
     selection_data.value = x
 
+t_from = solara.reactive(0)
+t_to = solara.reactive(0)
+def set_click_data(x=None):
+    if x['device_state']['shift']:
+        t_to.value = x['points']['xs'][0]
+    else:
+        t_from.value = x['points']['xs'][0]
+
 data_object = dynatree.DynatreeMeasurement(
     s.day.value, 
     s.tree.value, 
@@ -63,7 +68,7 @@ def plot(df, var, msg=None, id=None, resample=False):
                      **kwds)    
     if resample:
         fig_res = FigureResampler(fig)
-        solara.FigurePlotly(fig_res, on_selection=set_selection_data)    
+        solara.FigurePlotly(fig_res, on_selection=set_selection_data, on_click=set_click_data)
     else:
         solara.FigurePlotly(fig, on_selection=set_selection_data)    
     if msg is not None:
@@ -186,6 +191,17 @@ def generuj_obrazky(x=None):
     pass
 
 @solara.component
+def PlotDetail(df5):
+    if t_to.value > t_from.value:
+        subdf = df5.loc[t_from.value:t_to.value, dependent_acc.value]
+        fig = px.scatter(subdf, y=dependent_acc.value,
+                         height=s.height.value, width=s.width.value,
+                         title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
+                         ) .update_traces(mode='lines')
+        solara.FigurePlotly(fig)
+
+
+@solara.component
 def Page():
     data_object = dynatree.DynatreeMeasurement(
         s.day.value, 
@@ -293,7 +309,12 @@ Data jsou dynamicky přesamplovaná pomocí plotly-resample. Mohou tedy vypadat 
 nedalo pracovat. Downsamplování je pouze při zobrazování, nepoužívá se pro výpočty.
 """
                             )
-                        plot(df5, dependent_acc, resample=True)                        
+                        plot(df5, dependent_acc, resample=True)
+                        solara.InputFloat("From", value=t_from)
+                        solara.InputFloat("To", value=t_to)
+                        PlotDetail(df5)
+                            # solara.display(df5.loc[t_from.value:t_to.value,:])
+
                         # plot(df5, dependent_acc)                        
                     #     investigate(df5, dependent_acc)                        
                     # else:
