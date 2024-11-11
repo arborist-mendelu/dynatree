@@ -89,7 +89,9 @@ Akcelerometr a02_z pro stanovení časů ťuknutí
     # solara.display(peak_times.value)
 
 
-    # plot_all()
+    if plot_all.not_called():
+        plot_all()
+        return
     if plot_all.finished:
         images = plot_all.value
         for time, fig in images.items():
