@@ -1,3 +1,4 @@
+from pywt import threshold
 from scipy.fft import fft, fftfreq
 import numpy as np
 import pandas as pd
@@ -26,8 +27,14 @@ class SignalTuk():
         return df_fft
 
 
-def find_peak_times(m):
-    df = m.data_acc5000.loc[:, "a02_z"]
-    peaks, _ = find_peaks(df.abs(), threshold=10, distance=75)
+def find_peak_times(m, probe="a02_z", threshold=10, shift=False):
+    df = m.data_acc5000.loc[:, probe]
+    if m.measurement != "M01":
+        df = df.loc[:20]
+    if probe=="a02_z":
+        peaks, _ = find_peaks(df, threshold=threshold, distance=75)
+    else:
+        maximum = df.dropna().max()
+        peaks, _ = find_peaks(df, prominence=maximum*0.75, distance=75)
     peak_times = df.index[peaks]
     return peak_times
