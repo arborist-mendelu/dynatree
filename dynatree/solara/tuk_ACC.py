@@ -1,42 +1,17 @@
 # from dynatree.find_measurements import available_measurements
+
 from dynatree import dynatree
-import plotly.express as px
 import solara.lab
 import solara
 import pandas as pd
 import dynatree.solara.select_source as s
-from plotly_resampler import FigureResampler
-from scipy.fft import fft, fftfreq
-import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks, peak_prominences
 from solara.lab import task
-# import rich
+from dynatree.signal_knock import SignalTuk, find_peak_times
 
-# from dynatree.plot_fft_boxplots import plot_data
 import logging
+# dynatree.logger.setLevel(logging.INFO)
 dynatree.logger.setLevel(logging.ERROR)
-
-class SignalTuk():
-
-    def __init__(self, parent, start, end, probe):
-        self.parent = parent
-        self.start = start
-        self.end = end
-        self.signal = parent.data_acc5000.loc[start:end, probe]
-        self.dt = 0.0002
-        self.probe = probe
-
-    @property
-    def fft(self):
-        N = self.signal.shape[0]  # get the number of points
-        xf_r = fftfreq(N, self.dt)[:N // 2]
-        yf = fft(self.signal.values)  # preform FFT analysis
-        yf_r = 2.0 / N * np.abs(yf[0:N // 2])
-        df_fft = pd.Series(index=xf_r, data=yf_r, name=self.probe)
-        return df_fft
-
-# def  hledani_peaku():
 
 
 @solara.component
@@ -75,7 +50,7 @@ Akcelerometr a02_z pro stanovení časů ťuknutí
     ax.grid()
     plt.tight_layout()
     solara.FigureMatplotlib(fig, format='png')
-    plot_all(None, None, None, None, True)
+    plot_all(None, None, True)
 
 @solara.component
 def Rozklad():
@@ -84,18 +59,16 @@ def Rozklad():
     if m.data_acc5000 is None:
         solara.Error(f"Měření {m} není dostupné")
         return
-    df = m.data_acc5000.loc[:, "a02_z"]
-    peaks, _ = find_peaks(df.abs(), threshold=10, distance=75)
-    peak_times = df.index[peaks]
+    peak_times = find_peak_times(m)
     display(pd.DataFrame(peak_times, columns=["Čas ťuku"]).T)
     solara.Markdown(
     """
     ## Signál po ťuku
 
-    Ťuknutí je stavnoveno automaticky podle jedné z os jednoho akcelerometru. Po změně parametrů klikněte
+    Ťuknutí je stanoveno automaticky podle jedné z os jednoho akcelerometru. Po změně parametrů klikněte
     na tlačítko pro překreslení.
     """)
-    solara.Button("Re-Plot", on_click=lambda : plot_all(m,df,peaks, peak_times))
+    solara.Button("Re-Plot", on_click=lambda : plot_all(m, peak_times))
     solara.ProgressLinear(plot_all.progress if plot_all.pending else False)
 
     # solara.ProgressLinear(plot_all.pending)
@@ -103,7 +76,7 @@ def Rozklad():
 
 
     if plot_all.not_called:
-        plot_all(m, df, peaks, peak_times)
+        plot_all(m, peak_times)
         return
     if plot_all.finished:
         images = plot_all.value
@@ -117,14 +90,14 @@ def Rozklad():
         if (plot_all.progress is not None) and (plot_all.progress>0):
             solara.SpinnerSolara(size="100px")
             if m.measurement == "M01":
-                solara.Info("Generují se obrázky. Pro M01, výpočet trvá dlouho, několik sekund.")
+                solara.Info("Generují se obrázky. Pro M01, výpočet trvá dlouho, něco přes 10 sekund.")
             else:
                 solara.Info("Generují se obrázky. Ale mělo by to být rychlé.")
 
 
 @task
 @dynatree.timeit
-def plot_all(m, df, peaks, peak_times, erase=False):
+def plot_all(m, peak_times, erase=False):
     dynatree.logger.info(f"Plot All entered {m}")
     answer = {}
     if erase:
@@ -140,23 +113,28 @@ def plot_all(m, df, peaks, peak_times, erase=False):
         plot_all.progress = (i) * 100.0/n
         dynatree.logger.info(f"progress is {(i + 1) * 100.0/n}")
 
-        probes = ["a02_y", "a02_z", "a03_y", "a03_z"]
-        a = [SignalTuk(m, start=start, end=start+0.1, probe=probe) for probe in probes]
-        signals = pd.concat([sg.signal for sg in a], axis=1)
+        figsize = (7,12)
+        probes = [f"a0{i}_{j}" for i in [1,2,3,4] for j in ['x','y','z']]
+        all_knocks = [SignalTuk(m, start=start-0.4, end=start+0.4, probe=probe) for probe in probes]
+        signals = pd.concat([sg.signal for sg in all_knocks], axis=1)
         # fig, ax = plt.subplots()
-        ax = signals.plot(subplots=True, sharex=True )
+        ax = signals.plot(subplots=True, sharex=True, figsize=figsize )
         [_.grid() for _ in ax]
         fig1 = plt.gcf()
-        fig1.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, at {start}s")
+        fig1.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, ťuk v čase {start}s")
         plt.tight_layout()
 
-        ffts = pd.concat([i.fft for i in a], axis=1)
-        ax = ffts.plot(subplots=True)
-        for a in ax:
-            a.set(yscale='log')
-            a.grid()
+        ffts = pd.concat([i.fft for i in all_knocks], axis=1)
+        dynatree.logger.info(f"ffts is {ffts.head()}")
+        ax = ffts.plot(subplots=True, figsize=figsize)
+        for i,axes in enumerate(ax):
+            max_peak = ffts.iloc[5:,i].idxmax()
+            dynatree.logger.info(f"max_peak is {max_peak}")
+            axes.axvline(x=max_peak, color='red', linestyle='--')
+            axes.set(yscale='log')
+            axes.grid()
         fig2 = plt.gcf()
-        fig2.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, at {start}s")
+        fig2.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, ťuk v čase {start}s")
         plt.tight_layout()
 
         answer[start] = [fig1, fig2]
