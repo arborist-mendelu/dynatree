@@ -15,7 +15,7 @@ from solara.lab import task
 
 # from dynatree.plot_fft_boxplots import plot_data
 import logging
-dynatree.logger.setLevel(logging.INFO)
+dynatree.logger.setLevel(logging.ERROR)
 
 class SignalTuk():
 
@@ -50,7 +50,11 @@ def Page():
             optics_switch=False,
             report_optics_availability=False,
         )
+    Signal()
+    Rozklad()
 
+@solara.component
+def Signal():
     solara.Markdown(
 """
 ## Signál akcelerometru
@@ -58,7 +62,7 @@ def Page():
 Akcelerometr a02_z pro stanovení časů ťuknutí
 """)
 
-    dynatree.logger.info("Hledani Peaku entered")
+    dynatree.logger.info("Signal entered")
     m = dynatree.DynatreeMeasurement(day=s.day.value, tree=s.tree.value, measurement=s.measurement.value,
                                      measurement_type=s.method.value)
     if m.data_acc5000 is None:
@@ -71,7 +75,16 @@ Akcelerometr a02_z pro stanovení časů ťuknutí
     ax.grid()
     plt.tight_layout()
     solara.FigureMatplotlib(fig, format='png')
+    plot_all(None, None, None, None, True)
 
+@solara.component
+def Rozklad():
+    m = dynatree.DynatreeMeasurement(day=s.day.value, tree=s.tree.value, measurement=s.measurement.value,
+                                     measurement_type=s.method.value)
+    if m.data_acc5000 is None:
+        solara.Error(f"Měření {m} není dostupné")
+        return
+    df = m.data_acc5000.loc[:, "a02_z"]
     peaks, _ = find_peaks(df.abs(), threshold=10, distance=75)
     peak_times = df.index[peaks]
     display(pd.DataFrame(peak_times, columns=["Čas ťuku"]).T)
@@ -82,15 +95,15 @@ Akcelerometr a02_z pro stanovení časů ťuknutí
     Ťuknutí je stavnoveno automaticky podle jedné z os jednoho akcelerometru. Po změně parametrů klikněte
     na tlačítko pro překreslení.
     """)
-    solara.Button("Plot", on_click=plot_all)
-    solara.ProgressLinear(plot_all.pending)
+    solara.Button("Re-Plot", on_click=lambda : plot_all(m,df,peaks, peak_times))
+    solara.ProgressLinear(plot_all.progress if plot_all.pending else False)
 
     # solara.ProgressLinear(plot_all.pending)
     # solara.display(peak_times.value)
 
 
     if plot_all.not_called:
-        plot_all()
+        plot_all(m, df, peaks, peak_times)
         return
     if plot_all.finished:
         images = plot_all.value
@@ -101,28 +114,31 @@ Akcelerometr a02_z pro stanovení časů ťuknutí
                 solara.FigureMatplotlib(fig[1], format='png')
         plt.close('all')
     else:
-        solara.SpinnerSolara(size="100px")
-        if m.measurement == "M01":
-            solara.Info("Generují se obrázky. Pro M01, výpočet trvá dlouho, několik sekund.")
-        else:
-            solara.Info("Generují se obrázky. Ale mělo by to být rychlé.")
+        if (plot_all.progress is not None) and (plot_all.progress>0):
+            solara.SpinnerSolara(size="100px")
+            if m.measurement == "M01":
+                solara.Info("Generují se obrázky. Pro M01, výpočet trvá dlouho, několik sekund.")
+            else:
+                solara.Info("Generují se obrázky. Ale mělo by to být rychlé.")
 
 
 @task
-def plot_all():
-    dynatree.logger.info("Plot All entered")
-    m = dynatree.DynatreeMeasurement(day=s.day.value, tree=s.tree.value, measurement=s.measurement.value,
-                                     measurement_type=s.method.value)
-    df = m.data_acc5000.loc[:, "a02_z"]
-    peaks, _ = find_peaks(df.abs(), threshold=10, distance=75)
-    peak_times = df.index[peaks]
-
+@dynatree.timeit
+def plot_all(m, df, peaks, peak_times, erase=False):
+    dynatree.logger.info(f"Plot All entered {m}")
     answer = {}
-    for start in peak_times:
+    if erase:
+        return answer
+
+    plot_all.progress = 0.001
+    n = len(peak_times)
+    for i,start in enumerate(peak_times):
         # fig, ax = plt.subplots()
         # solara.Markdown(f"## Ťuk v čase {df.index[peak]:.2f}")
         # df.iloc[peak:peak + 100].plot(ax=ax)
         # solara.FigureMatplotlib(fig)
+        plot_all.progress = (i) * 100.0/n
+        dynatree.logger.info(f"progress is {(i + 1) * 100.0/n}")
 
         probes = ["a02_y", "a02_z", "a03_y", "a03_z"]
         a = [SignalTuk(m, start=start, end=start+0.1, probe=probe) for probe in probes]

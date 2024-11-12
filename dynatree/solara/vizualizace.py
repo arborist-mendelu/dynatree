@@ -45,10 +45,7 @@ def set_selection_data(x=None):
 t_from = solara.reactive(0)
 t_to = solara.reactive(0)
 def set_click_data(x=None):
-    if x['device_state']['shift']:
-        t_to.value = x['points']['xs'][0]
-    else:
-        t_from.value = x['points']['xs'][0]
+    t_from.value = x['points']['xs'][0]
 
 data_object = dynatree.DynatreeMeasurement(
     s.day.value, 
@@ -192,13 +189,13 @@ def generuj_obrazky(x=None):
 
 @solara.component
 def PlotDetail(df5):
-    if t_to.value > t_from.value:
-        subdf = df5.loc[t_from.value:t_to.value, dependent_acc.value]
-        fig = px.scatter(subdf, y=dependent_acc.value,
-                         height=s.height.value, width=s.width.value,
-                         title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
-                         ) .update_traces(mode='lines')
-        solara.FigurePlotly(fig)
+    # if t_to.value > t_from.value:
+    subdf = df5.loc[t_from.value:t_from.value+1, dependent_acc.value]
+    fig = px.scatter(subdf, y=dependent_acc.value,
+                     height=s.height.value, width=s.width.value,
+                     title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
+                     ) .update_traces(mode='lines')
+    solara.FigurePlotly(fig)
 
 
 @solara.component
@@ -310,8 +307,9 @@ nedalo pracovat. Downsamplování je pouze při zobrazování, nepoužívá se p
 """
                             )
                         plot(df5, dependent_acc, resample=True)
+                        solara.Info("Detail bez přesamplování je níže. Začátek inervalu zadej z klávesnice nebo kliknutím do horního obrázku. Délka signálu je 1s. Po změně začátku je asi potřeba resetovat zobrazení os v dolním obrázku - dvojklik do obrázku.")
                         solara.InputFloat("From", value=t_from)
-                        solara.InputFloat("To", value=t_to)
+                        # solara.InputFloat("To", value=t_to)
                         PlotDetail(df5)
                             # solara.display(df5.loc[t_from.value:t_to.value,:])
 
