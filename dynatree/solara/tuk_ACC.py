@@ -12,8 +12,8 @@ from solara.lab import task
 from dynatree.signal_knock import SignalTuk, find_peak_times_chanelA, find_peak_times_chanelB, chanelA, chanelB
 
 import logging
-dynatree.logger.setLevel(logging.INFO)
-# dynatree.logger.setLevel(logging.ERROR)
+# dynatree.logger.setLevel(logging.INFO)
+dynatree.logger.setLevel(logging.ERROR)
 
 
 @solara.component
@@ -141,10 +141,22 @@ def plot_all(m, peak_times):
             ffts = pd.concat([i.fft for i in all_knocks], axis=1)
             dynatree.logger.info(f"ffts is {ffts.head()}")
             ax = ffts.plot(subplots=True, figsize=figsize, legend=False)
+            ax = [_ for _ in ax]
+            colnames = ffts.columns
             for i,axes in enumerate(ax):
                 max_peak = ffts.iloc[5:,i].idxmax()
                 dynatree.logger.info(f"max_peak is {max_peak}")
                 axes.axvline(x=max_peak, color='red', linestyle='--')
+                axes.text(
+                    1.0, 0.0,  # Relativní souřadnice v pravém dolním rohu
+                    f"{colnames[i]}: {round(max_peak)} Hz",  # Text popisku
+                    ha = 'right',  # Zarovnání na pravý okraj textu
+                    va = 'bottom',  # Přilepení k dolnímu okraji
+                    fontsize = 8,  # Velikost textu
+                    color = 'red',  # Barva textu
+                    bbox = dict(facecolor='yellow'),  # Pozadí popisku
+                    transform = axes.transAxes
+                )
                 axes.set(yscale='log')
                 axes.grid()
             fig2 = plt.gcf()
