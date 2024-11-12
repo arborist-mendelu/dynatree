@@ -24,7 +24,7 @@ for row in all_data.values:
             for probe in probes:
                 try:
                     signal_knock = sk.SignalTuk(m, start=knock_time - 0.4, end=knock_time + 0.4, probe=probe)
-                    fft_peak = signal_knock.fft.idxmax()
+                    fft_peak = signal_knock.fft.iloc[5:,:].idxmax()
                     ans[(date, tree, measurement, type, knock_index, probe)] = fft_peak
                     dynatree.logger.info(f"{type} {date} {tree} {measurement} {probe} {knock_time} {fft_peak}")
                 except:
