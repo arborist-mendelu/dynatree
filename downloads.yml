@@ -35,7 +35,7 @@ title: "FFT po ťuku"
 popis:
     FFT analýza po ťuku ve statice a před pull and release.
 
-FFT_acc_knock,csv: Výstup z FFT analýzy.
+FFT_acc_knock.csv: Výstup z FFT analýzy.
 
 ---
 title: "FFT, oscilace, pull and release"
