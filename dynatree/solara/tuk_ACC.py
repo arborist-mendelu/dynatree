@@ -34,9 +34,9 @@ def Page():
         with solara.lab.Tab("Celé měření"):
             Signal()
             Rozklad()
-        with solara.lab.Tab("Tabulka"):
-            Tabulka()
-        with solara.lab.Tab("Seznam"):
+        # with solara.lab.Tab("Tabulka"):
+        #     Tabulka()
+        with solara.lab.Tab("Detail"):
             with solara.Columns(1,1):
                 with solara.Column():
                     Seznam()
@@ -45,11 +45,16 @@ def Page():
 
 @solara.component
 def Graf():
-    with solara.Card(style={'css':'sticky',  'top': '0'}):
+    with solara.Card(style={'position': 'fixed', 'bottom':'0px', 'right':'0px', 'z-index':'1000',
+                            'max-width':'400px', 'max-height':'100vh'}):
         solara.ProgressLinear(interactive_graph.pending)
         if interactive_graph.finished:
-            solara.FigurePlotly(interactive_graph.value[0])
-            solara.FigurePlotly(interactive_graph.value[1])
+            ans = interactive_graph.value
+            solara.Text(ans['text'])
+            solara.Markdown("**Časový průběh**")
+            solara.FigurePlotly(ans['signal'])
+            solara.Markdown("**FFT transformace**")
+            solara.FigurePlotly(ans['fft'])
 
 @task
 def interactive_graph(type, day, tree, measurement, probe, start):
@@ -70,8 +75,12 @@ def interactive_graph(type, day, tree, measurement, probe, start):
             yaxis_title=None,  # Skrývá popisek osy y
             showlegend=False  # Skrývá legendu
         )
+        fig.update_layout(
+            margin=dict(l=0, r=0, t=20, b=0)  # l = left, r = right, t = top, b = bottom
+        )
+
     fig2.update_yaxes(type="log")  # Logaritmická osa y
-    return [fig1,fig2]
+    return {'signal':fig1,'fft':fig2, 'text':f"{type} {day} {tree} {measurement} {probe} {start}"}
 
 @solara.component
 def Tabulka():
@@ -125,16 +134,16 @@ def ReusableComponent(row, poradi, pocet):
             with solara.Column():
                 solara.Text(f"{poradi + 1}/{pocet}")
                 solara.Text(f"{row['measurement']} {row['probe']}")
-                solara.Text(f"{row['knock_time']} * 0.01 sec")
+                solara.Text(f"{row['knock_time']*1.0/100} sec")
                 solara.Text(f"max at {round(row['freq'])} Hz")
             solara.Image(image_path)
             solara.Image(image_path_FFT)
         with solara.CardActions():
-            solara.Button("Action 1", text=True, on_click=lambda:
+            solara.Button("Zobrazit grafy", text=True, on_click=lambda:
             interactive_graph(s.method.value, s.day.value, s.tree.value, s.measurement.value, row['probe'],
                               row['knock_time'])
                           )
-            solara.Button("Action 2", text=True)
+            # solara.Button("Action 2", text=True)
 
 @solara.component
 def Signal():
@@ -145,6 +154,25 @@ def Signal():
 Akcelerometry a02_z a a02_x pro stanovení časů ťuknutí pro dvě sběrnice
 """)
 
+    summary_text = "Detailnější popis (klikni pro rozbalení)"
+    additional_content = [solara.Markdown(
+        """
+        * Na obrázku je celý časový průbeh experimentu. Dva kanály a na nich pokusy o nalezení peaků pomocí find_peaks
+        a nastavení thresholdů, prominencí a vzdáleností. 
+    
+        * Do tabulky se pro zpracování ukládají časy ťuků zaokrouhlené na setiny.  Takto je možné přidat později i 
+          zatím nerozpoznané ťuky.
+    
+        * Je možné si zobrazit FFT transformaci, ale dlouho to trvá a lepší je pouužít předpočítané grafy na 
+          vedlejší záložce.
+        """)
+    ]
+
+    solara.Details(
+        summary=summary_text,
+        children=additional_content,
+        expand=False
+    )
     dynatree.logger.info("Signal entered")
     m = dynatree.DynatreeMeasurement(day=s.day.value, tree=s.tree.value, measurement=s.measurement.value,
                                      measurement_type=s.method.value)
@@ -272,4 +300,3 @@ def plot_all(m, peak_times):
 
             answer[(start,number)] = [fig1, fig2]
     return answer
-
