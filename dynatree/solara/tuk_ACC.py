@@ -1,7 +1,4 @@
-# from dynatree.find_measurements import available_measurements
-from fontTools.varLib.instancer import axisValuesFromAxisLimits
 from matplotlib.pyplot import axvline
-
 from dynatree import dynatree
 import solara.lab
 import solara
@@ -10,10 +7,13 @@ import dynatree.solara.select_source as s
 import matplotlib.pyplot as plt
 from solara.lab import task
 from dynatree.signal_knock import SignalTuk, find_peak_times_chanelA, find_peak_times_chanelB, chanelA, chanelB
+from dynatree_summary.acc_knocks import  delta_time
 import solara.website
-from pathlib import Path
-
 import logging
+import plotly.express as px
+
+from dynatree.solara.tahovky import interactive_graph
+
 # dynatree.logger.setLevel(logging.INFO)
 dynatree.logger.setLevel(logging.ERROR)
 
@@ -37,7 +37,41 @@ def Page():
         with solara.lab.Tab("Tabulka"):
             Tabulka()
         with solara.lab.Tab("Seznam"):
-            Seznam()
+            with solara.Columns(1,1):
+                with solara.Column():
+                    Seznam()
+                with solara.Column():
+                    Graf()
+
+@solara.component
+def Graf():
+    with solara.Card(style={'css':'sticky',  'top': '0'}):
+        solara.ProgressLinear(interactive_graph.pending)
+        if interactive_graph.finished:
+            solara.FigurePlotly(interactive_graph.value[0])
+            solara.FigurePlotly(interactive_graph.value[1])
+
+@task
+def interactive_graph(type, day, tree, measurement, probe, start):
+    dynatree.logger.info("interactive graph entered")
+    m = dynatree.DynatreeMeasurement(day=day, tree=tree, measurement=measurement,
+                                     measurement_type=type)
+    start = start*1.0/100
+    signal_knock = SignalTuk(m, start=start - delta_time, end=start + delta_time, probe=probe)
+    fig1 = px.line(signal_knock.signal,
+                  # title=f"{type} {day} {tree} {measurement} {probe} {start}"
+                  )
+    fig2 = px.line(signal_knock.fft,
+                  # title=f"{type} {day} {tree} {measurement} {probe} {start}"
+                  )
+    for fig in [fig1,fig2]:
+        fig.update_layout(
+            xaxis_title=None,  # Skrývá popisek osy x
+            yaxis_title=None,  # Skrývá popisek osy y
+            showlegend=False  # Skrývá legendu
+        )
+    fig2.update_yaxes(type="log")  # Logaritmická osa y
+    return [fig1,fig2]
 
 @solara.component
 def Tabulka():
@@ -48,6 +82,16 @@ def Tabulka():
         .pipe(lambda d: d[d["type"] == s.method.value])
         .drop(["day","tree","type","measurement","knock_index","filename"], axis=1)
     )
+
+first_portrait = solara.reactive(0)
+def prev_ten():
+    first_portrait.value = max(0,first_portrait.value - 10)
+def next_ten():
+    first_portrait.value = first_portrait.value + 10
+def prev_next_buttons():
+    with solara.Row():
+        solara.Button("Prev 10", on_click=prev_ten)
+        solara.Button("Next 10", on_click=next_ten)
 
 @solara.component
 def Seznam():
@@ -61,15 +105,36 @@ def Seznam():
         .pipe(lambda d: d[d["type"] == s.method.value])
         #.drop(["day","tree","type","measurement","knock_index","filename"], axis=1)
     )
-    for i,row in temp_df.iterrows():
-        image_path = "/static/public/cache/" + row['filename'] +".png"
-        image_path_FFT = "/static/public/cache/FFT_" + row['filename'] +".png"
+    pocet = len(temp_df)
+    prev_next_buttons()
+    for poradi, row in enumerate(temp_df.iterrows()):
+        if poradi < first_portrait.value:
+            continue
+        if poradi > first_portrait.value+10:
+            continue
+        ReusableComponent(row, poradi, pocet)
+    prev_next_buttons()
+
+@solara.component
+def ReusableComponent(row, poradi, pocet):
+    i, row = row
+    image_path = "/static/public/cache/" + row['filename'] + ".png"
+    image_path_FFT = "/static/public/cache/FFT_" + row['filename'] + ".png"
+    with solara.Card():
         with solara.Row():
-            solara.Text(row['probe'])
+            with solara.Column():
+                solara.Text(f"{poradi + 1}/{pocet}")
+                solara.Text(f"{row['measurement']} {row['probe']}")
+                solara.Text(f"{row['knock_time']} * 0.01 sec")
+                solara.Text(f"max at {round(row['freq'])} Hz")
             solara.Image(image_path)
             solara.Image(image_path_FFT)
-
-
+        with solara.CardActions():
+            solara.Button("Action 1", text=True, on_click=lambda:
+            interactive_graph(s.method.value, s.day.value, s.tree.value, s.measurement.value, row['probe'],
+                              row['knock_time'])
+                          )
+            solara.Button("Action 2", text=True)
 
 @solara.component
 def Signal():

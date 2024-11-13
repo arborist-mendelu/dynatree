@@ -15,14 +15,10 @@ import matplotlib.pyplot as plt
 # import resource
 # resource.setrlimit(resource.RLIMIT_AS, (10 * 1024 * 1024 * 1024, 10 * 1024 * 1024 * 1024))
 
-all_data = get_all_measurements_acc()
-pbar = tqdm(total=len(all_data))
 delta_time = 0.4
-cachedir = file['cachedir']
-
-dynatree.logger.setLevel(logging.ERROR)
 
 def save_images(signal_knock, fft_peak, figname):
+    cachedir = file['cachedir']
 
     fig, ax = plt.subplots(figsize=(3,1))
     ax.plot(signal_knock.signal)
@@ -38,6 +34,8 @@ def save_images(signal_knock, fft_peak, figname):
         color="C2"
     ax.plot(signal_knock.fft, color=color)
     ax.axvline(x=fft_peak, color='r', linestyle='--')
+    ax.grid()
+    ax.set(yscale='log')
     fig.savefig(f"{cachedir}/FFT_{figname}.png", transparent=True)
     plt.close(fig)
 
@@ -45,6 +43,10 @@ def save_images(signal_knock, fft_peak, figname):
 
 
 def main():
+    all_data = get_all_measurements_acc()
+    pbar = tqdm(total=len(all_data))
+
+    dynatree.logger.setLevel(logging.ERROR)
     ans = {}
     for row in all_data.values:
         date, tree, measurement, type = row
@@ -77,7 +79,8 @@ def main():
     df.columns = ["type", "day", "tree", "measurement", "knock_index", "knock_time", "probe", "freq", "filename"]
     df.to_csv(file['outputs/FFT_acc_knock'], index=False)
 
-main()
+if __name__ == "__main__":
+    main()
 
 
 
