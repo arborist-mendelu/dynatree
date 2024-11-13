@@ -37,6 +37,7 @@ def find_peak_times_chanelA(m, probe="a02_z", threshold=10):
         maximum = df.dropna().max()
         peaks, _ = find_peaks(df, prominence=maximum*0.75, distance=75)
     peak_times = df.index[peaks]
+    peak_times = [round(i,2) for i in peak_times]
     return peak_times
 
 def find_peak_times_chanelB(m):

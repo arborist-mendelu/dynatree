@@ -15,6 +15,7 @@ import logging
 # dynatree.logger.setLevel(logging.INFO)
 dynatree.logger.setLevel(logging.ERROR)
 
+rdf =  solara.reactive(pd.read_csv("../outputs/FFT_acc_knock.csv"))
 
 @solara.component
 def Page():
@@ -27,8 +28,39 @@ def Page():
             optics_switch=False,
             report_optics_availability=False,
         )
-    Signal()
-    Rozklad()
+    with solara.lab.Tabs():
+        with solara.lab.Tab("Celé měření"):
+            Signal()
+            Rozklad()
+        with solara.lab.Tab("Tabulka"):
+            Tabulka()
+        with solara.lab.Tab("Seznam"):
+            Seznam()
+
+@solara.component
+def Tabulka():
+    solara.DataFrame(
+        rdf.value
+        .pipe(lambda d: d[d["tree"] == s.tree.value])
+        .pipe(lambda d: d[d["day"] == s.day.value])
+        .pipe(lambda d: d[d["type"] == s.method.value])
+        .drop(["day","tree","type","measurement","knock_index","filename"], axis=1)
+    )
+
+@solara.component
+def Seznam():
+    temp_df = (
+        rdf.value
+        .pipe(lambda d: d[d["tree"] == s.tree.value])
+        .pipe(lambda d: d[d["day"] == s.day.value])
+        .pipe(lambda d: d[d["type"] == s.method.value])
+        #.drop(["day","tree","type","measurement","knock_index","filename"], axis=1)
+    )
+    for i,row in temp_df.iterrows():
+        solara.display(row)
+        solara.Markdown(f"({row['filename']})")
+
+
 
 @solara.component
 def Signal():

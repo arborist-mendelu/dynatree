@@ -193,6 +193,7 @@ def on_action_cell(column, row_index):
     row = subdf.iloc[row_index,:]
     probe.value = column
     s.method.value = row['type']
+    s.get_measurements_list()
     s.day.value = row['day']
     s.tree.value = row['tree']
     s.measurement.value = row['measurement']
