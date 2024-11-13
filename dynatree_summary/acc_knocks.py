@@ -24,13 +24,20 @@ dynatree.logger.setLevel(logging.ERROR)
 
 def save_images(signal_knock, fft_peak, figname):
 
-    fig, ax = plt.subplots(figsize=(3,0.8))
+    fig, ax = plt.subplots(figsize=(3,1))
     ax.plot(signal_knock.signal)
     fig.savefig(f"{cachedir}/{figname}.png", transparent=True)
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(3,1))
-    ax.plot(signal_knock.fft)
+    if "_x_" in figname:
+        color="C0"
+    elif "_y_" in figname:
+        color="C1"
+    else:
+        color="C2"
+    ax.plot(signal_knock.fft, color=color)
+    ax.axvline(x=fft_peak, color='r', linestyle='--')
     fig.savefig(f"{cachedir}/FFT_{figname}.png", transparent=True)
     plt.close(fig)
 

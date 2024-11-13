@@ -10,6 +10,8 @@ import dynatree.solara.select_source as s
 import matplotlib.pyplot as plt
 from solara.lab import task
 from dynatree.signal_knock import SignalTuk, find_peak_times_chanelA, find_peak_times_chanelB, chanelA, chanelB
+import solara.website
+from pathlib import Path
 
 import logging
 # dynatree.logger.setLevel(logging.INFO)
@@ -49,6 +51,9 @@ def Tabulka():
 
 @solara.component
 def Seznam():
+    solara.Markdown(f"""
+## {s.method.value} {s.day.value} {s.tree.value}    
+    """)
     temp_df = (
         rdf.value
         .pipe(lambda d: d[d["tree"] == s.tree.value])
@@ -57,8 +62,12 @@ def Seznam():
         #.drop(["day","tree","type","measurement","knock_index","filename"], axis=1)
     )
     for i,row in temp_df.iterrows():
-        solara.display(row)
-        solara.Markdown(f"({row['filename']})")
+        image_path = "/static/public/cache/" + row['filename'] +".png"
+        image_path_FFT = "/static/public/cache/FFT_" + row['filename'] +".png"
+        with solara.Row():
+            solara.Text(row['probe'])
+            solara.Image(image_path)
+            solara.Image(image_path_FFT)
 
 
 
