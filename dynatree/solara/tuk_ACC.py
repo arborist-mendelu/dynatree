@@ -140,7 +140,7 @@ def ReusableComponent(row, poradi, pocet):
             solara.Image(image_path_FFT)
         with solara.CardActions():
             solara.Button("Zobrazit grafy", text=True, on_click=lambda:
-            interactive_graph(s.method.value, s.day.value, s.tree.value, s.measurement.value, row['probe'],
+            interactive_graph(s.method.value, s.day.value, s.tree.value, row['measurement'], row['probe'],
                               row['knock_time'])
                           )
             # solara.Button("Action 2", text=True)
