@@ -76,7 +76,7 @@ def interactive_graph(type, day, tree, measurement, probe, start):
             showlegend=False  # Skrývá legendu
         )
         fig.update_layout(
-            margin=dict(l=0, r=0, t=20, b=0)  # l = left, r = right, t = top, b = bottom
+            margin=dict(l=0, r=0, t=30, b=0)  # l = left, r = right, t = top, b = bottom
         )
 
     fig2.update_yaxes(type="log")  # Logaritmická osa y
