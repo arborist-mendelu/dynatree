@@ -118,8 +118,8 @@ def Seznam():
     )
     pocet = len(temp_df)
     prev_next_buttons(max=pocet)
-    if poradi > pocet:
-        poradi = pocet - 5
+    if first_portrait.value > pocet:
+        first_portrait.value = pocet - 5
     for poradi, row in enumerate(temp_df.iterrows()):
         if poradi < first_portrait.value:
             continue
