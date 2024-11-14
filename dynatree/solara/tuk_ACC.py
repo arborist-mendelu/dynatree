@@ -15,6 +15,22 @@ import logging
 import plotly.express as px
 
 from dynatree.solara.tahovky import interactive_graph
+from statsmodels.stats.rates import power_negbin_ratio_2indep
+
+from dynatree import dynatree
+import solara.lab
+import solara
+import pandas as pd
+import dynatree.solara.select_source as s
+import matplotlib.pyplot as plt
+from solara.lab import task
+from dynatree.signal_knock import SignalTuk, find_peak_times_chanelA, find_peak_times_chanelB, chanelA, chanelB
+from dynatree_summary.acc_knocks import  delta_time
+import solara.website
+import logging
+import plotly.express as px
+
+from dynatree.solara.tahovky import interactive_graph
 
 # dynatree.logger.setLevel(logging.INFO)
 dynatree.logger.setLevel(logging.ERROR)
@@ -44,6 +60,8 @@ def Page():
                     Seznam()
                 with solara.Column():
                     Graf()
+        with solara.lab.Tab("Tabulková forma"):
+            Tabulka()
 
 @solara.component
 def Graf():
@@ -51,18 +69,29 @@ def Graf():
         ans = interactive_graph.value
         if ans is None:
             return
-    with solara.Card(style={'position': 'fixed', 'bottom':'0px', 'right':'0px', 'z-index':'1000',
-                            'max-width':'400px', 'max-height':'100vh'}):
-        solara.ProgressLinear(interactive_graph.pending)
-        if interactive_graph.finished:
-            ans = interactive_graph.value
-            with solara.Row():
-                solara.Text(ans['text'])
-                solara.Button("❌", on_click=lambda: interactive_graph())
-            solara.Markdown("**Časový průběh**")
-            solara.FigurePlotly(ans['signal'])
-            solara.Markdown("**FFT transformace**")
-            solara.FigurePlotly(ans['fft'])
+    if interactive_graph.not_called:
+        return
+    with solara.Card(style={'position': 'fixed', 'top': '0', 'left': '0', 'width': '100vw', 'height': '100vh',
+                       'background-color': 'rgba(0, 0, 0, 0.5)', 'z-index': '999',
+                       'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}):
+        with solara.Card(
+                # style={'position': 'fixed', 'bottom':'0px', 'right':'0px', 'z-index':'1000',
+                #                 'max-width':'1200px', 'width':'1000px', 'max-height':'100vh'}
+            style = {
+                'background-color': 'white', 'padding': '20px', 'border-radius': '8px',
+                'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.2)',
+                'max-width':'1200px', 'width':'1000px', 'max-height':'100vh'}
+        ):
+            solara.ProgressLinear(interactive_graph.pending)
+            if interactive_graph.finished:
+                ans = interactive_graph.value
+                with solara.Row():
+                    solara.Text(ans['text'])
+                    solara.Button("❌", on_click=lambda: interactive_graph())
+                solara.Markdown("**Časový průběh**")
+                solara.FigurePlotly(ans['signal'])
+                solara.Markdown(f"**FFT transformace** Peak at Hz.")
+                solara.FigurePlotly(ans['fft'])
 
 @task
 def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=None, start=None):
@@ -92,15 +121,47 @@ def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=No
     fig2.update_yaxes(type="log")  # Logaritmická osa y
     return {'signal':fig1,'fft':fig2, 'text':f"{type}, {day}, {tree}, {measurement}, {probe}, {start}s"}
 
+
+# Funkce pro stylování - přidání hranice, když se změní hodnota v úrovni 'tree'
+def add_horizontal_line(df):
+    styles = pd.DataFrame('', index=df.index, columns=df.columns)
+
+    # Projdi všechny řádky a přidej stylování
+    for i in range(1, len(df)):
+        if df.index[i][0] != df.index[i - 1][0]:  # Pokud se změní 'tree'
+            styles.iloc[i, :] = 'border-top: 2px solid red'  # Přidej hranici
+
+    return styles
+
 @solara.component
 def Tabulka():
-    solara.DataFrame(
-        rdf.value
+    solara.Details(
+        summary="Rozklikni pro popis",
+        children = [solara.Markdown(
+"""
+* V tabulce jsou frekvence v Hz. Knock_time je čas v setinách sekundy od začátku měření. 
+* Obarvení je po sloupcích. V každém sloupci jsou nejvyšší hodnoty nejtmavší.
+* Pod tabulkou je median a další statistiky.
+"""
+        )]
+    )
+    subdf = (rdf.value
         .pipe(lambda d: d[d["tree"] == s.tree.value])
         .pipe(lambda d: d[d["day"] == s.day.value])
         .pipe(lambda d: d[d["type"] == s.method.value])
-        .drop(["day","tree","type","measurement","knock_index","filename"], axis=1)
+        #.pipe(lambda d: d[d["measurement"] == s.measurement.value])
+        .drop(["day","tree","type","knock_index","filename"], axis=1)
+        .pivot(index=['measurement', 'knock_time'], columns='probe', values='freq')
+             )
+    solara.display(
+        subdf
+        .style.format(precision=0).background_gradient(axis=0)
+        .apply(add_horizontal_line, axis=None)
+        .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+        .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
     )
+    with solara.Card(title="Statistics"):
+        solara.display(subdf.describe())
 
 first_portrait = solara.reactive(0)
 def prev_ten():
