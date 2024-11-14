@@ -1,42 +1,28 @@
 from matplotlib.pyplot import axvline
-from statsmodels.stats.rates import power_negbin_ratio_2indep
-
-from dynatree import dynatree
 import solara.lab
+import solara.website
+from dynatree import dynatree
 import solara
 import pandas as pd
+import polars as pl
 import dynatree.solara.select_source as s
 import matplotlib.pyplot as plt
 from solara.lab import task
 from dynatree.signal_knock import SignalTuk, find_peak_times_chanelA, find_peak_times_chanelB, chanelA, chanelB
 from dynatree_summary.acc_knocks import  delta_time
-import solara.website
 import logging
 import plotly.express as px
 
 from dynatree.solara.tahovky import interactive_graph
-from statsmodels.stats.rates import power_negbin_ratio_2indep
-
-from dynatree import dynatree
-import solara.lab
-import solara
-import pandas as pd
-import dynatree.solara.select_source as s
-import matplotlib.pyplot as plt
-from solara.lab import task
-from dynatree.signal_knock import SignalTuk, find_peak_times_chanelA, find_peak_times_chanelB, chanelA, chanelB
-from dynatree_summary.acc_knocks import  delta_time
-import solara.website
-import logging
-import plotly.express as px
-
-from dynatree.solara.tahovky import interactive_graph
+import numpy as np
 from contextlib import contextmanager
 
 # dynatree.logger.setLevel(logging.INFO)
 dynatree.logger.setLevel(logging.ERROR)
-
-rdf =  solara.reactive(pd.read_csv("../outputs/FFT_acc_knock.csv"))
+df = pd.read_csv("../outputs/FFT_acc_knock.csv")
+df["valid"] = True
+df["manual_peak"] = np.nan
+rdf =  solara.reactive(df)
 
 active_tab = solara.reactive(1)
 use_overlay = solara.reactive(False)
@@ -77,7 +63,7 @@ def Page():
             report_optics_availability=False,
             include_measurements=active_tab.value != 2
         )
-        solara.Switch(label="Use overlay for grahs", value=use_overlay)
+        solara.Switch(label="Use overlay for graphs", value=use_overlay)
     with solara.lab.Tabs(value=active_tab):
         with solara.lab.Tab("Celé měření"):
             Signal()
@@ -125,10 +111,12 @@ def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=No
     start = start*1.0/100
     signal_knock = SignalTuk(mi, start=start - delta_time, end=start + delta_time, probe=probe)
     fig1 = px.line(signal_knock.signal,
+                   height=200,
                   # title=f"{type} {day} {tree} {measurement} {probe} {start}"
                   )
     fig2 = px.line(signal_knock.fft,
-                  # title=f"{type} {day} {tree} {measurement} {probe} {start}"
+                   height=300,
+    # title=f"{type} {day} {tree} {measurement} {probe} {start}"
                   )
     for fig in [fig1,fig2]:
         fig.update_layout(
@@ -221,6 +209,7 @@ def Seznam():
 
 @solara.component
 def ReusableComponent(row, poradi, pocet):
+    solara.display(row)
     i, row = row
     image_path = "/static/public/cache/" + row['filename'] + ".png"
     image_path_FFT = "/static/public/cache/FFT_" + row['filename'] + ".png"
