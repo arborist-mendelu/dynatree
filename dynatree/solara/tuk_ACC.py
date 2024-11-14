@@ -1,4 +1,6 @@
 from matplotlib.pyplot import axvline
+from statsmodels.stats.rates import power_negbin_ratio_2indep
+
 from dynatree import dynatree
 import solara.lab
 import solara
@@ -95,12 +97,12 @@ def Tabulka():
 first_portrait = solara.reactive(0)
 def prev_ten():
     first_portrait.value = max(0,first_portrait.value - 10)
-def next_ten():
-    first_portrait.value = first_portrait.value + 10
-def prev_next_buttons():
+def next_ten(max):
+    first_portrait.value = min(max,first_portrait.value + 10)
+def prev_next_buttons(max):
     with solara.Row():
         solara.Button("Prev 10", on_click=prev_ten)
-        solara.Button("Next 10", on_click=next_ten)
+        solara.Button("Next 10", on_click=lambda: next_ten(max))
 
 @solara.component
 def Seznam():
@@ -115,14 +117,16 @@ def Seznam():
         #.drop(["day","tree","type","measurement","knock_index","filename"], axis=1)
     )
     pocet = len(temp_df)
-    prev_next_buttons()
+    prev_next_buttons(max=pocet)
+    if poradi > pocet:
+        poradi = pocet - 5
     for poradi, row in enumerate(temp_df.iterrows()):
         if poradi < first_portrait.value:
             continue
         if poradi > first_portrait.value+10:
             continue
         ReusableComponent(row, poradi, pocet)
-    prev_next_buttons()
+    prev_next_buttons(max=pocet)
 
 @solara.component
 def ReusableComponent(row, poradi, pocet):
