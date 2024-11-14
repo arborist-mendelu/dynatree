@@ -31,11 +31,39 @@ import logging
 import plotly.express as px
 
 from dynatree.solara.tahovky import interactive_graph
+from contextlib import contextmanager
 
 # dynatree.logger.setLevel(logging.INFO)
 dynatree.logger.setLevel(logging.ERROR)
 
 rdf =  solara.reactive(pd.read_csv("../outputs/FFT_acc_knock.csv"))
+
+active_tab = solara.reactive(1)
+use_overlay = solara.reactive(False)
+
+@contextmanager
+def customizable_card(overlay=True):
+    if overlay:
+        # První varianta s overlay efektem přes celou obrazovku
+        with solara.Card(style={
+            'position': 'fixed', 'top': '0', 'left': '0', 'width': '100vw', 'height': '100vh',
+            'background-color': 'rgba(0, 0, 0, 0.5)', 'z-index': '999',
+            'display': 'flex', 'align-items': 'center', 'justify-content': 'center'
+        }, margin=0):
+            with solara.Card(style={
+                'background-color': 'white', 'padding': '20px', 'border-radius': '8px',
+                'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.2)',
+                'max-width': '1200px', 'width': '1000px', 'max-height': '100vh'
+            }):
+                yield  # Výkon příkazu v této variantě
+    else:
+        # Druhá varianta, fixovaná v pravém dolním rohu
+        with solara.Card(style={
+            'position': 'fixed', 'bottom': '0px', 'right': '0px', 'z-index': '1000',
+            'max-width': '1200px', 'width': '1000px', 'max-height': '100vh'
+        }):
+            yield  # Výkon příkazu v této variantě
+
 
 @solara.component
 def Page():
@@ -47,8 +75,10 @@ def Page():
         s.Selection(
             optics_switch=False,
             report_optics_availability=False,
+            include_measurements=active_tab.value != 2
         )
-    with solara.lab.Tabs():
+        solara.Switch(label="Use overlay for grahs", value=use_overlay)
+    with solara.lab.Tabs(value=active_tab):
         with solara.lab.Tab("Celé měření"):
             Signal()
             Rozklad()
@@ -63,6 +93,8 @@ def Page():
         with solara.lab.Tab("Tabulková forma"):
             Tabulka()
 
+
+
 @solara.component
 def Graf():
     if interactive_graph.finished:
@@ -71,27 +103,17 @@ def Graf():
             return
     if interactive_graph.not_called:
         return
-    with solara.Card(style={'position': 'fixed', 'top': '0', 'left': '0', 'width': '100vw', 'height': '100vh',
-                       'background-color': 'rgba(0, 0, 0, 0.5)', 'z-index': '999',
-                       'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}):
-        with solara.Card(
-                # style={'position': 'fixed', 'bottom':'0px', 'right':'0px', 'z-index':'1000',
-                #                 'max-width':'1200px', 'width':'1000px', 'max-height':'100vh'}
-            style = {
-                'background-color': 'white', 'padding': '20px', 'border-radius': '8px',
-                'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.2)',
-                'max-width':'1200px', 'width':'1000px', 'max-height':'100vh'}
-        ):
-            solara.ProgressLinear(interactive_graph.pending)
-            if interactive_graph.finished:
-                ans = interactive_graph.value
-                with solara.Row():
-                    solara.Text(ans['text'])
-                    solara.Button("❌", on_click=lambda: interactive_graph())
-                solara.Markdown("**Časový průběh**")
-                solara.FigurePlotly(ans['signal'])
-                solara.Markdown(f"**FFT transformace** Peak at Hz.")
-                solara.FigurePlotly(ans['fft'])
+    with customizable_card(use_overlay.value):
+        solara.ProgressLinear(interactive_graph.pending)
+        if interactive_graph.finished:
+            ans = interactive_graph.value
+            with solara.Row():
+                solara.Text(ans['text'])
+                solara.Button("❌", on_click=lambda: interactive_graph())
+            solara.Markdown("**Časový průběh**")
+            solara.FigurePlotly(ans['signal'])
+            solara.Markdown(f"**FFT transformace** Peak at Hz.")
+            solara.FigurePlotly(ans['fft'])
 
 @task
 def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=None, start=None):
@@ -129,7 +151,7 @@ def add_horizontal_line(df):
     # Projdi všechny řádky a přidej stylování
     for i in range(1, len(df)):
         if df.index[i][0] != df.index[i - 1][0]:  # Pokud se změní 'tree'
-            styles.iloc[i, :] = 'border-top: 2px solid red'  # Přidej hranici
+            styles.iloc[i, :] = 'border-top: 4px solid red'  # Přidej hranici
 
     return styles
 

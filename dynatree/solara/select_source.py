@@ -71,7 +71,8 @@ def Selection(
        optics_switch = True,
        confirm_choice = True, 
        report_optics_availability = True,
-       exclude_M01 = False
+       exclude_M01 = False,
+        include_measurements = True,
         ):
     if exclude_M01:
         measurements.value = [i for i in measurements.value if i!="M01"]
@@ -84,12 +85,13 @@ def Selection(
                                        on_value=day_action)
             solara.ToggleButtonsSingle(value=tree, values=list(trees.value),
                                        on_value=tree_action)
-            solara.ToggleButtonsSingle(value=measurement,
-                                       values=available_measurements(
-                                           df.value, day.value, tree.value, method.value,
-                                           exclude_M01=exclude_M01),
-                                       on_value=measurement_action
-                                       )
+            if include_measurements:
+                solara.ToggleButtonsSingle(value=measurement,
+                                           values=available_measurements(
+                                               df.value, day.value, tree.value, method.value,
+                                               exclude_M01=exclude_M01),
+                                           on_value=measurement_action
+                                           )
         data_object = dynatree.DynatreeMeasurement(
             day.value, tree.value, measurement.value,measurement_type=method.value)
         if optics_switch:
@@ -106,7 +108,7 @@ def Selection(
         # solara.Button("Clear cache", on_click=clear(), color="primary")
         if confirm_choice:
             solara.Markdown(
-                f"**Selected**: {method.value}, {day.value}, {tree.value}, {measurement.value}")
+                f"**Selected**: {method.value}, {day.value}, {tree.value}, {measurement.value if include_measurements else ''}")
         if report_optics_availability:
             if data_object.is_optics_available:
                 solara.Markdown("✅ Optics is available for this measurement.")
