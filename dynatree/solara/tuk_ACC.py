@@ -47,19 +47,27 @@ def Page():
 
 @solara.component
 def Graf():
+    if interactive_graph.finished:
+        ans = interactive_graph.value
+        if ans is None:
+            return
     with solara.Card(style={'position': 'fixed', 'bottom':'0px', 'right':'0px', 'z-index':'1000',
                             'max-width':'400px', 'max-height':'100vh'}):
         solara.ProgressLinear(interactive_graph.pending)
         if interactive_graph.finished:
             ans = interactive_graph.value
-            solara.Text(ans['text'])
+            with solara.Row():
+                solara.Text(ans['text'])
+                solara.Button("❌", on_click=lambda: interactive_graph())
             solara.Markdown("**Časový průběh**")
             solara.FigurePlotly(ans['signal'])
             solara.Markdown("**FFT transformace**")
             solara.FigurePlotly(ans['fft'])
 
 @task
-def interactive_graph(type, day, tree, measurement, probe, start):
+def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=None, start=None):
+    if type is None:
+        return None
     dynatree.logger.info(f"interactive graph entered {day} {tree} {measurement} {type}")
     mi = dynatree.DynatreeMeasurement(day=day, tree=tree, measurement=measurement,
                                      measurement_type=type)
@@ -82,7 +90,7 @@ def interactive_graph(type, day, tree, measurement, probe, start):
         )
 
     fig2.update_yaxes(type="log")  # Logaritmická osa y
-    return {'signal':fig1,'fft':fig2, 'text':f"{type} {day} {tree} {measurement} {probe} {start}"}
+    return {'signal':fig1,'fft':fig2, 'text':f"{type}, {day}, {tree}, {measurement}, {probe}, {start}s"}
 
 @solara.component
 def Tabulka():
@@ -143,6 +151,7 @@ def ReusableComponent(row, poradi, pocet):
             solara.Image(image_path)
             solara.Image(image_path_FFT)
         with solara.CardActions():
+            s.measurement.value = row['measurement']
             solara.Button("Zobrazit grafy", text=True, on_click=lambda:
             interactive_graph(s.method.value, s.day.value, s.tree.value, row['measurement'], row['probe'],
                               row['knock_time'])
