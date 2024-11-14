@@ -58,11 +58,11 @@ def Graf():
 
 @task
 def interactive_graph(type, day, tree, measurement, probe, start):
-    dynatree.logger.info("interactive graph entered")
-    m = dynatree.DynatreeMeasurement(day=day, tree=tree, measurement=measurement,
+    dynatree.logger.info(f"interactive graph entered {day} {tree} {measurement} {type}")
+    mi = dynatree.DynatreeMeasurement(day=day, tree=tree, measurement=measurement,
                                      measurement_type=type)
     start = start*1.0/100
-    signal_knock = SignalTuk(m, start=start - delta_time, end=start + delta_time, probe=probe)
+    signal_knock = SignalTuk(mi, start=start - delta_time, end=start + delta_time, probe=probe)
     fig1 = px.line(signal_knock.signal,
                   # title=f"{type} {day} {tree} {measurement} {probe} {start}"
                   )
