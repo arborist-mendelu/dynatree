@@ -305,9 +305,9 @@ def ReusableComponent(row, poradi, pocet):
     else:
         style = {'border-right':'solid', 'border-color':'red', 'background-color':'#F0F0F0'}
         bgstyle = {'background-color':'#F0F0F0'}
-    image_path = "/static/public/cache/" + row['filename'] + ".png"
-    image_path_FFT = "/static/public/cache/FFT_" + row['filename'] + ".png"
-    image_path_FFT_large = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
+    image_path = "./static/public/cache/" + row['filename'] + ".png"
+    image_path_FFT = "./static/public/cache/FFT_" + row['filename'] + ".png"
+    image_path_FFT_large = "./static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
     with solara.Card(style=style):
         if is_valid:
             solara.Text("✅")
