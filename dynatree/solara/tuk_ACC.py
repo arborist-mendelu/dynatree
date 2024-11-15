@@ -13,6 +13,7 @@ from dynatree_summary.acc_knocks import  delta_time
 import logging
 import plotly.express as px
 from io import BytesIO
+import random
 
 
 from contextlib import contextmanager
@@ -25,7 +26,8 @@ if "valid" not in df.columns:
     df["valid"] = True
 if "manual_peaks" not in df.columns:
     df["manual_peaks"] = None
-rdf =  solara.reactive(df)
+rdf =  df.copy()
+df_updated = solara.reactive(0)
 
 active_tab = solara.reactive(1)
 use_overlay = solara.reactive(False)
@@ -60,6 +62,7 @@ def customizable_card(overlay=True):
 
 
 def on_file(f):
+    global rdf
     dynatree.logger.info("File uploaded")
     content = f["file_obj"].read()
     df = None
@@ -81,7 +84,8 @@ def on_file(f):
     else:
         dynatree.logger.info(f"File not accepted")
     if df is not None:
-        rdf.value = df.copy(deep=False)
+        rdf = df.copy(deep=False)
+        df_updated.value = random.random()
 
 
 @solara.component
@@ -105,9 +109,9 @@ def Page():
                     solara.ToggleButtonsSingle(value=cards_on_page, values=[10,20,50,75,100])
             with solara.Card(title = "Data file handling"):
                 with solara.Column():
-                    solara.FileDownload(rdf.value.to_parquet(), filename="FFT_acc_knock.parquet",
+                    solara.FileDownload(rdf.to_parquet(), filename="FFT_acc_knock.parquet",
                                         label="Download parquet data")
-                    solara.FileDownload(rdf.value.to_csv(), filename="FFT_acc_knock.csv",
+                    solara.FileDownload(rdf.to_csv(), filename="FFT_acc_knock.csv",
                                 label="Download csv data")
                     solara.Switch(label="Allow file upload", value=use_custom_file)
                     if use_custom_file.value:
@@ -147,7 +151,7 @@ def Graf():
         solara.ProgressLinear(interactive_graph.pending)
         if interactive_graph.finished:
             ans = interactive_graph.value
-            current_peaks = rdf.value.at[ans['index'], "manual_peaks"]
+            current_peaks = rdf.at[ans['index'], "manual_peaks"]
             with solara.Row():
                 solara.Button("❌", on_click=lambda: interactive_graph())
                 solara.Button("Save & ❌", on_click=lambda: save_click_data(ans['index']))
@@ -171,16 +175,11 @@ def set_click_data(x=None):
     else:
         manual_freq.value = manual_freq.value + [x['points']['xs'][0]]
 
-def notify_change():
-    rdf.value = rdf.value
-
 @dynatree.timeit
 def save_click_data(index):
-    rdf.value.at[index,"manual_peaks"] = manual_freq.value
-    a = time.time()
-    rdf.value = rdf.value.copy()
-    b = time.time()
-    dynatree.logger.info(f"Dataframe copy took {b-a} sec")
+    global rdf
+    rdf.at[index,"manual_peaks"] = manual_freq.value
+    df_updated.value = random.random()
     interactive_graph()
 
 def get_knock_data(**kwds):
@@ -212,7 +211,8 @@ def interactive_graph(**kwds):
     fig2 = px.line(fft_data,
                    height=300,
                   )
-    manual_peaks = rdf.value.at[kwds['index'], "manual_peaks"]
+    manual_peaks = rdf.at[kwds['index'], "manual_peaks"]
+    df_updated.value = random.random()
     if manual_peaks is not None:
         for _ in manual_peaks:
             fig2.add_vline(x=_, line_width=3, line_dash="dash", line_color="red")
@@ -259,7 +259,7 @@ def Tabulka():
 """
         )]
     )
-    subdf = (rdf.value
+    subdf = (rdf
         .pipe(lambda d: d[d["tree"] == s.tree.value])
         .pipe(lambda d: d[d["day"] == s.day.value])
         .pipe(lambda d: d[d["type"] == s.method.value])
@@ -297,7 +297,7 @@ def Seznam():
 # Precomputed graphs for {s.method.value} {s.day.value} {s.tree.value}    
     """)
     temp_df = (
-        rdf.value
+        rdf
         .pipe(lambda d: d[d["tree"] == s.tree.value])
         .pipe(lambda d: d[d["day"] == s.day.value])
         .pipe(lambda d: d[d["type"] == s.method.value])
@@ -315,18 +315,18 @@ def Seznam():
         ReusableComponent(row, poradi, pocet)
     prev_next_buttons(max=pocet)
 
-test_df = rdf.value.loc[:,["valid","manual_peaks"]]
+test_df = rdf.loc[:,["valid","manual_peaks"]]
 testdf = solara.reactive(test_df)
 
 @dynatree.timeit
 def change_OK_status(i):
+    global rdf
     a = time.time()
-    current = rdf.value.at[i,"valid"]
-    rdf.value.at[i,"valid"] = not current
+    current = rdf.at[i,"valid"]
+    rdf.at[i,"valid"] = not current
     b = time.time()
-    rdf.value = rdf.value.copy()
+    df_updated.value = random.random()
     c = time.time()
-    testdf.value = testdf.value.copy()
     d = time.time()
     dynatree.logger.info(f"Variable setting: {b-a}, copying data: {c-b} versus {d-c}")
 
@@ -341,7 +341,7 @@ def FFT_curve(*args, **kwargs):
         showlegend=False,  # Skrytí legendy
         plot_bgcolor="white",  # Nastavení bílé barvy pozadí
     )
-    vert_lines = rdf.value.at[kwargs["index"],"manual_peaks"]
+    vert_lines = rdf.at[kwargs["index"],"manual_peaks"]
     dynatree.logger.info(f"Vertical lineas are {vert_lines}")
     # # Přidání svislých červených čar
     if vert_lines is not None:
@@ -355,7 +355,7 @@ def FFT_curve(*args, **kwargs):
 @dynatree.timeit
 def ReusableComponent(row, poradi, pocet):
     i, row = row
-    is_valid = rdf.value.at[i, "valid"]
+    is_valid = rdf.at[i, "valid"]
     if is_valid:
         style = {}
         bgstyle = {}
@@ -365,6 +365,7 @@ def ReusableComponent(row, poradi, pocet):
     image_path = "./static/public/cache/" + row['filename'] + ".png"
     image_path_FFT = "./static/public/cache/FFT_" + row['filename'] + ".png"
     image_path_FFT_large = "./static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
+    dsafdsaf = df_updated.value
     with solara.Card(style=style):
         if is_valid:
             solara.Text("✅")
@@ -396,7 +397,7 @@ max at {round(row['freq'])} Hz
             else:
                 solara.Image(image_path)
                 solara.Image(image_path_FFT)
-        man_p = rdf.value.at[i, "manual_peaks"]
+        man_p = rdf.at[i, "manual_peaks"]
         if man_p is not None:
             solara.Text(f"Manual peaks {[round(_) for _ in man_p]} ", style={'color':'red'})
         with solara.CardActions():
