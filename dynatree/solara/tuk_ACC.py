@@ -16,9 +16,10 @@ from io import BytesIO
 
 
 from contextlib import contextmanager
+import time
 
-# dynatree.logger.setLevel(logging.INFO)
-dynatree.logger.setLevel(logging.ERROR)
+dynatree.logger.setLevel(logging.INFO)
+# dynatree.logger.setLevel(logging.ERROR)
 df = pd.read_csv("../outputs/FFT_acc_knock.csv")
 if "valid" not in df.columns:
     df["valid"] = True
@@ -32,6 +33,7 @@ manual_freq = solara.reactive([])
 cards_on_page = solara.reactive(10)
 use_large_fft = solara.reactive(False)
 use_custom_file = solara.reactive(False)
+img_from_live_data = solara.reactive(False)
 
 @contextmanager
 def customizable_card(overlay=True):
@@ -79,7 +81,7 @@ def on_file(f):
     else:
         dynatree.logger.info(f"File not accepted")
     if df is not None:
-        rdf.value = df.copy()
+        rdf.value = df.copy(deep=False)
 
 
 @solara.component
@@ -97,6 +99,7 @@ def Page():
             with solara.Card(title = "Dashboard setting"):
                 solara.Switch(label="Use overlay for graphs (useful for small screen)", value=use_overlay)
                 solara.Switch(label="Use larger FFT image", value=use_large_fft)
+                solara.Switch(label="FFT images from live peaks", value=img_from_live_data)
                 with solara.Column(gap="0px"):
                     solara.Text("Items on page:")
                     solara.ToggleButtonsSingle(value=cards_on_page, values=[10,20,50,75,100])
@@ -132,6 +135,7 @@ def Page():
             Tabulka()
 
 @solara.component
+@dynatree.timeit
 def Graf():
     if interactive_graph.finished:
         ans = interactive_graph.value
@@ -167,31 +171,50 @@ def set_click_data(x=None):
     else:
         manual_freq.value = manual_freq.value + [x['points']['xs'][0]]
 
+def notify_change():
+    rdf.value = rdf.value
+
+@dynatree.timeit
 def save_click_data(index):
     rdf.value.at[index,"manual_peaks"] = manual_freq.value
+    a = time.time()
     rdf.value = rdf.value.copy()
+    b = time.time()
+    dynatree.logger.info(f"Dataframe copy took {b-a} sec")
     interactive_graph()
 
+def get_knock_data(**kwds):
+    """
+    Returns signal after the knock for given measurement_type, day, tree, measurement, knock_time,
+    delta_time, probe
+    
+    Return SignalTuk object
+    Knock time is given as int number of 1/100 sec.
+    """
+    mi = dynatree.DynatreeMeasurement(day=kwds['day'], tree=kwds['tree'], measurement=kwds['measurement'],
+                                     measurement_type=kwds['method'])
+    knock_time = kwds['knock_time']*1.0/100
+    signal_knock = SignalTuk(mi, start=knock_time - delta_time, end=knock_time + delta_time, probe=kwds['probe'])
+    return signal_knock
+
 @task
-def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=None, start=None, index=None):
-    if type is None:
+@dynatree.timeit
+def interactive_graph(**kwds):
+    if len(kwds)==0:
         manual_freq.value = []
         return None
-    dynatree.logger.info(f"interactive graph entered {day} {tree} {measurement} {type}")
-    mi = dynatree.DynatreeMeasurement(day=day, tree=tree, measurement=measurement,
-                                     measurement_type=type)
-    start = start*1.0/100
-    signal_knock = SignalTuk(mi, start=start - delta_time, end=start + delta_time, probe=probe)
+    dynatree.logger.info(f"interactive graph entered {kwds['day']} {kwds['tree']} {kwds['measurement']} {kwds['method']}")
+    signal_knock = get_knock_data(**kwds)
     fig1 = px.line(signal_knock.signal,
                    height=200,
-                  # title=f"{type} {day} {tree} {measurement} {probe} {start}"
                   )
-    fig2 = px.line(signal_knock.fft,
+    fft_data = signal_knock.fft
+    fig2 = px.line(fft_data,
                    height=300,
-    # title=f"{type} {day} {tree} {measurement} {probe} {start}"
                   )
-    if rdf.value.at[index, "manual_peaks"] is not None:
-        for _ in rdf.value.at[index, "manual_peaks"]:
+    manual_peaks = rdf.value.at[kwds['index'], "manual_peaks"]
+    if manual_peaks is not None:
+        for _ in manual_peaks:
             fig2.add_vline(x=_, line_width=3, line_dash="dash", line_color="red")
 
     for fig in [fig1,fig2]:
@@ -205,8 +228,10 @@ def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=No
         )
 
     fig2.update_yaxes(type="log")  # Logaritmická osa y
-    return {'signal':fig1,'fft':fig2, 'text':f"{type}, {day}, {tree}, {measurement}, {probe}, {start}s",
-            'index':index}
+    return {'signal':fig1,'fft':fig2,
+            'text':f"{kwds['method']}, {kwds['day']}, {kwds['tree']}, {kwds['measurement']}, {kwds['probe']}, {kwds['knock_time']}s",
+            'index':kwds['index']
+            }
 
 
 # Funkce pro stylování - přidání hranice, když se změní hodnota v úrovni 'tree'
@@ -290,12 +315,44 @@ def Seznam():
         ReusableComponent(row, poradi, pocet)
     prev_next_buttons(max=pocet)
 
+test_df = rdf.value.loc[:,["valid","manual_peaks"]]
+testdf = solara.reactive(test_df)
+
+@dynatree.timeit
 def change_OK_status(i):
+    a = time.time()
     current = rdf.value.at[i,"valid"]
     rdf.value.at[i,"valid"] = not current
+    b = time.time()
     rdf.value = rdf.value.copy()
+    c = time.time()
+    testdf.value = testdf.value.copy()
+    d = time.time()
+    dynatree.logger.info(f"Variable setting: {b-a}, copying data: {c-b} versus {d-c}")
+
+def FFT_curve(*args, **kwargs):
+    knock_data = get_knock_data(**kwargs).fft
+    fig = px.line(x=knock_data.index, y=knock_data.values.reshape(-1), width=400, height=150)
+    # Odstranění všech dalších prvků
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=0, b=0),  # Nastavení nulových okrajů
+        xaxis=dict(visible=False),  # Skrytí osy X
+        yaxis=dict(visible=False, type="log"),  # Skrytí osy Y
+        showlegend=False,  # Skrytí legendy
+        plot_bgcolor="white",  # Nastavení bílé barvy pozadí
+    )
+    vert_lines = rdf.value.at[kwargs["index"],"manual_peaks"]
+    dynatree.logger.info(f"Vertical lineas are {vert_lines}")
+    # # Přidání svislých červených čar
+    if vert_lines is not None:
+        for _ in vert_lines:
+            fig.add_vline(x=_, line_width=1, line_dash="dash", line_color="red")
+
+    return fig
+
 
 @solara.component
+@dynatree.timeit
 def ReusableComponent(row, poradi, pocet):
     i, row = row
     is_valid = rdf.value.at[i, "valid"]
@@ -327,7 +384,14 @@ max at {round(row['freq'])} Hz
                 # solara.Text(f"{row['measurement']} {row['probe']}")
                 # solara.Text(f"@ {row['knock_time']*1.0/100} sec")
                 # solara.Text(f"max at {round(row['freq'])} Hz")
-            if use_large_fft.value:
+            coordinates = dict(method = s.method.value, day = s.day.value, tree = s.tree.value,
+                measurement = row['measurement'], probe = row['probe'],
+                knock_time = row['knock_time'], index = i)
+            if img_from_live_data.value:
+                fig = FFT_curve(**coordinates)
+                config = {"displayModeBar": False}
+                fig.show(config=config)
+            elif use_large_fft.value:
                 solara.Image(image_path_FFT_large)
             else:
                 solara.Image(image_path)
@@ -340,8 +404,7 @@ max at {round(row['freq'])} Hz
             with solara.Columns(1):
                 with solara.Column():
                     solara.Button("Zadat peaky", text=True, color="primary", on_click=lambda:
-                        interactive_graph(s.method.value, s.day.value, s.tree.value, row['measurement'], row['probe'],
-                                      row['knock_time'],i),
+                        interactive_graph(**coordinates),
                         outlined=True
                                   )
                 with solara.Column():
@@ -404,6 +467,7 @@ Akcelerometry a02_z a a02_x pro stanovení časů ťuknutí pro dvě sběrnice
     plot_all(None, None)
 
 @solara.component
+@dynatree.timeit
 def Rozklad():
     m = dynatree.DynatreeMeasurement(day=s.day.value, tree=s.tree.value, measurement=s.measurement.value,
                                      measurement_type=s.method.value)
@@ -461,16 +525,16 @@ def plot_all(m, peak_times):
             figsize = (3, 4)
         dynatree.logger.info(f"probes is {probes}")
         n = len(p_times)
-        for i,start in enumerate(p_times):
+        for i,knock_time in enumerate(p_times):
             plot_all.progress = (i) * 50.0/n +number*50
             dynatree.logger.warning(f"progress is {(i) * 50.0/n + number*50}")
 
-            all_knocks = [SignalTuk(m, start=start-0.4, end=start+0.4, probe=probe) for probe in probes]
+            all_knocks = [SignalTuk(m, start=knock_time-0.4, end=knock_time+0.4, probe=probe) for probe in probes]
             signals = pd.concat([sg.signal for sg in all_knocks], axis=1)
             ax = signals.plot(subplots=True, sharex=True, figsize=figsize )
             [_.grid() for _ in ax]
             fig1 = plt.gcf()
-            fig1.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, ťuk v čase {start}s",
+            fig1.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, ťuk v čase {knock_time}s",
                           fontsize = 8)
             plt.tight_layout()
 
@@ -496,10 +560,10 @@ def plot_all(m, peak_times):
                 axes.set(yscale='log')
                 axes.grid()
             fig2 = plt.gcf()
-            fig2.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, ťuk v čase {start}s",
+            fig2.suptitle(f"{m.day} {m.tree} {m.measurement} {m.measurement_type}, ťuk v čase {knock_time}s",
                         fontsize = 8)
             plt.tight_layout()
 
-            answer[(start,number)] = [fig1, fig2]
+            answer[(knock_time,number)] = [fig1, fig2]
     return answer
 
