@@ -4,7 +4,7 @@ import solara.website
 from dynatree import dynatree
 import solara
 import pandas as pd
-import polars as pl
+# import polars as pl
 import dynatree.solara.select_source as s
 import matplotlib.pyplot as plt
 from solara.lab import task
@@ -12,12 +12,13 @@ from dynatree.signal_knock import SignalTuk, find_peak_times_chanelA, find_peak_
 from dynatree_summary.acc_knocks import  delta_time
 import logging
 import plotly.express as px
+from io import BytesIO
 
-import numpy as np
+
 from contextlib import contextmanager
 
 # dynatree.logger.setLevel(logging.INFO)
-dynatree.logger.setLevel(logging.INFO)
+dynatree.logger.setLevel(logging.ERROR)
 df = pd.read_csv("../outputs/FFT_acc_knock.csv")
 if "valid" not in df.columns:
     df["valid"] = True
@@ -28,6 +29,9 @@ rdf =  solara.reactive(df)
 active_tab = solara.reactive(1)
 use_overlay = solara.reactive(False)
 manual_freq = solara.reactive([])
+cards_on_page = solara.reactive(10)
+use_large_fft = solara.reactive(False)
+use_custom_file = solara.reactive(False)
 
 @contextmanager
 def customizable_card(overlay=True):
@@ -53,11 +57,36 @@ def customizable_card(overlay=True):
             yield  # Výkon příkazu v této variantě
 
 
+def on_file(f):
+    dynatree.logger.info("File uploaded")
+    content = f["file_obj"].read()
+    df = None
+    try:
+        dynatree.logger.info("Trying to read as csv ...")
+        df = pd.read_csv(BytesIO(content))
+        dynatree.logger.info("     Passed")
+    except:
+        dynatree.logger.info("     FAILED")
+    if df is None:
+        try:
+            dynatree.logger.info("Trying to read as parquet ...")
+            df = pd.read_parquet(BytesIO(content))
+            dynatree.logger.info("     Passed")
+        except:
+            dynatree.logger.info("     FAILED")
+    if df is not None:
+        dynatree.logger.info(f"Head of uploaded data: {df.head()}")
+    else:
+        dynatree.logger.info(f"File not accepted")
+    if df is not None:
+        rdf.value = df.copy()
+
+
 @solara.component
 def Page():
     dynatree.logger.info("Page entered")
     solara.Title("DYNATREE: ACC ťuknutí")
-    solara.Style(s.styles_css)
+    solara.Style(s.styles_css+".zero-margin p {margin-bottom: 0px;}")
     with solara.Sidebar():
         s.Selection(
             optics_switch=False,
@@ -65,18 +94,31 @@ def Page():
             include_measurements=active_tab.value != 2
         )
         if active_tab.value == 1:
-            solara.Switch(label="Use overlay for graphs", value=use_overlay)
-            solara.FileDownload(rdf.value.to_parquet(), filename="FFT_acc_knock.parquet",
-                                label="Download parquet data")
-            solara.FileDownload(rdf.value.to_csv(), filename="FFT_acc_knock.csv",
-                        label="Download csv data")
+            with solara.Card(title = "Dashboard setting"):
+                solara.Switch(label="Use overlay for graphs (useful for small screen)", value=use_overlay)
+                solara.Switch(label="Use larger FFT image", value=use_large_fft)
+                with solara.Column(gap="0px"):
+                    solara.Text("Items on page:")
+                    solara.ToggleButtonsSingle(value=cards_on_page, values=[10,20,50,75,100])
+            with solara.Card(title = "Data file handling"):
+                with solara.Column():
+                    solara.FileDownload(rdf.value.to_parquet(), filename="FFT_acc_knock.parquet",
+                                        label="Download parquet data")
+                    solara.FileDownload(rdf.value.to_csv(), filename="FFT_acc_knock.csv",
+                                label="Download csv data")
+                    solara.Switch(label="Allow file upload", value=use_custom_file)
+                    if use_custom_file.value:
+                        solara.FileDrop(
+                                label="Drop your own csv or parquet file here.",
+                                on_file=on_file,
+                        )
     with solara.lab.Tabs(value=active_tab, lazy=True):
-        with solara.lab.Tab("Celé měření"):
+        with solara.lab.Tab("Měření"):
             Signal()
             Rozklad()
         # with solara.lab.Tab("Tabulka"):
         #     Tabulka()
-        with solara.lab.Tab("Detail"):
+        with solara.lab.Tab("Detail ťuků"):
             if use_overlay.value:
                 Seznam()
                 Graf()
@@ -86,10 +128,8 @@ def Page():
                         Seznam()
                     with solara.Column():
                         Graf()
-        with solara.lab.Tab("Tabulková forma"):
+        with solara.lab.Tab("Tabulka pro strom a den"):
             Tabulka()
-
-
 
 @solara.component
 def Graf():
@@ -103,16 +143,21 @@ def Graf():
         solara.ProgressLinear(interactive_graph.pending)
         if interactive_graph.finished:
             ans = interactive_graph.value
+            current_peaks = rdf.value.at[ans['index'], "manual_peaks"]
             with solara.Row():
+                solara.Button("❌", on_click=lambda: interactive_graph())
+                solara.Button("Save & ❌", on_click=lambda: save_click_data(ans['index']))
                 solara.Text(ans['text'])
                 solara.Text(f"(id {ans['index']})")
-
-                solara.Button("❌", on_click=lambda: interactive_graph())
-                solara.Button("Save", on_click=lambda: save_click_data(ans['index']))
-            solara.Markdown("**Časový průběh**")
+            solara.Markdown("**Time domain**")
             solara.FigurePlotly(ans['signal'])
-            solara.Markdown(f"**FFT transformace** Peak at Hz.")
-            solara.Text(f"Manual freqs: {[round(i) for i in manual_freq.value]}")
+            solara.Markdown(f"""
+            **Freq domain and peaks positions**
+            
+            * Current manual freqs: {[round(i) for i in current_peaks] if current_peaks is not None else "Not defined (yet)."}
+            
+            * **New manual freqs: {[round(i) for i in manual_freq.value]}**
+            """)
             solara.FigurePlotly(ans['fft'], on_click=set_click_data)
 
 
@@ -123,10 +168,9 @@ def set_click_data(x=None):
         manual_freq.value = manual_freq.value + [x['points']['xs'][0]]
 
 def save_click_data(index):
-    print (f"Saving peaks, index {index}")
     rdf.value.at[index,"manual_peaks"] = manual_freq.value
     rdf.value = rdf.value.copy()
-    print(rdf.value.head())
+    interactive_graph()
 
 @task
 def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=None, start=None, index=None):
@@ -146,6 +190,10 @@ def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=No
                    height=300,
     # title=f"{type} {day} {tree} {measurement} {probe} {start}"
                   )
+    if rdf.value.at[index, "manual_peaks"] is not None:
+        for _ in rdf.value.at[index, "manual_peaks"]:
+            fig2.add_vline(x=_, line_width=3, line_dash="dash", line_color="red")
+
     for fig in [fig1,fig2]:
         fig.update_layout(
             xaxis_title=None,  # Skrývá popisek osy x
@@ -175,6 +223,7 @@ def add_horizontal_line(df):
 @solara.component
 @dynatree.timeit
 def Tabulka():
+    solara.Markdown(f"# Data for {s.method.value}, {s.day.value}, {s.tree.value}")
     solara.Details(
         summary="Rozklikni pro popis",
         children = [solara.Markdown(
@@ -205,19 +254,22 @@ def Tabulka():
 
 first_portrait = solara.reactive(0)
 def prev_ten():
-    first_portrait.value = max(0,first_portrait.value - 10)
+    first_portrait.value = max(0,first_portrait.value - cards_on_page.value)
 def next_ten(max):
-    first_portrait.value = min(max,first_portrait.value + 10)
+    first_portrait.value = min(max,first_portrait.value + cards_on_page.value)
 def prev_next_buttons(max):
     with solara.Row():
-        solara.Button("Prev 10", on_click=prev_ten)
-        solara.Button("Next 10", on_click=lambda: next_ten(max))
+        with solara.Columns(1):
+            with solara.Column():
+                solara.Button(f"Prev {cards_on_page.value}", on_click=prev_ten)
+            with solara.Column():
+                solara.Button(f"Next {cards_on_page.value}", on_click=lambda: next_ten(max))
 
 @solara.component
 @dynatree.timeit
 def Seznam():
     solara.Markdown(f"""
-## {s.method.value} {s.day.value} {s.tree.value}    
+# Precomputed graphs for {s.method.value} {s.day.value} {s.tree.value}    
     """)
     temp_df = (
         rdf.value
@@ -233,7 +285,7 @@ def Seznam():
     for poradi, row in enumerate(temp_df.iterrows()):
         if poradi < first_portrait.value:
             continue
-        if poradi > first_portrait.value+10:
+        if poradi > first_portrait.value+cards_on_page.value-1:
             continue
         ReusableComponent(row, poradi, pocet)
     prev_next_buttons(max=pocet)
@@ -251,32 +303,50 @@ def ReusableComponent(row, poradi, pocet):
         style = {}
         bgstyle = {}
     else:
-        style = {'border-right':'solid', 'border-color':'red', 'background-color':'lightgray'}
-        bgstyle = {'background-color':'lightgray'}
+        style = {'border-right':'solid', 'border-color':'red', 'background-color':'#F0F0F0'}
+        bgstyle = {'background-color':'#F0F0F0'}
     image_path = "/static/public/cache/" + row['filename'] + ".png"
     image_path_FFT = "/static/public/cache/FFT_" + row['filename'] + ".png"
+    image_path_FFT_large = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
     with solara.Card(style=style):
+        if is_valid:
+            solara.Text("✅")
+        else:
+            solara.Text("👎")
         with solara.Row(style=bgstyle):
-            with solara.Column(style=bgstyle):
-                solara.Text(f"{poradi + 1}/{pocet}, (id {i})")
-                solara.Text(f"{row['measurement']} {row['probe']}")
-                solara.Text(f"{row['knock_time']*1.0/100} sec")
-                solara.Text(f"max at {round(row['freq'])} Hz")
-                solara.Text(f"Manual peaks {rdf.value.at[i,"manual_peaks"]} ")
-            solara.Image(image_path)
-            solara.Image(image_path_FFT)
+            with solara.Column(style=bgstyle, gap="0px", classes=['zero-margin']):
+                solara.Markdown(
+f"""**{poradi + 1}/{pocet}** (id {i})
+
+{row['measurement']} {row['probe']}
+
+@ {row['knock_time']*1.0/100} sec
+
+max at {round(row['freq'])} Hz
+""")
+                # solara.Text(f"{row['measurement']} {row['probe']}")
+                # solara.Text(f"@ {row['knock_time']*1.0/100} sec")
+                # solara.Text(f"max at {round(row['freq'])} Hz")
+            if use_large_fft.value:
+                solara.Image(image_path_FFT_large)
+            else:
+                solara.Image(image_path)
+                solara.Image(image_path_FFT)
+        man_p = rdf.value.at[i, "manual_peaks"]
+        if man_p is not None:
+            solara.Text(f"Manual peaks {[round(_) for _ in man_p]} ", style={'color':'red'})
         with solara.CardActions():
             s.measurement.value = row['measurement']
-            solara.Button("Zobrazit grafy", text=True, color="primary", on_click=lambda:
-                interactive_graph(s.method.value, s.day.value, s.tree.value, row['measurement'], row['probe'],
-                              row['knock_time'],i)
-                          )
-            solara.Button("Změň status", text=True, color="primary", on_click=lambda:
-                change_OK_status(i))
-            if is_valid:
-                solara.Text("✅")
-            else:
-                solara.Text("👎")
+            with solara.Columns(1):
+                with solara.Column():
+                    solara.Button("Zadat peaky", text=True, color="primary", on_click=lambda:
+                        interactive_graph(s.method.value, s.day.value, s.tree.value, row['measurement'], row['probe'],
+                                      row['knock_time'],i),
+                        outlined=True
+                                  )
+                with solara.Column():
+                    solara.Button("Změnit status", text=True, color="primary", on_click=lambda:
+                    change_OK_status(i), outlined=True)
 
             # solara.Button("Action 2", text=True)
 
@@ -285,7 +355,7 @@ def ReusableComponent(row, poradi, pocet):
 def Signal():
     solara.Markdown(
 """
-## Signál akcelerometru
+# Jedno měření, živě generovaná data
 
 Akcelerometry a02_z a a02_x pro stanovení časů ťuknutí pro dvě sběrnice
 """)
@@ -355,11 +425,7 @@ def Rozklad():
     if not plot_all.pending:
         solara.Info("Kliknutím na tlačítko se spustí generování obrázků. To může trvat dlouho.")
 
-    # solara.Warning("Zatím se kreslí jenom jedna sběrnice, bez a02_x a bez a04. Je potřeba vyřešit automatické nalezení ťuků.")
     solara.Button("Plot or Replot", on_click=lambda : plot_all(m, [peak_timesA, peak_timesB]))
-
-    # solara.ProgressLinear(plot_all.pending)
-    # solara.display(peak_times.value)
 
     if plot_all.finished:
         images = plot_all.value
@@ -436,3 +502,4 @@ def plot_all(m, peak_times):
 
             answer[(start,number)] = [fig1, fig2]
     return answer
+

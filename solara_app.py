@@ -11,7 +11,7 @@ from solara.lab import task
 import dynatree.solara.tahovky
 import dynatree.solara.vizualizace
 import dynatree.solara.force_elasto_inclino
-import dynatree.solara.FFT
+# import dynatree.solara.FFT
 import dynatree.solara.welch_ACC
 import dynatree.solara.FFT_tukey
 import dynatree.solara.download
@@ -124,10 +124,10 @@ routes = [
     solara.Route(path="vizualizace", component=dynatree.solara.vizualizace.Page, label="vizualizace"),
     solara.Route(path="tahovky", component=dynatree.solara.tahovky.Page, label="tahovky"),
     solara.Route(path="synchronizace", component=dynatree.solara.force_elasto_inclino.Page, label="synchronizace"),
-    solara.Route(path="FFT_old", component=dynatree.solara.FFT.Page, label="FFT1"),
+    # solara.Route(path="FFT_old", component=dynatree.solara.FFT.Page, label="FFT1"),
     solara.Route(path="Welch_ACC", component=dynatree.solara.welch_ACC.Page, label="FFT2"),
     solara.Route(path="FFT_Tukey_all", component=dynatree.solara.FFT_tukey.Page, label="FFT3"),
-    solara.Route(path="ACC_Tuk", component=dynatree.solara.tuk_ACC.Page, label="ACC_TUK"),
+    solara.Route(path="ACC_tuk", component=dynatree.solara.tuk_ACC.Page, label="ACC_TUK"),
     solara.Route(path="Damping", component=dynatree.solara.damping.Page, label="damping"),
     solara.Route(path="Downloads", component=dynatree.solara.download.Page, label="DWNL"),
     solara.Route(path="Krkoskova", component=krkoskova.krkoskova_app.Page, label="K"),
