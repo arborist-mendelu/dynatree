@@ -13,7 +13,6 @@ from dynatree_summary.acc_knocks import  delta_time
 import logging
 import plotly.express as px
 
-from dynatree.solara.tahovky import interactive_graph
 import numpy as np
 from contextlib import contextmanager
 
@@ -21,11 +20,12 @@ from contextlib import contextmanager
 dynatree.logger.setLevel(logging.INFO)
 df = pd.read_csv("../outputs/FFT_acc_knock.csv")
 df["valid"] = True
-df["manual_peak"] = np.nan
+df["manual_peaks"] = ""
 rdf =  solara.reactive(df)
 
 active_tab = solara.reactive(1)
 use_overlay = solara.reactive(False)
+manual_freq = solara.reactive([])
 
 @contextmanager
 def customizable_card(overlay=True):
@@ -104,14 +104,30 @@ def Graf():
                 solara.Text(f"(id {ans['index']})")
 
                 solara.Button("❌", on_click=lambda: interactive_graph())
+                solara.Button("Save", on_click=lambda: save_click_data(ans['index']))
             solara.Markdown("**Časový průběh**")
             solara.FigurePlotly(ans['signal'])
             solara.Markdown(f"**FFT transformace** Peak at Hz.")
-            solara.FigurePlotly(ans['fft'])
+            solara.Text(f"Manual freqs: {[round(i) for i in manual_freq.value]}")
+            solara.FigurePlotly(ans['fft'], on_click=set_click_data)
+
+
+def set_click_data(x=None):
+    if x['device_state']['shift']:
+        manual_freq.value = [x['points']['xs'][0]]
+    else:
+        manual_freq.value = manual_freq.value + [x['points']['xs'][0]]
+
+def save_click_data(index):
+    print (f"Saving peaks, index {index}")
+    rdf.value.at[index,"manual_peaks"] = f"{manual_freq.value}"
+    rdf.value = rdf.value.copy()
+    print(rdf.value.head())
 
 @task
 def interactive_graph(type=None, day=None, tree=None, measurement=None, probe=None, start=None, index=None):
     if type is None:
+        manual_freq.value = []
         return None
     dynatree.logger.info(f"interactive graph entered {day} {tree} {measurement} {type}")
     mi = dynatree.DynatreeMeasurement(day=day, tree=tree, measurement=measurement,
@@ -242,7 +258,7 @@ def ReusableComponent(row, poradi, pocet):
                 solara.Text(f"{row['measurement']} {row['probe']}")
                 solara.Text(f"{row['knock_time']*1.0/100} sec")
                 solara.Text(f"max at {round(row['freq'])} Hz")
-                solara.Text(f"Manual peaks {rdf.value.at[i,"manual_peak"]} ")
+                solara.Text(f"Manual peaks {rdf.value.at[i,"manual_peaks"]} ")
             solara.Image(image_path)
             solara.Image(image_path_FFT)
         with solara.CardActions():
