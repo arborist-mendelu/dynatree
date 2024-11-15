@@ -19,8 +19,10 @@ from contextlib import contextmanager
 # dynatree.logger.setLevel(logging.INFO)
 dynatree.logger.setLevel(logging.INFO)
 df = pd.read_csv("../outputs/FFT_acc_knock.csv")
-df["valid"] = True
-df["manual_peaks"] = ""
+if "valid" not in df.columns:
+    df["valid"] = True
+if "manual_peaks" not in df.columns:
+    df["manual_peaks"] = None
 rdf =  solara.reactive(df)
 
 active_tab = solara.reactive(1)
@@ -65,7 +67,9 @@ def Page():
         if active_tab.value == 1:
             solara.Switch(label="Use overlay for graphs", value=use_overlay)
             solara.FileDownload(rdf.value.to_parquet(), filename="FFT_acc_knock.parquet",
-                                label="Download data")
+                                label="Download parquet data")
+            solara.FileDownload(rdf.value.to_csv(), filename="FFT_acc_knock.csv",
+                        label="Download csv data")
     with solara.lab.Tabs(value=active_tab, lazy=True):
         with solara.lab.Tab("Celé měření"):
             Signal()
@@ -120,7 +124,7 @@ def set_click_data(x=None):
 
 def save_click_data(index):
     print (f"Saving peaks, index {index}")
-    rdf.value.at[index,"manual_peaks"] = f"{manual_freq.value}"
+    rdf.value.at[index,"manual_peaks"] = manual_freq.value
     rdf.value = rdf.value.copy()
     print(rdf.value.head())
 
