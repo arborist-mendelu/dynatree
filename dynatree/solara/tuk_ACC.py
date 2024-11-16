@@ -167,7 +167,7 @@ def Seznam_probe():
                 with solara.Row():
                     solara.Image(image_path)
                     with solara.Column():
-                        solara.Text(f"{row['measurement']} @ {row['knock_time']}")
+                        solara.Text(f"{row['measurement']} @ {row['knock_time']*1.0/100} sec")
                         solara.Text(f"{round(row['freq'])} Hz")
 
 
