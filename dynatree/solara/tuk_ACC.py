@@ -14,21 +14,28 @@ import logging
 import plotly.express as px
 from io import BytesIO
 import random
-
-
 from contextlib import contextmanager
 import time
 from functools import lru_cache
 
-# dynatree.logger.setLevel(logging.INFO)
-dynatree.logger.setLevel(logging.ERROR)
+dynatree.logger.setLevel(logging.INFO)
+# dynatree.logger.setLevel(logging.ERROR)
+
+dynatree.logger.info("Starting app tuk_ACC.py")
+server = "http://um.mendelu.cz/dynatree/"
+dynatree.logger.info(f"Server is {server}")
 df = pd.read_csv("../outputs/FFT_acc_knock.csv")
 if "valid" not in df.columns:
     df["valid"] = True
 if "manual_peaks" not in df.columns:
     df["manual_peaks"] = None
 rdf =  df.copy()
+rdf['timecoords'] = rdf['day'].astype(str) + "_" + rdf['type']
 df_updated = solara.reactive(0)
+day_type_pairs = list(rdf.loc[:,["day","type"]].drop_duplicates().sort_values(by=["day","type"]).values)
+day_type_pairs = [f"{i[0]}_{i[1]}" for i in day_type_pairs]
+dynatree.logger.info("Dataframes initialized")
+
 
 active_tab = solara.reactive(1)
 use_overlay = solara.reactive(False)
@@ -38,6 +45,8 @@ use_large_fft = solara.reactive(False)
 use_custom_file = solara.reactive(False)
 img_from_live_data = solara.reactive(False)
 img_size = solara.reactive('small')
+
+filecontent = solara.reactive("")
 
 @contextmanager
 def customizable_card(overlay=True):
@@ -89,9 +98,10 @@ def on_file(f):
         rdf = df.copy(deep=False)
         df_updated.value = random.random()
 
-
+file = None
 @solara.component
 def Page():
+    global file
     dynatree.logger.info("Page entered")
     solara.Title("DYNATREE: ACC ťuknutí")
     solara.Style(s.styles_css+".zero-margin p {margin-bottom: 0px;}")
@@ -142,33 +152,73 @@ def Page():
         with solara.lab.Tab("Jeden probe, všechna data"):
             Seznam_probe()
 
+select_days_multi = solara.reactive([])
 @solara.component
 def Seznam_probe():
     with solara.Row():
-        solara.ToggleButtonsSingle(value=select_probe, values = ["a01","a02","a03","a04"])
-        solara.ToggleButtonsSingle(value=select_axis, values = ["x","y","z"])
+        solara.ToggleButtonsMultiple(value=select_probe_multi, values = ["a01","a02","a03","a04"])
+        solara.ToggleButtonsMultiple(value=select_axis_multi, values = ["x","y","z"])
         solara.ToggleButtonsSingle(value=img_size, values=["small","large"])
+    solara.ToggleButtonsMultiple(value=select_days_multi, values=day_type_pairs)
+    probeset = [f"{i}_{j}" for i in select_probe_multi.value for j in select_axis_multi.value]
     subdf = rdf[
-        (rdf["probe"]==f"{select_probe.value}_{select_axis.value}")
-        &(rdf["tree"] == s.tree.value)
+        (rdf["tree"] == s.tree.value)
+        &
+        (rdf["probe"].isin(probeset))
     ]
+    subdf = subdf[subdf['timecoords'].isin(select_days_multi.value)]
     subdf = subdf.sort_values(by=["day","type","measurement","knock_time"])
-    solara.display(subdf.head())
     sets = subdf[["day","type"]].drop_duplicates()
+    file = f"<h1>Tree {s.tree.value} and probes {probeset}</h1>"
+    images_added = False
     for I,R in sets.iterrows():
-        subsubdf = subdf[(subdf["day"]==R["day"]) & (subdf["type"]==R["type"])]
-        with solara.Card(title=f"{R['day']} {R['type']}"):
-            # solara.display(subsubdf)
-            for i,row in subsubdf.iterrows():
+        subsubdf = subdf[(subdf["day"] == R["day"]) & (subdf["type"] == R["type"])]
+        file = file + f"<h2> {R['day']} {R['type']} </h2>"
+        for subprobe in probeset:
+            sub3df = subsubdf[subsubdf["probe"] == subprobe]
+            file = file + f"<h3>{subprobe}</h3>"
+            for i, row in sub3df.iterrows():
                 if img_size.value == 'small':
-                    image_path = "./static/public/cache/FFT_" + row['filename'] + ".png"
+                    image_path = "/static/public/cache/FFT_" + row['filename'] + ".png"
                 else:
-                    image_path = "./static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
-                with solara.Row():
-                    solara.Image(image_path)
-                    with solara.Column():
-                        solara.Text(f"{row['measurement']} @ {row['knock_time']*1.0/100} sec")
-                        solara.Text(f"{round(row['freq'])} Hz")
+                    image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
+                souradnice = f"{row['measurement']} @{row['knock_time']/100.0}sec, <b>{round(row['freq'])} Hz</b>"
+                file = file + f"\n<div style='display:inline-block; border-style:solid; border-color:gray;'><p>{souradnice}</p><img src = {server}{image_path}></div>"
+                images_added = True
+    filecontent.value = file
+    if images_added:
+        solara.Info(
+            solara.Markdown(
+                f"""
+        * File saved and ready to download. 
+        * Probes are {probeset} and image size is {img_size.value}
+        * Days are {select_days_multi.value}
+        * Pokud by se zobrazovaly obrázky zde, bylo by načítání stránky pomalé kvůli repsonzivnímu designu a množství obrázků. 
+          Proto je pohodlnější vytvořit strohý html soubor a zobrazit obrázky v nativní velikosti.  
+        """), style={'color': '#2196f3'})
+        solara.FileDownload(filecontent.value, filename=f"dynatree_data_acc.html", label="Download")
+    else:
+        solara.Warning("Vyber aspoň jeden přistroj, aspoň jednu osu a aspoň jeden den v menu nad tímto textem. Stom vyber v boční liště. Ostatní volby z postranní lišty nejsou brány v úvahu.")
+    ### The following code works but it is painfuly slow. The server response if fast, probably has something to
+    ### due with the number of images which are scaled in browser.
+    # for I,R in sets.iterrows():
+    #     subsubdf = subdf[(subdf["day"]==R["day"]) & (subdf["type"]==R["type"])]
+    #     with solara.Card(title=f"{R['day']} {R['type']}"):
+    #         with solara.Row():
+    #             for subprobe in probeset:
+    #                 with solara.Column():
+    #                     sub3df = subsubdf[subsubdf["probe"]==subprobe]
+    #                     solara.Markdown(f"**{subprobe}**")
+    #                     for i,row in sub3df.iterrows():
+    #                         if img_size.value == 'small':
+    #                             image_path = "/static/public/cache/FFT_" + row['filename'] + ".png"
+    #                         else:
+    #                             image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
+    #                         with solara.Row():
+    #                             solara.Text(image_path)
+    #                             with solara.Column():
+    #                                 solara.Text(f"{row['measurement']} @ {row['knock_time']*1.0/100} sec")
+    #                                 solara.Text(f"{round(row['freq'])} Hz")
 
 
 
@@ -327,6 +377,8 @@ def prev_next_buttons(max):
 
 select_probe = solara.reactive("All")
 select_axis = solara.reactive("All")
+select_probe_multi = solara.reactive(["a03"])
+select_axis_multi = solara.reactive([])
 use_all_measurements = solara.reactive("False")
 
 @solara.component

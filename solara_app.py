@@ -23,6 +23,7 @@ import pandas as pd
 import time
 from datetime import datetime
 import psutil
+import os
 
 import toml
 with open('solara_texts.toml', 'r') as f:
@@ -117,6 +118,8 @@ def Page():
                             solara.Text(f"Memory Total: {memory.total/1024**3:.2f}GB")
                             solara.Text(f"Cores: {psutil.cpu_count()}")
                             solara.Text(f"Datum a čas: {date}")
+                            solara.Text(f"SERVER_NAME {os.environ['SERVER_NAME']}")
+                            solara.Text(f"SERVER_PORT {os.environ['SERVER_PORT']}")
                     solara.Button("Refresh", on_click=monitoring)
                 
 routes = [
