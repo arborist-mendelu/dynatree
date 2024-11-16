@@ -118,8 +118,14 @@ def Page():
                             solara.Text(f"Memory Total: {memory.total/1024**3:.2f}GB")
                             solara.Text(f"Cores: {psutil.cpu_count()}")
                             solara.Text(f"Datum a čas: {date}")
-                            solara.Text(f"SERVER_NAME {os.environ['SERVER_NAME']}")
-                            solara.Text(f"SERVER_PORT {os.environ['SERVER_PORT']}")
+                            try:
+                                solara.Text(f"SERVER_NAME {os.environ['SERVER_NAME']}")
+                            except:
+                                pass
+                            try:
+                                solara.Text(f"SERVER_PORT {os.environ['SERVER_PORT']}")
+                            except:
+                                pass
                     solara.Button("Refresh", on_click=monitoring)
                 
 routes = [
