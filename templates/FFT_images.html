@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Selection</title>
+    <style>
+        .image-container {
+            display: inline-block;
+            margin: 2px;
+            text-align: center;
+            cursor: pointer;
+            padding: 1px;
+            border: 1px solid transparent;
+        }
+
+        .image-container.selected {
+            border: 1px solid blue;
+            background-color: #c8ffc4;
+        }
+
+        pre {
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+<H1>Dynatree, FFT transformace ťuků</H1>
+    <p>
+    <ul>
+       <li> Můžeš kliknutím označit obrázky, které si chceš zapamatovat a poté tlačítkem Save na konci stránky seznam uložit.
+        Ze jmen souborů se dá zrekonstruovat měření, strom, akcelerometr, osa, čas kliknutí.
+       </li>
+        <li> Obrázky mají jako element "title" číslo stromu, datum a druh měření. Zobrazí se po najetí myší nad obrázek.
+        </li>
+    </ul>
+    </p>
+    <div id="images">
+        {{containers}}
+        <!-- Add more image containers as needed -->
+    </div>
+    <button id="save-button">Save</button>
+    <pre id="output"></pre>
+
+    <script>
+        const imageContainers = document.querySelectorAll('.image-container');
+        const saveButton = document.getElementById('save-button');
+        const output = document.getElementById('output');
+
+        imageContainers.forEach(container => {
+            const checkbox = container.querySelector('.image-checkbox');
+            const image = container.querySelector('img');
+
+            // Toggle checkbox and styling when the container is clicked
+            container.addEventListener('click', (event) => {
+                // Prevent toggling if clicking directly on the checkbox
+                if (event.target === checkbox) return;
+
+                checkbox.checked = !checkbox.checked;
+                container.classList.toggle('selected', checkbox.checked);
+            });
+
+            // Ensure checkbox and container remain synchronized
+            checkbox.addEventListener('change', () => {
+                container.classList.toggle('selected', checkbox.checked);
+            });
+        });
+
+        // Save button click event
+        saveButton.addEventListener('click', () => {
+            const selectedImages = [];
+            imageContainers.forEach(container => {
+                const checkbox = container.querySelector('.image-checkbox');
+                const image = container.querySelector('img');
+                if (checkbox.checked) {
+                    selectedImages.push(image.dataset.name);
+                }
+            });
+
+            // Display selected images in <pre> as a column
+            output.textContent = selectedImages.join('\n');
+
+            // Save to file
+            const blob = new Blob([selectedImages.join('\n')], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'dynatree_selected_images.txt';
+            link.click();
+        });
+    </script>
+</body>
+</html>

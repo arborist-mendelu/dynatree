@@ -18,6 +18,7 @@ from contextlib import contextmanager
 import time
 from functools import lru_cache
 import urllib.parse
+import jinja2
 
 dynatree.logger.setLevel(logging.INFO)
 # dynatree.logger.setLevel(logging.ERROR)
@@ -68,7 +69,8 @@ def customizable_card(overlay=True):
         # Druhá varianta, fixovaná v pravém dolním rohu
         with solara.Card(style={
             'position': 'fixed', 'bottom': '0px', 'right': '0px', 'z-index': '1000',
-            'max-width': '1200px', 'width': '1000px', 'max-height': '100vh'
+            'max-width': '1200px', 'width': '1000px', 'max-height': '100vh',
+            'border-style': 'solid'
         }):
             yield  # Výkon příkazu v této variantě
 
@@ -181,7 +183,7 @@ def Seznam_probe():
     images_added = False
     for I,R in sets.iterrows():
         subsubdf = subdf[(subdf["day"] == R["day"]) & (subdf["type"] == R["type"])]
-        file = file + f"<h2> {R['day']} {R['type']} </h2>"
+        file = file + f"<h2>{R['day']} {R['type']}</h2>"
         for subprobe in probeset:
             sub3df = subsubdf[subsubdf["probe"] == subprobe]
             file = file + f"<h3>{subprobe}</h3>"
@@ -191,9 +193,16 @@ def Seznam_probe():
                 else:
                     image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
                 souradnice = f"{row['measurement']} @{row['knock_time']/100.0}sec, <b>{round(row['freq'])} Hz</b>"
-                file = file + f"\n<div style='display:inline-block; border-style:solid; border-color:gray;'><p>{souradnice}</p><img src = {server}{image_path} title='{R['day']} {R['type']} {s.tree.value}'></div>"
+                file = file + f"""
+<div style='display:inline-block; border-style:solid; border-color:gray;' class="image-container">
+<p><input type="checkbox" class="image-checkbox">{souradnice}</p>
+<img src="{server}{image_path}" title='{R['day']} {R['type']} {s.tree.value}' data-name="{image_path.split("/")[-1]}">
+</div>
+"""
                 images_added = True
-    filecontent.value = file
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader('templates'))
+    template = env.get_template('FFT_images.html')
+    filecontent.value = template.render(containers = file)
     if images_added:
         solara.Info(
             solara.Markdown(
@@ -246,19 +255,22 @@ def Graf():
             current_peaks = rdf.at[ans['index'], "manual_peaks"]
             with solara.Row():
                 solara.Button("❌", on_click=lambda: interactive_graph())
-                solara.Button("Save & ❌", on_click=lambda: save_click_data(ans['index']))
+                if ans['is_fft']:
+                    solara.Button("Save & ❌", on_click=lambda: save_click_data(ans['index']))
                 solara.Text(ans['text'])
                 solara.Text(f"(id {ans['index']})")
-            solara.Markdown("**Time domain**")
-            solara.FigurePlotly(ans['signal'])
-            solara.Markdown(f"""
-            **Freq domain and peaks positions**
-            
-            * Current manual freqs: {[round(i) for i in current_peaks] if current_peaks is not None else "Not defined (yet)."}
-            
-            * **New manual freqs: {[round(i) for i in manual_freq.value]}**
-            """)
-            solara.FigurePlotly(ans['fft'], on_click=set_click_data)
+            if ans['is_fft']:
+                solara.Markdown(f"""
+                **Freq domain and peaks positions**
+    
+                * Current manual freqs: {[round(i) for i in current_peaks] if current_peaks is not None else "Not defined (yet)."}
+    
+                * **New manual freqs: {[round(i) for i in manual_freq.value]}**
+                """)
+                solara.FigurePlotly(ans['figure'], on_click=set_click_data)
+            else:
+                solara.Markdown("**Time domain**")
+                solara.FigurePlotly(ans['figure'])
 
 
 def set_click_data(x=None):
@@ -291,37 +303,38 @@ def get_knock_data(**kwds):
 
 @task
 @dynatree.timeit
-def interactive_graph(**kwds):
+def interactive_graph(fft=True, **kwds):
     if len(kwds)==0:
         manual_freq.value = []
         return None
     dynatree.logger.info(f"interactive graph entered {kwds['day']} {kwds['tree']} {kwds['measurement']} {kwds['method']}")
     signal_knock = get_knock_data(**kwds)
-    fig1 = px.line(signal_knock.signal,
-                   height=200,
-                  )
-    fft_data = signal_knock.fft
-    fig2 = px.line(fft_data,
-                   height=300,
-                  )
-    manual_peaks = rdf.at[kwds['index'], "manual_peaks"]
-    df_updated.value = random.random()
-    if manual_peaks is not None:
-        for _ in manual_peaks:
-            fig2.add_vline(x=_, line_width=3, line_dash="dash", line_color="red")
+    if fft:
+        fft_data = signal_knock.fft
+        fig = px.line(fft_data,
+                       height=300,
+                      )
+        manual_peaks = rdf.at[kwds['index'], "manual_peaks"]
+        df_updated.value = random.random()
+        if manual_peaks is not None:
+            for _ in manual_peaks:
+                fig.add_vline(x=_, line_width=3, line_dash="dash", line_color="red")
+        fig.update_yaxes(type="log")  # Logaritmická osa y
+    else:
+        fig = px.line(signal_knock.signal,
+                      height=300,
+                      )
 
-    for fig in [fig1,fig2]:
-        fig.update_layout(
-            xaxis_title=None,  # Skrývá popisek osy x
-            yaxis_title=None,  # Skrývá popisek osy y
-            showlegend=False  # Skrývá legendu
-        )
-        fig.update_layout(
-            margin=dict(l=0, r=0, t=30, b=0)  # l = left, r = right, t = top, b = bottom
-        )
+    fig.update_layout(
+        xaxis_title=None,  # Skrývá popisek osy x
+        yaxis_title=None,  # Skrývá popisek osy y
+        showlegend=False  # Skrývá legendu
+    )
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=30, b=0)  # l = left, r = right, t = top, b = bottom
+    )
 
-    fig2.update_yaxes(type="log")  # Logaritmická osa y
-    return {'signal':fig1,'fft':fig2,
+    return {'figure':fig, 'is_fft':fft,
             'text':f"{kwds['method']}, {kwds['day']}, {kwds['tree']}, {kwds['measurement']}, {kwds['probe']}, {kwds['knock_time']}s",
             'index':kwds['index']
             }
@@ -517,6 +530,11 @@ max at {round(row['freq'])} Hz
         with solara.CardActions():
             s.measurement.value = row['measurement']
             with solara.Columns(1):
+                with solara.Column():
+                    solara.Button("Zobrazit kmity", text=True, color="primary", on_click=lambda:
+                        interactive_graph(fft=False, **coordinates),
+                        outlined=True
+                                  )
                 with solara.Column():
                     solara.Button("Zadat peaky", text=True, color="primary", on_click=lambda:
                         interactive_graph(**coordinates),
