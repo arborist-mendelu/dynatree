@@ -183,7 +183,7 @@ def Seznam_probe():
                 else:
                     image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
                 souradnice = f"{row['measurement']} @{row['knock_time']/100.0}sec, <b>{round(row['freq'])} Hz</b>"
-                file = file + f"\n<div style='display:inline-block; border-style:solid; border-color:gray;'><p>{souradnice}</p><img src = {server}{image_path}></div>"
+                file = file + f"\n<div style='display:inline-block; border-style:solid; border-color:gray;'><p>{souradnice}</p><img src = {server}{image_path} title="{R['day']} {R['type']} {s.tree.value}"></div>"
                 images_added = True
     filecontent.value = file
     if images_added:
@@ -191,7 +191,7 @@ def Seznam_probe():
             solara.Markdown(
                 f"""
         * File saved and ready to download. 
-        * Probes are {probeset} and image size is {img_size.value}
+        * Probes are {probeset}. Image size is {img_size.value}
         * Days are {select_days_multi.value}
         * Pokud by se zobrazovaly obrázky zde, bylo by načítání stránky pomalé kvůli repsonzivnímu designu a množství obrázků. 
           Proto je pohodlnější vytvořit strohý html soubor a zobrazit obrázky v nativní velikosti.  
