@@ -17,6 +17,7 @@ import random
 from contextlib import contextmanager
 import time
 from functools import lru_cache
+import urllib.parse
 
 dynatree.logger.setLevel(logging.INFO)
 # dynatree.logger.setLevel(logging.ERROR)
@@ -98,11 +99,18 @@ def on_file(f):
         rdf = df.copy(deep=False)
         df_updated.value = random.random()
 
-file = None
 @solara.component
 def Page():
-    global file
-    dynatree.logger.info("Page entered")
+    dynatree.logger.info("Page in tuk_ACC.py entered")
+    router = solara.use_router()
+    parsed_values = urllib.parse.parse_qs(router.search, keep_blank_values=True)
+    dynatree.logger.info(f"Parsed values from URL: {parsed_values}")
+    if 'active_tab' in parsed_values.keys():
+        try:
+            active_tab.value = int(parsed_values['active_tab'][0])
+            router.push("ACC_tuk")
+        except:
+            pass
     solara.Title("DYNATREE: ACC ťuknutí")
     solara.Style(s.styles_css+".zero-margin p {margin-bottom: 0px;}")
     with solara.Sidebar():
