@@ -18,9 +18,10 @@ import random
 
 from contextlib import contextmanager
 import time
+from functools import lru_cache
 
-dynatree.logger.setLevel(logging.INFO)
-# dynatree.logger.setLevel(logging.ERROR)
+# dynatree.logger.setLevel(logging.INFO)
+dynatree.logger.setLevel(logging.ERROR)
 df = pd.read_csv("../outputs/FFT_acc_knock.csv")
 if "valid" not in df.columns:
     df["valid"] = True
@@ -171,9 +172,9 @@ def Graf():
 
 def set_click_data(x=None):
     if x['device_state']['shift']:
-        manual_freq.value = [x['points']['xs'][0]]
+        manual_freq.value = (x['points']['xs'][0],)
     else:
-        manual_freq.value = manual_freq.value + [x['points']['xs'][0]]
+        manual_freq.value = (*manual_freq.value, x['points']['xs'][0])
 
 @dynatree.timeit
 def save_click_data(index):
@@ -182,6 +183,7 @@ def save_click_data(index):
     df_updated.value = random.random()
     interactive_graph()
 
+@dynatree.timeit
 def get_knock_data(**kwds):
     """
     Returns signal after the knock for given measurement_type, day, tree, measurement, knock_time,
@@ -330,18 +332,23 @@ def change_OK_status(i):
     d = time.time()
     dynatree.logger.info(f"Variable setting: {b-a}, copying data: {c-b} versus {d-c}")
 
+@dynatree.timeit
+@lru_cache
 def FFT_curve(*args, **kwargs):
     knock_data = get_knock_data(**kwargs).fft
+    fft_peak = knock_data.iloc[5:].idxmax()
     fig = px.line(x=knock_data.index, y=knock_data.values.reshape(-1), width=400, height=150)
+    fig.add_vline(x=fft_peak, line_width=1, line_dash="dash", line_color="green")
     # Odstranění všech dalších prvků
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),  # Nastavení nulových okrajů
         xaxis=dict(visible=False),  # Skrytí osy X
         yaxis=dict(visible=False, type="log"),  # Skrytí osy Y
         showlegend=False,  # Skrytí legendy
-        plot_bgcolor="white",  # Nastavení bílé barvy pozadí
+        # plot_bgcolor="white",  # Nastavení bílé barvy pozadí
+        plot_bgcolor='rgba(0,0,0,0)',  # Nastavení bílé barvy pozadí
     )
-    vert_lines = rdf.at[kwargs["index"],"manual_peaks"]
+    vert_lines = kwargs['vert_lines']
     dynatree.logger.info(f"Vertical lineas are {vert_lines}")
     # # Přidání svislých červených čar
     if vert_lines is not None:
@@ -387,7 +394,7 @@ max at {round(row['freq'])} Hz
                 # solara.Text(f"max at {round(row['freq'])} Hz")
             coordinates = dict(method = s.method.value, day = s.day.value, tree = s.tree.value,
                 measurement = row['measurement'], probe = row['probe'],
-                knock_time = row['knock_time'], index = i)
+                knock_time = row['knock_time'], index = i, vert_lines = rdf.at[i,"manual_peaks"])
             if img_from_live_data.value:
                 fig = FFT_curve(**coordinates)
                 config = {"displayModeBar": False}
