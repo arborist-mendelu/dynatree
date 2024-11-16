@@ -292,6 +292,8 @@ def prev_next_buttons(max):
             with solara.Column():
                 solara.Button(f"Next {cards_on_page.value}", on_click=lambda: next_ten(max))
 
+select_probe = solara.reactive("All")
+select_axis = solara.reactive("All")
 @solara.component
 @dynatree.timeit
 def Seznam():
@@ -303,8 +305,16 @@ def Seznam():
         .pipe(lambda d: d[d["tree"] == s.tree.value])
         .pipe(lambda d: d[d["day"] == s.day.value])
         .pipe(lambda d: d[d["type"] == s.method.value])
+        .pipe(lambda d: d[d["measurement"] == s.measurement.value])
         #.drop(["day","tree","type","measurement","knock_index","filename"], axis=1)
     )
+    with solara.Row():
+        solara.ToggleButtonsSingle(value=select_probe, values = ["All","a01","a02","a03","a04"])
+        solara.ToggleButtonsSingle(value=select_axis, values = ["All","x","y","z"])
+    if select_probe.value != "All":
+        temp_df = temp_df[temp_df['probe'].str.contains(select_probe.value)]
+    if select_axis.value != "All":
+        temp_df = temp_df[temp_df['probe'].str.contains(select_axis.value)]
     pocet = len(temp_df)
     prev_next_buttons(max=pocet)
     if first_portrait.value > pocet - 2:
