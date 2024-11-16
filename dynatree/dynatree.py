@@ -655,6 +655,13 @@ class DynatreeMeasurement:
         df.index = np.array(range(len(df.index)))/5000
         return df 
 
+    def data_acc5000_single_channel(self, channel="a01_x"):
+        """
+        Not implemented yet
+        """
+        pass
+        return None
+
     @cached_property
     def data_pulling_interpolated(self):
         logger.debug("interpolating pulling data")

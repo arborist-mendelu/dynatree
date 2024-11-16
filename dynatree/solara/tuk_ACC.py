@@ -37,6 +37,7 @@ cards_on_page = solara.reactive(10)
 use_large_fft = solara.reactive(False)
 use_custom_file = solara.reactive(False)
 img_from_live_data = solara.reactive(False)
+img_size = solara.reactive('small')
 
 @contextmanager
 def customizable_card(overlay=True):
@@ -138,6 +139,38 @@ def Page():
                         Graf()
         with solara.lab.Tab("Tabulka pro strom a den"):
             Tabulka()
+        with solara.lab.Tab("Jeden probe, všechna data"):
+            Seznam_probe()
+
+@solara.component
+def Seznam_probe():
+    with solara.Row():
+        solara.ToggleButtonsSingle(value=select_probe, values = ["a01","a02","a03","a04"])
+        solara.ToggleButtonsSingle(value=select_axis, values = ["x","y","z"])
+        solara.ToggleButtonsSingle(value=img_size, values=["small","large"])
+    subdf = rdf[
+        (rdf["probe"]==f"{select_probe.value}_{select_axis.value}")
+        &(rdf["tree"] == s.tree.value)
+    ]
+    subdf = subdf.sort_values(by=["day","type","measurement","knock_time"])
+    solara.display(subdf.head())
+    sets = subdf[["day","type"]].drop_duplicates()
+    for I,R in sets.iterrows():
+        subsubdf = subdf[(subdf["day"]==R["day"]) & (subdf["type"]==R["type"])]
+        with solara.Card(title=f"{R['day']} {R['type']}"):
+            # solara.display(subsubdf)
+            for i,row in subsubdf.iterrows():
+                if img_size.value == 'small':
+                    image_path = "./static/public/cache/FFT_" + row['filename'] + ".png"
+                else:
+                    image_path = "./static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
+                with solara.Row():
+                    solara.Image(image_path)
+                    with solara.Column():
+                        solara.Text(f"{row['measurement']} @ {row['knock_time']}")
+                        solara.Text(f"{round(row['freq'])} Hz")
+
+
 
 @solara.component
 @dynatree.timeit
@@ -386,7 +419,7 @@ def ReusableComponent(row, poradi, pocet):
     image_path = "./static/public/cache/" + row['filename'] + ".png"
     image_path_FFT = "./static/public/cache/FFT_" + row['filename'] + ".png"
     image_path_FFT_large = "./static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
-    dsafdsaf = df_updated.value
+    fake_variable = df_updated.value
     with solara.Card(style=style):
         if is_valid:
             solara.Text("✅")

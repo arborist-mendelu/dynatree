@@ -6,16 +6,11 @@ Created on Sun Dec  3 09:07:25 2023
 @author: marik
 """
 
-from dynatree.dynatree import read_data_selected, read_data
+from dynatree.dynatree import DynatreeMeasurement
+from time import time
 
-# %%time
-df = read_data("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
-df["Time"].max()
-
-# %%
-
-%%time
-
-df2= read_data_selected("../01_Mereni_Babice_22032021_optika_zpracovani/csv/BK04_M02.csv")
-
-df2["Time"].max()
+m = DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M01")
+start = time()
+df = m.data_acc5000_single("a01_x")
+end = time()
+print(end-start)
