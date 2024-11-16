@@ -183,7 +183,7 @@ def Seznam_probe():
                 else:
                     image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
                 souradnice = f"{row['measurement']} @{row['knock_time']/100.0}sec, <b>{round(row['freq'])} Hz</b>"
-                file = file + f"\n<div style='display:inline-block; border-style:solid; border-color:gray;'><p>{souradnice}</p><img src = {server}{image_path} title="{R['day']} {R['type']} {s.tree.value}"></div>"
+                file = file + f"\n<div style='display:inline-block; border-style:solid; border-color:gray;'><p>{souradnice}</p><img src = {server}{image_path} title='{R['day']} {R['type']} {s.tree.value}'></div>"
                 images_added = True
     filecontent.value = file
     if images_added:
