@@ -294,23 +294,27 @@ def prev_next_buttons(max):
 
 select_probe = solara.reactive("All")
 select_axis = solara.reactive("All")
+use_all_measurements = solara.reactive("False")
+
 @solara.component
 @dynatree.timeit
 def Seznam():
     solara.Markdown(f"""
 # Precomputed graphs for {s.method.value} {s.day.value} {s.tree.value}    
     """)
+    with solara.Row():
+        solara.ToggleButtonsSingle(value=select_probe, values = ["All","a01","a02","a03","a04"])
+        solara.ToggleButtonsSingle(value=select_axis, values = ["All","x","y","z"])
+        solara.Switch(label="Show all measurements M01, M02, ...", value=use_all_measurements)
     temp_df = (
         rdf
         .pipe(lambda d: d[d["tree"] == s.tree.value])
         .pipe(lambda d: d[d["day"] == s.day.value])
         .pipe(lambda d: d[d["type"] == s.method.value])
-        .pipe(lambda d: d[d["measurement"] == s.measurement.value])
         #.drop(["day","tree","type","measurement","knock_index","filename"], axis=1)
     )
-    with solara.Row():
-        solara.ToggleButtonsSingle(value=select_probe, values = ["All","a01","a02","a03","a04"])
-        solara.ToggleButtonsSingle(value=select_axis, values = ["All","x","y","z"])
+    if not use_all_measurements.value:
+        temp_df = temp_df[temp_df['measurement'] == s.measurement.value]
     if select_probe.value != "All":
         temp_df = temp_df[temp_df['probe'].str.contains(select_probe.value)]
     if select_axis.value != "All":
