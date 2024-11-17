@@ -194,9 +194,9 @@ def Seznam_probe():
                     image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
                 souradnice = f"{row['measurement']} @{row['knock_time']/100.0}sec, <b>{round(row['freq'])} Hz</b>"
                 file = file + f"""
-<div style='display:inline-block; border-style:solid; border-color:gray;' class="image-container">
-<p><input type="checkbox" class="image-checkbox">{souradnice}</p>
-<img src="{server}{image_path}" title='{R['day']} {R['type']} {s.tree.value}' data-name="{image_path.split("/")[-1]}">
+<div style='display:inline-block; border-style:solid; border-color:gray;' class='image-container'>
+<p><input type='checkbox' class='image-checkbox'>{souradnice}</p>
+<img src='{server}{image_path}' title='{R['day']} {R['type']} {s.tree.value}' data-name='{image_path.split('/')[-1]}'>
 </div>
 """
                 images_added = True
@@ -212,7 +212,7 @@ def Seznam_probe():
         * Days are {select_days_multi.value}
         * Pokud by se zobrazovaly obrázky zde, bylo by načítání stránky pomalé kvůli repsonzivnímu designu a množství obrázků. 
           Proto je pohodlnější vytvořit strohý html soubor a zobrazit obrázky v nativní velikosti.  
-        """), style={'color': '#2196f3'})
+        """, style={'color': 'inherit'}))
         solara.FileDownload(filecontent.value, filename=f"dynatree_data_acc.html", label="Download")
     else:
         solara.Warning("Vyber aspoň jeden přistroj, aspoň jednu osu a aspoň jeden den v menu nad tímto textem. Stom vyber v boční liště. Ostatní volby z postranní lišty nejsou brány v úvahu.")

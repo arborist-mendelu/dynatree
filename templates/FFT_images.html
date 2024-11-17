@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>Image Selection</title>
     <style>
         .image-container {
@@ -33,16 +33,16 @@
        <li> Můžeš kliknutím označit obrázky, které si chceš zapamatovat a poté tlačítkem Save na konci stránky seznam uložit.
         Ze jmen souborů se dá zrekonstruovat měření, strom, akcelerometr, osa, čas kliknutí.
        </li>
-        <li> Obrázky mají jako element "title" číslo stromu, datum a druh měření. Zobrazí se po najetí myší nad obrázek.
+        <li> Obrázky mají jako element title číslo stromu, datum a druh měření. Zobrazí se po najetí myší nad obrázek.
         </li>
     </ul>
     </p>
-    <div id="images">
+    <div id=images>
         {{containers}}
         <!-- Add more image containers as needed -->
     </div>
-    <button id="save-button">Save</button>
-    <pre id="output"></pre>
+    <button id=save-button>Save</button>
+    <pre id=output></pre>
 
     <script>
         const imageContainers = document.querySelectorAll('.image-container');

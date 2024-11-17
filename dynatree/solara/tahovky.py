@@ -141,7 +141,7 @@ def prehled():
         * True/False se vztahuje k přítomnosti listů. 
         * Číslo 0 až 2 se vztahuje k počtu ořezů.
         * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
-        """
+        """, style={'color':'inherit'}
     )
     # with solara.Row():
     #     solara.Button("Update Page", on_click=ShowRegressionsHere)
@@ -565,7 +565,7 @@ def Graphs():
                   day {s.day.value} measurement type {s.method.value}.
                 * You may need to switch measurement type (normal/den/noc/...) 
                   if the list of the measuemrent day is incorrect.
-                """)
+                """, style={'color':'inherit'})
         return
 
     if nakresli.not_called:
@@ -575,7 +575,7 @@ def Graphs():
 * Ovládací prvky jsou v sidebaru. Pokud není otevřený, otevři kliknutím na tři čárky nalevo v modrém pásu.
 * Při změně vstupů se většinou obrázek aktualizuje, ale ne vždy. Pokud nadpis na obrázku nesouhlasí s vybranými hodnotami, spusť výpočet tlačítkem \"Run calculation\".
 
-                                    """))
+                                    """, style={'color':'inherit'}))
         # solara.Warning(
         #     "Pokud pracuješ v prostředí JupyterHub, asi bude lepší aplikaci maximalizovat. Tlačítko je v modrém pásu úplně napravo.")
     elif not nakresli.finished:

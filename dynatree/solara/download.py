@@ -32,7 +32,7 @@ def Page():
 * Odkazy se sem přidávají ručně, tak všechno nemusí být aktuální. Data se potom aktualizují
   při `snakemake`.
 * Odkazy fungují i bez nutnosti zadávat heslo.
-""")
+""", style={'color':'inherit'})
 
     # title = {0: "Aktuální soubory", 1: "Asi už nepotřebné soubory"}
 
