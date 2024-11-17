@@ -23,6 +23,8 @@ import os
 import config
 # from weasyprint import HTML, CSS
 
+loading_start = time.time()
+
 # lib_dynatree.logger.setLevel(logging.INFO)
 
 # https://stackoverflow.com/questions/37470734/matplotlib-giving-error-overflowerror-in-draw-path-exceeded-cell-block-limit
@@ -604,3 +606,4 @@ def Welch_interactive():
     figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
     solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
             
+dynatree.logger.info(f"File FFT_tukey.py loaded in {time.time()-loading_start} sec.")

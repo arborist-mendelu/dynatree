@@ -7,6 +7,8 @@ Created on Thu Aug 15 14:00:04 2024
 from altair import value
 from sphinx.addnodes import literal_emphasis
 
+import time
+loading_start = time.time()
 from dynatree.find_measurements import available_measurements
 from dynatree import dynatree
 import plotly.express as px
@@ -412,3 +414,4 @@ def Selection():
             solara.ToggleButtonsSingle(value=height, values=heights)
       
 
+dynatree.logger.info(f"File vizualizace.py loaded in {time.time()-loading_start} sec")

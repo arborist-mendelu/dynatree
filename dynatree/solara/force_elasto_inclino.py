@@ -1,3 +1,5 @@
+from dynatree.solara.FFT_tukey import loading_start
+
 DATA_PATH = "../data"
 
 navod = """
@@ -28,6 +30,10 @@ import dynatree.solara.select_source as s
 from dynatree.static_pull import DynatreeStaticMeasurement
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import time
+import dynatree.dynatree as dynatree
+
+loading_start = time.time()
 major_minor = solara.reactive(True)
 
 probes = ["Pt3 with Pt4","Pt3 with fixes"]
@@ -255,3 +261,5 @@ def Grafy():
         with solara.Row():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
             solara.SpinnerSolara(size="100px")
+
+dynatree.logger.info(f"File force_elasto_inclino.py loaded in {time.time()-loading_start} sec.")

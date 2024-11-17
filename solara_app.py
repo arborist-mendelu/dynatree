@@ -5,11 +5,14 @@ Created on Wed Aug 28 18:41:25 2024
 
 @author: marik
 """
+import time
+
+start_imports = time.time()
 
 import solara
 from solara.lab import task
+mezicas = time.time() - start_imports
 import dynatree.solara.tahovky
-import dynatree.solara.vizualizace
 import dynatree.solara.force_elasto_inclino
 # import dynatree.solara.FFT
 import dynatree.solara.welch_ACC
@@ -20,12 +23,15 @@ import dynatree.solara.pulling_tests
 import dynatree.solara.tuk_ACC
 import krkoskova.krkoskova_app
 import pandas as pd
-import time
 from datetime import datetime
 import psutil
 import os
-
 import toml
+mezicas2 = time.time() - start_imports
+import dynatree.solara.vizualizace
+import_finish = time.time()
+print(f"Imports finished in {import_finish-start_imports} sec, mezicas {mezicas}, {mezicas2}")
+
 with open('solara_texts.toml', 'r') as f:
     config = toml.load(f)
 

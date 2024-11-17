@@ -8,6 +8,8 @@ import pandas as pd
 import dynatree.solara.select_source as s
 import matplotlib.pyplot as plt
 from solara.lab import task
+
+from dynatree.dynatree import timeit
 from dynatree.signal_knock import SignalTuk, find_peak_times_chanelA, find_peak_times_chanelB, chanelA, chanelB
 from dynatree_summary.acc_knocks import  delta_time
 import logging
@@ -20,26 +22,19 @@ from functools import lru_cache
 import urllib.parse
 import jinja2
 
+loading_start = time.time()
+
+def Markdown(text, **kwds):
+    return solara.Markdown(text, style={'color':'inherit'},**kwds)
+
 dynatree.logger.setLevel(logging.INFO)
 # dynatree.logger.setLevel(logging.ERROR)
 
 dynatree.logger.info("Starting app tuk_ACC.py")
-server = "http://um.mendelu.cz/dynatree/"
-dynatree.logger.info(f"Server is {server}")
-df = pd.read_csv("../outputs/FFT_acc_knock.csv")
-if "valid" not in df.columns:
-    df["valid"] = True
-if "manual_peaks" not in df.columns:
-    df["manual_peaks"] = None
-rdf =  df.copy()
-rdf['timecoords'] = rdf['day'].astype(str) + "_" + rdf['type']
+
 df_updated = solara.reactive(0)
-day_type_pairs = list(rdf.loc[:,["day","type"]].drop_duplicates().sort_values(by=["day","type"]).values)
-day_type_pairs = [f"{i[0]}_{i[1]}" for i in day_type_pairs]
-dynatree.logger.info("Dataframes initialized")
-
-
-active_tab = solara.reactive(1)
+worker = solara.reactive('ini')
+active_tab = solara.reactive(2)
 use_overlay = solara.reactive(False)
 manual_freq = solara.reactive([])
 cards_on_page = solara.reactive(10)
@@ -47,8 +42,35 @@ use_large_fft = solara.reactive(False)
 use_custom_file = solara.reactive(False)
 img_from_live_data = solara.reactive(False)
 img_size = solara.reactive('small')
-
+select_days_multi = solara.reactive([])
 filecontent = solara.reactive("")
+select_probe = solara.reactive("All")
+select_axis = solara.reactive("All")
+select_probe_multi = solara.reactive(["a03"])
+select_axis_multi = solara.reactive([])
+use_all_measurements = solara.reactive("False")
+
+df = pd.read_csv("../outputs/FFT_acc_knock.csv")
+if "valid" not in df.columns:
+    df["valid"] = True
+if "manual_peaks" not in df.columns:
+    df["manual_peaks"] = None
+rdf = {}
+rdf['ini'] =  df.copy()
+rdf['ini']['timecoords'] = rdf['ini']['day'].astype(str) + "_" + rdf['ini']['type']
+day_type_pairs = list(rdf['ini'].loc[:,["day","type"]].drop_duplicates().sort_values(by=["day","type"]).values)
+day_type_pairs = [f"{i[0]}_{i[1]}" for i in day_type_pairs]
+dynatree.logger.info("Dataframes initialized")
+if worker.value not in rdf.keys():
+    worker.value = 'ini'
+test_df = rdf[worker.value].loc[:,["valid","manual_peaks"]]
+
+testdf = solara.reactive(test_df)
+
+server = "http://um.mendelu.cz/dynatree/"
+dynatree.logger.info(f"Server is {server}")
+
+
 
 @contextmanager
 def customizable_card(overlay=True):
@@ -98,8 +120,25 @@ def on_file(f):
     else:
         dynatree.logger.info(f"File not accepted")
     if df is not None:
-        rdf = df.copy(deep=False)
+        rdf[worker.value] = df.copy(deep=False)
         df_updated.value = random.random()
+
+def make_my_copy_of_df(x=None):
+    global rdf
+    if x in rdf.keys():
+        return
+    rdf[worker.value] = rdf['ini'].copy()
+
+@dynatree.timeit
+def get_rdf(value, all=True):
+    global rdf
+    dynatree.logger.info(f"Gettind rdf for worker {value}. All keys are {rdf.keys()}")
+    return rdf[value]
+    # if all:
+    #     return rdf[value]
+    # df = rdf[value]
+    # breakpoint()
+    # return df[~df["valid"] & df["manual_peaks"].notna()]
 
 @solara.component
 def Page():
@@ -129,18 +168,7 @@ def Page():
                 with solara.Column(gap="0px"):
                     solara.Text("Items on page:")
                     solara.ToggleButtonsSingle(value=cards_on_page, values=[10,20,50,75,100])
-            with solara.Card(title = "Data file handling"):
-                with solara.Column():
-                    solara.FileDownload(rdf.to_parquet(), filename="FFT_acc_knock.parquet",
-                                        label="Download parquet data")
-                    solara.FileDownload(rdf.to_csv(), filename="FFT_acc_knock.csv",
-                                label="Download csv data")
-                    solara.Switch(label="Allow file upload", value=use_custom_file)
-                    if use_custom_file.value:
-                        solara.FileDrop(
-                                label="Drop your own csv or parquet file here.",
-                                on_file=on_file,
-                        )
+            Download()
     with solara.lab.Tabs(value=active_tab, lazy=True):
         with solara.lab.Tab("Měření"):
             Signal()
@@ -148,33 +176,46 @@ def Page():
         # with solara.lab.Tab("Tabulka"):
         #     Tabulka()
         with solara.lab.Tab("Detail ťuků"):
-            if use_overlay.value:
-                Seznam()
-                Graf()
+            dynatree.logger.info(f"worker name is {worker.value}")
+            if (worker.value == 'ini') & (active_tab.value==1):
+                solara.Warning(Markdown(
+f"""
+* Tato funkcionalita ještě není dotažená do konce. Zatím jenom pro prohlédnutí dat a ne pro vážnou práci 
+  (hledání nevalidních ťuků a hledání FFT peaků) 
+* Pro správnou funkcí při editaci údajů je nutné pracovat na své vlastní kopii odlišené klíčem.
+* Současné klíče: {", ".join(list(rdf.keys()))}
+* Je nutné použít nějaký jiný klíč.
+"""
+                ))
+                solara.InputText(label="Vlož svůj unikátní klíč", message="Přepiš zadaný klíč svým vlastním, například jméno, a stiskni Enter.", on_value=make_my_copy_of_df, value=worker)
             else:
-                with solara.Columns(1,1):
-                    with solara.Column():
-                        Seznam()
-                    with solara.Column():
-                        Graf()
+                if use_overlay.value:
+                    Seznam()
+                    Graf()
+                else:
+                    with solara.Columns(1,1):
+                        with solara.Column():
+                            Seznam()
+                        with solara.Column():
+                            Graf()
         with solara.lab.Tab("Tabulka pro strom a den"):
             Tabulka()
         with solara.lab.Tab("Jeden probe, všechna data"):
             Seznam_probe()
 
-select_days_multi = solara.reactive([])
 @solara.component
 def Seznam_probe():
+    dynatree.logger.info(f"rdf je dict s klíči {rdf.keys()}")
     with solara.Row():
         solara.ToggleButtonsMultiple(value=select_probe_multi, values = ["a01","a02","a03","a04"])
         solara.ToggleButtonsMultiple(value=select_axis_multi, values = ["x","y","z"])
         solara.ToggleButtonsSingle(value=img_size, values=["small","large"])
     solara.ToggleButtonsMultiple(value=select_days_multi, values=day_type_pairs)
     probeset = [f"{i}_{j}" for i in select_probe_multi.value for j in select_axis_multi.value]
-    subdf = rdf[
-        (rdf["tree"] == s.tree.value)
+    subdf = rdf[worker.value][
+        (rdf[worker.value]["tree"] == s.tree.value)
         &
-        (rdf["probe"].isin(probeset))
+        (rdf[worker.value]["probe"].isin(probeset))
     ]
     subdf = subdf[subdf['timecoords'].isin(select_days_multi.value)]
     subdf = subdf.sort_values(by=["day","type","measurement","knock_time"])
@@ -252,7 +293,7 @@ def Graf():
         solara.ProgressLinear(interactive_graph.pending)
         if interactive_graph.finished:
             ans = interactive_graph.value
-            current_peaks = rdf.at[ans['index'], "manual_peaks"]
+            current_peaks = rdf[worker.value].at[ans['index'], "manual_peaks"]
             with solara.Row():
                 solara.Button("❌", on_click=lambda: interactive_graph())
                 if ans['is_fft']:
@@ -282,7 +323,7 @@ def set_click_data(x=None):
 @dynatree.timeit
 def save_click_data(index):
     global rdf
-    rdf.at[index,"manual_peaks"] = manual_freq.value
+    rdf[worker.value].at[index,"manual_peaks"] = manual_freq.value
     df_updated.value = random.random()
     interactive_graph()
 
@@ -314,8 +355,8 @@ def interactive_graph(fft=True, **kwds):
         fig = px.line(fft_data,
                        height=300,
                       )
-        manual_peaks = rdf.at[kwds['index'], "manual_peaks"]
-        df_updated.value = random.random()
+        manual_peaks = rdf[worker.value].at[kwds['index'], "manual_peaks"]
+        # df_updated.value = random.random()
         if manual_peaks is not None:
             for _ in manual_peaks:
                 fig.add_vline(x=_, line_width=3, line_dash="dash", line_color="red")
@@ -365,7 +406,7 @@ def Tabulka():
 """
         )]
     )
-    subdf = (rdf
+    subdf = (rdf[worker.value]
         .pipe(lambda d: d[d["tree"] == s.tree.value])
         .pipe(lambda d: d[d["day"] == s.day.value])
         .pipe(lambda d: d[d["type"] == s.method.value])
@@ -396,11 +437,25 @@ def prev_next_buttons(max):
             with solara.Column():
                 solara.Button(f"Next {cards_on_page.value}", on_click=lambda: next_ten(max))
 
-select_probe = solara.reactive("All")
-select_axis = solara.reactive("All")
-select_probe_multi = solara.reactive(["a03"])
-select_axis_multi = solara.reactive([])
-use_all_measurements = solara.reactive("False")
+@solara.component
+def Download():
+    with solara.Card(title="Data file handling"):
+        with solara.Column():
+            solara.FileDownload(get_rdf(worker.value).to_parquet(), filename="FFT_acc_knock.parquet",
+                                label="All data in parquet")
+            solara.FileDownload(get_rdf(worker.value).to_csv(), filename="FFT_acc_knock.csv",
+                                label="All data in csv")
+            solara.FileDownload(get_rdf(worker.value, all=False).to_csv(), filename="FFT_acc_knock_changes.csv",
+                                label="Failed & with manual peaks.")
+            solara.Switch(label="Allow file upload", value=use_custom_file)
+            if use_custom_file.value:
+                solara.FileDrop(
+                    label="Drop your own csv or parquet file here.",
+                    on_file=on_file,
+                )
+            solara.Text(f"updated at {time.ctime()}")
+            solara.Text(f"{df_updated.value} {worker.value}")
+
 
 @solara.component
 @dynatree.timeit
@@ -413,7 +468,7 @@ def Seznam():
         solara.ToggleButtonsSingle(value=select_axis, values = ["All","x","y","z"])
         solara.Switch(label="Show all measurements M01, M02, ...", value=use_all_measurements)
     temp_df = (
-        rdf
+        rdf[worker.value]
         .pipe(lambda d: d[d["tree"] == s.tree.value])
         .pipe(lambda d: d[d["day"] == s.day.value])
         .pipe(lambda d: d[d["type"] == s.method.value])
@@ -437,20 +492,12 @@ def Seznam():
         ReusableComponent(row, poradi, pocet)
     prev_next_buttons(max=pocet)
 
-test_df = rdf.loc[:,["valid","manual_peaks"]]
-testdf = solara.reactive(test_df)
-
 @dynatree.timeit
 def change_OK_status(i):
     global rdf
-    a = time.time()
-    current = rdf.at[i,"valid"]
-    rdf.at[i,"valid"] = not current
-    b = time.time()
+    current = rdf[worker.value].at[i,"valid"]
+    rdf[worker.value].at[i,"valid"] = not current
     df_updated.value = random.random()
-    c = time.time()
-    d = time.time()
-    dynatree.logger.info(f"Variable setting: {b-a}, copying data: {c-b} versus {d-c}")
 
 @dynatree.timeit
 @lru_cache
@@ -482,7 +529,7 @@ def FFT_curve(*args, **kwargs):
 @dynatree.timeit
 def ReusableComponent(row, poradi, pocet):
     i, row = row
-    is_valid = rdf.at[i, "valid"]
+    is_valid = rdf[worker.value].at[i, "valid"]
     if is_valid:
         style = {}
         bgstyle = {}
@@ -514,7 +561,7 @@ max at {round(row['freq'])} Hz
                 # solara.Text(f"max at {round(row['freq'])} Hz")
             coordinates = dict(method = s.method.value, day = s.day.value, tree = s.tree.value,
                 measurement = row['measurement'], probe = row['probe'],
-                knock_time = row['knock_time'], index = i, vert_lines = rdf.at[i,"manual_peaks"])
+                knock_time = row['knock_time'], index = i, vert_lines = rdf[worker.value].at[i,"manual_peaks"])
             if img_from_live_data.value:
                 fig = FFT_curve(**coordinates)
                 config = {"displayModeBar": False}
@@ -524,7 +571,7 @@ max at {round(row['freq'])} Hz
             else:
                 solara.Image(image_path)
                 solara.Image(image_path_FFT)
-        man_p = rdf.at[i, "manual_peaks"]
+        man_p = rdf[worker.value].at[i, "manual_peaks"]
         if man_p is not None:
             solara.Text(f"Manual peaks {[round(_) for _ in man_p]} ", style={'color':'red'})
         with solara.CardActions():
@@ -700,3 +747,4 @@ def plot_all(m, peak_times):
             answer[(knock_time,number)] = [fig1, fig2]
     return answer
 
+dynatree.logger.info(f"File tuk_ACC.py loaded in {time.time()-loading_start} sec.")

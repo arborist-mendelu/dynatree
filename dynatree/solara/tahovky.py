@@ -6,6 +6,7 @@ Created on Thu Aug 15 14:00:04 2024
 @author: marik
 """
 
+import time
 from dynatree.find_measurements import available_measurements
 from dynatree import static_pull, dynatree_util as du
 import numpy as np
@@ -21,6 +22,10 @@ import dynatree.solara.select_source as s
 import graphs_regressions
 import static_lib_pull_comparison
 import dynatree.dynatree as dynatree
+import logging
+dynatree.logger.setLevel(logging.INFO)
+
+loading_start = time.time()
 
 DATA_PATH = "../data"
 from great_tables import GT, style, loc
@@ -969,3 +974,5 @@ Pokud chceš dynamické měření brát jako statiku, použij přepínač "Use o
 * 2024-09-?? polární graf, interaktivní grafy
 """
     )
+
+dynatree.logger.info(f"File tahovky.py loaded in {time.time()-loading_start} sec.")
