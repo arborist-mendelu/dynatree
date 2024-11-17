@@ -125,9 +125,8 @@ def on_file(f):
 
 def make_my_copy_of_df(x=None):
     global rdf
-    if x in rdf.keys():
-        return
-    rdf[worker.value] = rdf['ini'].copy()
+    if x not in rdf.keys():
+        rdf[worker.value] = rdf['ini'].copy()
 
 @dynatree.timeit
 def get_rdf(value, all=True):
@@ -184,7 +183,10 @@ f"""
   (hledání nevalidních ťuků a hledání FFT peaků) 
 * Pro správnou funkcí při editaci údajů je nutné pracovat na své vlastní kopii odlišené klíčem.
 * Současné klíče: {", ".join(list(rdf.keys()))}
-* Je nutné použít nějaký jiný klíč.
+* Je nutné použít nějaký nový klíč pro práci od začátku nebo předešlý klíč po pokračování práce například po 
+  reloadu prohlížeče. Proměnná zůstává na serveru uložena po nějkou dobu a je jistá šance, že se podaří navázat.
+* Zatím klikání peaků není na normální práci. Ale kdyby, tak při práci často ukládej (stahuj csv nebo parquet soubor). 
+  Pokud dojde k reloadu, což je při sebemenší změně kódu, tak se data inicializují znovu. 
 """
                 ))
                 solara.InputText(label="Vlož svůj unikátní klíč", message="Přepiš zadaný klíč svým vlastním, například jméno, a stiskni Enter.", on_value=make_my_copy_of_df, value=worker)
@@ -445,8 +447,8 @@ def Download():
                                 label="All data in parquet")
             solara.FileDownload(get_rdf(worker.value).to_csv(), filename="FFT_acc_knock.csv",
                                 label="All data in csv")
-            solara.FileDownload(get_rdf(worker.value, all=False).to_csv(), filename="FFT_acc_knock_changes.csv",
-                                label="Failed & with manual peaks.")
+            # solara.FileDownload(get_rdf(worker.value, all=False).to_csv(), filename="FFT_acc_knock_changes.csv",
+            #                     label="Failed & with manual peaks.")
             solara.Switch(label="Allow file upload", value=use_custom_file)
             if use_custom_file.value:
                 solara.FileDrop(
