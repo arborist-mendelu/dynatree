@@ -202,7 +202,7 @@ f"""
                             Graf()
         with solara.lab.Tab("Tabulka pro strom a den"):
             Tabulka()
-        with solara.lab.Tab("Jeden probe, všechna data"):
+        with solara.lab.Tab("Obrázky pro vybraná data"):
             Seznam_probe()
 
 @solara.component
