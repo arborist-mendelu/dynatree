@@ -12,8 +12,7 @@ from dynatree import dynatree
 import logging
 import time
 
-dynatree.logger.setLevel(logging.ERROR)
-dynatree.logger.setLevel(logging.INFO)
+dynatree.logger.setLevel(dynatree.logger_level)
 
 loading_start = time.time()
 def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1 ):

@@ -15,11 +15,15 @@ import pandas as pd
 import plotly.express as px
 import dynatree.dynatree as dynatree
 import dynatree.FFT as FFT
+import time
 
 # https://stackoverflow.com/questions/37470734/matplotlib-giving-error-overflowerror-in-draw-path-exceeded-cell-block-limit
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 
+dynatree.logger.setLevel(dynatree.logger_level)
+
+__start = time.time()
 
 acc_fft_axis = solara.reactive('a03_z')
 tukey_alpha = solara.reactive(0.1)
@@ -145,4 +149,5 @@ def Page():
         # pass
 
     plt.close('all')
-        
+
+dynatree.logger.info(f"welch_ACC.py loaded in {time.time()-__start}")

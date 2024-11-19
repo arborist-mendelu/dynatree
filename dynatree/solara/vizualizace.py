@@ -4,8 +4,6 @@ Created on Thu Aug 15 14:00:04 2024
 
 @author: marik
 """
-from altair import value
-from sphinx.addnodes import literal_emphasis
 
 import time
 loading_start = time.time()
@@ -17,6 +15,8 @@ import solara
 import pandas as pd
 import dynatree.solara.select_source as s
 from plotly_resampler import FigureResampler
+
+dynatree.logger.setLevel(dynatree.logger_level)
 
 tightcols = {'gap': "0px"}
 regression_settings = {'color': 'gray', 'alpha': 0.5}

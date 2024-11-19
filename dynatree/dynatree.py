@@ -22,6 +22,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 logFile = config.file['logfile']
 
+logger_level = logging.INFO
+
 try:
     logger = logging.getLogger("lib_dynatree")
     file_handler = RotatingFileHandler(logFile, maxBytes=100000, backupCount=10)

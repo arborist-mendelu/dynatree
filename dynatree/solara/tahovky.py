@@ -23,7 +23,7 @@ import graphs_regressions
 import static_lib_pull_comparison
 import dynatree.dynatree as dynatree
 import logging
-dynatree.logger.setLevel(logging.INFO)
+dynatree.logger.setLevel(dynatree.logger_level)
 
 loading_start = time.time()
 

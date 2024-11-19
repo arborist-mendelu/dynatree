@@ -25,24 +25,22 @@ import config
 
 loading_start = time.time()
 
-# lib_dynatree.logger.setLevel(logging.INFO)
+dynatree.logger.setLevel(dynatree.logger_level)
 
 # https://stackoverflow.com/questions/37470734/matplotlib-giving-error-overflowerror-in-draw-path-exceeded-cell-block-limit
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 
-
 import logging
 
-logger = logging.getLogger("Solara_FFT")
-logger.setLevel(logging.WARNING)
+logger = dynatree.logger
+filelogger = dynatree.logger
 
-filelogger = logging.getLogger("FFT Rotating Log")
-filelogger.setLevel(logging.INFO)
-filehandler = logging.handlers.RotatingFileHandler(f"{os.path.expanduser('~')}/solara_log/solara_FFT.log", maxBytes=10000000, backupCount=10)
-log_format = logging.Formatter("[%(asctime)s] %(levelname)s | %(message)s")
-filehandler.setFormatter(log_format)
-filelogger.addHandler(filehandler)
+# filelogger.setLevel(logging.INFO)
+# filehandler = logging.handlers.RotatingFileHandler(f"{os.path.expanduser('~')}/solara_log/solara_FFT.log", maxBytes=10000000, backupCount=10)
+# log_format = logging.Formatter("[%(asctime)s] %(levelname)s | %(message)s")
+# filehandler.setFormatter(log_format)
+# filelogger.addHandler(filehandler)
 
 
 pd.options.display.float_format = '{:.3f}'.format

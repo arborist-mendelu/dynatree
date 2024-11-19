@@ -27,8 +27,7 @@ loading_start = time.time()
 def Markdown(text, **kwds):
     return solara.Markdown(text, style={'color':'inherit'},**kwds)
 
-dynatree.logger.setLevel(logging.INFO)
-# dynatree.logger.setLevel(logging.ERROR)
+dynatree.logger.setLevel(dynatree.logger_level)
 
 dynatree.logger.info("Starting app tuk_ACC.py")
 
@@ -49,6 +48,7 @@ select_axis = solara.reactive("All")
 select_probe_multi = solara.reactive(["a03"])
 select_axis_multi = solara.reactive([])
 use_all_measurements = solara.reactive("False")
+log_x_axis_FFT = solara.reactive(False)
 
 df = pd.read_csv("../outputs/FFT_acc_knock.csv")
 if "valid" not in df.columns:
@@ -63,14 +63,11 @@ day_type_pairs = [f"{i[0]}_{i[1]}" for i in day_type_pairs]
 dynatree.logger.info("Dataframes initialized")
 if worker.value not in rdf.keys():
     worker.value = 'ini'
-test_df = rdf[worker.value].loc[:,["valid","manual_peaks"]]
 
-testdf = solara.reactive(test_df)
+
 
 server = "http://um.mendelu.cz/dynatree/"
 dynatree.logger.info(f"Server is {server}")
-
-
 
 @contextmanager
 def customizable_card(overlay=True):
@@ -123,6 +120,7 @@ def on_file(f):
         rdf[worker.value] = df.copy(deep=False)
         df_updated.value = random.random()
 
+@dynatree.timeit
 def make_my_copy_of_df(x=None):
     global rdf
     if x not in rdf.keys():
@@ -131,7 +129,7 @@ def make_my_copy_of_df(x=None):
 @dynatree.timeit
 def get_rdf(value, all=True):
     global rdf
-    dynatree.logger.info(f"Gettind rdf for worker {value}. All keys are {rdf.keys()}")
+    dynatree.logger.info(f"Getting rdf for worker {value}. All keys are {rdf.keys()}")
     return rdf[value]
     # if all:
     #     return rdf[value]
@@ -145,6 +143,7 @@ def Page():
     router = solara.use_router()
     parsed_values = urllib.parse.parse_qs(router.search, keep_blank_values=True)
     dynatree.logger.info(f"Parsed values from URL: {parsed_values}")
+    #session_id = solara.get_kernel_id()
     if 'active_tab' in parsed_values.keys():
         try:
             active_tab.value = int(parsed_values['active_tab'][0])
@@ -154,11 +153,14 @@ def Page():
     solara.Title("DYNATREE: ACC ťuknutí")
     solara.Style(s.styles_css+".zero-margin p {margin-bottom: 0px;}")
     with solara.Sidebar():
-        s.Selection(
-            optics_switch=False,
-            report_optics_availability=False,
-            include_measurements=active_tab.value != 2
-        )
+        if active_tab.value == 3:
+            s.Selection_trees_only()
+        else:
+            s.Selection(
+                optics_switch=False,
+                report_optics_availability=False,
+                include_measurements=active_tab.value != 2
+            )
         if active_tab.value == 1:
             with solara.Card(title = "Dashboard setting"):
                 solara.Switch(label="Use overlay for graphs (useful for small screen)", value=use_overlay)
@@ -169,6 +171,10 @@ def Page():
                     solara.ToggleButtonsSingle(value=cards_on_page, values=[10,20,50,75,100])
             Download()
     with solara.lab.Tabs(value=active_tab, lazy=True):
+        # TODO: zmenit na kernel_id podle https://solara.dev/documentation/examples/general/custom_storage
+        #if session_id not in rdf.keys():
+        #    make_my_copy_of_df(session_id)
+
         with solara.lab.Tab("Měření"):
             Signal()
             Rozklad()
@@ -208,6 +214,7 @@ f"""
 @solara.component
 def Seznam_probe():
     dynatree.logger.info(f"rdf je dict s klíči {rdf.keys()}")
+    #session_id = solara.get_kernel_id()
     with solara.Row():
         solara.ToggleButtonsMultiple(value=select_probe_multi, values = ["a01","a02","a03","a04"])
         solara.ToggleButtonsMultiple(value=select_axis_multi, values = ["x","y","z"])
@@ -258,7 +265,12 @@ def Seznam_probe():
         """, style={'color': 'inherit'}))
         solara.FileDownload(filecontent.value, filename=f"dynatree_data_acc.html", label="Download")
     else:
-        solara.Warning("Vyber aspoň jeden přistroj, aspoň jednu osu a aspoň jeden den v menu nad tímto textem. Stom vyber v boční liště. Ostatní volby z postranní lišty nejsou brány v úvahu.")
+        solara.Warning(
+            solara.Markdown("""
+* Vyber aspoň jeden přístroj, aspoň jednu osu a aspoň jeden den v menu nad tímto textem. 
+* Strom vyber v boční liště.
+* Pokud toto okno nezmizí ani při výběru strom-den-přístroj-osa, je možná vybrána kombinace, ke které nejsou data. 
+""", style={'color': 'inherit'}))
     ### The following code works but it is painfuly slow. The server response if fast, probably has something to
     ### due with the number of images which are scaled in browser.
     # for I,R in sets.iterrows():
@@ -285,6 +297,7 @@ def Seznam_probe():
 @solara.component
 @dynatree.timeit
 def Graf():
+    #session_id = solara.get_kernel_id()
     if interactive_graph.finished:
         ans = interactive_graph.value
         if ans is None:
@@ -346,7 +359,8 @@ def get_knock_data(**kwds):
 
 @task
 @dynatree.timeit
-def interactive_graph(fft=True, **kwds):
+def interactive_graph(fft=True, x_axis_type=None, **kwds):
+    #session_id = solara.get_kernel_id()
     if len(kwds)==0:
         manual_freq.value = []
         return None
@@ -363,6 +377,8 @@ def interactive_graph(fft=True, **kwds):
             for _ in manual_peaks:
                 fig.add_vline(x=_, line_width=3, line_dash="dash", line_color="red")
         fig.update_yaxes(type="log")  # Logaritmická osa y
+        if x_axis_type is not None:
+            fig.update_xaxes(type=x_axis_type)  # Logaritmická osa x
     else:
         fig = px.line(signal_knock.signal,
                       height=300,
@@ -441,6 +457,7 @@ def prev_next_buttons(max):
 
 @solara.component
 def Download():
+    #session_id = solara.get_kernel_id()
     with solara.Card(title="Data file handling"):
         with solara.Column():
             solara.FileDownload(get_rdf(worker.value).to_parquet(), filename="FFT_acc_knock.parquet",
@@ -462,6 +479,7 @@ def Download():
 @solara.component
 @dynatree.timeit
 def Seznam():
+    #session_id = solara.get_kernel_id()
     solara.Markdown(f"""
 # Precomputed graphs for {s.method.value} {s.day.value} {s.tree.value}    
     """)
@@ -469,6 +487,7 @@ def Seznam():
         solara.ToggleButtonsSingle(value=select_probe, values = ["All","a01","a02","a03","a04"])
         solara.ToggleButtonsSingle(value=select_axis, values = ["All","x","y","z"])
         solara.Switch(label="Show all measurements M01, M02, ...", value=use_all_measurements)
+        solara.Switch(label="Log scale on x axis", value=log_x_axis_FFT)
     temp_df = (
         rdf[worker.value]
         .pipe(lambda d: d[d["tree"] == s.tree.value])
@@ -504,15 +523,15 @@ def change_OK_status(i):
 @dynatree.timeit
 @lru_cache
 def FFT_curve(*args, **kwargs):
-    knock_data = get_knock_data(**kwargs).fft
+    knock_data = get_knock_data(**kwargs).fft.loc[2:]
     fft_peak = knock_data.iloc[5:].idxmax()
     fig = px.line(x=knock_data.index, y=knock_data.values.reshape(-1), width=400, height=150)
     fig.add_vline(x=fft_peak, line_width=1, line_dash="dash", line_color="green")
     # Odstranění všech dalších prvků
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),  # Nastavení nulových okrajů
-        xaxis=dict(visible=False),  # Skrytí osy X
-        yaxis=dict(visible=False, type="log"),  # Skrytí osy Y
+        xaxis=dict(visible=True, type=kwargs['x_axis_type']),  # Skrytí osy X
+        yaxis=dict(visible=True, type="log"),  # Skrytí osy Y
         showlegend=False,  # Skrytí legendy
         # plot_bgcolor="white",  # Nastavení bílé barvy pozadí
         plot_bgcolor='rgba(0,0,0,0)',  # Nastavení bílé barvy pozadí
@@ -530,6 +549,7 @@ def FFT_curve(*args, **kwargs):
 @solara.component
 @dynatree.timeit
 def ReusableComponent(row, poradi, pocet):
+    #session_id = solara.get_kernel_id()
     i, row = row
     is_valid = rdf[worker.value].at[i, "valid"]
     if is_valid:
@@ -565,7 +585,11 @@ max at {round(row['freq'])} Hz
                 measurement = row['measurement'], probe = row['probe'],
                 knock_time = row['knock_time'], index = i, vert_lines = rdf[worker.value].at[i,"manual_peaks"])
             if img_from_live_data.value:
-                fig = FFT_curve(**coordinates)
+                if log_x_axis_FFT.value:
+                    x_axis_type = 'log'
+                else:
+                    x_axis_type = 'linear'
+                fig = FFT_curve(x_axis_type=x_axis_type, **coordinates)
                 config = {"displayModeBar": False}
                 fig.show(config=config)
             elif use_large_fft.value:
@@ -585,9 +609,13 @@ max at {round(row['freq'])} Hz
                         outlined=True
                                   )
                 with solara.Column():
-                    solara.Button("Zadat peaky", text=True, color="primary", on_click=lambda:
-                        interactive_graph(**coordinates),
-                        outlined=True
+                    if log_x_axis_FFT.value:
+                        x_axis_type = 'log'
+                    else:
+                        x_axis_type = None
+                    solara.Button("Zadat peaky", text=True, color="primary",
+                            on_click=lambda: interactive_graph(x_axis_type=x_axis_type, **coordinates),
+                            outlined=True
                                   )
                 with solara.Column():
                     solara.Button("Změnit status", text=True, color="primary", on_click=lambda:
