@@ -440,7 +440,10 @@ def Tabulka():
         .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
     )
     with solara.Card(title="Statistics"):
-        solara.display(subdf.describe())
+        try:
+            solara.display(subdf.describe())
+        except:
+            solara.Error("Failed.")
 
 first_portrait = solara.reactive(0)
 def prev_ten():
