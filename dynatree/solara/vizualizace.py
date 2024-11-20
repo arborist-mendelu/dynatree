@@ -196,6 +196,8 @@ length = solara.reactive(1)
 @solara.component
 def PlotDetail(df5):
     # if t_to.value > t_from.value:
+    if df5 is None:
+        return
     subdf = df5.loc[t_from.value:t_from.value+length.value, dependent_acc.value]
     fig = px.scatter(subdf, y=dependent_acc.value,
                      height=s.height.value, width=s.width.value,
