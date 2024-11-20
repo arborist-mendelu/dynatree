@@ -90,6 +90,12 @@ def process_row(row):
     plt.close('all')
     return ans
 
+def process_row_safe(row):
+    try:
+        return process_row(row)
+    except Exception as e:
+        print(f"Chyba při zpracování {row}: {e}")
+        return {}
 
 def main():
     all_data = get_all_measurements_acc()
@@ -103,7 +109,7 @@ def main():
     #     plt.close('all')
     #     break
     with ProcessPoolExecutor(max_workers=15) as executor:
-        futures = [executor.submit(process_row, row) for row in all_data.values]
+        futures = [executor.submit(process_row_safe, row) for row in all_data.values]
 
         combined_dict = ChainMap()  # Inicializace ChainMap
 
