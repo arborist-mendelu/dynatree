@@ -26,7 +26,7 @@ class SignalTuk():
         return df_fft
 
 
-def find_peak_times_chanelA(m, probe="a02_z", threshold=10):
+def find_peak_times_channelA(m, probe="a02_z", threshold=10):
     df = m.data_acc5000.loc[:, probe]
     if m.measurement != "M01":
         df = df.loc[:20]
@@ -39,8 +39,8 @@ def find_peak_times_chanelA(m, probe="a02_z", threshold=10):
     peak_times = [round(i,2) for i in peak_times]
     return peak_times
 
-def find_peak_times_chanelB(m):
-    return find_peak_times_chanelA(m, probe="a02_x", threshold=6)
+def find_peak_times_channelB(m):
+    return find_peak_times_channelA(m, probe="a02_x", threshold=6)
 
-chanelA = ["a01_x", "a01_y", "a01_z", "a02_y", "a02_z", "a03_x", "a03_y", "a03_z"]
-chanelB = ["a02_x", "a04_x", "a04_y", "a04_z"]
+channelA = ["a01_x", "a01_y", "a01_z", "a02_y", "a02_z", "a03_x", "a03_y", "a03_z"]
+channelB = ["a02_x", "a04_x", "a04_y", "a04_z"]

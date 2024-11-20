@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from solara.lab import task
 
 from dynatree.dynatree import timeit
-from dynatree.signal_knock import SignalTuk, find_peak_times_chanelA, find_peak_times_chanelB, chanelA, chanelB
+from dynatree.signal_knock import SignalTuk, find_peak_times_channelA, find_peak_times_channelB, channelA, channelB
 from dynatree_summary.acc_knocks import  delta_time
 import logging
 import plotly.express as px
@@ -658,8 +658,8 @@ Akcelerometry a02_z a a02_x pro stanovení časů ťuknutí pro dvě sběrnice
     if m.data_acc5000 is None:
         solara.Error(f"Měření {m} není dostupné")
         return
-    peak_timesA = find_peak_times_chanelA(m)
-    peak_timesB = find_peak_times_chanelB(m)
+    peak_timesA = find_peak_times_channelA(m)
+    peak_timesB = find_peak_times_channelB(m)
 
     for peak_times ,probe in zip([peak_timesA, peak_timesB],["a02_z", "a02_x"]):
         df = m.data_acc5000.loc[:, probe]
@@ -684,8 +684,8 @@ def Rozklad():
     if m.data_acc5000 is None:
         solara.Error(f"Měření {m} není dostupné")
         return
-    peak_timesA = find_peak_times_chanelA(m)
-    peak_timesB = find_peak_times_chanelB(m)
+    peak_timesA = find_peak_times_channelA(m)
+    peak_timesB = find_peak_times_channelB(m)
 
     solara.Markdown(
     """
@@ -728,10 +728,10 @@ def plot_all(m, peak_times):
     plot_all.progress = 0.001
     for number, p_times in enumerate(peak_times):
         if number == 0:
-            probes = chanelA
+            probes = channelA
             figsize = (3, 6)
         else:
-            probes = chanelB
+            probes = channelB
             figsize = (3, 4)
         dynatree.logger.info(f"probes is {probes}")
         n = len(p_times)

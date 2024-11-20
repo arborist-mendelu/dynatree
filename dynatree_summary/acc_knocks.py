@@ -52,8 +52,8 @@ def main():
         date, tree, measurement, type = row
         m = DynatreeMeasurement(date, tree, measurement, type)
         for knock_times,probes in zip(
-                [sk.find_peak_times_chanelA(m), sk.find_peak_times_chanelB(m)],
-                [sk.chanelA, sk.chanelB]
+                [sk.find_peak_times_channelA(m), sk.find_peak_times_channelB(m)],
+                [sk.channelA, sk.channelB]
         ):
             for knock_index, knock_time in enumerate(knock_times):
                 for probe in probes:
