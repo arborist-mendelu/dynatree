@@ -36,7 +36,7 @@ def save_images(signal_knock, fft_peak, figname):
     ax.axvline(x=fft_peak, color='r', linestyle='--')
     ax.grid()
     ax.set(yscale='log')
-    fig.savefig(f"{cachedir}_temp/FFT_{figname}.png", transparent=False)
+    fig.savefig(f"{cachedir}_temp/FFT_{figname}.png", transparent=True)
     plt.close(fig)
 
     plt.close('all')

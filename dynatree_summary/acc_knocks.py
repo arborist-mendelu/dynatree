@@ -19,12 +19,16 @@ delta_time = 0.4
 
 def save_images(signal_knock, fft_peak, figname):
     cachedir = file['cachedir']
+    cachedir_large = file['cachedir_large']
 
+    # small time domain
     fig, ax = plt.subplots(figsize=(3,1))
     ax.plot(signal_knock.signal)
     fig.savefig(f"{cachedir}/{figname}.png", transparent=True)
     plt.close(fig)
 
+    # small FFT
+    signal_fft = signal_knock.fft
     fig, ax = plt.subplots(figsize=(3,1))
     if "_x_" in figname:
         color="C0"
@@ -32,11 +36,26 @@ def save_images(signal_knock, fft_peak, figname):
         color="C1"
     else:
         color="C2"
-    ax.plot(signal_knock.fft, color=color)
+    ax.plot(signal_fft, color=color)
     ax.axvline(x=fft_peak, color='r', linestyle='--')
     ax.grid()
     ax.set(yscale='log')
     fig.savefig(f"{cachedir}/FFT_{figname}.png", transparent=True)
+    plt.close(fig)
+
+    # large FFT
+    fig, ax = plt.subplots(figsize=(9,3))
+    if "_x_" in figname:
+        color="C0"
+    elif "_y_" in figname:
+        color="C1"
+    else:
+        color="C2"
+    ax.plot(signal_fft, color=color)
+    ax.axvline(x=fft_peak, color='r', linestyle='--')
+    ax.grid()
+    ax.set(yscale='log')
+    fig.savefig(f"{cachedir_large}/FFT_{figname}.png", transparent=True)
     plt.close(fig)
 
     plt.close('all')
