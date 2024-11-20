@@ -85,8 +85,10 @@ def process_row(row):
                         save_images(signal_knock, fft_peak, figname)
                     ans[coords] = [fft_peak, figname]
                     dynatree.logger.info(f"{type} {date} {tree} {measurement} {probe} {knock_time} {fft_peak}")
+                    del signal_knock
                 except:
                     ans[coords] = [None, None]
+    del m
     plt.close('all')
     return ans
 
@@ -108,7 +110,7 @@ def main():
     #     process_row(row)
     #     plt.close('all')
     #     break
-    with ProcessPoolExecutor(max_workers=15) as executor:
+    with ProcessPoolExecutor(max_workers=20) as executor:
         futures = [executor.submit(process_row_safe, row) for row in all_data.values]
 
         combined_dict = ChainMap()  # Inicializace ChainMap
