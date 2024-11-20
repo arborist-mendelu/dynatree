@@ -13,6 +13,7 @@ import  logging
 import matplotlib.pyplot as plt
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from collections import ChainMap
+import gc
 # import resource
 # resource.setrlimit(resource.RLIMIT_AS, (10 * 1024 * 1024 * 1024, 10 * 1024 * 1024 * 1024))
 
@@ -90,6 +91,8 @@ def process_row(row):
                     ans[coords] = [None, None]
     del m
     plt.close('all')
+    collected = gc.collect()
+    print(f"Počet uvolněných objektů: {collected}")
     return ans
 
 def process_row_safe(row):
