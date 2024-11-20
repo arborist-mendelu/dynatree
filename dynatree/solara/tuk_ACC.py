@@ -47,7 +47,8 @@ select_probe = solara.reactive("All")
 select_axis = solara.reactive("All")
 select_probe_multi = solara.reactive(["a03"])
 select_axis_multi = solara.reactive([])
-use_all_measurements = solara.reactive("False")
+fft_status_for_report = solara.reactive("healthy")
+use_all_measurements = solara.reactive(True)
 log_x_axis_FFT = solara.reactive(False)
 
 df = pd.read_csv("../outputs/FFT_acc_knock.csv")
@@ -55,6 +56,10 @@ if "valid" not in df.columns:
     df["valid"] = True
 if "manual_peaks" not in df.columns:
     df["manual_peaks"] = None
+    df['manual_peaks'] = df['manual_peaks'].astype(object)
+else:
+    df['manual_peaks'] = df['manual_peaks'].astype(object)
+    df['manual_peaks'] = df['manual_peaks'].where(df['manual_peaks'].notna(), None)
 rdf = {}
 rdf['ini'] =  df.copy()
 rdf['ini']['timecoords'] = rdf['ini']['day'].astype(str) + "_" + rdf['ini']['type']
@@ -113,11 +118,14 @@ def on_file(f):
         except:
             dynatree.logger.info("     FAILED")
     if df is not None:
-        dynatree.logger.info(f"Head of uploaded data: {df.head()}")
+        df['manual_peaks'] = df['manual_peaks'].astype(object)
+        df['manual_peaks'] = df['manual_peaks'].where(df['manual_peaks'].notna(), None)
+        dynatree.logger.info(f"Head of uploaded data:")
+        dynatree.logger.info(f"{df.head()}")
     else:
         dynatree.logger.info(f"File not accepted")
     if df is not None:
-        rdf[worker.value] = df.copy(deep=False)
+        rdf[worker.value] = df.copy(deep=True)
         df_updated.value = random.random()
 
 @dynatree.timeit
@@ -162,14 +170,15 @@ def Page():
                 include_measurements=active_tab.value != 2
             )
         if active_tab.value == 1:
-            with solara.Card(title = "Dashboard setting"):
-                solara.Switch(label="Use overlay for graphs (useful for small screen)", value=use_overlay)
-                solara.Switch(label="Use larger FFT image", value=use_large_fft)
-                solara.Switch(label="FFT images from live peaks", value=img_from_live_data)
-                with solara.Column(gap="0px"):
-                    solara.Text("Items on page:")
-                    solara.ToggleButtonsSingle(value=cards_on_page, values=[10,20,50,75,100])
-            Download()
+            if worker.value != "ini":
+                with solara.Card(title = "Dashboard setting"):
+                    solara.Switch(label="Use overlay for graphs (useful for small screen)", value=use_overlay)
+                    solara.Switch(label="Use larger FFT image", value=use_large_fft)
+                    solara.Switch(label="FFT images from live peaks", value=img_from_live_data)
+                    with solara.Column(gap="0px"):
+                        solara.Text("Items on page:")
+                        solara.ToggleButtonsSingle(value=cards_on_page, values=[10,20,50,75,100])
+                Download()
     with solara.lab.Tabs(value=active_tab, lazy=True):
         # TODO: zmenit na kernel_id podle https://solara.dev/documentation/examples/general/custom_storage
         #if session_id not in rdf.keys():
@@ -219,6 +228,7 @@ def Seznam_probe():
         solara.ToggleButtonsMultiple(value=select_probe_multi, values = ["a01","a02","a03","a04"])
         solara.ToggleButtonsMultiple(value=select_axis_multi, values = ["x","y","z"])
         solara.ToggleButtonsSingle(value=img_size, values=["small","large"])
+        solara.ToggleButtonsSingle(value=fft_status_for_report, values=["healthy", "failed"])
     solara.ToggleButtonsMultiple(value=select_days_multi, values=day_type_pairs)
     probeset = [f"{i}_{j}" for i in select_probe_multi.value for j in select_axis_multi.value]
     subdf = rdf[worker.value][
@@ -226,6 +236,10 @@ def Seznam_probe():
         &
         (rdf[worker.value]["probe"].isin(probeset))
     ]
+    if fft_status_for_report.value == "healthy":
+        subdf = subdf[subdf["valid"]]
+    else:
+        subdf = subdf[~subdf["valid"]]
     subdf = subdf[subdf['timecoords'].isin(select_days_multi.value)]
     subdf = subdf.sort_values(by=["day","type","measurement","knock_time"])
     sets = subdf[["day","type"]].drop_duplicates()
