@@ -26,7 +26,7 @@ def save_images(signal_knock, fft_peak, figname):
     fig, ax = plt.subplots(figsize=(3,1))
     ax.plot(signal_knock.signal)
     fig.savefig(f"{cachedir}/{figname}.png", transparent=True)
-    print(f"{cachedir}/{figname}.png saved")
+    # print(f"{cachedir}/{figname}.png saved")
     plt.close(fig)
 
     # small FFT
@@ -43,7 +43,7 @@ def save_images(signal_knock, fft_peak, figname):
     ax.grid()
     ax.set(yscale='log')
     fig.savefig(f"{cachedir}/FFT_{figname}.png", transparent=True)
-    print(f"{cachedir}/FFT_{figname}.png saved")
+    # print(f"{cachedir}/FFT_{figname}.png saved")
     plt.close(fig)
 
     # large FFT
@@ -59,7 +59,7 @@ def save_images(signal_knock, fft_peak, figname):
     ax.grid()
     ax.set(yscale='log')
     fig.savefig(f"{cachedir_large}/FFT_{figname}.png", transparent=True)
-    print(f"{cachedir_large}/FFT_{figname}.png saved")
+    # print(f"{cachedir_large}/FFT_{figname}.png saved")
     plt.close(fig)
 
     plt.close('all')
