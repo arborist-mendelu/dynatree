@@ -17,6 +17,7 @@ from collections import ChainMap
 # resource.setrlimit(resource.RLIMIT_AS, (10 * 1024 * 1024 * 1024, 10 * 1024 * 1024 * 1024))
 
 delta_time = 0.4
+SAVE_IMAGES = True
 
 def save_images(signal_knock, fft_peak, figname):
     cachedir = file['cachedir']
@@ -80,7 +81,8 @@ def process_row(row):
                     signal_knock = sk.SignalTuk(m, start=knock_time - delta_time, end=knock_time + delta_time, probe=probe)
                     fft_peak = signal_knock.fft.iloc[5:].idxmax()
                     figname = f"{type}_{date}_{tree}_{measurement}_{probe}_{int(knock_time * 100)}"
-                    save_images(signal_knock, fft_peak, figname)
+                    if SAVE_IMAGES:
+                        save_images(signal_knock, fft_peak, figname)
                     ans[coords] = [fft_peak, figname]
                     dynatree.logger.info(f"{type} {date} {tree} {measurement} {probe} {knock_time} {fft_peak}")
                 except:
@@ -100,7 +102,7 @@ def main():
     #     process_row(row)
     #     plt.close('all')
     #     break
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=15) as executor:
         futures = [executor.submit(process_row, row) for row in all_data.values]
 
         combined_dict = ChainMap()  # Inicializace ChainMap
