@@ -15,7 +15,7 @@ class SignalTuk():
         else:
             zero_signal = pd.Series(index=np.arange(-1, 0, 0.0002), data=0)
             elongated_signal =  pd.concat([zero_signal,parent.data_acc5000.loc[start:end, probe]])
-            self.signal = elongated_signal.loc[start:end, probe].copy()
+            self.signal = elongated_signal.loc[start:end].copy()
         self.dt = 0.0002
         self.probe = probe
 
