@@ -3,18 +3,26 @@ import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 
+import dynatree.dynatree
+
 
 class SignalTuk():
 
-    def __init__(self, parent, start, end, probe):
+    def __init__(self, parent, start, end, probe, accdata=None):
         self.parent = parent
         self.start = start
         self.end = end
+        if accdata is None:
+            dynatree.dynatree.logger.debug("Loading acc data from parent")
+            self.accdata = parent.data_acc5000
+        else:
+            dynatree.dynatree.logger.debug("Loading acc data from parameter")
+            self.accdata = accdata
         if start > 0:
-            self.signal = parent.data_acc5000.loc[start:end, probe].copy()
+            self.signal = accdata.loc[start:end, probe].copy()
         else:
             zero_signal = pd.Series(index=np.arange(-1, 0, 0.0002), data=0)
-            elongated_signal =  pd.concat([zero_signal,parent.data_acc5000.loc[start:end, probe]])
+            elongated_signal =  pd.concat([zero_signal,accdata.loc[start:end, probe]])
             self.signal = elongated_signal.loc[start:end].copy()
         self.dt = 0.0002
         self.probe = probe

@@ -650,7 +650,7 @@ class DynatreeMeasurement:
     def data_acc5000(self):
         if self.file_acc5000_name is None:
             return None
-        logger.debug("loading acc data at 5000Hz")
+        logger.debug(f"loading acc data at 5000Hz for {self}")
         df = pd.read_parquet(self.file_acc5000_name)
         df.columns = [i.replace("Data1_","").replace("ACC","A0").replace("_axis","").lower() for i in df.columns]
         df = df.reindex(columns=sorted(df.columns))
