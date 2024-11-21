@@ -30,6 +30,8 @@ Skripty pro tvorbu parquet souborů:
 * `acc2parquet_full.py`  acc na 5000Hz, staci spustit
 * `parquet_add_inclino.py` Prida tahovky k optice, resamplovani tahovek, casova synchronizace a nulovani inklinometru podle csv/synchronization_finetune_inclinometers_fix.csv, Staci spustit
 * `find_tsv.py`, `xsight_tsv2parquet.py` Nalezeni a transformace tsv souboru. Staci spustit ve spravnem poradi (nejdriv najit adresare a potom je zpracovavat.)
+       python -m utils.find_tsv
+       python xsight_tsv2parquet.py
 * `pull2parquet.py`  Tahovky do parquet souboru. Nejdriv najit zdroje a pote spustit skript. Nalezeni zdroju viz navod v souboru.
 
 Acc jsou nezavisle, prdavani tahovek k optice predpoklada, ze jsou aktualni data z tahovek a z optiky, tj. `parquet_add_inclino.py` spoustet nakonec. A vzdy po uprave 
