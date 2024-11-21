@@ -51,18 +51,18 @@ def save_images(signal_knock, fft_peak, figname):
     # print(f"{cachedir}/FFT_{figname}.png saved")
 
     # large FFT
-    # fig, ax = plt.subplots(figsize=(9,3))
-    # if "_x_" in figname:
-    #     color="C0"
-    # elif "_y_" in figname:
-    #     color="C1"
-    # else:
-    #     color="C2"
-    # ax.plot(signal_fft, color=color)
-    # ax.axvline(x=fft_peak, color='r', linestyle='--')
-    # ax.grid()
-    # ax.set(yscale='log')
-    # fig.savefig(f"{cachedir_large}/FFT_{figname}.png", transparent=True)
+    fig, ax = plt.subplots(figsize=(9,3))
+    if "_x_" in figname:
+        color="C0"
+    elif "_y_" in figname:
+        color="C1"
+    else:
+        color="C2"
+    ax.plot(signal_fft, color=color)
+    ax.axvline(x=fft_peak, color='r', linestyle='--')
+    ax.grid()
+    ax.set(yscale='log')
+    fig.savefig(f"{cachedir_large}/FFT_{figname}.png", transparent=True)
     # print(f"{cachedir_large}/FFT_{figname}.png saved")
 
     plt.close('all')
@@ -91,24 +91,24 @@ def zpracuj_mereni(row):
 
 
 def main():
-    mereni_df = df[["type", "tree", "day", "measurement"]].drop_duplicates()
-    pbar = tqdm(total=len(mereni_df))
-    for i, row in mereni_df.iterrows():
-        zpracuj_mereni(row)
-        pbar.update(1)
-    pbar.close()
+    # mereni_df = df[["type", "tree", "day", "measurement"]].drop_duplicates()
+    # pbar = tqdm(total=len(mereni_df))
+    # for i, row in mereni_df.iterrows():
+    #     zpracuj_mereni(row)
+    #     pbar.update(1)
+    # pbar.close()
 
-    # with ProcessPoolExecutor() as executor:
-    #     # Startujeme úlohy paralelně
-    #     futures = {executor.submit(zpracuj_mereni, row): i for i, row in df.iterrows()}
-    #
-    #     # Ukazatel progresu
-    #     with tqdm(total=len(futures)) as pbar:
-    #         for future in as_completed(futures):
-    #             # Zpracování výsledku (pokud je potřeba)
-    #             result = future.result()
-    #             # Aktualizace progresu
-    #             pbar.update(1)
+    with ProcessPoolExecutor() as executor:
+        # Startujeme úlohy paralelně
+        futures = {executor.submit(zpracuj_mereni, row): i for i, row in mereni_df.iterrows()}
+
+        # Ukazatel progresu
+        with tqdm(total=len(futures)) as pbar:
+            for future in as_completed(futures):
+                # Zpracování výsledku (pokud je potřeba)
+                result = future.result()
+                # Aktualizace progresu
+                pbar.update(1)
 
 if __name__ == "__main__":
     main()
