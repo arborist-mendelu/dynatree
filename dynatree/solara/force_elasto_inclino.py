@@ -86,7 +86,8 @@ def nakresli():
         fig = plot_one_measurement(
                 date=s.day.value,
                 tree=s.tree.value, 
-                measurement=s.measurement.value, 
+                measurement=s.measurement.value,
+                measurement_type=s.method.value,
                 path=DATA_PATH,
                 plot_fixes=probe.value=="Pt3 with fixes", 
                 plot_Pt4=probe.value=="Pt3 with Pt4",
@@ -117,7 +118,7 @@ def Page():
             if tab_value.value == 1:
                 Interaktivni_grafy()
         with solara.lab.Tab("Návod"):
-            solara.Markdown(navod)
+            solara.Markdown(navod, style={"color":"inherit"})
 
 delta_time_manual = solara.reactive(0.0)      
 use_manual_delta = solara.reactive(False)
@@ -126,7 +127,8 @@ def Interaktivni_grafy():
     m = DynatreeStaticMeasurement(
         day=s.day.value, 
         tree=s.tree.value, 
-        measurement=s.measurement.value
+        measurement=s.measurement.value,
+        measurement_type=s.method.value
         )
     with solara.Sidebar():
         s.ImageSizes()
@@ -141,7 +143,7 @@ def Interaktivni_grafy():
         return
 
 
-    delta_time = find_finetune_synchro(m.day, m.tree, m.measurement)
+    delta_time = find_finetune_synchro(m.day, m.tree, m.measurement, m.measurement_type)
     with solara.Columns(2):
         with solara.Card():
             solara.InputFloat(label="ruční doladění synchronizace", 

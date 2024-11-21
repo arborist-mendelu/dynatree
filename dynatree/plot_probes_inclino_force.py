@@ -33,6 +33,7 @@ def plot_one_measurement(
         path=datapath,
         tree="01",
         measurement="2",
+        measurement_type="normal",
         df_remarks=None,
         return_figure=True,
         save_figure=False,
@@ -65,7 +66,7 @@ def plot_one_measurement(
 
     """
       
-    m = DynatreeMeasurement(date, tree, measurement)
+    m = DynatreeMeasurement(date, tree, measurement, measurement_type=measurement_type)
     if df_remarks is None:
         df_remarks = pd.read_csv(file['oscillation_times_remarks'])
     
@@ -109,7 +110,7 @@ def plot_one_measurement(
 
     fig, axes = plt.subplots(3,1,figsize=figsize,sharex=True)
     plt.suptitle(
-        f"{date.replace('_optika_zpracovani','')} - BK{tree} M0{measurement}")
+        f"{measurement_type} {date.replace('_optika_zpracovani','')} - BK{tree} M0{measurement}")
 
     # Plot probes, region of interest for oscillation
     ax = axes[0]
@@ -146,7 +147,7 @@ def plot_one_measurement(
     # plot inclinometers
     ax = axes[1]    
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
-    delta_time = find_finetune_synchro(date, tree,measurement) 
+    delta_time = find_finetune_synchro(date, tree,measurement, measurement_type)
     # print("delta time",delta_time)
 
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
@@ -162,7 +163,7 @@ def plot_one_measurement(
         delta_time=delta_time
         )    
     for inclino in list_inclino:
-        bounds = find_finetune_synchro(date, tree,measurement, inclino) 
+        bounds = find_finetune_synchro(date, tree,measurement, measurement_type, inclino)
         if bounds is None or np.isnan(bounds).any():
             continue
         start,end = bounds
@@ -223,7 +224,7 @@ def plot_one_measurement(
     for ax in axes:
         ax.axvline(x = release_time_optics, color='k', linestyle="dashed", zorder=0)
 
-    tmin, tmax = find_release_time_interval(df_extra, date, tree, measurement)
+    tmin, tmax = find_release_time_interval(df_extra, date, tree, measurement, measurement_type)
     
     for ax in axes:
         # Nasledujici radek omezi graf na okamzik okolo vypusteni
@@ -245,13 +246,16 @@ def plot_one_measurement(
 
 def plot_one_day(date="2021-03-22", path=datapath, release_detail=False):
     
-    files =  glob.glob(f"{path}/parquet/{date.replace('-','_')}/BK??_M??.parquet")
+    files =  glob.glob(f"{path}/parquet/{date.replace('-','_')}/*BK??_M??.parquet")
     files.sort()
     pbar = tqdm(total=len(files))
     for file in files:
         filename = file.split("/")[-1].replace(".parquet","")
+        data = filename.split("_")
+        if len(data) == 2:
+            data = ["normal", *data]
         # print(filename,", ",end="", flush=True)
-        tree, measurement = filename.split("_")
+        measure_type, tree, measurement = data
         pbar.set_description(f"{tree} {measurement}")
         plot_one_measurement(
             date=date, 

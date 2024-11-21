@@ -28,16 +28,21 @@ def find_release_data_one_measurement(
         path=datapath,
         tree="01",
         measurement="2",
+        measurement_type="normal",
         ):
     if len(tree)>2:
         tree = tree[-2:]
     if len(measurement)>1:
         measurement = measurement[-1]
 
+    if measurement_type == "normal":
+        prefix = ""
+    else:
+        prefix = f"{measurement_type}_"
     df_main = read_data_selected(
-        f"{path}/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}.parquet")
+        f"{path}/parquet/{date.replace('-','_')}/{prefix}BK{tree}_M0{measurement}.parquet")
     df_extra = read_data(
-        f"{path}/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}_pulling.parquet")
+        f"{path}/parquet/{date.replace('-','_')}/{prefix}BK{tree}_M0{measurement}_pulling.parquet")
 
     # print("/extrahuji data/", flush=True)
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
@@ -48,7 +53,7 @@ def find_release_data_one_measurement(
     df = df - df.iloc[0,:]
 
     # print("/hledam casovy interval/")
-    tmin, tmax = find_release_time_interval(df_extra, date, tree, measurement)
+    tmin, tmax = find_release_time_interval(df_extra, date, tree, measurement, measurement_type)
 
     # Výběr časového intervalu
     df_release = df.loc[tmin:tmax,:].copy()
@@ -71,9 +76,12 @@ def find_release_data_one_day(date="2021-03-22", path=datapath):
     # Drop directory name
     files = [i.split("/")[-1] for i in files]
     for file in files:
-        tree, measurement = filename2tree_and_measurement_numbers(file)
+        measurement_type, tree, measurement = filename2tree_and_measurement_numbers(file)
         print (f"BK{tree} M0{measurement}, ",end="", flush=True)
-        output[f"BK{tree} M0{measurement}"] = find_release_data_one_measurement(date=date, tree=tree, measurement=measurement, path=path)
+        output[f"BK{tree} M0{measurement}"] = find_release_data_one_measurement(date=date, tree=tree,
+                                                                                measurement=measurement,
+                                                                                measurement_type=measurement_type,
+                                                                                path=path)
     df = pd.DataFrame(output)
     return df
 
@@ -84,6 +92,7 @@ def main():
                     "2021-06-29", 
                     "2022-04-05",
                     "2022-08-16",
+                    "2023-07-17",
                     ]:
         print()
         print(i)

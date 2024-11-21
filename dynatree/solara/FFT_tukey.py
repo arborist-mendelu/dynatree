@@ -337,7 +337,7 @@ def Page():
         * Svislá červená čára je frekvence použitá do dalšího zpracování. Stanovena jako maximum na určitém frekvenčním 
           intervalu. Numerická hodnota je i v nadpisu obrázku.
         * Pokud je toto měření pokažené, zkopíruj si řádek nad tímto rámečkem a přidá se mezi seznam zkažených.
-        """                            
+        """, style={'color':'inherit'}
                                     )
                         except:
                             pass
@@ -418,7 +418,7 @@ def Page():
         * Krok mezi frekvencemi je 0.017Hz. Odchylka v mezích 0.02Hz nic neznamená, může se jednat o 
           vedlejší bod u širokého peaku.
         * Vyjádření k některým měřením:
-        """                        
+        """, style={'color':'inherit'}
                                 )
                             solara.display(df_komentare)
                 with solara.lab.Tab("Přehled s odkazy"):
@@ -468,7 +468,7 @@ def Page():
                 * Za položkama v tabulce jsou tři tečky, které po najetí umožní zobrazit statický graf a případnou 
                   poznámku v sidebaru. Toto je možné použít na na data, která patří k existujícím měřením, ale mají
                   v tabulce pomlčku, protože jsou tato měření vyhodnocena jako pokažená.
-                """                        
+                """ , style={'color':'inherit'}
                                         )
         
                                 solara.HTML(tag="script", unsafe_innerHTML=

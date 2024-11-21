@@ -225,10 +225,14 @@ def directory2date(d):
 
 
 def filename2tree_and_measurement_numbers(f):
-    tree,tree_measurement,*_ = f.split("_")
+    f = f.replace("_pulling","")
+    data = f.split("_")
+    if len(data) == 2:
+        data = ["normal",*data]
+    tree,tree_measurement = data
     tree = tree.replace("BK","")
     tree_measurement = tree_measurement.replace("M0","").replace(".parquet","")
-    return tree,tree_measurement
+    return measurement_type, tree, tree_measurement
 
 
 def find_release_time_optics(df,probe="Pt3",coordinate="Y0"):
@@ -383,7 +387,7 @@ def find_finetune_synchro(date, tree, measurement, measurement_type, cols="delta
 #     return date
 
 
-def find_release_time_interval(df_extra, date, tree, measurement):
+def find_release_time_interval(df_extra, date, tree, measurement, measurement_type):
     """
     Find release time
     
@@ -394,7 +398,7 @@ def find_release_time_interval(df_extra, date, tree, measurement):
     of maxima.
     """
 
-    check_manual_data = find_finetune_synchro(date, tree, measurement, cols="pre_release")
+    check_manual_data = find_finetune_synchro(date, tree, measurement, measurement_type, cols="pre_release")
     if check_manual_data is not None and ~(np.isnan(check_manual_data).any()):
         return check_manual_data
     
