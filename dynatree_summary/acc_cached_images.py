@@ -91,7 +91,7 @@ def zpracuj_mereni(row):
 
 
 def main():
-    # mereni_df = df[["type", "tree", "day", "measurement"]].drop_duplicates()
+    mereni_df = df[["type", "tree", "day", "measurement"]].drop_duplicates()
     # pbar = tqdm(total=len(mereni_df))
     # for i, row in mereni_df.iterrows():
     #     zpracuj_mereni(row)
