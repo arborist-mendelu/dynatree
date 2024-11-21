@@ -5,25 +5,33 @@ Created on Wed Aug 28 18:41:25 2024
 
 @author: marik
 """
+import time
+
+start_imports = time.time()
 
 import solara
 from solara.lab import task
+mezicas = time.time() - start_imports
 import dynatree.solara.tahovky
-import dynatree.solara.vizualizace
 import dynatree.solara.force_elasto_inclino
-import dynatree.solara.FFT
+# import dynatree.solara.FFT
 import dynatree.solara.welch_ACC
 import dynatree.solara.FFT_tukey
 import dynatree.solara.download
 import dynatree.solara.damping
 import dynatree.solara.pulling_tests
+import dynatree.solara.tuk_ACC
 import krkoskova.krkoskova_app
 import pandas as pd
-import time
 from datetime import datetime
 import psutil
-
+import os
 import toml
+mezicas2 = time.time() - start_imports
+import dynatree.solara.vizualizace
+import_finish = time.time()
+print(f"Imports finished in {import_finish-start_imports} sec, mezicas {mezicas}, {mezicas2}")
+
 with open('solara_texts.toml', 'r') as f:
     config = toml.load(f)
 
@@ -116,6 +124,14 @@ def Page():
                             solara.Text(f"Memory Total: {memory.total/1024**3:.2f}GB")
                             solara.Text(f"Cores: {psutil.cpu_count()}")
                             solara.Text(f"Datum a čas: {date}")
+                            try:
+                                solara.Text(f"SERVER_NAME {os.environ['SERVER_NAME']}")
+                            except:
+                                pass
+                            try:
+                                solara.Text(f"SERVER_PORT {os.environ['SERVER_PORT']}")
+                            except:
+                                pass
                     solara.Button("Refresh", on_click=monitoring)
                 
 routes = [
@@ -123,9 +139,10 @@ routes = [
     solara.Route(path="vizualizace", component=dynatree.solara.vizualizace.Page, label="vizualizace"),
     solara.Route(path="tahovky", component=dynatree.solara.tahovky.Page, label="tahovky"),
     solara.Route(path="synchronizace", component=dynatree.solara.force_elasto_inclino.Page, label="synchronizace"),
-    solara.Route(path="FFT_old", component=dynatree.solara.FFT.Page, label="FFT1"),
+    # solara.Route(path="FFT_old", component=dynatree.solara.FFT.Page, label="FFT1"),
     solara.Route(path="Welch_ACC", component=dynatree.solara.welch_ACC.Page, label="FFT2"),
     solara.Route(path="FFT_Tukey_all", component=dynatree.solara.FFT_tukey.Page, label="FFT3"),
+    solara.Route(path="ACC_tuk", component=dynatree.solara.tuk_ACC.Page, label="ACC_TUK"),
     solara.Route(path="Damping", component=dynatree.solara.damping.Page, label="damping"),
     solara.Route(path="Downloads", component=dynatree.solara.download.Page, label="DWNL"),
     solara.Route(path="Krkoskova", component=krkoskova.krkoskova_app.Page, label="K"),

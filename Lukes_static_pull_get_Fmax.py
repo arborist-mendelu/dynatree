@@ -1,8 +1,8 @@
 # %%
 
-from lib_find_measurements import get_all_measurements
+from dynatree.find_measurements import get_all_measurements
 import pandas as pd
-from static_pull import DynatreeStaticMeasurement
+from dynatree.static_pull import DynatreeStaticMeasurement
 
 df = get_all_measurements(method='all', type='all')
 df = df[

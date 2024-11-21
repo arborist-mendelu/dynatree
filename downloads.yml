@@ -29,9 +29,16 @@ static_pull_first_versus_other_pulls.html: Porovnání směrnic z regresí, druh
 
 static_pull_major_versus_total.html: Porovnání směrnic z regresí, major versus total.
 
+---
+title: "FFT po ťuku"
+
+popis:
+    FFT analýza po ťuku ve statice a před pull and release.
+
+FFT_acc_knock.csv: Výstup z FFT analýzy.
 
 ---
-title: "FFT, oscilace, etc"
+title: "FFT, oscilace, pull and release"
 
 popis: 
     FFT analýza nově (k 2024-09-22), tj. automatické (doladit? připustit výjimky?) 

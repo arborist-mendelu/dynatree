@@ -10,8 +10,11 @@ from plotly.subplots import make_subplots
 import pandas as pd
 from dynatree import dynatree
 import logging
-dynatree.logger.setLevel(logging.ERROR)
+import time
 
+dynatree.logger.setLevel(dynatree.logger_level)
+
+loading_start = time.time()
 def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1 ):
     signal, time = s.damped_signal.reshape(-1), s.damped_time
     x = time
@@ -125,3 +128,4 @@ def draw_images(temp=None):
     df.index = ['k']
     return df,fig
 
+dynatree.logger.info(f"File damping.py loaded in {time.time()-loading_start} sec.")

@@ -17,9 +17,26 @@ rule all:
         "../outputs/fft_boxplots_for_probes_tukey.pdf",
         "../outputs/static_pull_first_versus_other_pulls.html",
         "../outputs/static_pull_major_versus_total.html",
-        "../outputs/welch.pdf"
+        "../outputs/welch.pdf",
+        "../outputs/FFT_acc_knock.csv"
 
-        
+
+rule FFT_acc_knock:
+    """
+    FFT for acc channles when the tree is knock by a hammer
+    """
+    input:
+        file = "dynatree_summary/acc_knocks.py"
+    output:
+        "../outputs/FFT_acc_knock.csv"
+    conda:
+        "dynatree"
+    shell:
+        """
+        python -m dynatree_summary.acc_knocks
+        """
+
+
 rule measurement_notes:
     """
     Extract the measurement notes from the xlsx file.

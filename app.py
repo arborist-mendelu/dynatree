@@ -63,11 +63,16 @@ def logout():
 def check_if_logged_in():
     target_url = request.path
     print(f"target url is {request.path}")
+    if "/api" in target_url:
+        return
     if not 'logged_in' in session or not session['logged_in']:
         if request.endpoint not in ['login', 'register', 'static', 'blueprint-solara.public']:
             # Přesměruj na přihlašovací stránku, pokud uživatel není přihlášen
             return redirect(url_for('login', next=target_url))
 
+@app.route('/api')
+def api():
+    return "Tady bude api, není nutné se přihlašovat. Možná."
 
 if __name__ == '__main__':
     app.run(debug=True)

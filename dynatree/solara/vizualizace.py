@@ -5,6 +5,8 @@ Created on Thu Aug 15 14:00:04 2024
 @author: marik
 """
 
+import time
+loading_start = time.time()
 from dynatree.find_measurements import available_measurements
 from dynatree import dynatree
 import plotly.express as px
@@ -14,11 +16,10 @@ import pandas as pd
 import dynatree.solara.select_source as s
 from plotly_resampler import FigureResampler
 
-DATA_PATH = "../data"
+dynatree.logger.setLevel(dynatree.logger_level)
 
 tightcols = {'gap': "0px"}
 regression_settings = {'color': 'gray', 'alpha': 0.5}
-
 
 title = "DYNATREE: vizualizace dat, se kterými se pracuje"
 
@@ -45,6 +46,11 @@ selection_data = solara.reactive(None)
 def set_selection_data(x=None):
     selection_data.value = x
 
+t_from = solara.reactive(0)
+t_to = solara.reactive(0)
+def set_click_data(x=None):
+    t_from.value = x['points']['xs'][0]
+
 data_object = dynatree.DynatreeMeasurement(
     s.day.value, 
     s.tree.value, 
@@ -63,7 +69,7 @@ def plot(df, var, msg=None, id=None, resample=False):
                      **kwds)    
     if resample:
         fig_res = FigureResampler(fig)
-        solara.FigurePlotly(fig_res, on_selection=set_selection_data)    
+        solara.FigurePlotly(fig_res, on_selection=set_selection_data, on_click=set_click_data)
     else:
         solara.FigurePlotly(fig, on_selection=set_selection_data)    
     if msg is not None:
@@ -185,6 +191,34 @@ def resetuj(x=None):
 def generuj_obrazky(x=None):
     pass
 
+length = solara.reactive(1)
+
+@solara.component
+def PlotDetail(df5):
+    # if t_to.value > t_from.value:
+    if df5 is None:
+        return
+    subdf = df5.loc[t_from.value:t_from.value+length.value, dependent_acc.value]
+    fig = px.scatter(subdf, y=dependent_acc.value,
+                     height=s.height.value, width=s.width.value,
+                     title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
+                     ) .update_traces(mode='lines')
+    solara.FigurePlotly(fig)
+
+def posun_t_from(value, limit=500):
+    # pass
+    t_from.value = t_from.value + value
+    if t_from.value < 0:
+        t_from.value = 0
+    if t_from.value > limit-1:
+        t_from.value = limit-1
+
+def posun_doprava():
+    t_from.value = t_from.value + length.value
+def posun_doleva():
+    t_from.value = t_from.value - length.value
+
+
 @solara.component
 def Page():
     data_object = dynatree.DynatreeMeasurement(
@@ -293,7 +327,25 @@ Data jsou dynamicky přesamplovaná pomocí plotly-resample. Mohou tedy vypadat 
 nedalo pracovat. Downsamplování je pouze při zobrazování, nepoužívá se pro výpočty.
 """
                             )
-                        plot(df5, dependent_acc, resample=True)                        
+                        plot(df5, dependent_acc, resample=True)
+                        solara.Info("Detail bez přesamplování je níže. Začátek inervalu zadej z klávesnice nebo kliknutím do horního obrázku. Délka signálu je volitelná. Po změně začátku je asi potřeba resetovat zobrazení os v dolním obrázku - dvojklik do obrázku.")
+                        solara.InputFloat("From", value=t_from)
+                        # solara.InputFloat("To", value=t_to)
+                        with solara.Row():
+                            solara.Text("Délka intervalu pro detail")
+                            solara.ToggleButtonsSingle(value=length, values = [0.5,1,2,3,5])
+                        with solara.Row():
+                             solara.Button(label=f"<-", on_click=posun_doleva)
+                             solara.Button(label=f"->", on_click=posun_doprava)
+
+                        # with solara.Row():
+                        #     solara.Text("Posunout pohled na graf")
+                        #     for posun in [-10,-5,-3,-1,1,2,3,5,10]:
+                        #         solara.Button(label=f"{posun}", value=posun, on_click=posun_t_from)
+
+                        PlotDetail(df5)
+                            # solara.display(df5.loc[t_from.value:t_to.value,:])
+
                         # plot(df5, dependent_acc)                        
                     #     investigate(df5, dependent_acc)                        
                     # else:
@@ -364,3 +416,4 @@ def Selection():
             solara.ToggleButtonsSingle(value=height, values=heights)
       
 
+dynatree.logger.info(f"File vizualizace.py loaded in {time.time()-loading_start} sec")

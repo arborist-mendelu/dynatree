@@ -26,3 +26,4 @@ bioconda::snakemake
 passlib
 gunicorn
 statsmodels
+polars

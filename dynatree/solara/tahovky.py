@@ -6,6 +6,7 @@ Created on Thu Aug 15 14:00:04 2024
 @author: marik
 """
 
+import time
 from dynatree.find_measurements import available_measurements
 from dynatree import static_pull, dynatree_util as du
 import numpy as np
@@ -21,6 +22,10 @@ import dynatree.solara.select_source as s
 import graphs_regressions
 import static_lib_pull_comparison
 import dynatree.dynatree as dynatree
+import logging
+dynatree.logger.setLevel(dynatree.logger_level)
+
+loading_start = time.time()
 
 DATA_PATH = "../data"
 from great_tables import GT, style, loc
@@ -141,7 +146,7 @@ def prehled():
         * True/False se vztahuje k přítomnosti listů. 
         * Číslo 0 až 2 se vztahuje k počtu ořezů.
         * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
-        """
+        """, style={'color':'inherit'}
     )
     # with solara.Row():
     #     solara.Button("Update Page", on_click=ShowRegressionsHere)
@@ -565,7 +570,7 @@ def Graphs():
                   day {s.day.value} measurement type {s.method.value}.
                 * You may need to switch measurement type (normal/den/noc/...) 
                   if the list of the measuemrent day is incorrect.
-                """)
+                """, style={'color':'inherit'})
         return
 
     if nakresli.not_called:
@@ -575,7 +580,7 @@ def Graphs():
 * Ovládací prvky jsou v sidebaru. Pokud není otevřený, otevři kliknutím na tři čárky nalevo v modrém pásu.
 * Při změně vstupů se většinou obrázek aktualizuje, ale ne vždy. Pokud nadpis na obrázku nesouhlasí s vybranými hodnotami, spusť výpočet tlačítkem \"Run calculation\".
 
-                                    """))
+                                    """, style={'color':'inherit'}))
         # solara.Warning(
         #     "Pokud pracuješ v prostředí JupyterHub, asi bude lepší aplikaci maximalizovat. Tlačítko je v modrém pásu úplně napravo.")
     elif not nakresli.finished:
@@ -969,3 +974,5 @@ Pokud chceš dynamické měření brát jako statiku, použij přepínač "Use o
 * 2024-09-?? polární graf, interaktivní grafy
 """
     )
+
+dynatree.logger.info(f"File tahovky.py loaded in {time.time()-loading_start} sec.")

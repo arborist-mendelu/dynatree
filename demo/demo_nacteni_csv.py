@@ -7,14 +7,23 @@ Created on Mon Nov  6 19:31:14 2023
 """
 
 from dynatree import dynatree
+import logging
+dynatree.logger.setLevel(logging.DEBUG)
 
-data = lib_dynatree.DynatreeMeasurement("2021-03-22", "BK01", "M03")
+
+# %%
+data = dynatree.DynatreeMeasurement("2021-03-22", "BK01", "M03")
 
 d1 = data.data_optics_pt34
 d2 = data.data_pulling
 # df_remarks = pd.read_csv("csv/oscillation_times_remarks.csv")
 # df = read_data(f"../01_Mereni_Babice_16082022_optika_zpracovani/csv/BK11_M03.csv")
 
-# #%%
+# %%
 
-# df[("Pt3","Y0")].plot()
+data.data_acc5000
+
+# %%
+
+data.data_acc5000.columns
+

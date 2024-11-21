@@ -38,9 +38,11 @@ file['solara_FFT'] = "csv/solara_FFT.csv"
 file['FFT_comments'] = "csv/FFT_comments.csv"
 file['FFT_failed'] = "csv/FFT_failed.csv"
 
+file['outputs/FFT_acc_knock'] = "../outputs/FFT_acc_knock.csv"
+file['cachedir'] = "../outputs/cache"
+file['cachedir_large'] = "../outputs/fft_images_knocks"
+
 for key in file.keys():
     file[key] = PREFIX + file[key]
-
-
 
 file['logfile'] = '/tmp/dynatree.log'

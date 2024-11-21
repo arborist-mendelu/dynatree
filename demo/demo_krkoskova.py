@@ -17,6 +17,7 @@ import pandas as pd
 import rich
 
 m = lk.Tuk("LP15", "tuk01")
+
 # rich.inspect(m)
 
 #%%
