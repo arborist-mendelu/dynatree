@@ -258,7 +258,7 @@ def Seznam_probe():
                     image_path = "/static/public/cache/FFT_" + row['filename'] + ".png"
                 else:
                     image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
-                if time_or_freq == "time domain":
+                if time_or_freq.value == "time domain":
                     image_path = "/static/public/cache/" + row['filename'] + ".png"
                 souradnice = f"{row['measurement']} @{row['knock_time']/100.0}sec, <b>{round(row['freq'])} Hz</b>"
                 file = file + f"""
