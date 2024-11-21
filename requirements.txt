@@ -27,3 +27,4 @@ passlib
 gunicorn
 statsmodels
 polars
+parallelbar
