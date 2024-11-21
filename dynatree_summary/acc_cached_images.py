@@ -11,7 +11,7 @@ from config import file
 import matplotlib.pyplot as plt
 from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
 import logging
-dynatree.dynatree.logger.setLevel(logging.DEBUG)
+dynatree.dynatree.logger.setLevel(logging.ERROR)
 
 delta_time = 0.4
 df = pd.read_csv(file['outputs/FFT_acc_knock'])
