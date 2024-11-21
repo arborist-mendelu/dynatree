@@ -2,7 +2,8 @@
 Ulozi fft obrazky a obrazky kmitu do souborove cache.
 """
 import sys
-
+import gc
+from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
 
@@ -27,6 +28,12 @@ cachedir_large = file['cachedir_large']
 
 # @dynatree.dynatree.timeit
 def save_images(signal_knock, fft_peak, figname):
+    if (
+            Path(f"{cachedir}/{figname}.png").exists() &
+            Path(f"{cachedir}/FFT_{figname}.png").exists() &
+            Path(f"{cachedir_large}/FFT_{figname}.png").exists()
+    ):
+        return
 
     # small time domain
     fig, ax = plt.subplots(figsize=(3,1))
@@ -91,13 +98,33 @@ def zpracuj_mereni(row):
 
 
 def main():
-    mereni_df = df[["type", "tree", "day", "measurement"]].drop_duplicates()
+    mereni_df = df[["type", "tree", "day", "measurement"]].drop_duplicates().reset_index()
     # pbar = tqdm(total=len(mereni_df))
     # for i, row in mereni_df.iterrows():
     #     zpracuj_mereni(row)
     #     pbar.update(1)
     # pbar.close()
+    main_part(mereni_df.loc[:50,:].copy())
+    gc.collect()
+    main_part(mereni_df.loc[51:100,:].copy())
+    gc.collect()
+    main_part(mereni_df.loc[100:150,:].copy())
+    gc.collect()
+    main_part(mereni_df.loc[150:200,:].copy())
+    gc.collect()
+    main_part(mereni_df.loc[200:250,:].copy())
+    gc.collect()
+    main_part(mereni_df.loc[250:300,:].copy())
+    gc.collect()
+    main_part(mereni_df.loc[300:400,:].copy())
+    gc.collect()
+    main_part(mereni_df.loc[400:500,:].copy())
+    gc.collect()
+    main_part(mereni_df.loc[500:600,:].copy())
+    gc.collect()
+    main_part(mereni_df.loc[600:,:].copy())
 
+def main_part(mereni_df):
     with ProcessPoolExecutor() as executor:
         # Startujeme úlohy paralelně
         futures = {executor.submit(zpracuj_mereni, row): i for i, row in mereni_df.iterrows()}

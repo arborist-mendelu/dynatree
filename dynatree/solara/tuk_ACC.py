@@ -50,6 +50,7 @@ select_axis_multi = solara.reactive([])
 fft_status_for_report = solara.reactive("healthy")
 use_all_measurements = solara.reactive(True)
 log_x_axis_FFT = solara.reactive(False)
+time_or_freq = solara.reactive("FFT")
 
 df = pd.read_csv("../outputs/FFT_acc_knock.csv")
 if "valid" not in df.columns:
@@ -229,6 +230,7 @@ def Seznam_probe():
         solara.ToggleButtonsMultiple(value=select_axis_multi, values = ["x","y","z"])
         solara.ToggleButtonsSingle(value=img_size, values=["small","large"])
         solara.ToggleButtonsSingle(value=fft_status_for_report, values=["healthy", "failed"])
+    solara.ToggleButtonsSingle(value=time_or_freq, values=["FFT", "time domain"])
     solara.ToggleButtonsMultiple(value=select_days_multi, values=day_type_pairs)
     probeset = [f"{i}_{j}" for i in select_probe_multi.value for j in select_axis_multi.value]
     subdf = rdf[worker.value][
@@ -256,6 +258,8 @@ def Seznam_probe():
                     image_path = "/static/public/cache/FFT_" + row['filename'] + ".png"
                 else:
                     image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
+                if time_or_freq == "time domain":
+                    image_path = "/static/public/cache/" + row['filename'] + ".png"
                 souradnice = f"{row['measurement']} @{row['knock_time']/100.0}sec, <b>{round(row['freq'])} Hz</b>"
                 file = file + f"""
 <div style='display:inline-block; border-style:solid; border-color:gray;' class='image-container'>
