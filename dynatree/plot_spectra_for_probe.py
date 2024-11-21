@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft, fftfreq
 import matplotlib
-from tqdm import tqdm
+from parallelbar import progress_map
 from config import file
 
 @dynatree.timeit
@@ -128,30 +128,26 @@ def main():
     except:
         matplotlib.use('Agg')
     all = find_measurements.get_all_measurements(method='all', type='normal',)
-    pbar = tqdm(total=len(all))
-    for i,row in all.iterrows():
-        if row['measurement'] == "M01":
-            continue
-        # print (f"{row['date']} {row['tree']} {row['measurement']}")
-        pbar.set_description(f"{row['type']} {row['date']} {row['tree']} {row['measurement']}")
-        figs = plot_spectra_for_all_probes(
-            measurement_type=row['type'],
-            day=row['day'],
-            tree=row['tree'],
-            measurement=row['measurement'])
-        # for i in figs.values():
-            # plt.show(i['fig'])
-            # print(i['remark'])
-        if figs is None:
-            continue
-        for f in figs.values():
-            f['fig'].text(0.01,0.01,f['remark'][:100])
-            f['fig'].text(0.4,0.4,f"peaks {f['peaks']}")
-            f['fig'].savefig(f"../temp_spectra/{row['type']}_{row['day']}_{row['tree']}_{row['measurement']}_{f['probe'].replace('(','').replace(')','')}.pdf")
-        plt.close('all')
-        pbar.update(1)
-    pbar.close()    
-    
+
+    res = progress_map(do_one_row, [i for _,i in all.iterrows()])
+
+def do_one_row(row):
+    if row['measurement'] == "M01":
+        return
+    figs = plot_spectra_for_all_probes(
+        measurement_type=row['type'],
+        day=row['day'],
+        tree=row['tree'],
+        measurement=row['measurement'])
+    if figs is None:
+        return
+    for f in figs.values():
+        f['fig'].text(0.01, 0.01, f['remark'][:100])
+        f['fig'].text(0.4, 0.4, f"peaks {f['peaks']}")
+        f['fig'].savefig(
+            f"../temp_spectra/{row['type']}_{row['day']}_{row['tree']}_{row['measurement']}_{f['probe'].replace('(', '').replace(')', '')}.pdf")
+    plt.close('all')
+
 if __name__ == "__main__":
     main()
 
