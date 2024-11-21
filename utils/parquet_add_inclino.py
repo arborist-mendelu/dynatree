@@ -11,7 +11,7 @@ Načte inklinoměry, sílu a elastometr, přeškáluje čas na stejné časy
 jako v optice, synchronizuje okamžiky vypuštění podle maxima síly a
 maxima Pt3.
 
-Čte následující data ve fromatu parquet:
+Čte následující data ve formatu parquet:
 
 * data z optiky 
 * data z tahovek
@@ -46,16 +46,17 @@ import pandas as pd
 import numpy as np
 import warnings
 from scipy import interpolate
-from lib_dynatree import read_data, find_release_time_optics
-from lib_dynatree import find_finetune_synchro, directory2date
-from lib_dynatree import DynatreeMeasurement
-from static_pull import DynatreeStaticMeasurement
-import lib_dynatree
-from dynatree_util import read_data_inclinometers
+from dynatree.dynatree import read_data, find_release_time_optics
+from dynatree.dynatree import find_finetune_synchro, directory2date
+from dynatree.dynatree import DynatreeMeasurement
+from dynatree.static_pull import DynatreeStaticMeasurement
+import dynatree.dynatree as dynatree
+from dynatree.dynatree_util import read_data_inclinometers
 from tqdm import tqdm
+import pathlib
 
 import logging
-lib_dynatree.logger.setLevel(logging.WARNING)
+dynatree.logger.setLevel(logging.INFO)
 
 def fix_data_by_points_on_ground(df):
     """
@@ -126,7 +127,11 @@ def extend_one_file(
         measurement="2", 
         path="../data", 
         write_file=False, 
-        df=None):
+        df=None,
+        keep_old_files=True,
+        fileprefix="",  # fileprefix is derived from measurement_type
+        measurement_type="normal"
+    ):
     """
     Reads csv file in a csv like directory, 
     adds data from inclinometers (reads from pulling_test subdirectory) and saves to 
@@ -138,38 +143,47 @@ def extend_one_file(
     The dataframe with fixes, inclinometers, force , ...
 
     """
-    lib_dynatree.logger.debug(f"Funkce extend_one_file")
-    
+    dynatree.logger.debug(f"Funkce extend_one_file")
+
+    if measurement_type == "normal":
+        fileprefix = ""
+    else:
+        fileprefix = f"{measurement_type}_"
     # accept both M02 and 2 as a measurement number
     measurement = measurement[-1]
     # accept both BK04 and 04 as a tree number
     tree = tree[-2:]
     # accepts all "2021_03_22" and "2021-03-22" as measurement_day
     date = date.replace("-","_")    
-    
+
+    target = f"{path}/parquet/{date.replace('-', '_')}/{fileprefix}BK{tree}_M0{measurement}_pulling.parquet"
+    if (keep_old_files & pathlib.Path(target).is_file()):
+        dynatree.logger.info(f"The file {target} exists. Skipping")
+        return
+
     # Read data file
     # načte data z csv souboru
     if df is None:
-        df = read_data(f"{path}/parquet/{date}/BK{tree}_M0{measurement}.parquet")   
-    # df se sploupci s odectenim pohybu bodu na zemi
+        df = read_data(f"{path}/parquet/{date}/{fileprefix}BK{tree}_M0{measurement}.parquet")
+    # df se sloupci s odectenim pohybu bodu na zemi
     df_fixed = df.copy().pipe(fix_data_by_points_on_ground) 
     # df s daty z inklinoměrů, synchronizuje a interpoluje na stejné časové okamžiky
     if measurement == "1":
-        lib_dynatree.logger.debug("Measurement is M01")
-        m = DynatreeStaticMeasurement(day=date, tree=tree, measurement=measurement)
+        dynatree.logger.debug("Measurement is M01")
+        m = DynatreeStaticMeasurement(day=date, tree=tree, measurement=measurement, measurement_type=measurement_type)
         release_time_optics = m.release_time_optics
     else:
-        lib_dynatree.logger.debug("Measurement is not M01")
+        dynatree.logger.debug("Measurement is not M01")
         release_time_optics = find_release_time_optics(df)
-        m = DynatreeMeasurement(date, tree, measurement)
+        m = DynatreeMeasurement(date, tree, measurement, measurement_type=measurement_type)
 
-    lib_dynatree.logger.debug(f"release time optics: {m.release_time_optics}")
-    delta_time = find_finetune_synchro(directory2date(date), tree,measurement)
+    dynatree.logger.debug(f"release time optics: {m.release_time_optics}")
+    delta_time = find_finetune_synchro(directory2date(date), tree,measurement, measurement_type=measurement_type)
     
     if delta_time != 0:
-        lib_dynatree.logger.debug(f"    Fixing data, nonzero delta time {delta_time} found.")
+        dynatree.logger.debug(f"    Fixing data, nonzero delta time {delta_time} found.")
         
-    lib_dynatree.logger.debug(f"    delta time {delta_time} release optics time {release_time_optics}")
+    dynatree.logger.debug(f"    delta time {delta_time} release optics time {release_time_optics}")
     
     # načte synchronizovaná data a přesampluje na stejné časy jako v optice
     df_pulling_tests_ = read_data_inclinometers(
@@ -183,17 +197,19 @@ def extend_one_file(
     # the mean value on the interval given between start and end is zero.    
     list_inclino = ["Inclino(80)X","Inclino(80)Y","Inclino(81)X","Inclino(81)Y"]
     for inclino in list_inclino:
-        bounds = find_finetune_synchro(date, tree,measurement, inclino) 
+        bounds = find_finetune_synchro(date, tree,measurement,measurement_type,inclino)
         if bounds is None or np.isnan(bounds).any():
             continue
         start,end = bounds
-        lib_dynatree.logger.debug(f"  Fixing inclinometer {inclino}, setting to zero from {start} to {end}.")
+        dynatree.logger.debug(f"  Fixing inclinometer {inclino}, setting to zero from {start} to {end}.")
         inclino_mean = df_pulling_tests.loc[start:end,inclino].mean()
         df_pulling_tests[inclino] = df_pulling_tests[inclino] - inclino_mean                
 
     df_fixed_and_inclino = pd.concat([df_fixed,df_pulling_tests], axis=1)
     if write_file:
-        df_fixed_and_inclino.to_parquet(f"{path}/parquet/{date.replace('-','_')}/BK{tree}_M0{measurement}_pulling.parquet")
+        df_fixed_and_inclino.to_parquet(target)
+        dynatree.logger.warning(f"File {target} saved.")
+
     return df_fixed_and_inclino
 
       
@@ -203,30 +219,40 @@ def main(path="../data"):
     if answer.upper() in ["Y", "YES"]:
         pass
     else:
-        lib_dynatree.logger.info("File processing skipped.")
+        dynatree.logger.info("File processing skipped.")
         return None
-    files = glob.glob(f"{path}/parquet/*/*.parquet")
+
+    files = glob.glob(f"{path}/parquet/2023*/*.parquet")
+    files = [i for i in files if "_pulling.parquet" not in i]
+
     files.sort()
     pbar = tqdm(total=len(files))
     for file in files:
-        date = file.split()
-        date,filename = file.split("/")[-2:]
+
+        date, filename = file.split("/")[-2:]
+        coords = filename.split(".")[0].split("_")
+        if len(coords) == 2:
+            coords = ["normal", *coords]
+        measurement_type, tree, measurement = coords
         # if not "M01" in filename:
         #     continue
-        lib_dynatree.logger.info(f"{date}/{filename}")
-        tree = filename[2:4]
-        measurement = filename[7]
+        dynatree.logger.info(f"{date}/{filename}")
+        tree = tree[2:]
+        measurement = measurement[2:]
 
         pbar.update(1)
         pbar.set_description(f"{date} {tree} {measurement}")
 
+
         extend_one_file(
-            date=date, 
-            path=path, 
-            tree=tree, 
+            date=date,
+            path=path,
+            tree=tree,
             measurement=measurement,
-            write_file=True)
-    lib_dynatree.logger.info(f"Konec zpracování")
+            measurement_type=measurement_type,
+            write_file=True,
+            keep_old_files=True)
+    dynatree.logger.info(f"Konec zpracování")
     pbar.close()
 
 if __name__ == "__main__":

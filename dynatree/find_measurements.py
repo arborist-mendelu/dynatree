@@ -59,6 +59,7 @@ def get_all_measurements_optics(cesta=DIRECTORY, suffix='parquet', directory='pa
     """
     files = glob.glob(cesta+f"/{directory}/*/*.{suffix}") 
     files = [i.replace(cesta+f"/{directory}/","").replace(f".{suffix}","") for i in files]
+    files = [i.replace(f"/BK","/normal_BK") for i in files]
     df = pd.DataFrame(files, columns=["full_path"])
     df[["date","rest"]] = df['full_path'].str.split("/", expand=True)
     df["date"] = df["date"].str.replace("_","-")
@@ -66,13 +67,13 @@ def get_all_measurements_optics(cesta=DIRECTORY, suffix='parquet', directory='pa
     mask = df["is_pulling"]
     dfA = df[np.logical_not(mask)].copy()
     dfB = df[mask].copy()
-    dfA[["tree","measurement"]] = dfA["rest"].str.split("_", expand=True)
-    dfB[["tree","measurement","pulling"]] = dfB["rest"].str.split("_", expand=True)
-    dfA = dfA.loc[:,["date","tree","measurement"]].sort_values(by = ["date","tree","measurement"]).reset_index(drop=True)
-    dfB = dfB.loc[:,["date","tree","measurement"]].sort_values(by = ["date","tree","measurement"]).reset_index(drop=True)
+    dfA[["type","tree","measurement"]] = dfA["rest"].str.split("_", expand=True)
+    dfB[["type","tree","measurement","pulling"]] = dfB["rest"].str.split("_", expand=True)
+    dfA = dfA.loc[:,["date","tree","measurement","type"]].sort_values(by = ["date","tree","measurement","type"]).reset_index(drop=True)
+    dfB = dfB.loc[:,["date","tree","measurement","type"]].sort_values(by = ["date","tree","measurement","type"]).reset_index(drop=True)
     if not dfA.equals(dfB):
         print("Některé měření nemá synchronizaci optika versus tahovky.")
-    dfA["type"] = "normal"  # optika je vzdy normal
+    # dfA["type"] = "normal"  # optika je vzdy normal
     return dfA
 
 def get_all_measurements(method='optics', type='normal', *args, **kwargs):

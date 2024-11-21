@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Sun Nov  5 07:56:28 2023
@@ -326,7 +327,7 @@ def do_welch(s, time, nperseg=2**10, fs = 100):
     Pxx
     return f, Pxx
 
-def find_finetune_synchro(date, tree, measurement, cols="delta time"):
+def find_finetune_synchro(date, tree, measurement, measurement_type, cols="delta time"):
     """
     Returns line from csv/synchronization_finetune_inclinometers_fix.csv
     corresponding to the date, tree and measurement numbers. Accepts both 
@@ -349,12 +350,12 @@ def find_finetune_synchro(date, tree, measurement, cols="delta time"):
     df = pd.read_csv(config.file["synchronization_finetune_inclinometers_fix"],
                      header=[0,1], index_col=[0,1,2])     
     df = df.sort_index()
-    if not (date,tree,measurement) in df.index:
+    if not (date, tree, measurement, measurement_type) in df.index:
         if cols=="delta time":
             return 0
         else:
             return None
-    df = df.loc[(date,tree,measurement),cols]
+    df = df.loc[(date,tree,measurement, measurement_type),cols]
     # if df.shape[0]>1:
     #     raise Exception (f"Row {date} {tree} {measurement} is more than once in the file csv/synchronization_finetune_inclinometers_fix.csv.\nMerge the date into a single row." )
     output = df.values
@@ -511,10 +512,11 @@ class DynatreeMeasurement:
         """
         The name of the file with optics.
         """
-        if self.measurement_type != "normal":
-            logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
-            return None
-        file = f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}.parquet"
+        if self.measurement_type == "normal":
+            prefix=""
+        else:
+            prefix = self.measurement_type+"_"
+        file = f"{self.datapath}/parquet/{self.day.replace('-','_')}/{prefix}{self.tree}_{self.measurement}.parquet"
         if Path(file).is_file():
             return file
 
@@ -525,10 +527,11 @@ class DynatreeMeasurement:
         interpolated to the same index as optics and both dataframes
         can be concatenated.
         """
-        if self.measurement_type != "normal":
-            logger.warning(f"Optics not available for {self.day} {self.tree} {self.measurement} {self.measurement_type}")
-            return None
-        file = f"{self.datapath}/parquet/{self.day.replace('-','_')}/{self.tree}_{self.measurement}_pulling.parquet"
+        if self.measurement_type == "normal":
+            prefix=""
+        else:
+            prefix = self.measurement_type+"_"
+        file = f"{self.datapath}/parquet/{self.day.replace('-','_')}/{prefix}{self.tree}_{self.measurement}_pulling.parquet"
         if Path(file).is_file():
             return file
 

@@ -11,6 +11,8 @@ Reads tsv files, converts into the form of dataframes with MultiIndex and saves 
 @author: marik
 """
 
+DRY_RUN = False
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -31,6 +33,8 @@ def read_tsv_files(cesta, prefix="/mnt/ERC/ERC"):
     Funkce čte tsv soubory z xsightu a transformuje do dataframe s MultiIndexem
     
     """
+    if DRY_RUN:
+        return
 
     ### Definice tabulky s víceúrovňovými nadpisy sloupců, Multiindex
     empty = [[],[]]  # dvě úrovně, na začátku prázdné
@@ -80,24 +84,29 @@ def main():
         date = row['date']
         tree = row['tree']
         measurement = row['measurement']
-        if os.path.isfile(f"../data/parquet/{date}/{tree}_{measurement}.parquet"):
-            print (f"Soubor ../data/parquet/{date}/{tree}_{measurement}.parquet existuje, nic neprepisuju")
+        kind = row['kind']
+        if kind == "Normal":
+            prefix_file = ""
+        else:
+            prefix_file = kind.lower()+"_"
+        if os.path.isfile(f"../data/parquet/{date}/{prefix_file}{tree}_{measurement}.parquet"):
+            print (f"Soubor ../data/parquet/{date}/{prefix_file}{tree}_{measurement}.parquet existuje, nic neprepisuju")
         else:
             try:
                 data = read_tsv_files(row["directory"])
                 if data is not None:
-                    print (f"Vytvářím soubor ../data/parquet/{date}/{tree}_{measurement}.parquet, typ {np.unique(data.dtypes.values)}")
+                    print (f"Vytvářím soubor ../data/parquet/{date}/{prefix_file}{tree}_{measurement}.parquet, typ {np.unique(data.dtypes.values)}")
                     if not os.path.isdir(f"../data/parquet/{date}"):
                         os.makedirs(f"../data/parquet/{date}")                    
                     if len(data) > 10:
-                        data.to_parquet(f"../data/parquet/{date}/{tree}_{measurement}.parquet")
+                        data.to_parquet(f"../data/parquet/{date}/{prefix_file}{tree}_{measurement}.parquet")
                         print (f"{len(data)} rows")
                     else:
                         print ("empty")
                 else:
-                    print (f"Missing or failed tree {tree} and measurement {measurement}.")
+                    print (f"Missing or failed tree {tree} and measurement {measurement}. {prefix_file}")
             except Exception as e:
-                print (f"CHYBA pri zpracovani {date},{tree},{measurement}")
+                print (f"CHYBA pri zpracovani {date},{prefix_file}{tree},{measurement}")
                 print (str(e))
 
 if __name__ == "__main__":
