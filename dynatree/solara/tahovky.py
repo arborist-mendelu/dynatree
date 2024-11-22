@@ -507,8 +507,8 @@ def show_regression_data_pt(pt):
     df = read_regression_data()
     df = df[df["Dependent"] == pt]
     df["Slope"] = np.abs(df["Slope"])
-    df_final = df.pivot(index=["tree", "day"], values=["Slope"], columns="M")
-    custom_display(df_final, how_to_colorize.value == "All data")
+    df_final = df.pivot(index=["tree", "type", "day"], values=["Slope"], columns="M")
+    custom_display(df_final, how_to_colorize.value == "All data", second_level=True)
 
 
 @solara.component
