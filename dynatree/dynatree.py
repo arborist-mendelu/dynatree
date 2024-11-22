@@ -571,6 +571,8 @@ class DynatreeMeasurement:
         list_inclino = ["Inclino(80)", "Inclino(81)"]
         # TODO: někdy jsou prohozené barvy. Podle fotek se projde a změní se přiřazení mezi 80/81 a blue/yellow.
         colors = {"Inclino(80)":"blue", "Inclino(81)":"yellow"}
+        if self.file_pulling_name is None:
+            return None
         df = pd.read_parquet(self.file_pulling_name)
         df = fix_inclinometers_sign(
             df, self.measurement_type, self.day, self.tree)
@@ -700,6 +702,8 @@ class DynatreeMeasurement:
 
     @cached_property
     def data_optics_pt34(self):
+        if self.file_optics_name is None:
+            return None
         logger.debug("loading optics data Pt3 and Pt4")
         ans = pd.read_parquet(
               self.file_optics_name, columns=["('Pt3', 'Y0')", "('Pt4', 'Y0')", "('Time', '')"])
