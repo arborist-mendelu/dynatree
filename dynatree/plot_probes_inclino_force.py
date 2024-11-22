@@ -238,7 +238,7 @@ def plot_one_measurement(
     if save_figure:
         pathlib.Path(f"{img_path}/optics_with_inclino/").mkdir(parents=True, exist_ok=True)
         fig.savefig(
-            f"{img_path}/optics_with_inclino/{date}_BK{tree}_M0{measurement}.pdf")
+            f"{img_path}/optics_with_inclino/{measurement_type}_{date}_BK{tree}_M0{measurement}.pdf")
     if return_figure:
         return fig
     else:
