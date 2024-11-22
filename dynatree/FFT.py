@@ -10,15 +10,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal
+from gitdb.fun import chunk_size
 from scipy.fft import fft, fftfreq
 # import find_measurements
-from tqdm import tqdm
 import matplotlib
 import dynatree.multi_handlers_logger as mhl
 import logging
 import config
 from dynatree import dynasignal, dynatree as dt
 from dynatree import find_measurements
+import gc
+
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from parallelbar.wrappers import stopit_after_timeout
+from parallelbar import progress_map
 
 length = 60  # the length of the signal
 # todo: make min and max different for each tree
@@ -40,7 +45,7 @@ class DynatreeSignal:
         elif self.measurement.data_acc5000 is not None and self.signal_source in self.measurement.data_acc5000.columns:
             self.signal_full = self.measurement.data_acc5000[self.signal_source]
             self.release_full = self.measurement.data_acc5000[self.release_source]
-        elif self.signal_source in ["Pt3", "Pt4"]:
+        elif (self.signal_source in ["Pt3", "Pt4"]) & (self.measurement.data_optics_pt34 is not None):
             self.signal_full = self.measurement.data_optics_pt34[(self.signal_source, "Y0")]
             self.release_full = self.measurement.data_optics_pt34[(self.release_source, "Y0")]
         else:
@@ -130,6 +135,8 @@ def process_one_probe(
     probename = probe
     release_source = probe
     if probe in ["blueMaj","yellowMaj"]:
+        if m.file_pulling_name is None:
+            return None
         probe = m.identify_major_minor[probe]
         release_source="Elasto(90)"
     test_failed = [f"{measurement_type}", f"{day}", f"{tree}", f"{measurement}", f"{probename}"] in df_failed_FFT_experiments.values.tolist()
@@ -139,9 +146,11 @@ def process_one_probe(
     else:
         value = s.main_peak
     if plot=='never':
+        del m
         return value 
     if plot=='failed' and not pd.isna(value):
-        return value 
+        del m
+        return value
     fig, ax = plt.subplots(2,1)
     sf = s.signal_full
     sf = sf - sf[0]
@@ -164,6 +173,7 @@ def process_one_probe(
     plt.tight_layout()
     fig.savefig(f"../temp/fft_tukey/{prefix}{s.measurement.measurement_type}_{s.measurement.day}_{s.measurement.tree}_{s.measurement.measurement}_{probename}.png")
     plt.close('all')
+    del m
     return value
     # print(s.measurement.measurement_type, s.measurement.day, 
     #       s.measurement.tree, s.measurement.measurement, s.signal_source,  s.main_peak)
@@ -186,35 +196,86 @@ if __name__ == '__main__':
     except:
         matplotlib.use('Agg')
     out = {}
-    df = find_measurements.get_all_measurements(method='all', type='all')
-    df = df[df["measurement"]!="M01"]
-    
-    
+
+    import pandas as pd
+    import plotly.express as px
+    import time
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import sys
+
+    sys.path.append("/babice/Mereni_Babice_zpracovani/skripty/")
+    cachedir = "."
+    cachedir_large = "."
+
+    import dynatree.find_measurements
+    import dynatree.FFT
+
+    df = dynatree.find_measurements.get_all_measurements(method='all', type='all')
+    df = df[df["measurement"] != "M01"]
+
     probes = ["blueMaj", "yellowMaj", "Elasto(90)"]
     probes = probes + ["Pt3", "Pt4"]
     probes = probes + ["a01_z", "a02_z", "a03_z", "a04_z"]
-    for probe in probes:
-        print(f"Probe {probe}")
-        pbar = tqdm(total=len(df))
-        for i, row in df.iterrows():
-            date, tree, measurement, measurement_type, optics, day = row
-            pbar.set_description(f"{measurement_type} {day} {tree} {measurement}")
-            if (tree=="JD18") & (probe in ["Pt3", "Pt4"]):
-                pbar.update(1)
-                continue
-            if (probe in ["Pt3", "Pt4"]) & (not optics):
-                pbar.update(1)
-                continue
-            try:
-                out[(measurement_type, day, tree, measurement, probe)
-                    ] = [process_one_probe(day, tree, measurement, measurement_type, probe=probe)]
-            except:
-                logger.error(f"FFT failed for {measurement_type}, {day}, {tree}, {measurement}, {probe}")
-            pbar.update(1)
-        pbar.close()
-    
-    
-    out_df = pd.DataFrame(out).T
-    out_df = out_df.reset_index(drop=False)
-    out_df.columns=["type","day","tree","measurement","probe","peak"]
-    out_df.to_csv(f"../outputs/FFT_csv_tukey.csv", index=False)
+    savecols = df.columns
+    all = [list(j) + [i] for i in probes for j in df.values]
+    df = pd.DataFrame(all, columns=list(savecols) + ["probe"])
+
+    df = df[(~( (df["tree"] == "JD18") & (df["probe"].isin(["Pt3", "Pt4"])) ))]
+    df = df[~( (df["probe"].isin(["Pt3", "Pt4"])) & (df["optics"] == False) )]
+    df = df.reset_index(drop=True)
+
+    # @stopit_after_timeout(2, raise_exception=True)
+    def process_one_row(row):
+        date, tree, measurement, measurement_type, optics, day, probe = row
+        try:
+            ansrow = process_one_probe(day, tree, measurement, measurement_type, probe=probe, plot='failed')
+        except:
+            msg = f"Spectral analysis failed for {date} {tree} {measurement} {measurement_type} {optics} {day} {probe}"
+            print(msg)
+            ansrow = None
+        return ansrow
+
+
+    # ans = process_one_row(["2021-06-29", "BK08", "M02", "normal", True, "2021-06-29", "a03_z"])
+    # print(ans)
+    # sys.exit()
+
+    input_data = [i for _, i in df.iterrows()]
+    ans = progress_map(process_one_row, input_data)
+    df.loc[:,"peak"] = ans
+    df = df.loc[:,["type","day","tree","measurement","probe","peak"]]
+    df.to_csv(f"../outputs/FFT_csv_tukey.csv", index=False)
+
+    # print(df.shape)
+    # input_data = [i for _, i in df.iterrows()]
+    # res = {}
+    # for i in [1000,1500,2000,2500,3000,3500,4000,4025]:
+    #     res[i] = progress_map(process_one_row, input_data[i:i+499])
+    #     gc.collect()
+
+    # # Paralelní zpracování
+    # ans = []
+    # with ProcessPoolExecutor(max_workers = 5) as executor:
+    #     # Vytvoření úloh
+    #     futures = {executor.submit(process_one_row, item): item for item in input_data}
+    #
+    #     # Sledování progresu pomocí tqdm
+    #     for future in tqdm(as_completed(futures), total=len(futures), desc="Processing items"):
+    #         ans.append(future.result())  # Uložení výsledků
+
+    # with ProcessPoolExecutor() as executor:
+    #     ans = list(tqdm(executor.map(process_one_row, input_data), total=len(input_data), desc="Processing items"))
+
+    # print(input_data[1509])
+    # process_one_row(input_data[1509])
+    # for row in input_data:
+    #     print(f"{row.name} ", end="", flush=True)
+    #     process_one_row(row)
+
+    # progress_map(process_one_row, input_data[:500], n_cpu=10)
+    # df.loc[:,"peak"] = ans
+    # df = df.loc[:,["type","day","tree","measurement","probe","peak"]]
+    # df.to_csv(f"../outputs/FFT_csv_tukey.csv", index=False)
+
+    print(f"Saved data, shape is {df.shape}")
