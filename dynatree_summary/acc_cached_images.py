@@ -37,7 +37,13 @@ def save_images(signal_knock, fft_peak, figname):
 
     # small time domain
     fig, ax = plt.subplots(figsize=(3,1))
-    ax.plot(signal_knock.signal)
+    if "_x_" in figname:
+        color="C0"
+    elif "_y_" in figname:
+        color="C1"
+    else:
+        color="C2"
+    ax.plot(signal_knock.signal, color=color)
     fig.savefig(f"{cachedir}/{figname}.png", transparent=True)
     # print(f"{cachedir}/{figname}.png saved")
 
