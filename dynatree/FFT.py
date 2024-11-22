@@ -20,10 +20,15 @@ import config
 from dynatree import dynasignal, dynatree as dt
 from dynatree import find_measurements
 import gc
+import time
 
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from parallelbar.wrappers import stopit_after_timeout
 from parallelbar import progress_map
+
+# import resource
+#
+# # Nastavení limitu paměti (např. 500 MB)
+# memory_limit = 5 * 1024 * 1024 * 1024  # v bajtech
+# resource.setrlimit(resource.RLIMIT_AS, (memory_limit, memory_limit))
 
 length = 60  # the length of the signal
 # todo: make min and max different for each tree
@@ -184,6 +189,37 @@ def process_one_probe(
 # plot_one_probe(tree="BK09", measurement='M03', day="2021-03-22", probe="a03_z")    
     
 #%%
+
+
+def process_one_row(row):
+    date, tree, measurement, measurement_type, optics, day, probe = row
+    try:
+        ansrow = process_one_probe(day, tree, measurement, measurement_type, probe=probe, plot='failed')
+    except:
+        msg = f"Spectral analysis failed for {date} {tree} {measurement} {measurement_type} {optics} {day} {probe}"
+        print(msg)
+        ansrow = None
+    return [measurement_type, day, tree, measurement, probe, ansrow]
+
+def process_df(df):
+    n = 30  # chunk row size
+    list_df = [df[i:i + n] for i in range(0, df.shape[0], n)]
+    delka = len(list_df)
+    i = 0
+    start = time.time()
+    ans = {}
+    for _,d in enumerate(list_df):
+        i = i+1
+        print (f"*******   {i}/{delka}, runtime {time.time()-start} seconds ", end="\r")
+        ans[_] = process_chunk(d)
+    print(f"Finished in {round(time.time()-start)} seconds                           ")
+    return ans
+
+def process_chunk(df):
+    ans = progress_map(process_one_row, df.values, disable=True)
+    return ans
+
+
 if __name__ == '__main__':
     # resource.setrlimit(resource.RLIMIT_DATA, (100 * 1024 * 1024, 100 * 1024 * 1024)) 
     
@@ -197,21 +233,7 @@ if __name__ == '__main__':
         matplotlib.use('Agg')
     out = {}
 
-    import pandas as pd
-    import plotly.express as px
-    import time
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import sys
-
-    sys.path.append("/babice/Mereni_Babice_zpracovani/skripty/")
-    cachedir = "."
-    cachedir_large = "."
-
-    import dynatree.find_measurements
-    import dynatree.FFT
-
-    df = dynatree.find_measurements.get_all_measurements(method='all', type='all')
+    df = find_measurements.get_all_measurements(method='all', type='all')
     df = df[df["measurement"] != "M01"]
 
     probes = ["blueMaj", "yellowMaj", "Elasto(90)"]
@@ -224,28 +246,24 @@ if __name__ == '__main__':
     df = df[(~( (df["tree"] == "JD18") & (df["probe"].isin(["Pt3", "Pt4"])) ))]
     df = df[~( (df["probe"].isin(["Pt3", "Pt4"])) & (df["optics"] == False) )]
     df = df.reset_index(drop=True)
+    # df = df.head(100)
 
-    # @stopit_after_timeout(2, raise_exception=True)
-    def process_one_row(row):
-        date, tree, measurement, measurement_type, optics, day, probe = row
-        try:
-            ansrow = process_one_probe(day, tree, measurement, measurement_type, probe=probe, plot='failed')
-        except:
-            msg = f"Spectral analysis failed for {date} {tree} {measurement} {measurement_type} {optics} {day} {probe}"
-            print(msg)
-            ansrow = None
-        return ansrow
+    ans = process_df(df)
 
+    ansdf = sum(ans.values(), start=[])
+    ansdf = pd.DataFrame(ansdf, columns = ["type","day","tree","measurement","probe","peak"])
+    ansdf.dropna().to_csv(f"../outputs/FFT_csv_tukey.csv", index=False)
+    print(f"Saved FFT peaks, shape is {ansdf.shape}")
 
     # ans = process_one_row(["2021-06-29", "BK08", "M02", "normal", True, "2021-06-29", "a03_z"])
     # print(ans)
     # sys.exit()
 
-    input_data = [i for _, i in df.iterrows()]
-    ans = progress_map(process_one_row, input_data)
-    df.loc[:,"peak"] = ans
-    df = df.loc[:,["type","day","tree","measurement","probe","peak"]]
-    df.to_csv(f"../outputs/FFT_csv_tukey.csv", index=False)
+    # input_data = [i for _, i in df.iterrows()]
+    # ans = (progress_map(process_one_row, input_data))
+    # df.loc[:,"peak"] = ans
+    # df = df.loc[:,["type","day","tree","measurement","probe","peak"]]
+    # df.to_csv(f"../outputs/FFT_csv_tukey.csv", index=False)
 
     # print(df.shape)
     # input_data = [i for _, i in df.iterrows()]
@@ -278,4 +296,3 @@ if __name__ == '__main__':
     # df = df.loc[:,["type","day","tree","measurement","probe","peak"]]
     # df.to_csv(f"../outputs/FFT_csv_tukey.csv", index=False)
 
-    print(f"Saved data, shape is {df.shape}")
