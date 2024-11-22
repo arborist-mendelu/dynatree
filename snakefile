@@ -18,8 +18,9 @@ rule all:
         "../outputs/static_pull_first_versus_other_pulls.html",
         "../outputs/static_pull_major_versus_total.html",
         "../outputs/welch.pdf",
-        "../outputs/FFT_acc_knock.csv"
-
+        "../outputs/FFT_acc_knock.csv",
+        "../outputs/pull_major_minor_check.pdf"
+	
 
 rule FFT_acc_knock:
     """
