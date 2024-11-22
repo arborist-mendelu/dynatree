@@ -245,7 +245,8 @@ def plot_one_measurement(
         plt.close(fig)
 
 def plot_one_day(date="2021-03-22", path=datapath, release_detail=False):
-    
+    # TODO: paralelizovat.
+    # TODO: pridat afterro
     files =  glob.glob(f"{path}/parquet/{date.replace('-','_')}/*BK??_M??.parquet")
     files.sort()
     pbar = tqdm(total=len(files))
@@ -265,7 +266,8 @@ def plot_one_day(date="2021-03-22", path=datapath, release_detail=False):
             save_figure=True, 
             return_figure=False, 
             major_minor=True, 
-            release_detail=release_detail
+            release_detail=release_detail,
+            measurement_type=measure_type
             )
         pbar.update(1)
 
@@ -293,7 +295,7 @@ def main():
             "2021-03-22", 
             "2021-06-29", 
             "2022-04-05", 
-            "2022-08-16"
+            "2022-08-16",
             "2023-07-17"
     ]:
         print(i)
