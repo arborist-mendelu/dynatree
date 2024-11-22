@@ -25,8 +25,8 @@ from dynatree.static_pull import DynatreeStaticPulling
 from dynatree.dynatree import logger
 from dynatree.dynatree import datapath
 import pathlib
-from tqdm import tqdm
 from config import file
+from parallelbar import progress_map
 
 def plot_one_measurement(
         date="2021-03-22",
@@ -244,34 +244,29 @@ def plot_one_measurement(
     else:
         plt.close(fig)
 
+def plot_wraper(arg):
+    filename, path, release_detail, date = arg
+    filename = filename.split("/")[-1].replace(".parquet", "")
+    data = filename.split("_")
+    if len(data) == 2:
+        data = ["normal", *data]
+    measure_type, tree, measurement = data
+    plot_one_measurement(
+        date=date,
+        path=path,
+        tree=tree[-2:],
+        measurement=measurement[-1],
+        save_figure=True,
+        return_figure=False,
+        major_minor=True,
+        release_detail=release_detail,
+        measurement_type=measure_type
+    )
+
 def plot_one_day(date="2021-03-22", path=datapath, release_detail=False):
-    # TODO: paralelizovat.
-    # TODO: pridat afterro
     files =  glob.glob(f"{path}/parquet/{date.replace('-','_')}/*BK??_M??.parquet")
     files.sort()
-    pbar = tqdm(total=len(files))
-    for file in files:
-        filename = file.split("/")[-1].replace(".parquet","")
-        data = filename.split("_")
-        if len(data) == 2:
-            data = ["normal", *data]
-        # print(filename,", ",end="", flush=True)
-        measure_type, tree, measurement = data
-        pbar.set_description(f"{tree} {measurement}")
-        plot_one_measurement(
-            date=date, 
-            path=path, 
-            tree=tree[-2:], 
-            measurement=measurement[-1], 
-            save_figure=True, 
-            return_figure=False, 
-            major_minor=True, 
-            release_detail=release_detail,
-            measurement_type=measure_type
-            )
-        pbar.update(1)
-
-    pbar.close()
+    progress_map(plot_wraper, [[i, path, release_detail, date] for i in files])
     print(f"Konec zpracování pro {date}")
     
 def main():
