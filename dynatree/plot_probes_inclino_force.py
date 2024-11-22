@@ -294,7 +294,8 @@ def main():
             "2021-06-29", 
             "2022-04-05", 
             "2022-08-16"
-                    ]:
+            "2023-07-17"
+    ]:
         print(i)
         print("=====================================================")
         plot_one_day(date=i, release_detail=args.release_detail)
