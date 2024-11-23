@@ -49,7 +49,7 @@ def get_all_measurements_acc(cesta=DIRECTORY, suffix='parquet', directory='parqu
         'measurement': info.iloc[:, 3],
         'type': info.iloc[:, 0],
     }
-    df = pd.DataFrame(ans).sort_values(by=["date", "tree", "measurement"])
+    df = pd.DataFrame(ans).sort_values(by=["date", "tree", "measurement"]).drop_duplicates()
     df = df.reset_index(drop=True)
     return df
 
