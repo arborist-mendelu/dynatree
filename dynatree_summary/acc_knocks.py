@@ -48,7 +48,7 @@ def process_row_safe(row):
         return {}
 
 def main():
-    all_data = get_all_measurements_acc()
+    all_data = get_all_measurements_acc().drop_duplicates()
     pbar = tqdm(total=len(all_data))
 
     dynatree.logger.setLevel(logging.ERROR)
