@@ -57,7 +57,12 @@ Pripadne jedna cast `solara run solara_FFT` apod. Vsechno ma zacatek "solara".
 
 Viz `snakefile` soubor. Výstupy jsou zpravidla v adresáři ../outputs. Jednou za čas se ručně přepkopíruje na erc disk do adresáře Mereni_Babice_zpracovani/vystupy (nebo tak nejak)
 
+## Ťuky
 
+Ťuky se automatem najdou jenom jednou a potom se slučují s ruční prací. Takže asi skript 
+dynatree_summary/acc_knocks.py pouštět jenom jednou, anebo aspoň v něm neměnit nastavení.
+
+Náhledy kmitů a FFT se dějí pomocí skriptu dynatree_summary/acc_cached_images.py. Bezi cca 10 minut.
 
 # Skripty pro zpracování dat z optiky apod - totó odnés čas ....
 

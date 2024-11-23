@@ -18,11 +18,14 @@ class SignalTuk():
         else:
             dynatree.dynatree.logger.debug("Loading acc data from parameter")
             self.accdata = accdata
-        if start > 0:
+        if (start > 0) & (end < self.accdata.index[-1]-0.45):
             self.signal = self.accdata.loc[start:end, probe].copy()
         else:
-            zero_signal = pd.Series(index=np.arange(-1, 0, 0.0002), data=0)
-            elongated_signal =  pd.concat([zero_signal,self.accdata.loc[start:end, probe]])
+            zero_signal_start = pd.Series(index=np.arange(-1, 0, 0.0002), data=0)
+            zero_signal_end = pd.Series(
+                index=np.arange(self.accdata.index[-1]+0.002,
+                self.accdata.index[-1]+1, 0.0002), data=0)
+            elongated_signal =  pd.concat([zero_signal_start,self.accdata.loc[start:end, probe], zero_signal_end])
             self.signal = elongated_signal.loc[start:end].copy()
         self.dt = 0.0002
         self.probe = probe
