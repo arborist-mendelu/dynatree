@@ -1,6 +1,6 @@
 import pandas as pd
 
-new = pd.read_csv("./flask_tuky/signal_ratio_upraveny.csv", index_col=0)
+automat = pd.read_csv("./flask_tuky/signal_ratio_upraveny.csv", index_col=0)
 new = new.set_index("file")[["liked"]]
 new.columns = ["valid"]
 new
