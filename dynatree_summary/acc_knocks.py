@@ -69,7 +69,7 @@ def main():
     df = pd.DataFrame(ans, index=["freq", "filename"]).T
     df = df.reset_index()
     df.columns = ["type", "day", "tree", "measurement", "knock_index", "knock_time", "probe", "freq", "filename"]
-    df.to_csv(file['outputs/FFT_acc_knock'], index=False)
+    df.to_csv("FFT_acc_knock_auto.csv", index=False)
 
 if __name__ == "__main__":
     main()
