@@ -5,7 +5,7 @@ Created on Mon Sep 16 11:24:56 2024
 
 @author: marik
 """
-
+# TODO: paralelizovat
 from dynatree import dynasignal, dynatree, FFT, find_measurements
 import matplotlib.pyplot as plt
 import pandas as pd

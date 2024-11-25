@@ -32,6 +32,8 @@ def get_FFT_one_probe(**kwds):
         for j in l.iloc[0]:
             s = SignalTuk(m, start=round(j / 100.0 - 0.04, 2), end=round(j / 100.0 + 0.04, 2), probe=kwds['probe'])
             tuky[(i, j)] = s.fft
+            del s
+        del m
 
     ans = pd.DataFrame(tuky)
     ans[['median', 'std']] = ans.apply(lambda row: [row.median(), row.std()], axis=1).to_list()
