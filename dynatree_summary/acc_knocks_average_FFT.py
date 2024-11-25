@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from parallelbar import progress_map
 
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 CACHE = "../outputs/cache_FFTavg/"
 
 def get_FFT_all_acc(**kwds):
@@ -29,7 +29,6 @@ def get_FFT_one_probe(**kwds):
     columns_for_select = ["type", "day", "tree", "probe"]
     subdf = df[(df[columns_for_select] ==
                 [kwds[i] for i in columns_for_select]).all(axis=1)].copy()
-
     tuky = {}
     subdf_iter = pd.DataFrame(subdf.groupby('measurement')['knock_time'].agg(list))
     if len(subdf_iter)==0:
@@ -94,5 +93,6 @@ def get_FFT_all_acc_wrapper(i):
 if __name__ == "__main__":
     # get_FFT_all_acc(**{'day': '2022-08-16', 'tree': 'BK13', 'type': 'normal'})
     # get_FFT_all_acc(**{'day': '2021-06-29', 'tree': 'BK08', 'type': 'normal'})
-    # get_FFT_one_probe(**{'day': '2021-06-29', 'tree': 'BK10', 'type': 'normal', 'probe': 'a02_y'})
-    main()
+    get_FFT_one_probe(**{'day': '2021-06-29', 'tree': 'BK10', 'type': 'normal', 'probe': 'a02_y'})
+    # get_FFT_one_probe(**{'day': '2024-09-02', 'tree': 'BK01', 'type': 'afterro2', 'probe': 'a04_y'})
+    # main()
