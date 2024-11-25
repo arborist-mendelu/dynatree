@@ -36,7 +36,7 @@ def get_FFT_one_probe(**kwds):
         logger.warning(f"No data for get_FFT_one_probe, {kwds}, return empty image and empty dataframe")
         fig, ax = plt.subplots(figsize=figsize)
         ax.set(title=f"{kwds['type']} {kwds['day']} {kwds['tree']} {kwds['probe']}, data missing")
-        fig.savefig(figname)
+        fig.savefig(figname, transparent=True)
         ans = pd.DataFrame()
         ans.to_csv(csvname)
         return None
@@ -66,7 +66,7 @@ def get_FFT_one_probe(**kwds):
 
     ax.get_legend().remove()
     plt.tight_layout()
-    fig.savefig(figname)
+    fig.savefig(figname, transparent=True)
     ans.to_csv(csvname)
     plt.close('all')
     return ans
