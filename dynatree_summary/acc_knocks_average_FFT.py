@@ -23,8 +23,11 @@ def get_FFT_all_acc(**kwds):
 
 def get_FFT_one_probe(**kwds):
     logger.info(f"get_FFT_one_probe entered, {kwds}")
-    subdf = df[(df[["type", "day", "tree", "probe"]] ==
-                [kwds['type'], kwds['day'], kwds['tree'], kwds['probe']]).all(axis=1)].copy()
+    figname = f"{CACHE}FFTaverage_{kwds['type']}_{kwds['day']}_{kwds['tree']}_{kwds['probe']}.png"
+    csvname = f"{CACHE}FFTaverage_{kwds['type']}_{kwds['day']}_{kwds['tree']}_{kwds['probe']}.csv"
+    columns_for_select = ["type", "day", "tree", "probe"]
+    subdf = df[(df[columns_for_select] ==
+                [kwds[i] for i in columns_for_select]).all(axis=1)].copy()
     tuky = {}
     subdf_iter = pd.DataFrame(subdf.groupby('measurement')['knock_time'].agg(list))
     if len(subdf_iter)==0:
@@ -49,8 +52,8 @@ def get_FFT_one_probe(**kwds):
     ax.set(yscale='log', title=f"{kwds['type']} {kwds['day']} {kwds['tree']} {kwds['probe']}")
     ax.grid()
     plt.tight_layout()
-    fig.savefig(f"{CACHE}FFTaverage_{kwds['type']}_{kwds['day']}_{kwds['tree']}_{kwds['probe']}.png")
-    ans.to_csv(f"{CACHE}FFTaverage_{kwds['type']}_{kwds['day']}_{kwds['tree']}_{kwds['probe']}.csv")
+    fig.savefig(figname)
+    ans.to_csv(csvname)
     plt.close('all')
     return ans
 
@@ -79,4 +82,5 @@ def get_FFT_all_acc_wrapper(i):
 
 if __name__ == "__main__":
     # get_FFT_all_acc(**{'day': '2022-08-16', 'tree': 'BK13', 'type': 'normal'})
-    main()
+    get_FFT_all_acc(**{'day': '2021-06-29', 'tree': 'BK08', 'type': 'normal'})
+    # main()
