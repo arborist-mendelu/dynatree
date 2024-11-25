@@ -8,17 +8,17 @@ import matplotlib.pyplot as plt
 import matplotlib
 from parallelbar import progress_map
 
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.WARNING)
 CACHE = "../outputs/cache_FFTavg/"
 
 def get_FFT_all_acc(**kwds):
     logger.info(f"get_FFT_all_acc entered, {kwds}")
     probes = [f"a0{i}_{j}" for i in [1,2,3,] for j in ["x","y","z"]]
     for probe in probes:
-        try:
+        # try:
             get_FFT_one_probe(probe=probe, **kwds)
-        except:
-            logger.error(f"Failed get_FFT_all_acc for {kwds}")
+        # except:
+        #     logger.error(f"Failed get_FFT_all_acc for {kwds}")
 
 
 def get_FFT_one_probe(**kwds):
@@ -26,9 +26,14 @@ def get_FFT_one_probe(**kwds):
     subdf = df[(df[["type", "day", "tree", "probe"]] ==
                 [kwds['type'], kwds['day'], kwds['tree'], kwds['probe']]).all(axis=1)].copy()
     tuky = {}
-    for i, l in pd.DataFrame(subdf.groupby('measurement')['knock_time'].agg(list)).iterrows():
+    subdf_iter = pd.DataFrame(subdf.groupby('measurement')['knock_time'].agg(list))
+    if len(subdf_iter)==0:
+        logger.warning(f"No data for get_FFT_one_probe, {kwds}")
+        return None
+    for i, l in subdf_iter.iterrows():
         m = DynatreeMeasurement(day=kwds['day'], tree=kwds['tree'], measurement_type=kwds['type'],
                             measurement=i)
+        logger.info(m)
         for j in l.iloc[0]:
             s = SignalTuk(m, start=round(j / 100.0 - 0.04, 2), end=round(j / 100.0 + 0.04, 2), probe=kwds['probe'])
             tuky[(i, j)] = s.fft
@@ -73,4 +78,5 @@ def get_FFT_all_acc_wrapper(i):
     get_FFT_all_acc(**i)
 
 if __name__ == "__main__":
+    # get_FFT_all_acc(**{'day': '2022-08-16', 'tree': 'BK13', 'type': 'normal'})
     main()
