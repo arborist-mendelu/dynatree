@@ -72,7 +72,8 @@ def main():
         .rename({'date': 'day'}, axis=1) )
 
     res = progress_map(get_FFT_all_acc_wrapper, [i for _, i in dfm.iterrows()],
-                       executor='threads', n_cpu=10)
+                       #executor='threads', 
+                       n_cpu=5)
     # for _, i in dfm.iterrows():
     #     get_FFT_all_acc_wrapper(i)
     #     print(f"{_} finished")
