@@ -63,10 +63,11 @@ def main():
         .reset_index(drop=True)
         .rename({'date': 'day'}, axis=1) )
 
-    # res = progress_map(get_FFT_all_acc_wrapper, [i for _, i in dfm.iterrows()])
-    for _, i in dfm.iterrows():
-        get_FFT_all_acc_wrapper(i)
-        print(f"{_} finished")
+    res = progress_map(get_FFT_all_acc_wrapper, [i for _, i in dfm.iterrows()],
+                       executor='threads', n_cpu=10)
+    # for _, i in dfm.iterrows():
+    #     get_FFT_all_acc_wrapper(i)
+    #     print(f"{_} finished")
 
 def get_FFT_all_acc_wrapper(i):
     get_FFT_all_acc(**i)
