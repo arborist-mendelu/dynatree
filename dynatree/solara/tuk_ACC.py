@@ -1,3 +1,4 @@
+from PyQt5.uic.Compiler.qobjectcreator import logger
 from matplotlib.pyplot import axvline
 import solara.lab
 import solara.website
@@ -163,7 +164,7 @@ def Page():
     solara.Style(s.styles_css+".zero-margin p {margin-bottom: 0px;}")
     with solara.Sidebar():
         if active_tab.value == 3:
-            s.Selection_trees_only()
+            s.Selection_trees_only(multiple=False)
         else:
             s.Selection(
                 optics_switch=False,
@@ -223,14 +224,14 @@ f"""
 
 @solara.component
 def Seznam_probe():
-    dynatree.logger.info(f"rdf je dict s klíči {rdf.keys()}")
+    dynatree.logger.info(f"Seznam_probe entered, rdf je dict s klíči {rdf.keys()}")
     #session_id = solara.get_kernel_id()
     with solara.Row():
         solara.ToggleButtonsMultiple(value=select_probe_multi, values = ["a01","a02","a03","a04"])
         solara.ToggleButtonsMultiple(value=select_axis_multi, values = ["x","y","z"])
         solara.ToggleButtonsSingle(value=img_size, values=["small","large"])
         solara.ToggleButtonsSingle(value=fft_status_for_report, values=["healthy", "failed"])
-    solara.ToggleButtonsSingle(value=time_or_freq, values=["FFT", "time domain"])
+    solara.ToggleButtonsSingle(value=time_or_freq, values=["FFT", "time domain", "average FFT for all knocks"])
     solara.ToggleButtonsMultiple(value=select_days_multi, values=day_type_pairs)
     probeset = [f"{i}_{j}" for i in select_probe_multi.value for j in select_axis_multi.value]
     subdf = rdf[worker.value][
@@ -246,31 +247,55 @@ def Seznam_probe():
     subdf = subdf.sort_values(by=["day","type","measurement","knock_time"])
     sets = subdf[["day","type"]].drop_duplicates()
     file = f"<h1>Tree {s.tree.value} and probes {probeset}</h1>"
+    text = ""
     images_added = False
-    for I,R in sets.iterrows():
-        subsubdf = subdf[(subdf["day"] == R["day"]) & (subdf["type"] == R["type"])]
-        file = file + f"<h2>{R['day']} {R['type']}</h2>"
-        for subprobe in probeset:
-            sub3df = subsubdf[subsubdf["probe"] == subprobe]
-            file = file + f"<h3>{subprobe}</h3>"
-            for i, row in sub3df.iterrows():
-                if img_size.value == 'small':
-                    image_path = "/static/public/cache/FFT_" + row['filename'] + ".png"
-                else:
-                    image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
-                if time_or_freq.value == "time domain":
-                    image_path = "/static/public/cache/" + row['filename'] + ".png"
-                souradnice = f"{row['measurement']} @{row['knock_time']/100.0}sec, <b>{round(row['freq'])} Hz</b>"
-                file = file + f"""
-<div style='display:inline-block; border-style:solid; border-color:gray;' class='image-container'>
-<p><input type='checkbox' class='image-checkbox'>{souradnice}</p>
-<img src='{server}{image_path}' title='{R['day']} {R['type']} {s.tree.value}' data-name='{image_path.split('/')[-1]}'>
-</div>
-"""
-                images_added = True
+    add_js = False
+    if time_or_freq.value == "average FFT for all knocks":
+        # plot all curves in a single image
+        for I,R in sets.iterrows():
+            dynatree.logger.info(f"adding {R.values}")
+            day, method = R.values
+            image_path = [
+                f"/static/public/cache_FFTavg/FFTaverage_{method}_{day}_{s.tree.value}_{probe}.png" for probe in probeset
+            ]
+            dynatree.logger.info(f"adding {image_path}")
+            for i_p in image_path:
+                file = file + f"<img src='{server}{i_p}'>"
+            images_added = True
+    else:
+        # plot 1 image per curve
+        add_js = True
+        for I,R in sets.iterrows():
+            subsubdf = subdf[(subdf["day"] == R["day"]) & (subdf["type"] == R["type"])]
+            file = file + f"<h2>{R['day']} {R['type']}</h2>"
+            for subprobe in probeset:
+                sub3df = subsubdf[subsubdf["probe"] == subprobe]
+                file = file + f"<h3>{subprobe}</h3>"
+                for i, row in sub3df.iterrows():
+                    if img_size.value == 'small':
+                        image_path = "/static/public/cache/FFT_" + row['filename'] + ".png"
+                    else:
+                        image_path = "/static/public/fft_images_knocks/FFT_" + row['filename'] + ".png"
+                    if time_or_freq.value == "time domain":
+                        image_path = "/static/public/cache/" + row['filename'] + ".png"
+                    souradnice = f"{row['measurement']} @{row['knock_time']/100.0}sec, <b>{round(row['freq'])} Hz</b>"
+                    file = file + f"""
+    <div style='display:inline-block; border-style:solid; border-color:gray;' class='image-container'>
+    <p><input type='checkbox' class='image-checkbox'>{souradnice}</p>
+    <img src='{server}{image_path}' title='{R['day']} {R['type']} {s.tree.value}' data-name='{image_path.split('/')[-1]}'>
+    </div>
+    """
+                    images_added = True
+        text = """
+           <li> Můžeš kliknutím označit obrázky, které si chceš zapamatovat a poté tlačítkem Save na konci stránky seznam uložit.
+            Ze jmen souborů se dá zrekonstruovat měření, strom, akcelerometr, osa, čas kliknutí.
+           </li>
+           <li> Obrázky mají jako element title číslo stromu, datum a druh měření. Zobrazí se po najetí myší nad obrázek.
+           </li>    
+        """
     env = jinja2.Environment(loader=jinja2.FileSystemLoader('templates'))
     template = env.get_template('FFT_images.html')
-    filecontent.value = template.render(containers = file)
+    filecontent.value = template.render(containers = file, text=text, add_js=add_js)
     if images_added:
         solara.Info(
             solara.Markdown(

@@ -1,4 +1,4 @@
-rule all:
+rule all_non_acc:
     input:
         "../outputs/fft_boxplots_for_probes.pdf",
         "../outputs/fft_spectra.zip",
@@ -18,23 +18,27 @@ rule all:
         "../outputs/static_pull_first_versus_other_pulls.html",
         "../outputs/static_pull_major_versus_total.html",
         "../outputs/welch.pdf",
-        "../outputs/FFT_acc_knock.csv",
         "../outputs/pull_major_minor_check.pdf"
 	
 
-rule FFT_acc_knock:
+rule all_acc:
+    input:
+        "../outputs/FFT_acc_average_graph.zip"
+
+rule average_FFT:
     """
-    FFT for acc channles when the tree is knock by a hammer
+    Return average FFT
     """
     input:
-        file = "dynatree_summary/acc_knocks.py"
-    output:
         "../outputs/FFT_acc_knock.csv"
+    output:
+        "../outputs/FFT_acc_average_graph.zip"
     conda:
         "dynatree"
     shell:
         """
-        python -m dynatree_summary.acc_knocks
+        python -m dynatree_summary.acc_knocks_average_FFT
+        zip -qj ../outputs/FFT_acc_average_graph.zip ../outputs/cache_FFTavg/*.png
         """
 
 

@@ -41,6 +41,8 @@ popis:
 
 FFT_acc_knock.csv: Výstup z FFT analýzy.
 
+FFT_acc_average_graph.zip: Obrázky průměrných FFT spekter
+
 ---
 title: "FFT, oscilace, pull and release"
 

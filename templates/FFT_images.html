@@ -30,17 +30,16 @@
 <H1>Dynatree, průběhy a FFT transformace ťuků</H1>
     <p>
     <ul>
-       <li> Můžeš kliknutím označit obrázky, které si chceš zapamatovat a poté tlačítkem Save na konci stránky seznam uložit.
-        Ze jmen souborů se dá zrekonstruovat měření, strom, akcelerometr, osa, čas kliknutí.
-       </li>
-        <li> Obrázky mají jako element title číslo stromu, datum a druh měření. Zobrazí se po najetí myší nad obrázek.
-        </li>
+        {{ text }}
     </ul>
     </p>
     <div id=images>
         {{containers}}
         <!-- Add more image containers as needed -->
+
     </div>
+
+    {% if add_js %}
     <button id=save-button>Save</button>
     <pre id=output></pre>
 
@@ -90,5 +89,7 @@
             link.click();
         });
     </script>
+    {% endif %}
+
 </body>
 </html>

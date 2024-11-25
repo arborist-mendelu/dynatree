@@ -32,6 +32,7 @@ def get_measurements_list(x='all'):
 
 day = solara.reactive(days.value[0])
 tree = solara.reactive(trees.value[0])
+multiple_trees = solara.reactive([trees.value[0]])
 measurement = solara.reactive(measurements.value[0])
 use_optics = solara.reactive(False)
 include_details = solara.reactive(False)
@@ -54,10 +55,14 @@ def resetuj(x=None):
     measurement.set(measurements.value[0])
 
 @solara.component
-def Selection_trees_only(tree_action = lambda x:None):
+def Selection_trees_only(tree_action = lambda x:None, multiple=False):
     with solara.Card(title="Tree choice"):
         vals = get_all_measurements(method='all', type='all')["tree"].drop_duplicates().values
-        solara.ToggleButtonsSingle(value=tree, values=list(vals),
+        if multiple:
+            solara.ToggleButtonsMultiple(value=multiple_trees, values=list(vals),
+                                   on_value=tree_action)
+        else:
+            solara.ToggleButtonsSingle(value=tree, values=list(vals),
                                    on_value=tree_action)
 
 @solara.component
