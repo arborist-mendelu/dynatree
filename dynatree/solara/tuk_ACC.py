@@ -256,11 +256,13 @@ def Seznam_probe():
             dynatree.logger.info(f"adding {R.values}")
             day, method = R.values
             image_path = [
-                {'filename': f"/static/public/cache_FFTavg/FFTaverage_{method}_{day}_{s.tree.value}_{probe}.png", 'probe':probe} for probe in probeset
+                {'filename': f"/static/public/cache_FFTavg/FFTaverage_{method}_{day}_{s.tree.value}_{probe}.png",
+                 'csv_filename': f"/static/public/cache_FFTavg/FFTaverage_{method}_{day}_{s.tree.value}_{probe}.csv",
+                 'probe':probe} for probe in probeset
             ]
             dynatree.logger.info(f"adding {image_path}")
             for i_p in image_path:
-                file = file + f"<img src='{server}{i_p['filename']}' class='{i_p['probe'].split('_')[0]} {i_p['probe'].split('_')[1]}'>"
+                file = file + f"<a href='{server}{i_p['csv_filename']}'><img src='{server}{i_p['filename']}' class='{i_p['probe'].split('_')[0]} {i_p['probe'].split('_')[1]}'></a>"
             images_added = True
     else:
         # plot 1 image per curve
