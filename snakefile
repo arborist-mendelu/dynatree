@@ -98,7 +98,7 @@ rule fft_spectra:
         mkdir ../temp_spectra
         python -m dynatree.plot_spectra_for_probe
         cd ../temp_spectra
-        zip {output.zip} *.pdf
+        zip -q {output.zip} *.pdf
         """
         
 rule fft_spectra_combine:
@@ -120,14 +120,14 @@ rule fft_spectra_combine:
         unzip ../{input.zip}
         for prefix in $(ls *.pdf | cut -d'_' -f1,2,3,4  | sort -u); do pdfunite $prefix*.pdf $prefix.pdf; done
         rm *_*_*_*_*.pdf
-        zip ../{output.by_measurement} *.pdf
+        zip -q ../{output.by_measurement} *.pdf
         rm *pdf
         unzip ../{input.zip} *Elasto* *a02_z*
         pdfunite *.pdf ../{output.elasto}
         trees=$(ls *|cut -d_ -f3 | sort | uniq)
         for tree in $(ls *|cut -d_ -f3 | sort | uniq); do echo $tree; pdfunite *_${{tree}}_*.pdf ${{tree}}.pdf; done        
         rm *_*.pdf
-        zip  out.zip *.pdf 
+        zip -q out.zip *.pdf
         cp out.zip ../{output.elasto}
         """
 
@@ -305,7 +305,7 @@ rule static_pull_plot_failed:
         mkdir -p ../temp/static_fail_images
         python static_pull_suspicious.py
         cd ../temp/static_fail_images
-        zip -r ../{output} *.* 
+        zip -qr ../{output} *.*
         """
         
 rule fft_all_probes:
@@ -327,7 +327,7 @@ rule fft_all_probes:
         cd ../temp/fft_tukey/
         echo "fft images" > readme
         rm ../{output.zip} || true
-        zip ../{output.zip} *
+        zip -q ../{output.zip} *
         """
         
 rule fft_all_probes_boxplots:
