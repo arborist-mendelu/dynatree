@@ -26,7 +26,8 @@ class SignalTuk():
                 index=np.arange(self.accdata.index[-1]+0.002,
                 self.accdata.index[-1]+1, 0.0002), data=0)
             elongated_signal =  pd.concat([zero_signal_start,self.accdata.loc[start:end, probe], zero_signal_end])
-            self.signal = elongated_signal.loc[start:end].copy()
+            self.signal = elongated_signal.loc[round(start-0.0001,4):round(end,4)].copy()
+            self.signal.index = self.signal.index.round(4)
         self.dt = 0.0002
         self.probe = probe
 
