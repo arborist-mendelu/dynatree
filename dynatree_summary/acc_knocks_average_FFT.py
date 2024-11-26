@@ -47,7 +47,7 @@ def process_one_tree_to_images(**kwds):
         csvname = f"{CACHE}FFTaverage_{kwds['measurement_type']}_{kwds['day']}_{kwds['tree']}_{probe}.csv"
         fig, ax = plt.subplots(figsize=figsize)
         try:
-            subans = ans.xs(key=probe, level="probe", axis=1).sort_index()
+            subans = ans.xs(key=probe, level="probe", axis=1).sort_index(axis=1)
             subans.plot(linewidth=1, legend=None, alpha=0.3, ax=ax)
 
             data = subans.apply(lambda row: row.median(), axis=1)
@@ -70,7 +70,7 @@ def process_one_tree_to_images(**kwds):
         ax.set(xlabel="Frequency / Hz", ylabel="FFT")
         # ax.get_legend().remove()
         plt.tight_layout()
-        fig.savefig(figname)
+        fig.savefig(figname, transparent=True)
         plt.close('all')
 
 def process_wrapper(row):
