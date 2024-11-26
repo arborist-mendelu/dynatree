@@ -95,8 +95,7 @@ def main():
     progress_map(process_wrapper, [i for _, i in list_of_measurements.iterrows()], n_cpu=6)
 
 if __name__ == "__main__":
-    # get_FFT_all_acc(**{'day': '2022-08-16', 'tree': 'BK13', 'type': 'normal'})
-    # get_FFT_all_acc(**{'day': '2021-06-29', 'tree': 'BK08', 'type': 'normal'})
-    # get_FFT_one_probe(**{'day': '2021-06-29', 'tree': 'BK10', 'type': 'normal', 'probe': 'a02_y'})
-    # get_FFT_one_probe(**{'day': '2024-09-02', 'tree': 'BK01', 'type': 'afterro2', 'probe': 'a04_y'})
+    # process_one_tree_to_images(**{'day': '2024-09-02', 'tree': 'BK01', 'measurement_type': 'afterro2', 'probe': 'a04_y'})
+    # process_one_tree_to_images(**{'day': '2022-08-16', 'tree': 'BK07', 'measurement_type': 'normal', 'probe': 'a04_y'})
+    # get_one_tree(**{'day': '2022-08-16', 'tree': 'BK07', 'measurement_type': 'normal', 'probe': 'a04_y'})
     main()
