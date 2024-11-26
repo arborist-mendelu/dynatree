@@ -71,6 +71,7 @@ def process_one_tree_to_images(**kwds):
         # ax.get_legend().remove()
         plt.tight_layout()
         fig.savefig(figname, transparent=True)
+        subans.to_csv(csvname)
         plt.close('all')
 
 def process_wrapper(row):
@@ -91,7 +92,7 @@ def main():
         matplotlib.use('Agg')
 
     # print(list_of_measurements)
-    progress_map(process_wrapper, [i for _, i in list_of_measurements.iterrows()], n_cpu=5)
+    progress_map(process_wrapper, [i for _, i in list_of_measurements.iterrows()], n_cpu=6)
 
 if __name__ == "__main__":
     # get_FFT_all_acc(**{'day': '2022-08-16', 'tree': 'BK13', 'type': 'normal'})
