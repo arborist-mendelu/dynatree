@@ -101,7 +101,7 @@ def process_chunk(df):
     return ans
 
 def process_df(df):
-    n = 10  # chunk row size
+    n = 20  # chunk row size
     list_df = [df[i:i + n] for i in range(0, df.shape[0], n)]
     delka = len(list_df)
     i = 0

@@ -28,14 +28,13 @@ rule all_acc:
 rule create_cached_images:
     """
     Create chached images
-
     Spoji informace o automaticky nalezenych peacich, rucne vyhozenych peacich a rucne nalezenych peacich 
     a vytvori obrazky pro cache na disku.
     """
     input:
-        "./dynatree_summary/FFT_acc_knock_auto.csv",
-        "./dynatree_summary/FFT_acc_knock_fail_manual.csv",
-        "./dynatree_summary/FFT_acc_knock_peak_manual.csv"
+        "dynatree_summary/FFT_acc_knock_auto.csv",
+        "dynatree_summary/FFT_acc_knock_fail_manual.csv",
+        "dynatree_summary/FFT_acc_knock_peak_manual.csv"
     output:
         "../outputs/FFT_acc_knock.csv",
         "../outputs/FFT_acc_average_graph.zip"
