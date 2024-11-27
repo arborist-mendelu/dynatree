@@ -35,7 +35,7 @@ def save_images(signal_knock, fft_peak, figname):
     ):
         pass
         return
-
+        # TODO: ukoncit vypocet drive, pred nactenim acc dat.
     # small time domain
     fig, ax = plt.subplots(figsize=(3,1))
     if "_x_" in figname:
@@ -88,7 +88,7 @@ def zpracuj_mereni(row):
     subdf = df[(df[columns_to_match] == row[columns_to_match]).all(axis=1)]
     m = DynatreeMeasurement(day=row["day"], tree=row["tree"], measurement=row["measurement"],
                             measurement_type=row["type"])
-    accdata = m.data_acc5000
+    accdata = m.data_acc5000 # TODO: toto presunout do cyklu a pred to dat continue, pokud soubor existuje.
     for subi,subrow in subdf.iterrows():
         s = SignalTuk(m, subrow["knock_time"] / 100.0 - delta_time,
                       subrow["knock_time"] / 100.0 + delta_time,
@@ -111,6 +111,7 @@ def main():
     #     zpracuj_mereni(row)
     #     pbar.update(1)
     # pbar.close()
+    # TODO: rozdeleni udelat automatem
     main_part(mereni_df.loc[:50,:].copy())
     gc.collect()
     main_part(mereni_df.loc[51:100,:].copy())

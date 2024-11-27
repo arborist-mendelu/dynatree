@@ -47,7 +47,6 @@ rule create_cached_images:
         cp ./dynatree_summary/FFT_acc_knock.csv ../outputs/FFT_acc_knock.csv
         python -m dynatree_summary.acc_cached_images
         python -m dynatree_summary.acc_knocks_average_FFT
-        python -m dynatree_summary.acc_knocks_average_FFT
         zip -qj ../outputs/FFT_acc_average_graph.zip ../outputs/cache_FFTavg/*.png
         """
 
