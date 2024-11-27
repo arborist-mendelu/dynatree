@@ -34,7 +34,7 @@ def save_images(signal_knock, fft_peak, figname):
             Path(f"{cachedir_large}/FFT_{figname}.png").exists()
     ):
         pass
-        #return
+        return
 
     # small time domain
     fig, ax = plt.subplots(figsize=(3,1))
