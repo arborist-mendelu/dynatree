@@ -25,22 +25,31 @@ rule all_acc:
     input:
         "../outputs/FFT_acc_average_graph.zip"
 
-rule average_FFT:
+rule create_cached_images:
     """
-    Return average FFT
+    Create chached images
+
+    Spoji informace o automaticky nalezenych peacich, rucne vyhozenych peacich a rucne nalezenych peacich 
+    a vytvori obrazky pro cache na disku.
     """
     input:
-        "../outputs/FFT_acc_knock.csv"
+        "./dynatree_summary/FFT_acc_knock_auto.csv",
+        "./dynatree_summary/FFT_acc_knock_fail_manual.csv",
+        "./dynatree_summary/FFT_acc_knock_peak_manual.csv"
     output:
+        "../outputs/FFT_acc_knock.csv",
         "../outputs/FFT_acc_average_graph.zip"
     conda:
         "dynatree"
     shell:
         """
+        python -m dynatree_summary.acc_knocks_merge_data
+        cp ./dynatree_summary/FFT_acc_knock.csv ../outputs/FFT_acc_knock.csv
+        python -m dynatree_summary.acc_cached_images
+        python -m dynatree_summary.acc_knocks_average_FFT
         python -m dynatree_summary.acc_knocks_average_FFT
         zip -qj ../outputs/FFT_acc_average_graph.zip ../outputs/cache_FFTavg/*.png
         """
-
 
 rule measurement_notes:
     """
