@@ -6,11 +6,12 @@ import gc
 from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
+import time
 
 import dynatree.dynatree
 from config import file
 import matplotlib.pyplot as plt
-from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
+from parallelbar import progress_map
 import logging
 dynatree.dynatree.logger.setLevel(logging.ERROR)
 
@@ -34,7 +35,7 @@ def save_images(signal_knock, fft_peak, figname):
             Path(f"{cachedir_large}/FFT_{figname}.png").exists()
     ):
         pass
-        return
+        # return
         # TODO: ukoncit vypocet drive, pred nactenim acc dat.
     # small time domain
     fig, ax = plt.subplots(figsize=(3,1))
@@ -95,55 +96,27 @@ def zpracuj_mereni(row):
                       subrow["probe"], accdata=accdata)
         save_images(s, subrow['freq'], subrow['filename'])
 
+def process_chunk(df):
+    ans = progress_map(zpracuj_mereni, [i for _,i in df.iterrows()], disable=True)
+    return ans
 
-# def zpracuj_tuk(m,subrow):
-#     for subi,subrow in subdf.iterrows():
-#         s = SignalTuk(m, subrow["knock_time"] / 100.0 - delta_time,
-#                       subrow["knock_time"] / 100.0 + delta_time,
-#                       subrow["probe"])
-#         save_images(s, subrow['freq'], subrow['filename'])
-
+def process_df(df):
+    n = 10  # chunk row size
+    list_df = [df[i:i + n] for i in range(0, df.shape[0], n)]
+    delka = len(list_df)
+    i = 0
+    start = time.time()
+    ans = {}
+    for _,d in enumerate(list_df):
+        i = i+1
+        print (f"*******   {i}/{delka}, runtime {time.time()-start} seconds ", end="\r")
+        ans[_] = process_chunk(d)
+    print(f"Finished in {round(time.time()-start)} seconds                           ")
+    return ans
 
 def main():
     mereni_df = df[["type", "tree", "day", "measurement"]].drop_duplicates().reset_index()
-    # pbar = tqdm(total=len(mereni_df))
-    # for i, row in mereni_df.iterrows():
-    #     zpracuj_mereni(row)
-    #     pbar.update(1)
-    # pbar.close()
-    # TODO: rozdeleni udelat automatem
-    main_part(mereni_df.loc[:50,:].copy())
-    gc.collect()
-    main_part(mereni_df.loc[51:100,:].copy())
-    gc.collect()
-    main_part(mereni_df.loc[100:150,:].copy())
-    gc.collect()
-    main_part(mereni_df.loc[150:200,:].copy())
-    gc.collect()
-    main_part(mereni_df.loc[200:250,:].copy())
-    gc.collect()
-    main_part(mereni_df.loc[250:300,:].copy())
-    gc.collect()
-    main_part(mereni_df.loc[300:400,:].copy())
-    gc.collect()
-    main_part(mereni_df.loc[400:500,:].copy())
-    gc.collect()
-    main_part(mereni_df.loc[500:600,:].copy())
-    gc.collect()
-    main_part(mereni_df.loc[600:,:].copy())
-
-def main_part(mereni_df):
-    with ProcessPoolExecutor() as executor:
-        # Startujeme úlohy paralelně
-        futures = {executor.submit(zpracuj_mereni, row): i for i, row in mereni_df.iterrows()}
-
-        # Ukazatel progresu
-        with tqdm(total=len(futures)) as pbar:
-            for future in as_completed(futures):
-                # Zpracování výsledku (pokud je potřeba)
-                result = future.result()
-                # Aktualizace progresu
-                pbar.update(1)
+    process_df(mereni_df)
 
 if __name__ == "__main__":
     main()
