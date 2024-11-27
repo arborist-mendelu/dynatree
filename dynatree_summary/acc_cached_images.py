@@ -1,8 +1,7 @@
 """
 Ulozi fft obrazky a obrazky kmitu do souborove cache.
 """
-import sys
-import gc
+
 from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
@@ -104,14 +103,12 @@ def process_df(df):
     n = 20  # chunk row size
     list_df = [df[i:i + n] for i in range(0, df.shape[0], n)]
     delka = len(list_df)
-    i = 0
-    start = time.time()
+    pbar = tqdm(total=delka)
     ans = {}
     for _,d in enumerate(list_df):
-        i = i+1
-        print (f"*******   {i}/{delka}, runtime {time.time()-start} seconds ", end="\r")
         ans[_] = process_chunk(d)
-    print(f"Finished in {round(time.time()-start)} seconds                           ")
+        pbar.update(1)
+    pbar.close()
     return ans
 
 def main():
