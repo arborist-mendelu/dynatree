@@ -478,6 +478,7 @@ def Tabulka():
         .pipe(lambda d: d[d["tree"] == s.tree.value])
         .pipe(lambda d: d[d["day"] == s.day.value])
         .pipe(lambda d: d[d["type"] == s.method.value])
+        .pipe(lambda d: d[d["valid"] == True])
         #.pipe(lambda d: d[d["measurement"] == s.measurement.value])
         .drop(["day","tree","type","knock_index","filename"], axis=1)
         .pivot(index=['measurement', 'knock_time'], columns='probe', values='freq')
