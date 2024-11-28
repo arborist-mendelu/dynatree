@@ -1,4 +1,3 @@
-from PyQt5.uic.Compiler.qobjectcreator import logger
 from matplotlib.pyplot import axvline
 import solara.lab
 import solara.website
@@ -23,6 +22,7 @@ from functools import lru_cache
 import urllib.parse
 import jinja2
 
+allow_save = False
 loading_start = time.time()
 
 def Markdown(text, **kwds):
@@ -171,8 +171,8 @@ def Page():
                 report_optics_availability=False,
                 include_measurements=active_tab.value != 2
             )
-        if active_tab.value == 1:
-            if worker.value != "ini":
+        if active_tab.value == 0:
+            if (worker.value != "ini") | (allow_save==False):
                 with solara.Card(title = "Dashboard setting"):
                     solara.Switch(label="Use overlay for graphs (useful for small screen)", value=use_overlay)
                     solara.Switch(label="Use larger FFT image", value=use_large_fft)
@@ -180,20 +180,21 @@ def Page():
                     with solara.Column(gap="0px"):
                         solara.Text("Items on page:")
                         solara.ToggleButtonsSingle(value=cards_on_page, values=[10,20,50,75,100])
-                Download()
+                if allow_save:
+                    Download()
     with solara.lab.Tabs(value=active_tab, lazy=True):
         # TODO: zmenit na kernel_id podle https://solara.dev/documentation/examples/general/custom_storage
         #if session_id not in rdf.keys():
         #    make_my_copy_of_df(session_id)
 
-        with solara.lab.Tab("Měření"):
-            Signal()
-            Rozklad()
+        # with solara.lab.Tab("Měření"):
+        #     Signal()
+        #     Rozklad()
         # with solara.lab.Tab("Tabulka"):
         #     Tabulka()
         with solara.lab.Tab("Detail ťuků"):
             dynatree.logger.info(f"worker name is {worker.value}")
-            if (worker.value == 'ini') & (active_tab.value==1):
+            if (allow_save==True) & (worker.value == 'ini') & (active_tab.value==1):
                 solara.Warning(Markdown(
 f"""
 * Tato funkcionalita ještě není dotažená do konce. Zatím jenom pro prohlédnutí dat a ne pro vážnou práci 
@@ -356,17 +357,21 @@ def Graf():
             current_peaks = rdf[worker.value].at[ans['index'], "manual_peaks"]
             with solara.Row():
                 solara.Button("❌", on_click=lambda: interactive_graph())
-                if ans['is_fft']:
+                if allow_save & ans['is_fft']:
                     solara.Button("Save & ❌", on_click=lambda: save_click_data(ans['index']))
                 solara.Text(ans['text'])
                 solara.Text(f"(id {ans['index']})")
             if ans['is_fft']:
+                # solara.Markdown(f"""
+                # **Freq domain and peaks positions**
+                #
+                # * Current manual freqs: {[round(i) for i in current_peaks] if current_peaks is not None else "Not defined (yet)."}
+                #
+                # * **New manual freqs: {[round(i) for i in manual_freq.value]}**
+                # """)
                 solara.Markdown(f"""
                 **Freq domain and peaks positions**
-    
-                * Current manual freqs: {[round(i) for i in current_peaks] if current_peaks is not None else "Not defined (yet)."}
-    
-                * **New manual freqs: {[round(i) for i in manual_freq.value]}**
+
                 """)
                 solara.FigurePlotly(ans['figure'], on_click=set_click_data)
             else:
@@ -661,13 +666,14 @@ max at {round(row['freq'])} Hz
                         x_axis_type = 'log'
                     else:
                         x_axis_type = None
-                    solara.Button("Zadat peaky", text=True, color="primary",
+                    solara.Button("Zobrazit peaky", text=True, color="primary",
                             on_click=lambda: interactive_graph(x_axis_type=x_axis_type, **coordinates),
                             outlined=True
                                   )
-                with solara.Column():
-                    solara.Button("Změnit status", text=True, color="primary", on_click=lambda:
-                    change_OK_status(i), outlined=True)
+                if allow_save:
+                    with solara.Column():
+                        solara.Button("Změnit status", text=True, color="primary", on_click=lambda:
+                        change_OK_status(i), outlined=True)
 
             # solara.Button("Action 2", text=True)
 
