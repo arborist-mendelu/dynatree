@@ -2,6 +2,10 @@ import pandas as pd
 
 from dynatree.dynatree import DynatreeMeasurement, logger
 from dynatree.signal_knock import SignalTuk
+import logging
+
+logger.setLevel(logging.INFO)
+
 
 df_manual_failed = pd.read_csv("./dynatree_summary/FFT_acc_knock_fail_manual.csv",
                                index_col=None, header=None,
@@ -49,13 +53,27 @@ def process_one_row(row):
     out.columns = ["type","day","tree","measurement","knock_index","knock_time","probe","freq","valid"]
     return out
 
+logger.info("Processing rows of a table of ACC knocks")
+# TODO: Slow, find better solution
 d = df_new.apply(process_one_row, axis=1).to_list()
 
+logger.info("Merge dataframes with ACC knocks")
 df = pd.concat([df,*d],axis=0)
 df.index.name = 'filename'
-df.to_csv("dynatree_summary/FFT_acc_knock.csv")
 
+logger.info("Remove duplicates and nearly duplicates")
 
+group_cols = ["type", "day", "tree", "measurement", "probe"]
+df = df.sort_values(by=group_cols + ["knock_time"]).reset_index(drop=True)
+
+# Vypočítáme rozdíly mezi sousedními hodnotami knock_time v rámci každé skupiny
+df["diff"] = df.groupby(group_cols)["knock_time"].diff().fillna(float('inf'))
+
+# Najdeme všechny řádky, kde rozdíl knock_time neni <= 10
+result = df[~(df["diff"].abs() <= 10.0)]
+result = result.drop("diff", axis=1)
+
+result.to_csv("dynatree_summary/FFT_acc_knock.csv")
 
 
 
