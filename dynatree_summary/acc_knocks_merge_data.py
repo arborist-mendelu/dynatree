@@ -64,7 +64,7 @@ df.index.name = 'filename'
 logger.info("Remove duplicates and nearly duplicates")
 
 group_cols = ["type", "day", "tree", "measurement", "probe"]
-df = df.sort_values(by=group_cols + ["knock_time"]).reset_index(drop=True)
+df = df.sort_values(by=group_cols + ["knock_time"]).reset_index(drop=False)
 
 # Vypočítáme rozdíly mezi sousedními hodnotami knock_time v rámci každé skupiny
 df["diff"] = df.groupby(group_cols)["knock_time"].diff().fillna(float('inf'))
