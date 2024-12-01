@@ -54,7 +54,7 @@ def process_one_row(row):
     return out
 
 logger.info("Processing rows of a table of ACC knocks")
-# TODO: Slow, find better solution
+# TODO: Slow, find better solution. Ale nevim jak, vektorizovat nejde, leda rozdelit na kousky a paralelizovat
 d = df_new.apply(process_one_row, axis=1).to_list()
 
 logger.info("Merge dataframes with ACC knocks")
