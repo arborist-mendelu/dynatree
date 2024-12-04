@@ -35,6 +35,8 @@ Skripty pro tvorbu parquet souborů:
        python xsight_tsv2parquet.py
 
 * `pull2parquet.py`  Tahovky do parquet souboru. Nejdriv najit zdroje a pote spustit skript. Nalezeni zdroju viz navod v souboru.
+  Aby byly major inklinometry kladne, je mozne, ze bude potreba udelat
+  zaznam v souboru scale_factors.csv
 
 * Acc jsou nezavisle. 
 * Pridavani tahovek k optice predpoklada, ze jsou aktualni data z tahovek a z optiky, tj. `parquet_add_inclino.py` spoustet nakonec. A vzdy po uprave 
