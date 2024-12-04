@@ -15,10 +15,10 @@ Uklada jako parquet soubory do ../data/parquet_pulling
 PREFIX = "/mnt/ERC/ERC/Mereni_Babice/"
 
 import pandas as pd
-import multi_handlers_logger
+#import multi_handlers_logger
 import os
-logger = multi_handlers_logger.setup_logger(prefix="pull2parquet")
-import extract_angle_from_pulling_data as ea
+#logger = multi_handlers_logger.setup_logger(prefix="pull2parquet")
+#import extract_angle_from_pulling_data as ea
 
 def get_df():
     
@@ -65,25 +65,25 @@ def zpracuj_radek(row):
     target = row['new_filename']
     target_dir = row['new_directory']
     if os.path.isfile(source):
-        logger.debug(f"Soubor {source} existuje")
+        print(f"Soubor {source} existuje")
     else:
-        logger.error(f"Soubor {source} neexistuje")
+        print(f"Soubor {source} neexistuje")
         return None
     if os.path.isdir(target_dir):
-        logger.debug(f"Adresář {target_dir} existuje")
+        print(f"Adresář {target_dir} existuje")
     else:
-        logger.info(f"Adresář {target_dir} neexistuje, vytvářím ho")
+        print(f"Adresář {target_dir} neexistuje, vytvářím ho")
         try:
             os.mkdir(target_dir)
         except:
-            logger.error(f"Adresář {target_dir} se nepodařilo vytvořit")
+            print(f"Adresář {target_dir} se nepodařilo vytvořit")
             return None
     if os.path.isfile(target):
-        logger.error(f"Soubor {target} existuje, nic nedělám ...")
+        print(f"Soubor {target} existuje, nic nedělám ...")
         return None
     df = read_csvdata_inclinometers(source)
     df.to_parquet(target)
-    logger.info(f"Soubor {target} vytvořen.")
+    print(f"Soubor {target} vytvořen.")
     return None   
 
 def read_csvdata_inclinometers(file):
@@ -110,22 +110,22 @@ df = get_df()
 # Extract the angle
 
 # Should not be used. The data are not reliable.
-angles = {}
-for i,row in df.iterrows():
-    angles[(row['type'].lower(), row['day'].replace("_","-"), row['tree'], row['measurement'])
-           ] = [ea.get_angle(row['old_filename'])]
-
-df_angles = pd.DataFrame(angles).T.sort_index()
-
-df_angles = df_angles.reset_index()
-df_angles.columns = ['measurement_type','day','tree','measurement','angle']
-
-df_wide = df_angles.pivot(index=['measurement_type', 'day', 'tree'], columns='measurement', values='angle')
-# All nonzero values are equal
-df_wide["angle"] = df_wide.max(axis=1, skipna=True)
-df_wide = df_wide[["angle"]]
-df_wide.to_csv("csv/angles_from_pulling.csv")
-df_wide.to_excel("uhly_z_tahovek.xlsx")
+#angles = {}
+#for i,row in df.iterrows():
+#    angles[(row['type'].lower(), row['day'].replace("_","-"), row['tree'], row['measurement'])
+#           ] = [ea.get_angle(row['old_filename'])]
+#
+#df_angles = pd.DataFrame(angles).T.sort_index()
+#
+#df_angles = df_angles.reset_index()
+#df_angles.columns = ['measurement_type','day','tree','measurement','angle']
+#
+#df_wide = df_angles.pivot(index=['measurement_type', 'day', 'tree'], columns='measurement', values='angle')
+## All nonzero values are equal
+#df_wide["angle"] = df_wide.max(axis=1, skipna=True)
+#df_wide = df_wide[["angle"]]
+#df_wide.to_csv("csv/angles_from_pulling.csv")
+#df_wide.to_excel("uhly_z_tahovek.xlsx")
 #%%
 # Write the parquet files
 for i,row in df.iterrows():
