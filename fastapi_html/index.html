@@ -160,6 +160,8 @@
     </div>
 
     <script>
+        server = "https://math4u.mendelu.cz/api"
+        //server = "https://jupyter.mendelu.cz:8770"
         Vue.component('selection-modal', {
             props: ['title', 'items', 'selected'],
             template: `
@@ -251,21 +253,21 @@
                     this.closeModal();
                 },
                 fetchMethods() {
-                    fetch('http://0.0.0.0:8000/methods')
+                    fetch(server+'/methods')
                         .then(response => response.json())
                         .then(data => {
                             this.modals.find(m => m.name === 'methods').items = data;
                         });
                 },
                 fetchTrees(method) {
-                    fetch(`http://0.0.0.0:8000/method/${method}`)
+                    fetch(server+`/method/${method}`)
                         .then(response => response.json())
                         .then(data => {
                             this.modals.find(m => m.name === 'trees').items = data;
                         });
                 },
                 fetchMeasurements(tree, method) {
-                    fetch(`http://0.0.0.0:8000/tree/${tree}/${method}`)
+                    fetch(server+`/tree/${tree}/${method}`)
                         .then(response => response.json())
                         .then(data => {
                             this.modals.find(m => m.name === 'measurements').items = data;
@@ -280,13 +282,14 @@
                         sensor: this.selectedSensor,
                         timeRange: this.timeRange
                     };
-                    this.ansUrl = "http://0.0.0.0:8000/draw_graph?method=" + this.selectedMethod + "&tree=" + this.selectedTree + "&measurement=" + this.selectedMeasurement + "&probe=" + this.selectedSensor + "&start=" + this.bounds.lower + "&end=" + this.bounds.upper+"&format=png";  
+                    this.ansUrl = server+"/draw_graph?method=" + this.selectedMethod + "&tree=" + this.selectedTree + "&measurement=" + this.selectedMeasurement + "&probe=" + this.selectedSensor + "&start=" + this.bounds.lower + "&end=" + this.bounds.upper+"&format=png";  
+                    console.log(this.ansUrl)
                 },                
                 async sendGetRequest() {
                     try {
                         // Převod parametrů na URL dotazovací řetězec
                         const queryString = new URLSearchParams(this.params).toString();
-                        const url = `http://127.0.0.1:8000/draw_graph/?${queryString}`;
+                        const url = server+`/draw_graph/?${queryString}`;
                         console.log("Odesílám GET na:", url);
 
                         // GET požadavek

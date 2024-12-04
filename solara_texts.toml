@@ -30,8 +30,9 @@ general_info = """
                 
         * Někdy se po přepnutí aplikací neaktualizuje menu v levém sidebaru. 
           To je možné opravit kliknutím na jinou položku v typu měření (normal/den/noc/...)
-        * Někdy se objeví chybová hláška, ale hned zmizí, to je neškodné. 
-        * U aplikací, které se spouští automaticky výběrem dne/stromu/měření může při rychlém klikání beh skončit chybou. Zatím není pořešeno odstřelování neaktuálních procesů.
+        * Někdy se objeví chybová hláška, ale hned zmizí, to je neškodné.
+        * Některé aplikace aktualizují výstup hned po změně parametrů, některé po stisku tlačítka na
+          přeskreslení nebo přepočet.
         """
 tahovky = """
         ## Tahovky
