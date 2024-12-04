@@ -77,6 +77,7 @@ def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement=
         data = m.data_acc5000
     else:
         data = m.data_optics
+        probe = (probe,"Y0")
     if data is None:
         return None
     data = data.loc[:,probe]
