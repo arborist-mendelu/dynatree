@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Configuration</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .btn {
+            position: relative;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+	    display: inline-block;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .btn:hover .dropdown {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Rozdělení na dva sloupce */
+	    background-color: lightgray !important;
+        }
+        .dropdown button {
+            display: inline-block;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: lightgray;
+            text-align: left;
+            cursor: pointer;
+        }
+        .dropdown button:hover {
+            background-color: #f0f0f0;
+        }
+	.modal {background-color: lightgray; padding:5px;}
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>DYNATREE Graphs</h1>
+
+	<div class='menu'>
+        <!-- Seznam pro výběr metod -->
+        <div class="btn">
+            {{ selectedMethod || "Select Method" }}
+            <div class="dropdown">
+                <button v-for="method in methods" :key="method" @click="selectMethod(method)">
+                    {{ method }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Seznam pro výběr stromů -->
+        <div class="btn" :class="{ disabled: !selectedMethod }" :disabled="!selectedMethod">
+            {{ selectedTree || "Select Tree" }}
+            <div class="dropdown" v-if="selectedMethod">
+                <button v-for="tree in trees" :key="tree" @click="selectTree(tree)">
+                    {{ tree }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Seznam pro výběr měření -->
+        <div class="btn" :class="{ disabled: !selectedTree }" :disabled="!selectedTree">
+            {{ selectedMeasurement || "Select Measurement" }}
+            <div class="dropdown" v-if="selectedTree">
+                <button v-for="measurement in measurements" :key="measurement" @click="selectMeasurement(measurement)">
+                    {{ measurement }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Seznam pro výběr senzorů -->
+        <div class="btn" :class="{ disabled: !selectedMeasurement }" :disabled="!selectedMeasurement">
+            {{ selectedSensor || "Select Sensor" }}
+            <div class="dropdown" v-if="selectedMeasurement">
+                <button v-for="sensor in sensors" :key="sensor" @click="selectSensor(sensor)">
+                    {{ sensor }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Tlačítko pro nastavení hranic -->
+        <button class="btn" :class="{ disabled: !selectedSensor }" :disabled="!selectedSensor" @click="openBoundsModal">
+            Set Bounds
+        </button>
+
+        <!-- Tlačítko pro vykreslení grafu -->
+        <button :disabled="!canDrawGraph" class="btn draw-btn" @click="fetchGraphData">
+            Draw Graph
+        </button>
+	</div>
+        <!-- Modalní okno pro nastavení hranic -->
+        <div v-if="currentModal === 'bounds'" class="modal" style="display: block;">
+            <div class="modal-content">
+                <span class="close" @click="closeModal">&times;</span>
+                <h2>Set Bounds</h2>
+                <div>
+                    <label>Lower Bound:</label>
+                    <input type="number" v-model="bounds.lower">
+                </div>
+                <div>
+                    <label>Upper Bound:</label>
+                    <input type="number" v-model="bounds.upper">
+                </div>
+                <button class="btn" @click="closeModal">Save</button>
+            </div>
+        </div>
+
+        <!-- Graf -->
+        <div id="plot">
+            <img v-if="ansUrl" :src="ansUrl" alt="Vykreslený graf" />
+        </div>
+    </div>
+
+    <script>
+        const server = "https://math4u.mendelu.cz/api";
+
+        new Vue({
+            el: '#app',
+            data: {
+                methods: [],
+                trees: [],
+                measurements: [],
+                sensors: ["Elasto(90)", "Inclino(80)X", "Inclino(80)Y", "Inclino(81)X", "Inclino(81)Y", "Pt3", "Pt4",
+			  "a01_x", "a01_y", "a01_z", 
+                    "a02_x", "a02_y", "a02_z", 
+                    "a03_x", "a03_y", "a03_z", 
+                    "a04_x", "a04_y", "a04_z"],
+                selectedMethod: null,
+                selectedTree: null,
+                selectedMeasurement: null,
+                selectedSensor: null,
+                bounds: { lower: 0, upper: 1e9 },
+                currentModal: null,
+                ansUrl: ''
+            },
+            computed: {
+                canDrawGraph() {
+                    return this.selectedMethod && this.selectedTree && this.selectedMeasurement && this.selectedSensor && this.bounds.lower !== null && this.bounds.upper !== null;
+                }
+            },
+            methods: {
+                fetchMethods() {
+                    fetch(server + '/methods')
+                        .then(response => response.json())
+                        .then(data => { this.methods = data; });
+                },
+                fetchTrees() {
+                    fetch(`${server}/method/${this.selectedMethod}`)
+                        .then(response => response.json())
+                        .then(data => { this.trees = data; });
+                },
+                fetchMeasurements() {
+                    fetch(`${server}/tree/${this.selectedTree}/${this.selectedMethod}`)
+                        .then(response => response.json())
+                        .then(data => { this.measurements = data; });
+                },
+                selectMethod(method) {
+                    this.selectedMethod = method;
+                    this.selectedTree = null;
+                    this.selectedMeasurement = null;
+                    this.fetchTrees();
+                },
+                selectTree(tree) {
+                    this.selectedTree = tree;
+                    this.selectedMeasurement = null;
+                    this.fetchMeasurements();
+                },
+                selectMeasurement(measurement) {
+                    this.selectedMeasurement = measurement;
+                },
+                selectSensor(sensor) {
+                    this.selectedSensor = sensor;
+                },
+                openBoundsModal() {
+                    this.currentModal = 'bounds';
+                },
+                closeModal() {
+                    this.currentModal = null;
+                },
+                fetchGraphData() {
+                    this.ansUrl = `${server}/draw_graph?method=${this.selectedMethod}&tree=${this.selectedTree}&measurement=${this.selectedMeasurement}&probe=${this.selectedSensor}&start=${this.bounds.lower}&end=${this.bounds.upper}&format=png`;
+                }
+            },
+            created() {
+                this.fetchMethods();
+            }
+        });
+    </script>
+</body>
+</html>

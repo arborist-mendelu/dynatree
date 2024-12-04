@@ -64,28 +64,28 @@ def Page():
     solara.Title("DYNATREE")
     solara.Markdown(
     """
-    Vyber si v menu v barevném panelu nahoře, co chceš dělat. Ve svislém menu níže je stručný popis.
+    Vyber si v menu v barevném panelu nahoře, co chceš dělat.
     """
     )
     with solara.lab.Tabs(vertical=True, background_color=None, dark=False):
         with solara.lab.Tab("Obecné info"):
             solara.Markdown(config['texts']['general_info'])
-        with solara.lab.Tab("Vizualizace"):
-            solara.Markdown(config['texts']['vizualizace'])
-        with solara.lab.Tab("Tahovky"):
-            solara.Markdown(config['texts']['tahovky'])
-        with solara.lab.Tab("Synchronizace"):
-            solara.Markdown(config['texts']['synchronizace'])
-        with solara.lab.Tab("FFT"):
-            solara.Markdown(config['texts']['FFT'])
-        with solara.lab.Tab("Downloads"):
-            solara.Markdown(
-            """
-            ## Downloads
-            
-            * Data ke stažení, aktualizují se přímo na serveru po dokončený výpočtů, měla by být vždy ta nejaktuálnější. 
-            """
-              )
+        # with solara.lab.Tab("Vizualizace"):
+        #     solara.Markdown(config['texts']['vizualizace'])
+        # with solara.lab.Tab("Tahovky"):
+        #     solara.Markdown(config['texts']['tahovky'])
+        # with solara.lab.Tab("Synchronizace"):
+        #     solara.Markdown(config['texts']['synchronizace'])
+        # with solara.lab.Tab("FFT"):
+        #     solara.Markdown(config['texts']['FFT'])
+        # with solara.lab.Tab("Downloads"):
+        #     solara.Markdown(
+        #     """
+        #     ## Downloads
+        #
+        #     * Data ke stažení, aktualizují se přímo na serveru po dokončený výpočtů, měla by být vždy ta nejaktuálnější.
+        #     """
+        #       )
 
         with solara.lab.Tab("Notes from measurements"):
             solara.Markdown(
