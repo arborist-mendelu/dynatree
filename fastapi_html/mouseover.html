@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Graph Configuration</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> <!-- Axios -->
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.5.2.min.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -52,6 +55,13 @@
             color: white;
         }
 	.modal {background-color: lightgray; padding:5px;}
+
+    #bokeh-plot {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      width: 100%;
+      height: 600px;
+    }
     </style>
 </head>
 <body>
@@ -106,7 +116,10 @@
 
         <!-- Tlačítko pro vykreslení grafu -->
         <button :disabled="!canDrawGraph" class="btn draw-btn" @click="fetchGraphData">
-            Draw Graph
+            Draw PNG
+        </button>
+        <button :disabled="!canDrawGraph" class="btn draw-btn" @click="fetchGraphDataBokeh">
+            Draw Bokeh
         </button>
 	</div>
         <!-- Modalní okno pro nastavení hranic -->
@@ -127,12 +140,39 @@
         </div>
 
         <!-- Graf -->
-        <div id="plot">
+        <div id="plot" v-show="showPngGraph">
             <img v-if="ansUrl" :src="ansUrl" alt="Pokud graf není zobrazen, možná není daná kombinace vstupů dostupná nebo není zpracována." />
+        </div>
+
+            <!-- Kontejner pro Bokeh graf -->
+        <div id="bokeh-plot" v-show="!showPngGraph">
         </div>
     </div>
 
     <script>
+async function addAndExecuteScript(scriptContent) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.text = scriptContent;
+
+    // Zpracování chyb
+    script.onerror = (e) => {
+      console.error('Chyba při načítání skriptu:', e);
+      reject(e);
+    };
+
+    // Po úspěšném načtení a spuštění
+    script.onload = () => {
+      console.log('Skript úspěšně načten a spuštěn.');
+      resolve();
+    };
+
+    // Přidání do <head>
+    document.head.appendChild(script);
+  });
+}
+
         const server = "https://math4u.mendelu.cz/api";
 
         new Vue({
@@ -152,7 +192,8 @@
                 selectedSensor: null,
                 bounds: { lower: 0, upper: 1e9 },
                 currentModal: null,
-                ansUrl: ''
+                ansUrl: '',
+                showPngGraph: false,
             },
             computed: {
                 canDrawGraph() {
@@ -200,8 +241,58 @@
                 },
                 fetchGraphData() {
                     this.ansUrl = `${server}/draw_graph?method=${this.selectedMethod}&tree=${this.selectedTree}&measurement=${this.selectedMeasurement}&probe=${this.selectedSensor}&start=${this.bounds.lower}&end=${this.bounds.upper}&format=png`;
+                    this.showPngGraph = true;
+                },
+                fetchGraphDataBokeh (){
+                    this.showPngGraph = false;
+                    const url = `${server}/draw_graph?method=${this.selectedMethod}&tree=${this.selectedTree}&measurement=${this.selectedMeasurement}&probe=${this.selectedSensor}&start=${this.bounds.lower}&end=${this.bounds.upper}&format=bokeh`;
+                axios.get(url)
+  .then((response) => {
+    if (response.data.status === 'success') {
+      this.responseMessage = 'Graf byl úspěšně načten.';
+      
+      // Najdeme kontejner pro Bokeh graf a vykreslíme ho
+      const target = document.getElementById(response.data.graph_data.target_id);
+      if (target) {
+        target.innerHTML = response.data.graph_data.div; // Vyčistíme předchozí obsah
+      } else {
+        console.error('Cílový element nebyl nalezen:', response.data.graph_data.target_id);
+        this.responseMessage = 'Chyba: Cílový element nebyl nalezen.';
+        return;
+      }
+
+      // Získáme obsah skriptu
+      const scriptContent = response.data.graph_data.script
+        .replace(/<script[^>]*>/, '')
+        .replace(/<\/script>/, '');
+      
+      // Přidání a provedení skriptu
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.text = scriptContent;
+
+      script.onload = () => {
+        console.log('Skript úspěšně proveden.');
+      };
+
+      script.onerror = (e) => {
+        console.error('Chyba při provádění skriptu:', e);
+        this.responseMessage = 'Chyba při vykreslování grafu.';
+      };
+
+      // Přidáme script do <head>
+      document.head.appendChild(script);
+    } else {
+      this.responseMessage = 'Chyba při generování grafu.';
+      console.error('Server vrátil neúspěšný status:', response.data);
+    }
+  })
+  .catch((error) => {
+    console.error('Chyba při volání API:', error);
+    this.responseMessage = 'Požadavek selhal.';
+  });
                 }
-            },
+        },
             created() {
                 this.fetchMethods();
             }
