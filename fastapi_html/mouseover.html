@@ -36,19 +36,20 @@
         .btn:hover .dropdown {
             display: grid;
             grid-template-columns: repeat(2, 1fr); /* Rozdělení na dva sloupce */
-	    background-color: lightgray !important;
+	    background-color: rgb(216, 246, 255);
         }
         .dropdown button {
             display: inline-block;
             width: 100%;
             padding: 10px;
             border: none;
-            background-color: lightgray;
+            background-color: rgb(216, 246, 255);
             text-align: left;
             cursor: pointer;
         }
         .dropdown button:hover {
-            background-color: #f0f0f0;
+            background-color: #007bff;
+            color: white;
         }
 	.modal {background-color: lightgray; padding:5px;}
     </style>
@@ -127,7 +128,7 @@
 
         <!-- Graf -->
         <div id="plot">
-            <img v-if="ansUrl" :src="ansUrl" alt="Vykreslený graf" />
+            <img v-if="ansUrl" :src="ansUrl" alt="Pokud graf není zobrazen, možná není daná kombinace vstupů dostupná nebo není zpracována." />
         </div>
     </div>
 
