@@ -55,6 +55,7 @@
             color: white;
         }
 	.modal {background-color: lightgray; padding:5px;}
+    .disabled, .disabled .btn:hover {background-color: lightgray;}
 
     #bokeh-plot {
       margin-top: 20px;
@@ -115,10 +116,10 @@
         </button>
 
         <!-- Tlačítko pro vykreslení grafu -->
-        <button :disabled="!canDrawGraph" class="btn draw-btn" @click="fetchGraphData">
+        <button :disabled="!canDrawGraph" class="btn draw-btn" :class="{ disabled: !canDrawGraph }" @click="fetchGraphData">
             Draw PNG
         </button>
-        <button :disabled="!canDrawGraph" class="btn draw-btn" @click="fetchGraphDataBokeh">
+        <button :disabled="!canDrawGraph" class="btn draw-btn" :class="{ disabled: !canDrawGraph }" @click="fetchGraphDataBokeh">
             Draw Bokeh
         </button>
 	</div>
