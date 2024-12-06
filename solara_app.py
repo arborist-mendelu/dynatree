@@ -32,6 +32,10 @@ mezicas2 = time.time() - start_imports
 import dynatree.solara.vizualizace
 import_finish = time.time()
 print(f"Imports finished in {import_finish-start_imports} sec, mezicas {mezicas}, {mezicas2}")
+from dynatree.dynatree import logger
+import logging
+logger.setLevel(logging.INFO)
+
 
 with open('solara_texts.toml', 'r') as f:
     config = toml.load(f)
@@ -50,7 +54,7 @@ def monitoring():
     
 @solara.component
 def Page():
-
+    logger.info("Page in solara_app.py started")
     with solara.Sidebar():
         solara.Success("Přístup povolen. Vítejte ve zpracování dat projektu Dynatree.")
 
@@ -135,7 +139,9 @@ def Page():
                             except:
                                 pass
                     solara.Button("Refresh", on_click=monitoring)
-                
+    logger.info("Page in solara_app.py finished")
+
+
 routes = [
     solara.Route(path="/", component=Page, label="home"),
     solara.Route(path="vizualizace", component=dynatree.solara.vizualizace.Page, label="vizualizace"),

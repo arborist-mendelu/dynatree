@@ -33,21 +33,21 @@
             position: absolute;
             top: 100%;
             left: 0;
-            border: 1px solid #ccc;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: 2px solid #999;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
             z-index: 1000;
         }
         .btn:hover .dropdown {
             display: grid;
             grid-template-columns: repeat(3, 1fr); /* Rozdělení na dva sloupce */
-	    background-color: rgb(216, 246, 255);
+	    background-color: rgb(255, 255  , 255);
         }
         .dropdown button {
             display: inline-block;
             width: 100%;
             padding: 10px;
             border: none;
-            background-color: rgb(216, 246, 255);
+            background-color: rgb(252, 255, 97);
             text-align: left;
             cursor: pointer;
         }
@@ -246,7 +246,6 @@
                     this.notyf.success('Požadavek byl odeslán.'); // Typická notifikace úspěchu
                     this.ansUrl = `${server}/draw_graph?method=${this.selectedMethod}&tree=${this.selectedTree}&measurement=${this.selectedMeasurement}&probe=${this.selectedSensor}&start=${this.bounds.lower}&end=${this.bounds.upper}&format=png`;
                     this.showPngGraph = true;
-                    this.notyf.success('Hotovo.'); // Typická notifikace úspěchu
                 },
                 fetchGraphDataBokeh (){
                     this.notyf.success('Požadavek byl odeslán.'); // Typická notifikace úspěchu
@@ -302,6 +301,8 @@
                     .catch((error) => {
                         console.error('Chyba při volání API:', error);
                         this.responseMessage = 'Požadavek selhal.';
+                        this.notyf.error('Při zpracování nastala chyba.'); // Typická notifikace neúspěchu
+                        document.getElementById("bokeh-plot").innerHTML = "Chyba při vykreslování grafu.";
                     });
                 },
         },
