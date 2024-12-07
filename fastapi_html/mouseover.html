@@ -35,6 +35,7 @@
             left: 0;
             border: 2px solid #999;
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
             z-index: 1000;
         }
         .btn:hover .dropdown {
@@ -63,6 +64,12 @@
       border: 1px solid #ddd;
       width: 100%;
       height: 600px;
+    }
+
+    .number-input {
+        display: flex;
+        align-items: center;
+        margin: 5px;
     }
 
     .skeleton {
@@ -131,12 +138,6 @@
                 </button>
             </div>
         </div>
-
-        <!-- Tlačítko pro nastavení hranic -->
-        <button class="btn" :class="{ disabled: !selectedSensor }" :disabled="!selectedSensor" @click="openBoundsModal">
-            Set Bounds
-        </button>
-
         <!-- Tlačítko pro vykreslení grafu -->
         <button :disabled="!canDrawGraph" class="btn draw-btn" :class="{ disabled: !canDrawGraph }" @click="fetchGraphData">
             Draw PNG
@@ -144,23 +145,17 @@
         <button :disabled="!canDrawGraph" class="btn draw-btn" :class="{ disabled: !canDrawGraph }" @click="fetchGraphDataBokeh">
             Draw Bokeh
         </button>
-	</div>
-        <!-- Modalní okno pro nastavení hranic -->
-        <div v-if="currentModal === 'bounds'" class="modal" style="display: block;">
-            <div class="modal-content">
-                <span class="close" @click="closeModal">&times;</span>
-                <h2>Set Bounds</h2>
-                <div>
-                    <label>Lower Bound:</label>
-                    <input type="number" v-model="bounds.lower">
-                </div>
-                <div>
-                    <label>Upper Bound:</label>
-                    <input type="number" v-model="bounds.upper">
-                </div>
-                <button class="btn" @click="closeModal">Save</button>
-            </div>
+
+        <div class="number-input">
+            <label>Lower Bound:</label>
+            <input type="number" v-model="bounds.lower">
         </div>
+        <div class="number-input">
+            <label>Upper Bound:</label>
+            <input type="number" v-model="bounds.upper">
+        </div>
+
+	</div>
 
         <!-- Graf -->
         <div id="plot" v-show="showPngGraph">
@@ -173,139 +168,159 @@
     </div>
 
     <script>
-        const server = "https://math4u.mendelu.cz/api";
+        const appData = {
+            methods: [],
+            trees: [],
+            measurements: [],
+            sensors: ["Elasto(90)", //"","",
+            "Inclino(80)X", "Inclino(80)Y", //"",
+            "Inclino(81)X", "Inclino(81)Y", //"",
+            "Pt3", "Pt4",//"",
+            "a01_x", "a01_y", "a01_z", 
+                "a02_x", "a02_y", "a02_z", 
+                "a03_x", "a03_y", "a03_z", 
+                "a04_x", "a04_y", "a04_z"],
+            selectedMethod: null,
+            selectedTree: null,
+            selectedMeasurement: null,
+            selectedSensor: null,
+            bounds: { lower: 0, upper: 1e9 },
+            currentModal: null,
+            ansUrl: '',
+            showPngGraph: true,
+        };
+        const appComputed = {
+            canDrawGraph() {
+                return this.selectedMethod && this.selectedTree && this.selectedMeasurement && this.selectedSensor && this.bounds.lower !== null && this.bounds.upper !== null;
+            }
+        };
+        const appMethods = {
+            fetchMethods() {
+                fetch(server + '/methods')
+                    .then(response => response.json())
+                    .then(data => { this.methods = data; });
+            },
+            fetchTrees() {
+                fetch(`${server}/method/${this.selectedMethod}`)
+                    .then(response => response.json())
+                    .then(data => { this.trees = data; });
+            },
+            fetchMeasurements() {
+                fetch(`${server}/tree/${this.selectedTree}/${this.selectedMethod}`)
+                    .then(response => response.json())
+                    .then(data => { this.measurements = data; });
+            },
+            selectMethod(method) {
+                this.selectedMethod = method;
+                this.selectedTree = null;
+                this.selectedMeasurement = null;
+                this.fetchTrees();
+            },
+            selectTree(tree) {
+                this.selectedTree = tree;
+                this.selectedMeasurement = null;
+                this.fetchMeasurements();
+            },
+            selectMeasurement(measurement) {
+                this.selectedMeasurement = measurement;
+            },
+            selectSensor(sensor) {
+                this.selectedSensor = sensor;
+            },
+        };
 
+        appMethods.fetchGraphData = function (){
+            this.notyf.success('Požadavek byl odeslán.'); // Typická notifikace úspěchu
+            params = {
+                method: this.selectedMethod,
+                tree: this.selectedTree,
+                measurement: this.selectedMeasurement,
+                probe: this.selectedSensor,
+                start: this.bounds.lower,
+                end: this.bounds.upper,
+                format: 'png'
+            }
+            const url = `${server}/draw_graph?${new URLSearchParams(params)}`;
+            this.ansUrl = url;
+            this.showPngGraph = true;
+        };
+
+        appMethods.fetchGraphDataBokeh = function (){
+            this.notyf.success('Požadavek byl odeslán.'); // Typická notifikace úspěchu
+            document.getElementById("bokeh-plot").innerHTML = "... working ...<div class='skeleton'></div>";
+            this.showPngGraph = false;
+            params = {
+                method: this.selectedMethod,
+                tree: this.selectedTree,
+                measurement: this.selectedMeasurement,
+                probe: this.selectedSensor,
+                start: this.bounds.lower,
+                end: this.bounds.upper,
+                format: 'bokeh'
+            }
+            const url = `${server}/draw_graph?${new URLSearchParams(params)}`;
+            axios.get(url)
+                .then((response) => 
+                {
+                    if (response.data.status === 'success') 
+                    {
+                        this.notyf.success('Graf byl úspěšně načten.');
+                        
+                        // Najdeme kontejner pro Bokeh graf a vykreslíme ho
+                        const target = document.getElementById(response.data.graph_data.target_id);
+                        if (target) {
+                            target.innerHTML = response.data.graph_data.div; // Vyčistíme předchozí obsah
+                        } else {
+                            console.error('Cílový element nebyl nalezen:', response.data.graph_data.target_id);
+                            this.responseMessage = 'Chyba: Cílový element nebyl nalezen.';
+                            return;
+                        }
+
+                        // Získáme obsah skriptu
+                        const scriptContent = response.data.graph_data.script
+                            .replace(/<script[^>]*>/, '')
+                            .replace(/<\/script>/, '');
+                        
+                        // Přidání a provedení skriptu
+                        const script = document.createElement('script');
+                        script.type = 'text/javascript';
+                        script.text = scriptContent;
+
+                        script.onload = () => {
+                            console.log('Skript úspěšně proveden.');
+                        };
+
+                        script.onerror = (e) => {
+                            console.error('Chyba při provádění skriptu:', e);
+                            this.notyf.error('Chyba při vykreslování grafu.');
+                        };
+
+                        // Přidáme script do <head>
+                        document.head.appendChild(script);
+                        this.notyf.success('Hotovo.'); // Typická notifikace úspěchu
+                    } 
+                    else 
+                    {
+                        this.notyf.error('Chyba při generování grafu.'); // Typická notifikace neúspěchu
+                        console.error('Server vrátil neúspěšný status:', response.data);
+                    }
+                })
+            .catch((error) => {
+                console.error('Chyba při volání API:', error);
+                this.notyf.error('Požadavek selhal.'); // Typická notifikace neúspěchu
+                document.getElementById("bokeh-plot").innerHTML = "Chyba při vykreslování grafu.";
+            });
+        };
+    </script>
+
+    <script>
+        const server = "https://math4u.mendelu.cz/api";
+        //const server = "http://localhost:8005";
         new Vue({
             el: '#app',
-            data: {
-                methods: [],
-                trees: [],
-                measurements: [],
-                sensors: ["Elasto(90)", //"","",
-                "Inclino(80)X", "Inclino(80)Y", //"",
-                "Inclino(81)X", "Inclino(81)Y", //"",
-                "Pt3", "Pt4",//"",
-			  "a01_x", "a01_y", "a01_z", 
-                    "a02_x", "a02_y", "a02_z", 
-                    "a03_x", "a03_y", "a03_z", 
-                    "a04_x", "a04_y", "a04_z"],
-                selectedMethod: null,
-                selectedTree: null,
-                selectedMeasurement: null,
-                selectedSensor: null,
-                bounds: { lower: 0, upper: 1e9 },
-                currentModal: null,
-                ansUrl: '',
-                showPngGraph: true,
-            },
-            computed: {
-                canDrawGraph() {
-                    return this.selectedMethod && this.selectedTree && this.selectedMeasurement && this.selectedSensor && this.bounds.lower !== null && this.bounds.upper !== null;
-                }
-            },
-            methods: {
-                fetchMethods() {
-                    fetch(server + '/methods')
-                        .then(response => response.json())
-                        .then(data => { this.methods = data; });
-                },
-                fetchTrees() {
-                    fetch(`${server}/method/${this.selectedMethod}`)
-                        .then(response => response.json())
-                        .then(data => { this.trees = data; });
-                },
-                fetchMeasurements() {
-                    fetch(`${server}/tree/${this.selectedTree}/${this.selectedMethod}`)
-                        .then(response => response.json())
-                        .then(data => { this.measurements = data; });
-                },
-                selectMethod(method) {
-                    this.selectedMethod = method;
-                    this.selectedTree = null;
-                    this.selectedMeasurement = null;
-                    this.fetchTrees();
-                },
-                selectTree(tree) {
-                    this.selectedTree = tree;
-                    this.selectedMeasurement = null;
-                    this.fetchMeasurements();
-                },
-                selectMeasurement(measurement) {
-                    this.selectedMeasurement = measurement;
-                },
-                selectSensor(sensor) {
-                    this.selectedSensor = sensor;
-                },
-                openBoundsModal() {
-                    this.currentModal = 'bounds';
-                },
-                closeModal() {
-                    this.currentModal = null;
-                },
-                fetchGraphData() {
-                    this.notyf.success('Požadavek byl odeslán.'); // Typická notifikace úspěchu
-                    this.ansUrl = `${server}/draw_graph?method=${this.selectedMethod}&tree=${this.selectedTree}&measurement=${this.selectedMeasurement}&probe=${this.selectedSensor}&start=${this.bounds.lower}&end=${this.bounds.upper}&format=png`;
-                    this.showPngGraph = true;
-                },
-                fetchGraphDataBokeh (){
-                    this.notyf.success('Požadavek byl odeslán.'); // Typická notifikace úspěchu
-                    document.getElementById("bokeh-plot").innerHTML = "... working ...<div class='skeleton'></div>";
-                    this.showPngGraph = false;
-                    const url = `${server}/draw_graph?method=${this.selectedMethod}&tree=${this.selectedTree}&measurement=${this.selectedMeasurement}&probe=${this.selectedSensor}&start=${this.bounds.lower}&end=${this.bounds.upper}&format=bokeh`;
-                    axios.get(url)
-                        .then((response) => 
-                        {
-                            if (response.data.status === 'success') 
-                            {
-                                this.responseMessage = 'Graf byl úspěšně načten.';
-                                
-                                // Najdeme kontejner pro Bokeh graf a vykreslíme ho
-                                const target = document.getElementById(response.data.graph_data.target_id);
-                                if (target) {
-                                    target.innerHTML = response.data.graph_data.div; // Vyčistíme předchozí obsah
-                                } else {
-                                    console.error('Cílový element nebyl nalezen:', response.data.graph_data.target_id);
-                                    this.responseMessage = 'Chyba: Cílový element nebyl nalezen.';
-                                    return;
-                                }
-
-                                // Získáme obsah skriptu
-                                const scriptContent = response.data.graph_data.script
-                                    .replace(/<script[^>]*>/, '')
-                                    .replace(/<\/script>/, '');
-                                
-                                // Přidání a provedení skriptu
-                                const script = document.createElement('script');
-                                script.type = 'text/javascript';
-                                script.text = scriptContent;
-                                this.notyf.success('Hotovo.'); // Typická notifikace úspěchu
-
-                                script.onload = () => {
-                                    console.log('Skript úspěšně proveden.');
-                                };
-
-                                script.onerror = (e) => {
-                                    console.error('Chyba při provádění skriptu:', e);
-                                    this.responseMessage = 'Chyba při vykreslování grafu.';
-                                };
-
-                                // Přidáme script do <head>
-                                document.head.appendChild(script);
-                            } 
-                            else 
-                            {
-                                this.responseMessage = 'Chyba při generování grafu.';
-                                console.error('Server vrátil neúspěšný status:', response.data);
-                            }
-                        })
-                    .catch((error) => {
-                        console.error('Chyba při volání API:', error);
-                        this.responseMessage = 'Požadavek selhal.';
-                        this.notyf.error('Při zpracování nastala chyba.'); // Typická notifikace neúspěchu
-                        document.getElementById("bokeh-plot").innerHTML = "Chyba při vykreslování grafu.";
-                    });
-                },
-        },
+            data: appData,
+            computed: appComputed,
+            methods: appMethods,
             created() {
                 this.fetchMethods();
                 this.notyf = new Notyf({
