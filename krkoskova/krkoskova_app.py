@@ -55,7 +55,8 @@ def plot(df, msg=None, resample=False, title=None, xaxis="Time / s", **kw):
 
 @solara.component
 def nakresli_po_tuku(b=None):
-    length = 500
+    length1, length2 = 200,800
+    length = length1 + length2
     m = lk.Tuk(tree.value, measurement.value)
     sig = m.signal(sensor.value)
     
@@ -67,7 +68,7 @@ def nakresli_po_tuku(b=None):
     
     for i,peak in enumerate(m.peaks):
         mask = np.argmax(sig.time > peak)
-        mask = range(mask, mask+length)
+        mask = range(mask-length1, mask+length2)
         data = sig.data[mask]
         df.loc[:,i] = data
     
