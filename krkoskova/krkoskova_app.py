@@ -58,7 +58,7 @@ def nakresli_po_tuku(b=None):
     length1, length2 = 200,800
     length = length1 + length2
     m = lk.Tuk(tree.value, measurement.value)
-    sig = m.signal(sensor.value)
+    sig = m.signal(sensor.value, extend=None)
     
     df = pd.DataFrame(index = sig.time[:length])
     
@@ -152,12 +152,14 @@ def Page():
 
     if "tuk" in measurement.value:
         m = lk.Tuk(tree.value, measurement.value)
+        extend = None
     else:
         m = lk.Measurement(tree.value, measurement.value)
+        extend = 60
     data = m.sensor_data(sensor.value)
     if len(data) == 0:
         return None
-    s = m.signal(sensor=sensor.value)
+    s = m.signal(sensor=sensor.value, extend=extend)
 
     with solara.lab.Tabs(lazy=True, value=krkoskova_tab_number):
         with solara.lab.Tab("Time domain"):
