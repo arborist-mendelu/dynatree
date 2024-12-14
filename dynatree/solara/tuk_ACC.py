@@ -245,7 +245,10 @@ def Seznam_probe():
     else:
         subdf = subdf[~subdf["valid"]]
     subdf = subdf[subdf['timecoords'].isin(select_days_multi.value)]
-    subdf = subdf.sort_values(by=["day","type","measurement","knock_time"])
+    subdf["timecoords"] = pd.Categorical(subdf["timecoords"], categories=select_days_multi.value, ordered=True)
+    dynatree.logger.info(f"days {select_days_multi.value}")
+    subdf = subdf.sort_values(by=["timecoords","type","measurement","knock_time"])
+    dynatree.logger.info(f"Dataframe: {subdf.head()}")
     sets = subdf[["day","type"]].drop_duplicates()
     file = f"<h1>Tree {s.tree.value} and probes {probeset}</h1>"
     text = ""
@@ -253,24 +256,25 @@ def Seznam_probe():
     add_js = False
     if time_or_freq.value == "average FFT for all knocks":
         # plot all curves in a single image
-        for I,R in sets.iterrows():
-            dynatree.logger.info(f"adding {R.values}")
-            day, method = R.values
+        for R in select_days_multi.value:
+            day, method = R.split("_")
+            dynatree.logger.info(f"adding {method} {day}")
             image_path = [
                 {'filename': f"/static/public/cache_FFTavg/FFTaverage_{method}_{day}_{s.tree.value}_{probe}.png",
                  'csv_filename': f"/static/public/cache_FFTavg/FFTaverage_{method}_{day}_{s.tree.value}_{probe}.csv",
                  'probe':probe} for probe in probeset
             ]
-            dynatree.logger.info(f"adding {image_path}")
+            dynatree.logger.info(f"Adding {image_path}")
             for i_p in image_path:
                 file = file + f"<a href='{server}{i_p['csv_filename']}'><img src='{server}{i_p['filename']}' class='{i_p['probe'].split('_')[0]} {i_p['probe'].split('_')[1]}'></a>"
             images_added = True
     else:
         # plot 1 image per curve
         add_js = True
-        for I,R in sets.iterrows():
-            subsubdf = subdf[(subdf["day"] == R["day"]) & (subdf["type"] == R["type"])]
-            file = file + f"<h2>{R['day']} {R['type']}</h2>"
+        for R in select_days_multi.value:
+            day, method = R.split("_")
+            subsubdf = subdf[(subdf["day"] == day) & (subdf["type"] == method)]
+            file = file + f"<h2>{day} {method}</h2>"
             for subprobe in probeset:
                 sub3df = subsubdf[subsubdf["probe"] == subprobe]
                 file = file + f"<h3>{subprobe}</h3>"
@@ -285,7 +289,7 @@ def Seznam_probe():
                     file = file + f"""
     <div style='display:inline-block; border-style:solid; border-color:gray;' class='image-container'>
     <p><input type='checkbox' class='image-checkbox'>{souradnice}</p>
-    <img src='{server}{image_path}' title='{R['day']} {R['type']} {s.tree.value}' data-name='{image_path.split('/')[-1]}'>
+    <img src='{server}{image_path}' title='{day} {method} {s.tree.value}' data-name='{image_path.split('/')[-1]}'>
     </div>
     """
                     images_added = True
@@ -305,7 +309,7 @@ def Seznam_probe():
                 f"""
         * File saved and ready to download. 
         * Probes are {probeset}. Image size is {img_size.value}
-        * Days are {select_days_multi.value}
+        * Days are {select_days_multi.value}. The data will follow this day ordering.
         * Pokud by se zobrazovaly obrázky zde, bylo by načítání stránky pomalé kvůli repsonzivnímu designu a množství obrázků. 
           Proto je pohodlnější vytvořit strohý html soubor a zobrazit obrázky v nativní velikosti.  
         """, style={'color': 'inherit'}))
