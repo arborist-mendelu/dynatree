@@ -28,7 +28,7 @@ def get_data():
     df_fix = df_fix.set_index(['type', 'day', 'tree', 'measurement', 'probe'])
     df_long = df_long.set_index(['type', 'day', 'tree', 'measurement', 'probe'])
     # df_long['ori'] = df_long['peak']
-    df_long['peak'].update(df_fix['peak'])
+    df_long.update(df_fix['peak'])
     df_long = df_long.reset_index()
 
 
