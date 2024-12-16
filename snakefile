@@ -124,12 +124,12 @@ rule fft_spectra_combine:
         rm -rf ../temp/spectra_combine || true
         mkdir -p ../temp/spectra_combine 
         cd ../temp/spectra_combine 
-        unzip ../{input.zip}
+        unzip -q ../{input.zip}
         for prefix in $(ls *.pdf | cut -d'_' -f1,2,3,4  | sort -u); do pdfunite $prefix*.pdf $prefix.pdf; done
         rm *_*_*_*_*.pdf
         zip -q ../{output.by_measurement} *.pdf
         rm *pdf
-        unzip ../{input.zip} *Elasto* *a02_z*
+        unzip -q ../{input.zip} *Elasto* *a02_z*
         pdfunite *.pdf ../{output.elasto}
         trees=$(ls *|cut -d_ -f3 | sort | uniq)
         for tree in $(ls *|cut -d_ -f3 | sort | uniq); do echo $tree; pdfunite *_${{tree}}_*.pdf ${{tree}}.pdf; done        
