@@ -19,7 +19,7 @@ import seaborn as sns
 # import psutil
 # import logging
 import time
-import os
+# import os
 import config
 # from weasyprint import HTML, CSS
 
@@ -66,6 +66,7 @@ subtab_value = solara.reactive(1)
 manual_release_time = solara.reactive(0.0)
 manual_end_time = solara.reactive(0.0)
 n = solara.reactive(8)
+table_restrict_tree = solara.reactive(True)
 
 def ChooseProbe():
     data_obj = dynatree.DynatreeMeasurement(
@@ -228,6 +229,10 @@ def save_peaks():
     save_button_color.value = "none"
     filelogger.info(f"Saved {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{probe.value},{fft_freq.value}")
 
+def clear_memory():
+    df_manual_peaks.value = df_manual_peaks.value.iloc[0:0]
+
+
 def save_freq_on_click(x=None):
     logger.debug(f"FFT clicked. Event: {x}")
     logger.debug(f"Previous value: {fft_freq.value}")
@@ -366,10 +371,18 @@ def Page():
                                 solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
                                 with solara.Row():
                                     solara.Text(fft_freq.value)
-                                    solara.Button(label="Clear", on_click=clear_fft_freq)
+                                    solara.Button(label="Clear this measurement", on_click=clear_fft_freq)
                                     SaveButton()
+                                    solara.Button(label="Clear table", on_click=clear_memory)
                                     solara.FileDownload(df_manual_peaks.value.to_csv(), filename=f"FFT_manual_peaks.csv", label="Download csv")
-                                solara.display(df_manual_peaks.value)
+                                with pd.option_context('display.max_rows', None, ):
+                                    solara.Switch(label="Restrict to tree selected", value=table_restrict_tree)
+                                    if table_restrict_tree.value:
+                                        _ = df_manual_peaks.value.copy()
+                                        _ = _[_.index.get_level_values("tree") == s.tree.value]
+                                        solara.display(_)
+                                    else:
+                                        solara.display(df_manual_peaks.value)
                         # except:
                         #     pass
         
