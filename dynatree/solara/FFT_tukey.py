@@ -68,6 +68,7 @@ manual_release_time = solara.reactive(0.0)
 manual_end_time = solara.reactive(0.0)
 n = solara.reactive(8)
 table_restrict_tree = solara.reactive(True)
+use_acc_in_fft_table = solara.reactive(True)
 
 def ChooseProbe():
     data_obj = dynatree.DynatreeMeasurement(
@@ -268,6 +269,9 @@ def serad(subdf):
     df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
     df = df.sort_values(["day", "type", "tree", "measurement"])
     df = df.set_index(["type", "day", "tree", "measurement"])
+    if not use_acc_in_fft_table.value:
+        columns = [i for i in df.columns if "a0" not in i]
+        df = df[columns]
     return df
 
 
@@ -412,7 +416,9 @@ def Page():
 
                 with solara.lab.Tab("Přehled barevně"):
                     if (tab_value.value, subtab_value.value) == (1,0):
-                        solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
+                        with solara.Row():
+                            solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
+                            solara.Switch(label="Include accelerometers", value=use_acc_in_fft_table)
                         with solara.Card(title=f"All days for tree {s.tree.value}"):
                             # try:
                             subdfA = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
