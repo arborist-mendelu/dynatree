@@ -39,29 +39,29 @@ df_manual_release_times = pd.read_csv(config.file["FFT_release"], index_col=[0,1
 class DynatreeSignal:
 
     def __init__(self, measurement, signal_source, release_source=None, dt=None, tukey=0.1):
+        print("Initializing DynatreeSignal")
         self.measurement = measurement
         self.signal_source = signal_source
         self.release_source = release_source
         if self.release_source is None:
             self.release_source = signal_source
         if self.measurement.data_pulling is not None and self.signal_source in self.measurement.data_pulling.columns:
-            self.signal_full = self.measurement.data_pulling[self.signal_source]
-            self.release_full = self.measurement.data_pulling[self.release_source]
+            self.signal_full = self.measurement.data_pulling_interpolated[self.signal_source]
+            self.release_full = self.measurement.data_pulling_interpolated[self.release_source]
+            self.dt = 0.12
         elif self.measurement.data_acc5000 is not None and self.signal_source in self.measurement.data_acc5000.columns:
             self.signal_full = self.measurement.data_acc5000[self.signal_source]
             self.release_full = self.measurement.data_acc5000[self.release_source]
+            self.dt = 0.0002
         elif (self.signal_source in ["Pt3", "Pt4"]) & (self.measurement.data_optics_pt34 is not None):
             self.signal_full = self.measurement.data_optics_pt34[(self.signal_source, "Y0")]
             self.release_full = self.measurement.data_optics_pt34[(self.release_source, "Y0")]
+            self.dt = 0.01
         else:
             self.signal_full = None
             self.release_full = None
         if dt is not None:
             self.dt = dt
-        elif "a0" in self.signal_source:
-            self.dt = 0.0002
-        else:
-            self.dt = 0.01
         self.tukey = tukey
         self.manual_release_time = None
 

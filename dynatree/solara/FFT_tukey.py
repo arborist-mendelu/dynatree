@@ -48,10 +48,6 @@ df_komentare = pd.read_csv(config.file['FFT_comments'], index_col=[0,1,2,3,4])
 df_failed = pd.read_csv(config.file["FFT_failed"]).values.tolist()
 df_fft_long = pd.read_csv(config.file["outputs/FFT_csv_tukey"])
 
-# type_order = ['normal', 'afterro', 'afterro2', 'den', 'noc', 'mraz', 'mokro']
-# df_fft_long['type'] = pd.Categorical(df_fft_long['type'], categories=type_order, ordered=True)
-# df_fft_long = df_fft_long.sort_values(["day", "type", "tree", "measurement", "probe"])
-
 df_fft_all = df_fft_long.pivot(
     index = ["type","day","tree","measurement"],
     values="peak",
@@ -136,6 +132,7 @@ def spust_mereni(x=None):
 @task
 @dynatree.timeit
 def nakresli_signal(x=None):
+    logger.info("Budu volat zpracuj")
     output = zpracuj()
     
     plt.close('all')    
@@ -155,8 +152,7 @@ def nakresli_signal(x=None):
     ax[1].set(ylim=(ymax/10**4,ymax*2), xlabel="Freq / Hz", ylabel="Amplitude")
     ax[1].yaxis.set_ticklabels([])
     ax[0].set(xlim=(0,None), xlabel="Time / s", ylabel="Value")
-    test_is_failed = [s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value
-                     ] in df_failed    
+    test_is_failed = [s.method.value, s.day.value, s.tree.value, s.measurement.value, probe.value] in df_failed
     if test_is_failed:
         value = np.nan
     else:
@@ -169,7 +165,7 @@ def nakresli_signal(x=None):
 # Funkce pro stylování - přidání hranice, když se změní hodnota v úrovni 'tree'
 def add_horizontal_line(df):
     styles = pd.DataFrame('', index=df.index, columns=df.columns)
-    
+
     # Projdi všechny řádky a přidej stylování
     for i in range(1, len(df)):
         if df.index[i][1] != df.index[i - 1][1]:  # Pokud se změní 'tree'
@@ -252,9 +248,9 @@ def clear_fft_freq(x=None):
     fft_freq.value = ""
     save_button_color.value = "red"
 
-def oprav_peaky(subdf):
+def oprav_peaky_a_serad(subdf):
     if not use_manual_peaks.value:
-        return subdf
+        return serad(subdf)
     idx = subdf.index
     for i,row in df_manual_peaks.value.iterrows():
         coords = tuple(row.name[:-1])
@@ -263,7 +259,18 @@ def oprav_peaky(subdf):
         if not coords in idx:
             continue
         subdf.loc[coords,probe] = value
-    return subdf
+    return serad(subdf)
+
+def serad(subdf):
+    df = subdf.copy()
+    df = df.reset_index()
+    type_order = ['normal', 'afterro', 'afterro2', 'den', 'noc', 'mraz', 'mokro']
+    df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
+    df = df.sort_values(["day", "type", "tree", "measurement"])
+    df = df.set_index(["type", "day", "tree", "measurement"])
+    return df
+
+
 
 @solara.component
 def SaveButton():
@@ -402,15 +409,14 @@ def Page():
 
         with solara.lab.Tab("Jeden strom", icon_name="mdi-pine-tree"):
             with solara.lab.Tabs(value=subtab_value, **dark):
-        
-        
+
                 with solara.lab.Tab("Přehled barevně"):
                     if (tab_value.value, subtab_value.value) == (1,0):
+                        solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
                         with solara.Card(title=f"All days for tree {s.tree.value}"):
-                            solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
                             # try:
                             subdfA = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
-                            subdfA = oprav_peaky(subdfA.copy())
+                            subdfA = oprav_peaky_a_serad(subdfA.copy())
                             subdfA_copy = subdfA.copy()
                             subdfA = ostyluj(subdfA)
                             solara.display(subdfA)
@@ -475,7 +481,7 @@ def Page():
                                 subdf = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]
                                 # subdf = ostyluj(subdf)
                                 # solara.display(subdf)
-                                subdf = oprav_peaky(subdf.copy())
+                                subdf = oprav_peaky_a_serad(subdf.copy())
                                 subdf = subdf.reset_index()
                                 solara.DataTable(subdf, items_per_page=100, format=myformat,cell_actions=cell_actions)                        
         
