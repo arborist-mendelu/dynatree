@@ -31,6 +31,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         # Ořízni Series od první záporné hodnoty do konce
         data = data[first_negative_index:]
         data = data - data.mean()
+        # TODO: Pro akcelerometry se bere samplovani taky po 0.01? Proc?
         if "a0" in self.signal_source:
             self.dt = 0.01
             df = pd.DataFrame(decimate(data.values, 50))

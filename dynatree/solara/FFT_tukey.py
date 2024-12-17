@@ -48,12 +48,12 @@ df_komentare = pd.read_csv(config.file['FFT_comments'], index_col=[0,1,2,3,4])
 df_failed = pd.read_csv(config.file["FFT_failed"]).values.tolist()
 df_fft_long = pd.read_csv(config.file["outputs/FFT_csv_tukey"])
 
-type_order = ['normal', 'afterro', 'afterro2', 'den', 'noc', 'mraz', 'mokro']
-df_fft_long['type'] = pd.Categorical(df_fft_long['type'], categories=type_order, ordered=True)
-df_fft_long = df_fft_long.sort_values(["day", "type", "tree", "measurement", "probe"])
+# type_order = ['normal', 'afterro', 'afterro2', 'den', 'noc', 'mraz', 'mokro']
+# df_fft_long['type'] = pd.Categorical(df_fft_long['type'], categories=type_order, ordered=True)
+# df_fft_long = df_fft_long.sort_values(["day", "type", "tree", "measurement", "probe"])
 
 df_fft_all = df_fft_long.pivot(
-    index = ["day","type","tree","measurement"],
+    index = ["type","day","tree","measurement"],
     values="peak",
     columns="probe")
 df_fft_all = df_fft_all.loc[:,[
