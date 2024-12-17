@@ -39,7 +39,6 @@ df_manual_release_times = pd.read_csv(config.file["FFT_release"], index_col=[0,1
 class DynatreeSignal:
 
     def __init__(self, measurement, signal_source, release_source=None, dt=None, tukey=0.1):
-        print("Initializing DynatreeSignal")
         self.measurement = measurement
         self.signal_source = signal_source
         self.release_source = release_source
