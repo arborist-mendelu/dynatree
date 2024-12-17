@@ -57,7 +57,7 @@ if __name__ == '__main__':
     import os
     import shutil
 
-    source_directory = "figs_peak_width"
+    source_dir = "figs_peak_width"
     # 1. Vymazání adresáře a jeho obsahu, pokud existuje
     if os.path.exists(source_dir):
         shutil.rmtree(source_dir)
