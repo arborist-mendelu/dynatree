@@ -109,6 +109,6 @@ if __name__ == '__main__':
 
     # 4. Zazipovat obrazky
 
-    zip_command = f"zip -r  peak_width.zip figs_peak_width"
+    zip_command = f"zip -qr  peak_width.zip figs_peak_width"
     os.system(zip_command)
     shutil.move("peak_width.zip", "../outputs/peak_width.zip")
