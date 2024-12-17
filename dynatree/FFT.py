@@ -10,7 +10,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal
-from gitdb.fun import chunk_size
 from scipy.fft import fft, fftfreq
 # import find_measurements
 import matplotlib
@@ -19,7 +18,6 @@ import logging
 import config
 from dynatree import dynasignal, dynatree as dt
 from dynatree import find_measurements
-import gc
 import time
 
 from parallelbar import progress_map
