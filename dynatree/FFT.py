@@ -38,7 +38,7 @@ df_manual_release_times = pd.read_csv(config.file["FFT_release"], index_col=[0,1
 
 class DynatreeSignal:
 
-    def __init__(self, measurement, signal_source, release_source=None, dt=0.0002, tukey=0.1):
+    def __init__(self, measurement, signal_source, release_source=None, dt=None, tukey=0.1):
         self.measurement = measurement
         self.signal_source = signal_source
         self.release_source = release_source
@@ -56,7 +56,9 @@ class DynatreeSignal:
         else:
             self.signal_full = None
             self.release_full = None
-        if "a0" in self.signal_source:
+        if dt is not None:
+            self.dt = dt
+        elif "a0" in self.signal_source:
             self.dt = 0.0002
         else:
             self.dt = 0.01
@@ -122,6 +124,8 @@ class DynatreeSignal:
             fs = 100
         if self.dt == 0.0002:
             fs = 5000
+        if self.dt == 0.12:
+            fs = 1/0.12
         return dynasignal.do_welch(pd.DataFrame(self.signal), nperseg=nperseg, fs=fs)
         
 
