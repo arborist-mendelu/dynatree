@@ -5,7 +5,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from dynatree import find_measurements
+from dynatree.dynatree import logger
+import logging
 import pandas as pd
+import sys
+from tqdm import tqdm
+
+logger.setLevel(logging.INFO)
 
 peak_min = .1 # do not look for the peak smaller than this value
 peak_max = 0.7 # do not look for the peak larger than this value
@@ -53,9 +59,25 @@ if __name__ == '__main__':
         matplotlib.use('Agg')
     out = {}
 
+    df_failed = pd.read_csv("csv/FFT_failed.csv")
+    df_failed = df_failed[df_failed["probe"]=="Elasto(90)"]
+    df_failed = ["_".join(i) for i in df_failed.values[:,:4]]
+
+
     df = find_measurements.get_all_measurements(method='all', type='all')
     df = df[df["measurement"] != "M01"]
+    df = df[df["type"] != "noc"]
+    df = df[df["type"] != "den"]
+
+    pbar = tqdm(total=len(df))
     for i,row in df.iterrows():
+        pbar.update(1)
+        data = [row.iloc[3],*row.iloc[0:3].values]
+        data = "_".join(data)
+        if data in df_failed:
+            logger.info(f"Skipping {data} -- FFT marked as failed")
+            continue
+        # if [row['type'],row['day'],row['tree'],row[]]
         try:
             ans = process_row(row)
             out[tuple(row[:4])] = ans['width']
@@ -64,5 +86,6 @@ if __name__ == '__main__':
         except:
             print(f"Row {row} failed.")
 
+    pbar.close()
     df = pd.DataFrame(out, index=["width"]).T
     df.to_csv("../outputs/peak_width.csv")

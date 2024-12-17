@@ -265,7 +265,7 @@ def oprav_peaky_a_serad(subdf):
 def serad(subdf):
     df = subdf.copy()
     df = df.reset_index()
-    type_order = ['normal', 'afterro', 'afterro2', 'den', 'noc', 'mraz', 'mokro']
+    type_order = ['normal', 'noc', 'den', 'afterro', 'afterro2', 'mraz', 'mokro']
     df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
     df = df.sort_values(["day", "type", "tree", "measurement"])
     df = df.set_index(["type", "day", "tree", "measurement"])
