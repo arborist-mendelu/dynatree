@@ -53,6 +53,23 @@ def process_row(row):
 
 
 if __name__ == '__main__':
+
+    import os
+    import shutil
+
+    source_directory = "figs_peak_width"
+    # 1. Vymazání adresáře a jeho obsahu, pokud existuje
+    if os.path.exists(source_dir):
+        shutil.rmtree(source_dir)
+        print(f"Adresář '{source_dir}' byl vymazán.")
+    else:
+        print(f"Adresář '{source_dir}' neexistoval, bude vytvořen nový.")
+
+    # 2. Vytvoření adresáře
+    os.makedirs(source_dir)
+    print(f"Adresář '{source_dir}' byl vytvořen.")
+
+    # 3. Naplnění daty
     try:
         matplotlib.use('TkAgg')
     except:
@@ -89,3 +106,9 @@ if __name__ == '__main__':
     pbar.close()
     df = pd.DataFrame(out, index=["width"]).T
     df.to_csv("../outputs/peak_width.csv")
+
+    # 4. Zazipovat obrazky
+
+    zip_command = f"zip -r  peak_width.zip figs_peak_width"
+    os.system(zip_command)
+    shutil.move("peak_width.zip", "../outputs/peak_width.zip")
