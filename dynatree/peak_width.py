@@ -102,9 +102,11 @@ if __name__ == '__main__':
             plt.close()
         except:
             print(f"Row {row} failed.")
+        break
 
     pbar.close()
     df = pd.DataFrame(out, index=["width"]).T
+    df.index.names = ("day","tree","measurement","type")
     df.to_csv("../outputs/peak_width.csv")
 
     # 4. Zazipovat obrazky
