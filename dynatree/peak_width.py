@@ -102,7 +102,6 @@ if __name__ == '__main__':
             plt.close()
         except:
             print(f"Row {row} failed.")
-        break
 
     pbar.close()
     df = pd.DataFrame(out, index=["width"]).T
