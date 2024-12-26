@@ -148,34 +148,34 @@ def investigate(df_, var):
             solara.Markdown("**Data table**")
             solara.DataFrame(df)
             solara.FileDownload(df.to_csv(), filename=f"{s.method.value}_{s.day.value}_{s.tree.value}_{s.measurement.value}.csv", label="Download as csv")
-    if selection_data.value is None:
-        msg_selected = "You can use the box select tool to select some data and download the selected bounds for later use."
-        save_disabled = True
-    else:
-        msg_selected = """
-        **Current selection**
-        """
-        save_disabled = False 
-    with solara.Card(style={'background-color': '#FFFFAA'}):
-        solara.Markdown(msg_selected)
-        if selection_data.value is not None:
-            solara.display(current_selection())
-            if auto_add.value:
-                save_data()
-    with solara.Column():
-        with solara.Row(justify='center'):
-            solara.Text("⇩", style={'font-size':'300%'})
-            solara.Button(label="Add current selection to table", disabled=save_disabled, on_click=save_data)
-            with solara.Tooltip("Add the current selection automatically on the top of previously selected. It the first five columns are equal for the current selection and the last added selection (on top), the data are rewritten to the current."):
-                solara.Switch(label="AutoAdd", value=auto_add)
-    with solara.Card():
-        solara.Markdown("**Previously selected**")
-        solara.display(list_selected.value)
-        with solara.Row():
-            solara.Button(label="Delete table", on_click=list_drop)
-            with solara.Tooltip("Works if the switch AutoAdd is off."):
-                solara.Button(label="Delete first row", on_click=first_drop)
-            solara.FileDownload(list_selected.value.to_csv(), filename="data.csv", label="Download as csv")
+    # if selection_data.value is None:
+    #     msg_selected = "You can use the box select tool to select some data and download the selected bounds for later use."
+    #     save_disabled = True
+    # else:
+    #     msg_selected = """
+    #     **Current selection**
+    #     """
+    #     save_disabled = False
+    # with solara.Card(style={'background-color': '#FFFFAA'}):
+    #     solara.Markdown(msg_selected)
+    #     if selection_data.value is not None:
+    #         solara.display(current_selection())
+    #         if auto_add.value:
+    #             save_data()
+    # with solara.Column():
+    #     with solara.Row(justify='center'):
+    #         solara.Text("⇩", style={'font-size':'300%'})
+    #         solara.Button(label="Add current selection to table", disabled=save_disabled, on_click=save_data)
+    #         with solara.Tooltip("Add the current selection automatically on the top of previously selected. It the first five columns are equal for the current selection and the last added selection (on top), the data are rewritten to the current."):
+    #             solara.Switch(label="AutoAdd", value=auto_add)
+    # with solara.Card():
+    #     solara.Markdown("**Previously selected**")
+    #     solara.display(list_selected.value)
+    #     with solara.Row():
+    #         solara.Button(label="Delete table", on_click=list_drop)
+    #         with solara.Tooltip("Works if the switch AutoAdd is off."):
+    #             solara.Button(label="Delete first row", on_click=first_drop)
+    #         solara.FileDownload(list_selected.value.to_csv(), filename="data.csv", label="Download as csv")
         
 kwds = {"template": "plotly_white", 
         # "height": height.value, "width": width.value
@@ -253,7 +253,7 @@ def Page():
                             for i in major_minor.keys():
                                 df[i] = df[major_minor[i]]
                             plot(df, dependent_pull, id="tahovky")
-                            solara.Text(f"Row for csv with zeroing at given time: {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},,,,")
+                            # solara.Text(f"Row for csv with zeroing at given time: {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},,,,")
                             investigate(df, dependent_pull)
                 except:
                     pass
