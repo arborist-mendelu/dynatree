@@ -150,8 +150,6 @@ def Page():
         if active_tab.value == 0:
             if (worker.value != "ini") | (allow_save==False):
                 with solara.Card(title = "Dashboard setting"):
-                    # solara.Switch(label="Use overlay for graphs (useful for small screen)", value=use_overlay)
-                    solara.Switch(label="Show dialog", value=show_dialog)
                     solara.Switch(label="Use larger FFT image", value=use_large_fft)
                     solara.Switch(label="FFT images from live peaks", value=img_from_live_data)
                     with solara.Column(gap="0px"):
