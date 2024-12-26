@@ -9,6 +9,7 @@ import dynatree.solara.select_source as s
 import matplotlib.pyplot as plt
 from solara.lab import task
 
+from solara.lab.components.confirmation_dialog import ConfirmationDialog
 from dynatree.dynatree import timeit
 from dynatree.signal_knock import SignalTuk, find_peak_times_channelA, find_peak_times_channelB, channelA, channelB
 from dynatree_summary.acc_knocks import  delta_time
@@ -35,7 +36,7 @@ dynatree.logger.info("Starting app tuk_ACC.py")
 df_updated = solara.reactive(0)
 worker = solara.reactive('ini')
 active_tab = solara.reactive(2)
-use_overlay = solara.reactive(False)
+# use_overlay = solara.reactive(False)
 manual_freq = solara.reactive([])
 cards_on_page = solara.reactive(10)
 use_large_fft = solara.reactive(False)
@@ -75,31 +76,6 @@ if worker.value not in rdf.keys():
 
 server = "http://um.mendelu.cz/dynatree/"
 dynatree.logger.info(f"Server is {server}")
-
-@contextmanager
-def customizable_card(overlay=True):
-    if overlay:
-        # První varianta s overlay efektem přes celou obrazovku
-        with solara.Card(style={
-            'position': 'fixed', 'top': '0', 'left': '0', 'width': '100vw', 'height': '100vh',
-            'background-color': 'rgba(0, 0, 0, 0.5)', 'z-index': '999',
-            'display': 'flex', 'align-items': 'center', 'justify-content': 'center'
-        }, margin=0):
-            with solara.Card(style={
-                'background-color': 'white', 'padding': '20px', 'border-radius': '8px',
-                'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.2)',
-                'max-width': '1200px', 'width': '1000px', 'max-height': '100vh'
-            }):
-                yield  # Výkon příkazu v této variantě
-    else:
-        # Druhá varianta, fixovaná v pravém dolním rohu
-        with solara.Card(style={
-            'position': 'fixed', 'bottom': '0px', 'right': '0px', 'z-index': '1000',
-            'max-width': '1200px', 'width': '1000px', 'max-height': '100vh',
-            'border-style': 'solid'
-        }):
-            yield  # Výkon příkazu v této variantě
-
 
 def on_file(f):
     global rdf
@@ -174,7 +150,8 @@ def Page():
         if active_tab.value == 0:
             if (worker.value != "ini") | (allow_save==False):
                 with solara.Card(title = "Dashboard setting"):
-                    solara.Switch(label="Use overlay for graphs (useful for small screen)", value=use_overlay)
+                    # solara.Switch(label="Use overlay for graphs (useful for small screen)", value=use_overlay)
+                    solara.Switch(label="Show dialog", value=show_dialog)
                     solara.Switch(label="Use larger FFT image", value=use_large_fft)
                     solara.Switch(label="FFT images from live peaks", value=img_from_live_data)
                     with solara.Column(gap="0px"):
@@ -209,15 +186,8 @@ f"""
                 ))
                 solara.InputText(label="Vlož svůj unikátní klíč", message="Přepiš zadaný klíč svým vlastním, například jméno, a stiskni Enter.", on_value=make_my_copy_of_df, value=worker)
             else:
-                if use_overlay.value:
-                    Seznam()
-                    Graf()
-                else:
-                    with solara.Columns(1,1):
-                        with solara.Column():
-                            Seznam()
-                        with solara.Column():
-                            Graf()
+                Seznam()
+                Graf()
         with solara.lab.Tab("Tabulka pro strom a den"):
             Tabulka()
         with solara.lab.Tab("Obrázky pro vybraná data"):
@@ -343,7 +313,9 @@ def Seznam_probe():
     #                                 solara.Text(f"{round(row['freq'])} Hz")
 
 
-
+show_dialog = solara.reactive(False)
+def close_dialog():
+    show_dialog.value = False
 @solara.component
 @dynatree.timeit
 def Graf():
@@ -353,35 +325,23 @@ def Graf():
         if ans is None:
             return
     if interactive_graph.not_called:
-        return
-    with customizable_card(use_overlay.value):
+       return
+    with ConfirmationDialog(show_dialog.value, title="", max_width  = '100%',
+                            on_ok=close_dialog, on_close=close_dialog, on_cancel=close_dialog):
+        dynatree.logger.info("Graf, inside ConfirmationDialog")
         solara.ProgressLinear(interactive_graph.pending)
         if interactive_graph.finished:
             ans = interactive_graph.value
             current_peaks = rdf[worker.value].at[ans['index'], "manual_peaks"]
             with solara.Row():
-                solara.Button("❌", on_click=lambda: interactive_graph())
-                if allow_save & ans['is_fft']:
-                    solara.Button("Save & ❌", on_click=lambda: save_click_data(ans['index']))
                 solara.Text(ans['text'])
                 solara.Text(f"(id {ans['index']})")
             if ans['is_fft']:
-                # solara.Markdown(f"""
-                # **Freq domain and peaks positions**
-                #
-                # * Current manual freqs: {[round(i) for i in current_peaks] if current_peaks is not None else "Not defined (yet)."}
-                #
-                # * **New manual freqs: {[round(i) for i in manual_freq.value]}**
-                # """)
-                solara.Markdown(f"""
-                **Freq domain and peaks positions**
-
-                """)
+                solara.Markdown(f"""**Freq domain and peaks positions**""")
                 solara.FigurePlotly(ans['figure'], on_click=set_click_data)
             else:
                 solara.Markdown("**Time domain**")
                 solara.FigurePlotly(ans['figure'])
-
 
 def set_click_data(x=None):
     if x['device_state']['shift']:
@@ -414,11 +374,12 @@ def get_knock_data(**kwds):
 @task
 @dynatree.timeit
 def interactive_graph(fft=True, x_axis_type=None, **kwds):
+    show_dialog.value = True
     #session_id = solara.get_kernel_id()
     if len(kwds)==0:
         manual_freq.value = []
         return None
-    dynatree.logger.info(f"interactive graph entered {kwds['day']} {kwds['tree']} {kwds['measurement']} {kwds['method']}")
+    dynatree.logger.info(f"interactive graph entered {kwds['day']} {kwds['tree']} {kwds['measurement']} {kwds['method']} show_dialog={show_dialog.value}")
     signal_knock = get_knock_data(**kwds)
     if fft:
         fft_data = signal_knock.fft
