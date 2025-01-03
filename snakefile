@@ -18,8 +18,9 @@ rule all_non_acc:
         "../outputs/static_pull_first_versus_other_pulls.html",
         "../outputs/static_pull_major_versus_total.html",
         "../outputs/welch.pdf",
-        "../outputs/pull_major_minor_check.pdf"
-	
+        "../outputs/pull_major_minor_check.pdf",
+        "../outputs/peak_width.zip",
+        "../outputs/peak_width.csv"
 
 rule all_acc:
     input:
@@ -408,4 +409,17 @@ rule welch:
         cd ../temp/welch
 	montage BK*.png -tile 2x2 -geometry +0+0 welch.pdf
         mv welch.pdf ../../outputs
+        """
+rule peak_width:
+    output:
+        "../outputs/peak_width.zip",
+        "../outputs/peak_width.csv"
+    input:
+        "csv/FFT_failed.csv",
+        "csv/FFT_manual_peaks.csv"
+    conda:
+        "dynatree"
+    shell:
+        """
+        python -m dynatree.peak_width
         """
