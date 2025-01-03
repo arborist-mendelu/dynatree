@@ -66,8 +66,8 @@ if __name__ == '__main__':
 
     df = find_measurements.get_all_measurements(method='all', type='all')
     df = df[df["measurement"] != "M01"]
-    df = df[df["type"] != "noc"]
-    df = df[df["type"] != "den"]
+    #df = df[df["type"] != "noc"]
+    #df = df[df["type"] != "den"]
 
     pbar = tqdm(total=len(df))
     for i,row in df.iterrows():
