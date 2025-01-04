@@ -285,14 +285,17 @@ def slope_trend_more():
                     width=s.width.value, height=s.height.value
                     )
     solara.FigurePlotly(fig)
-    solara.Markdown(
-        """
-        * Barvné rozseparování podle pullNo (číslo zatáhnutí) umožní sledovat, jestli 
-          se během experimentu liší první zatáhnutí od ostatních a jak. 
-        * Barevné rozseparování podle senzoru (Dependent) umožní posoudit, 
-          jestli Blue a BlueMaj dávají stejné výstupy a podobně pro Yellow a YellowMaj.
-        """
-    )
+    with solara.Info():
+        solara.Markdown(
+            """
+            * V tabulce jsou data pro M01
+            * Barvné rozseparování podle pullNo (číslo zatáhnutí) umožní sledovat, jestli 
+              se během experimentu liší první zatáhnutí od ostatních a jak. 
+            * Barevné rozseparování podle senzoru (Dependent) umožní posoudit, 
+              jestli Blue a BlueMaj dávají stejné výstupy a podobně pro Yellow a YellowMaj.
+            """,
+            style={'color': 'inherit'}
+        )
     # solara.DataFrame(df)
 
     df = df.pivot(index=["day", "type"], columns=["Dependent", "pullNo"], values="Slope × 1000")
@@ -346,9 +349,33 @@ def normalized_slope():
 probe = solara.reactive("Elasto-strain")
 probes = ["Elasto-strain", "blue", "blueMaj", "yellow", "yellowMaj"]
 how_to_colorize = solara.reactive("All data")
+restrict_to_noc_den = solara.reactive(False)
+include_M01 = solara.reactive(True)
 
 
-def custom_display(df, all_data=True, second_level=False):
+def mysort(df):
+    type_order = ['normal', 'noc', 'den', 'afterro', 'afterro2', 'mraz', 'mokro']
+    df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
+    df = df.sort_values(["tree", "day", "type"])
+    return df
+    # if restrict_type is not None:
+    #     mask = df['type'].isin(restrict_type)
+    #     df = df[mask]
+
+def custom_display(df_, all_data=True, second_level=False):
+    with solara.Row():
+        solara.Switch(label="restrict to den/noc", value=restrict_to_noc_den)
+        solara.Switch(label="include M01", value=include_M01)
+    df = df_.copy()
+    index_names = df.index.names
+    df = df.reset_index().pipe(mysort)
+    if restrict_to_noc_den.value:
+        mask = df["type"].isin(["den","noc"])
+        df = df[mask]
+    if not include_M01.value:
+        mask = [i for i in df.columns if "M01" not in i[1]]
+        df = df.loc[:,mask]
+    df = df.set_index(index_names)
     if all_data:
         solara.display(du.ostyluj(df, second_level=second_level))
     else:
@@ -483,12 +510,12 @@ def read_regression_data():
 
 
 @solara.component
-def show_regression_data_inclino(color):
+def show_regression_data_inclino(color, restrict_type=["den","noc"], include_M01=True):
     df = read_regression_data()
     df = df[df["Dependent"] == color]
     df["Slope x 1e3"] = 1e3 * df["Slope"]
     df = df[~df["optics"]]
-    df_final = df.pivot(index=["tree", "type", "day"], values=["Slope x 1e3"], columns="M")
+    df_final = df.pivot(index=["tree", "day", "type"], values=["Slope x 1e3"], columns="M")
     custom_display(df_final, how_to_colorize.value == "All data", second_level=True)
 
 
