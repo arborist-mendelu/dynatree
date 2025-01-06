@@ -383,22 +383,25 @@ def Page():
                                                  title=f"FFT spectrum: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}, {probe.value}", 
                                                  log_y=True, range_x=[0,10], range_y=[ymax/100000, ymax*2]
                                 )
-                                figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
-                                solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
-                                with solara.Row():
-                                    solara.Text(fft_freq.value)
-                                    solara.Button(label="Clear this measurement", on_click=clear_fft_freq)
-                                    SaveButton()
-                                    solara.Button(label="Clear table", on_click=clear_memory)
-                                    solara.FileDownload(df_manual_peaks.value.to_csv(), filename=f"FFT_manual_peaks.csv", label="Download csv")
-                                with pd.option_context('display.max_rows', None, ):
-                                    solara.Switch(label="Restrict to tree selected", value=table_restrict_tree)
-                                    if table_restrict_tree.value:
-                                        _ = df_manual_peaks.value.copy()
-                                        _ = _[_.index.get_level_values("tree") == s.tree.value]
-                                        solara.display(_)
-                                    else:
-                                        solara.display(df_manual_peaks.value)
+                                with solara.ColumnsResponsive(12, xlarge=[6, 6]):
+                                    with solara.Column():
+                                        figFFT.update_layout(xaxis_title="Freq/Hz", yaxis_title="FFT amplitude")
+                                        solara.FigurePlotly(figFFT, on_click=save_freq_on_click)
+                                        with solara.Row():
+                                            solara.Text(fft_freq.value)
+                                            solara.Button(label="Clear this measurement", on_click=clear_fft_freq)
+                                            SaveButton()
+                                            solara.Button(label="Clear table", on_click=clear_memory)
+                                            solara.FileDownload(df_manual_peaks.value.to_csv(), filename=f"FFT_manual_peaks.csv", label="Download csv")
+                                    with solara.Column():
+                                        with pd.option_context('display.max_rows', None, ):
+                                            solara.Switch(label="Restrict to tree selected", value=table_restrict_tree)
+                                            if table_restrict_tree.value:
+                                                _ = df_manual_peaks.value.copy()
+                                                _ = _[_.index.get_level_values("tree") == s.tree.value]
+                                                solara.display(_)
+                                            else:
+                                                solara.display(df_manual_peaks.value)
                         # except:
                         #     pass
         
