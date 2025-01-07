@@ -61,7 +61,7 @@ with open(latest_log) as f:
         # Detekce konce pravidla
         elif "Finished job" in line and start_time and current_rule:
             duration = (timestamp - start_time).total_seconds()
-            durations.append((current_rule, duration))
+            durations.append((current_rule, duration, timestamp))
             start_time = None
             current_rule = None
 
@@ -71,17 +71,23 @@ durations.sort(key=lambda x: x[1], reverse=True)
 table = Table(title="[red]Doba trvání Snakemake úloh[/red]", show_header=True, header_style="bold")
 table.add_column("Pravidlo", style="cyan", no_wrap=True)
 table.add_column("Doba trvání (s)", style="magenta", justify="right")
+table.add_column("Timestamp", justify="right")
 
 # Přidání řádků do tabulky
-for rule, duration in durations:
-    table.add_row(rule, f"{duration:.2f}")
+for rule, duration, timestamp in durations:
+    table.add_row(rule, f"{duration:.2f}", f"{timestamp}")
 
 
 console.print(table)
 
 
-# Vyhledání nejdelší úlohy
+# Vyhledání celkového času a nejdelší úlohy
 if durations:
+    total_time = sum([x[1] for x in durations])
+    total_minutes = int(total_time // 60)
+    total_seconds = int(total_time % 60)
+    total_time = f"{total_minutes}:{total_seconds:02d}"
+    console.print(f'[bold red]Celkový čas: {total_time}.[/bold red]')
     longest = max(durations, key=lambda x: x[1])
     console.print(f'[bold yellow]Nejdelší úloha: {longest[0]}, Doba trvání: {longest[1]:.2f} sekund[/bold yellow]')
 
