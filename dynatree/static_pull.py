@@ -64,7 +64,7 @@ class DynatreeStaticMeasurement(dynatree.DynatreeMeasurement):
     """
     Like DynatreeMeasurement, adds more properties and methods.
     
-    pulings: list of objects DynatreeStaticPulling. This list contains the data
+    pullings: list of objects DynatreeStaticPulling. This list contains the data
     of the required part of the experiment. Length typically 3 for M01 and 1 for 
     other measurements.
     """
@@ -88,7 +88,7 @@ class DynatreeStaticMeasurement(dynatree.DynatreeMeasurement):
             ]
     @cached_property
     def regresions(self):
-        dynatree.logger.debug("Calculating regressionsfor static measurement")
+        dynatree.logger.debug("Calculating regressions for static measurement")
         if self.optics and not self.is_optics_available:
             dynatree.logger.info(f"{self.date} {self.tree} {self.measurement}: Optics used but optics is not available.")
             return None

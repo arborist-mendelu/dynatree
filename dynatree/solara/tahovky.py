@@ -266,16 +266,19 @@ def slope_trend_more():
     df = (pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
           .pipe(lambda x: x[x['lower_cut'] == 0.3])
           .pipe(lambda x: x[x['tree'] == s.tree.value])
-          .pipe(lambda x: x[x['measurement'] == 'M01'])
+          # .pipe(lambda x: x[x['measurement'] == 'M01'])
           .pipe(lambda x: x[~x['failed']])
           .pipe(lambda x: x[~x['optics']])
           .pipe(lambda x: x[~x['Dependent'].str.contains('Min')])
           .pipe(lambda x: x[x['tree'].str.contains('BK')])
           .pipe(lambda x: x[x['Independent'] == "M"])
-          .pipe(lambda x: x[["type", "day", "tree", "Dependent", "Slope", "pullNo"]])
+          .pipe(lambda x: x[["type", "day", "tree", "Dependent", "Slope", "pullNo", "measurement"]])
           # .pivot(values="Slope", columns='pullNo', index=
           #        ['type', 'day', 'tree', 'measurement', 'Dependent'])
           )
+    df["pullNo"] = df["measurement"].astype(str) + "_" + df["pullNo"].astype(str)
+    if color.value == "pullNo":
+        df = df.pipe(lambda x: x[x['measurement'] == 'M01'])
     # breakpoint()
     df["Slope × 1000"] = df["Slope"] * 1000
     df["id"] = df["day"] + " " + df["type"]
@@ -288,7 +291,7 @@ def slope_trend_more():
     with solara.Info():
         solara.Markdown(
             """
-            * V tabulce jsou data pro M01
+            * V tabulce jsou data pro M01, pokud je vybráno PullNo a všechna data, pokud je vybráno Dependent.
             * Barvné rozseparování podle pullNo (číslo zatáhnutí) umožní sledovat, jestli 
               se během experimentu liší první zatáhnutí od ostatních a jak. 
             * Barevné rozseparování podle senzoru (Dependent) umožní posoudit, 
