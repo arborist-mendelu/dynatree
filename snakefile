@@ -39,8 +39,6 @@ rule create_cached_images:
     output:
         "../outputs/FFT_acc_knock.csv",
         "../outputs/FFT_acc_average_graph.zip"
-    conda:
-        "dynatree"
     shell:
         """
         python -m dynatree_summary.acc_knocks_merge_data
@@ -58,8 +56,6 @@ rule measurement_notes:
         xls = "../data/Popis_Babice_VSE_13082024.xlsx",
     output:
         "csv_output/measurement_notes.csv"
-    conda:
-        "dynatree"        
     shell:
         """
         python read_measurements_notes.py
@@ -77,8 +73,6 @@ rule fft_boxplots:
         data = "csv/solara_FFT.csv",
     output:
         pdf = "../outputs/fft_boxplots_for_probes.pdf"
-    conda:
-        "dynatree"        
     shell:
         """
         python -m dynatree.plot_fft_boxplots
@@ -98,8 +92,6 @@ rule fft_spectra:
         data = "csv/solara_FFT.csv",
     output:
         zip = "../outputs/fft_spectra.zip"
-    conda:
-        "dynatree"        
     shell:
         """
         rm -rf ../temp_spectra || true
@@ -118,8 +110,6 @@ rule fft_spectra_combine:
     output:
         by_measurement = "../outputs/fft_spectra_by_measurements.zip",
         elasto = "../outputs/fft_spectra_elasto_acc2.zip"    
-    conda:
-        "dynatree"        
     shell:
         """
         rm -rf ../temp/spectra_combine || true
@@ -151,8 +141,6 @@ rule static_pull_create_regressions:
         csv_angles_measured = "csv/angles_measured.csv"
     output:
         csv = "../outputs/regressions_static.csv"
-    conda:
-        "dynatree"
     log: stdout="logs/static_pull_create_regressions.stdout", stderr="logs/static_pull_create_regressions.stderr"    
     shell:
         """
@@ -171,8 +159,6 @@ rule synchronization_check:
     output:
         "../outputs/synchro_optics_inclino.pdf",
         "../outputs/synchro_optics_inclino_detail.pdf"
-    conda:
-        "dynatree"        
     shell:
         """
         rm -rf ../temp/optics_with_inclino || true
@@ -196,8 +182,6 @@ rule fft_optics_boxplot:
         script = "plot_fft.py"
     output:
         "../outputs/fft_optics_boxplot.pdf"
-    conda:
-        "dynatree"        
     shell:
         """
         python {input.script}
@@ -215,8 +199,6 @@ rule RopeAngle_100_std:
         script = "static_pull_analyze_Rope100.py"
     output:
         img = "../outputs/static_pulling_std_RopeAngle100.pdf"
-    conda:
-        "dynatree"        
     shell:
         """
         python {input.script}
@@ -234,8 +216,6 @@ rule static_pulling_error_propagation:
         script = "static_pull_error_propagation.py"
     output:
         table = "../outputs/static_pulling_error_propagation.xlsx"
-    conda:
-        "dynatree"        
     shell:
         """
         python {input.script}
@@ -251,8 +231,6 @@ rule angle_from_measurement:
         script = "static_pull_read_tabulka.py"
     output:
         csv = "csv/angles_measured.csv"
-    conda:
-        "dynatree"        
     shell:
         """
         mkdir -p csv_output
@@ -268,8 +246,6 @@ rule plot_pull_major_minor:
     output:
         pdf = "../outputs/pull_major_minor_check.pdf",
         M01pdf = "../outputs/pull_major_minor_check_M01.pdf"        
-    conda:
-        "dynatree"        
     shell:
         """
         rm -r ../temp/inclino || true
@@ -289,8 +265,6 @@ rule static_pull_regressions_anotate:
         "../outputs/regressions_static.csv", 
         "csv/static_fail.csv",
         "static_pull_anotatte_regressions.py"
-    conda:
-        "dynatree"        
     output:
         "../outputs/anotated_regressions_static.csv"
     shell:
@@ -305,8 +279,6 @@ rule static_pull_plot_failed:
         "../outputs/anotated_regressions_static.csv"
     output: 
         "../outputs/static_pull_removed_experiments.zip"
-    conda:
-        "dynatree"        
     shell:
         """
         rm -rf ../temp/static_fail_images || true
@@ -325,8 +297,6 @@ rule fft_all_probes:
     output: 
         csv = "../outputs/FFT_csv_tukey.csv",
         zip = "../outputs/FFT_spectra.zip"
-    conda:
-        "dynatree"        
     shell:
         """
         rm -r ../temp/fft_tukey || true
@@ -347,8 +317,6 @@ rule fft_all_probes_boxplots:
         "csv/FFT_manual_peaks.csv"
     output: 
         "../outputs/fft_boxplots_for_probes_tukey.pdf"
-    conda:
-        "dynatree"        
     shell:
         """
         python plot_fft_boxplots_tukey.py
@@ -364,8 +332,6 @@ rule static_1_versus_2_3:
         script = "static_pull_first_versus_other_pulls.py"
     output:
         "../outputs/static_pull_first_versus_other_pulls.html"
-    conda:
-        "dynatree"        
     shell:
         """
         jupytext --to notebook {input.script}
@@ -384,8 +350,6 @@ rule static_major_verus_total:
         script = "static_pull_Major_versus_total.py"
     output:
         "../outputs/static_pull_major_versus_total.html"
-    conda:
-        "dynatree"        
     shell:
         """
         jupytext --to notebook {input.script}
@@ -399,8 +363,6 @@ rule welch:
         "../outputs/welch.pdf"
     input:
         "welch_for_acc.py"
-    conda:
-        "dynatree"        
     shell:
         """
         rm -r ../temp/welch || true
@@ -417,8 +379,6 @@ rule peak_width:
     input:
         "csv/FFT_failed.csv",
         "csv/FFT_manual_peaks.csv"
-    conda:
-        "dynatree"
     shell:
         """
         python -m dynatree.peak_width
