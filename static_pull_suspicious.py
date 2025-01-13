@@ -16,6 +16,7 @@ import config
 df = pd.read_csv(config.file["outputs/anotated_regressions_static"], index_col=0)
 df = df.dropna(subset=["Independent","Dependent"],how='all')
 df = df[df["lower_cut"]==0.3]
+df = df[df["optics"]==False]
 df = df.dropna(how='all', axis=0)
 df = df[~df['Dependent'].str.contains('Min')]
 df = df.sort_values(by="R^2")
@@ -68,7 +69,7 @@ def main():
     except:
         matplotlib.use('Agg')
     for i,row in df.iterrows():
-        if (row['R^2'] > 0.5) and (not row['failed']):
+        if (row['R^2'] > 0.9) and (not row['failed']):
             continue
         out = plot_row(row)
         if out is not None:
