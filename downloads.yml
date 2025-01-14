@@ -11,9 +11,10 @@ anotated_regressions_static.csv: Data, regresní koeficienty s anotacemi. Výstu
 
 regressions_static.csv: Data, regresní koeficienty. Výstup z regresí mezi momenty a náklonem ve statice. 
 
-static_pull_removed_experiments.zip: 
-    Obrázky vyřazených experimentů. Obrázky experimentů, které nejsou zařezeny 
-    do vyhodnocování vztahů mezi momentem a náklonem ve statice. 
+static_pull_suspicious_experiments.zip:
+    Obrázky vyřazených experimentů. Obrázky experimentů, které jsou podzřelé a neměly by být zařezeny 
+    do vyhodnocování vztahů mezi momentem a náklonem ve statice. K diskusi je, jak špatná musí být 
+    hodnota R^2, abychom měření vyřadili.
 
 static_pulling_error_propagation.xlsx: |
     Tabulka, šíření chyby stanovení náklonu lana. Analýza vlivu změny úhlu naklonění lana na 

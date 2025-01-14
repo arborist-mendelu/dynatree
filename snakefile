@@ -12,7 +12,7 @@ rule all_non_acc:
         "../outputs/anotated_regressions_static.csv",
         "csv/angles_measured.csv",
         "csv_output/measurement_notes.csv",
-        "../outputs/static_pull_removed_experiments.zip",
+        "../outputs/static_pull_suspicious_experiments.zip",
         "../outputs/FFT_csv_tukey.csv",
         "../outputs/fft_boxplots_for_probes_tukey.pdf",
         "../outputs/static_pull_first_versus_other_pulls.html",
@@ -278,7 +278,7 @@ rule static_pull_plot_failed:
     input: 
         "../outputs/anotated_regressions_static.csv"
     output: 
-        "../outputs/static_pull_removed_experiments.zip"
+        "../outputs/static_pull_suspicious_experiments.zip"
     shell:
         """
         rm -rf ../temp/static_fail_images || true
