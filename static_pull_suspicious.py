@@ -31,13 +31,13 @@ def plot_row(row):
     pull = m.pullings[row['pullNo']]
     
     fig, ax = plt.subplots(3,2,figsize=(12,8))
-    if row['Dependent'] in ['blue','blueMaj']:
+    if row['Dependent'] in ['blue_', 'blueMaj']:  # consider only Major
         data = pull.data
         data.plot(y=["Inclino(80)X","Inclino(80)Y"], ax=ax[0,1], style='.')
         data.plot(x="Force(100)", y=["Inclino(80)X","Inclino(80)Y"], ax=ax[2,0], style='.')
         m.data_pulling.plot(y=["Inclino(80)X","Inclino(80)Y"], ax = ax[0,0], style='.')
     
-    if row['Dependent'] in ['yellow','yellowMaj']:
+    if row['Dependent'] in ['yellow_','yellowMaj']: # consider only Major
         data = pull.data
         data.plot(y=["Inclino(81)X","Inclino(81)Y"], ax=ax[0,1], style='.')
         data.plot(x="Force(100)", y=["Inclino(81)X","Inclino(81)Y"], ax=ax[2,0], style='.')
