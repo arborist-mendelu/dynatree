@@ -12,9 +12,12 @@ import os
 
 # Funkce pro získání velikosti souboru v MB na 2 desetinná místa
 def velikost_souboru_v_mb(cesta_k_souboru):
-    velikost_bajty = os.path.getsize(cesta_k_souboru)  # Získání velikosti souboru v bajtech
-    velikost_mb = velikost_bajty / (1024 * 1024)  # Převod na MB
-    return f"{velikost_mb:.2f} MB"  # Formátování na 2 desetinná místa
+    try:
+        velikost_bajty = os.path.getsize(cesta_k_souboru)  # Získání velikosti souboru v bajtech
+        velikost_mb = velikost_bajty / (1024 * 1024)  # Převod na MB
+        return f"{velikost_mb:.2f} MB"  # Formátování na 2 desetinná místa
+    except:
+        return "?? MB"
 
 @solara.component
 def Page():

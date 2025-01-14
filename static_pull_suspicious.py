@@ -30,33 +30,36 @@ def plot_row(row):
         measurement_type=row['type'])
     pull = m.pullings[row['pullNo']]
     
-    fig, ax = plt.subplots(2,2,figsize=(12,8))
+    fig, ax = plt.subplots(3,2,figsize=(12,8))
     if row['Dependent'] in ['blue','blueMaj']:
         data = pull.data
-        data.plot(y=["Inclino(80)X","Inclino(80)Y"], ax=ax[0,0], style='.')
-        ax[0,0].grid()
-        data.plot(x="Force(100)", y=["Inclino(80)X","Inclino(80)Y"], ax=ax[0,1], style='.')
-        ax[0,1].grid()
-        m.data_pulling.plot(y=["Inclino(80)X","Inclino(80)Y"], ax = ax[1,0], style='.')
+        data.plot(y=["Inclino(80)X","Inclino(80)Y"], ax=ax[0,1], style='.')
+        data.plot(x="Force(100)", y=["Inclino(80)X","Inclino(80)Y"], ax=ax[2,0], style='.')
+        m.data_pulling.plot(y=["Inclino(80)X","Inclino(80)Y"], ax = ax[0,0], style='.')
     
     if row['Dependent'] in ['yellow','yellowMaj']:
         data = pull.data
-        data.plot(y=["Inclino(81)X","Inclino(81)Y"], ax=ax[0,0], style='.')
-        ax[0,0].grid()
-        data.plot(x="Force(100)", y=["Inclino(81)X","Inclino(81)Y"], ax=ax[0,1], style='.')
-        ax[0,1].grid()
-        m.data_pulling.plot(y=["Inclino(81)X","Inclino(81)Y"], ax = ax[1,0], style='.')
+        data.plot(y=["Inclino(81)X","Inclino(81)Y"], ax=ax[0,1], style='.')
+        data.plot(x="Force(100)", y=["Inclino(81)X","Inclino(81)Y"], ax=ax[2,0], style='.')
+        m.data_pulling.plot(y=["Inclino(81)X","Inclino(81)Y"], ax = ax[0,0], style='.')
         
     if row['Dependent'] == 'Elasto-strain':
         data = pull.data
-        data.plot(y=["Elasto(90)"], ax=ax[0,0], style='.')
-        ax[0,0].grid()
-        data.plot(x="Force(100)", y=["Elasto(90)"], ax=ax[0,1], style='.')
-        ax[0,1].grid()
-        m.data_pulling.plot(y=["Elasto(90)"], ax = ax[1,0], style='.')
-        
-    ax[1,1].text(0,0.5,row['reason'], wrap=True)
-    ax[1,1].axis('off')
+        data.plot(y=["Elasto(90)"], ax=ax[0,1], style='.')
+        data.plot(x="Force(100)", y=["Elasto(90)"], ax=ax[2,0], style='.')
+        m.data_pulling.plot(y=["Elasto(90)"], ax = ax[0,0], style='.')
+
+    data.plot(y=["Force(100)"], ax=ax[1, 1], style='.')
+    m.data_pulling.plot(y=["Force(100)"], ax=ax[1, 0], style='.')
+    ax[2,1].text(0,0.5,row['reason'], wrap=True)
+    ax[2,1].axis('off')
+
+    ax[0, 0].grid()
+    ax[0, 1].grid()
+    ax[1, 0].grid()
+    ax[1, 1].grid()
+    ax[2, 0].grid()
+
     plt.suptitle(f"{pull.measurement_type} {pull.day} {pull.tree} {row['measurement']} pullNo={row['pullNo']} R^2={row['R^2']:.4f}")
     plt.tight_layout()
     return fig,ax
@@ -74,7 +77,7 @@ def main():
         out = plot_row(row)
         if out is not None:
             fig, ax = out
-            filename = f"{row['type']}_{row['day']}_{row['tree']}_{row['measurement']}_{row['pullNo']}"
+            filename = f"{row['type']}_{row['day']}_{row['tree']}_{row['measurement']}_{row['pullNo']}_{row['Dependent']}"
             fig.savefig(f"../temp/static_fail_images/{filename}.png")
             plt.close('all')
 
