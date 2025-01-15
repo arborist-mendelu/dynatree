@@ -778,8 +778,8 @@ def Detail():
     with solara.Sidebar():
         cols = ['Time', 'Pt3', 'Pt4', 'Force(100)', 'Elasto(90)', 'Elasto-strain',
                 # 'Inclino(80)X', 'Inclino(80)Y', 'Inclino(81)X', 'Inclino(81)Y',
-                'blue', 'yellow',
-                'blueMaj', 'blueMin', 'yellowMaj', 'yellowMin',
+                # 'blue', 'yellow',
+                'blueMaj', 'yellowMaj',
                 'F_horizontal', 'F_vertical',
                 'M', 'M_Pt', 'M_Elasto',
                 ]
