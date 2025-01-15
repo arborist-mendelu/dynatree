@@ -25,12 +25,11 @@ def get_regressions(angle = 22, h = 0.1, tree=tree):
     # get the pull phase
     pull = md.pullings[0]
     # process forces, evaluate moments
-    treeNo = int(tree[-2:])
     pull._process_forces(
-        height_of_anchorage= sp.DF_PT_NOTES.at[treeNo,'height_of_anchorage'],
-        height_of_pt= sp.DF_PT_NOTES.at[treeNo,'height_of_pt'],
+        height_of_anchorage= sp.DF_PT_NOTES.at[(tree,day,measurement_type),'height_of_anchorage'],
+        height_of_pt= sp.DF_PT_NOTES.at[(tree,day,measurement_type),'height_of_pt'],
         rope_angle= angle+h,
-        height_of_elastometer= sp.DF_PT_NOTES.at[treeNo,'height_of_elastometer'],
+        height_of_elastometer= sp.DF_PT_NOTES.at[(tree,day,measurement_type),'height_of_elastometer'],
         suffix = ""
         )
     # get regressions
