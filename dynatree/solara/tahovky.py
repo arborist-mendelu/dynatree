@@ -55,7 +55,7 @@ data_object = dynatree.DynatreeMeasurement(
 data_possible_restrictions = ["0-100%", "10%-90%", "30%-90%"]
 
 xdata = solara.reactive("M")
-ydata = solara.reactive(["blue", "yellow"])
+ydata = solara.reactive(["blueMaj", "yellowMaj"])
 ydata2 = solara.reactive([])
 pull = solara.reactive(0)
 restrict_data = solara.reactive(data_possible_restrictions[-1])
