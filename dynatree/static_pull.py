@@ -568,7 +568,7 @@ def proces_one_row(row):
                                                  measurement_type=measurement_type, optics=use_optics,
                                                  restricted=(cut,0.9))
             if data_obj.parent.data_pulling is None:
-                logger.warning(f"There are no data for pulling tests for this case: {day} {tree} {measurement}, {measurement_type}.")
+                dynatree.logger.warning(f"There are no data for pulling tests for this case: {day} {tree} {measurement}, {measurement_type}.")
                 continue
             for i,pull in enumerate(data_obj.pullings):
                 regressions = pull.regressions
@@ -588,9 +588,9 @@ def proces_one_row(row):
         dynatree.logger.error(f"Failed to process {day} {tree} {measurement} {measurement_type}.")
     return ans
 
-logger = mhl.setup_logger(prefix="static_pull_")
-logger.setLevel(logging.INFO)
-logger.info("========== INITIALIZATION OF static-pull.py  ============")
+# logger = mhl.setup_logger(prefix="static_pull_")
+# logger.setLevel(logging.INFO)
+# logger.info("========== INITIALIZATION OF static-pull.py  ============")
 
 def main():
     df = get_all_measurements(method='all', type='all')
