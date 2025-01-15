@@ -32,6 +32,11 @@ df['tree'] = df['strom'].apply(transform)
 # Aplikujeme funkci na celý sloupec
 df['day'] = df['Datum'].apply(preformat_datum)
 
-df = df[['Stav','day','tree','Mereni','angle', 'diameter 1,3', 'height of anchorage', 'lv3 hposition', 'lv5 hposition']].rename({'Stav':'state', 'Mereni': 'type', 'diameter 1,3': 'diameter 1.3'}, axis=1)
+df = df[['Stav','day','tree','Mereni','angle', 'diameter 1,3', 'height of anchorage', 'lv3 hposition', 'lv5 hposition', 'I_kamera', 'I_nokamera'
+         ]].rename(
+    {'Stav':'state', 'Mereni': 'type', 'diameter 1,3': 'diameter 1.3', 'I_kamera': 'kamera', 'I_nokamera': 'nokamera'}, axis=1)
+
+mask = (df["day"] == "2024-09-02") & (df["type"]=="afterro")
+df.loc[mask,"type"] = "afterro2"
 df.to_csv("csv/angles_measured.csv", index=None)
 

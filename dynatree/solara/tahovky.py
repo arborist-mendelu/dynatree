@@ -140,7 +140,7 @@ def prehled():
         """
         **Přehled dat pro jednotlivé veličiny a stromy**
         
-        * Tady jsou směrnice z regresí M/blue, M/yellow a M_Elasto/Elasto. Pokud nějaká
+        * Tady jsou směrnice z regresí M/blueMaj, M/yellowMaj a M_Elasto/Elasto. Pokud nějaká
           hodnota ulítává, je možné, že inklinometr nebo extenzometr špatně měřil. V takovém případě se 
           kontroluje asi časový průběh příslušného přístroje.
         * True/False se vztahuje k přítomnosti listů. 
@@ -236,16 +236,19 @@ def highlight_changes(col):
             range(len(first_level))]
 
 
-def ostyluj(subdf):
+def ostyluj(subdf, skip_last_column=False, skip_how_many=1):
     cm = sns.light_palette("blue", as_cmap=True)
-    vmin = subdf.min(skipna=True).min()
+    columns_to_style = subdf.columns
+    if skip_last_column:
+        columns_to_style = columns_to_style[:-skip_how_many]
+    vmin = subdf.loc[:,columns_to_style].min(skipna=True).min()
     subdf = (subdf.style.format(precision=3)
-             .background_gradient(vmin=vmin, axis=None)
+             .background_gradient(vmin=vmin, axis=None, subset=columns_to_style)
              .format(na_rep='')
-             .apply(add_vertical_line, axis=None)
+             .apply(add_vertical_line, axis=None, subset=columns_to_style)
              # .apply(highlight_changes, axis=0, subset=pd.IndexSlice[:, :])
-             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
-             .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '', subset=columns_to_style)
+             .map(lambda x: 'background: transparent' if pd.isnull(x) else '', subset=columns_to_style)
              )
     return subdf
 
@@ -255,24 +258,23 @@ def slope_trend_more():
     with solara.Row():
         with solara.Tooltip(solara.Markdown(
                 """
-                * Můžeš vybrat pullNo (číslo zatažení) a sledovat, jestli tečky jiných barev
+                * Můžeš vybrat "pullNo" (číslo zatažení) a sledovat, jestli tečky jiných barev
                   vykazují nějaký trend, například jestli je tečka pro nulté zatažení stabilně pod 
-                  nebo nad tečkou pro další zatažení.
-                * Můžeš vybrat senzor (Dependent) a sledovat, jestli jsou tečky různých barev ve stejné 
-                  výšce a tím pádem jsou informace z různých senzorů konzistentní.
+                  nebo nad tečkou pro další zatažení. V tomto případě se pracuje jenom s M01.
+                * Můžeš vybrat "kamera" a sledovat časový vývoj inklinometru v dané pozici stromu.
                 """, style={'color': 'white'})):
             solara.Text("Barevně separovat podle ⓘ:")
-            solara.ToggleButtonsSingle(value=color, values=["pullNo", "Dependent"])
+            solara.ToggleButtonsSingle(value=color, values=["pullNo", "kamera"])
     df = (pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
           .pipe(lambda x: x[x['lower_cut'] == 0.3])
           .pipe(lambda x: x[x['tree'] == s.tree.value])
           # .pipe(lambda x: x[x['measurement'] == 'M01'])
           .pipe(lambda x: x[~x['failed']])
           .pipe(lambda x: x[~x['optics']])
-          .pipe(lambda x: x[~x['Dependent'].str.contains('Min')])
+          # .pipe(lambda x: x[~(x['Dependent'].str.contains('Min'))])
           .pipe(lambda x: x[x['tree'].str.contains('BK')])
           .pipe(lambda x: x[x['Independent'] == "M"])
-          .pipe(lambda x: x[["type", "day", "tree", "Dependent", "Slope", "pullNo", "measurement"]])
+          .pipe(lambda x: x[["type", "day", "tree", "Dependent", "Slope", "pullNo", "measurement", "kamera"]])
           # .pivot(values="Slope", columns='pullNo', index=
           #        ['type', 'day', 'tree', 'measurement', 'Dependent'])
           )
@@ -283,7 +285,7 @@ def slope_trend_more():
     df["Slope × 1000"] = df["Slope"] * 1000
     df["id"] = df["day"] + " " + df["type"]
     fig = plx.strip(df, x="id", y="Slope × 1000", template="plotly_white",
-                    color=color.value, hover_data=["pullNo", "Dependent"],
+                    color=color.value, hover_data=["pullNo", "Dependent", "kamera"],
                     title=f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship.",
                     width=s.width.value, height=s.height.value
                     )
@@ -291,19 +293,23 @@ def slope_trend_more():
     with solara.Info():
         solara.Markdown(
             """
-            * V tabulce jsou data pro M01, pokud je vybráno PullNo a všechna data, pokud je vybráno Dependent.
+            * V tabulce jsou data pro M01, pokud je vybráno "PullNo" a všechna data, pokud je vybráno "kamera".
             * Barvné rozseparování podle pullNo (číslo zatáhnutí) umožní sledovat, jestli 
               se během experimentu liší první zatáhnutí od ostatních a jak. 
-            * Barevné rozseparování podle senzoru (Dependent) umožní posoudit, 
-              jestli Blue a BlueMaj dávají stejné výstupy a podobně pro Yellow a YellowMaj.
+            * Barevné rozseparování podle kamera umožní studovat časový vývoj v daném místě stromu. Kamera true/false 
+              rozlišuje, zda je přísroj vidět na boční kameře.
             """,
             style={'color': 'inherit'}
         )
-    # solara.DataFrame(df)
-
-    df = df.pivot(index=["day", "type"], columns=["Dependent", "pullNo"], values="Slope × 1000")
+    df = df.pivot(index=["day", "type"], columns=["kamera", "pullNo"], values="Slope × 1000")
+    df_kamera = static_pull.DF_PT_NOTES["kamera"].copy().reset_index()
+    df_kamera = df_kamera[df_kamera["tree"] == s.tree.value].drop("tree", axis=1).set_index(["day","type"])
+    df_kamera.columns = [("kamera","")]
+    df[("kamera","")] = np.nan
+    df[("kamera", "")] = df[("kamera", "")].astype(object)
+    df.update(df_kamera)
     df = df.sort_index(axis=1)
-    solara.display(ostyluj(df))
+    solara.display(ostyluj(df, skip_last_column=True))
     solara.Style(
         ".col_heading.level0 {text-align: center !important; background-color: lightgray; border-right: 5px solid white !important;}")
     solara.FileDownload(df.to_csv(), filename=f"tahovky_{s.tree.value}.csv",
@@ -350,7 +356,7 @@ def normalized_slope():
 
 
 probe = solara.reactive("Elasto-strain")
-probes = ["Elasto-strain", "blue", "blueMaj", "yellow", "yellowMaj"]
+probes = ["Elasto-strain", "blueMaj", "yellowMaj"]
 how_to_colorize = solara.reactive("All data")
 restrict_to_noc_den = solara.reactive(False)
 include_M01 = solara.reactive(True)
@@ -428,7 +434,7 @@ def Page():
                             try:
                                 Detail()
                             except:
-                                pass
+                                solara.Error("Něco se pokazilo ...")
                 with solara.lab.Tab("Polární graf"):
                     if (tab_index.value, subtab_index.value) == (0, 2):
                         dynatree.logger.info("Polarni graf")
@@ -436,7 +442,7 @@ def Page():
                             try:
                                 Polarni()
                             except:
-                                pass
+                                solara.Error("Něco se pokazilo ...")
 
         with solara.lab.Tab("Jeden strom (trend, ...)", icon_name="mdi-pine-tree"):
             with solara.lab.Tabs(lazy=True, **dark):
@@ -453,15 +459,20 @@ def Page():
                         try:
                             normalized_slope()
                         except:
-                            pass
+                            solara.Error("Něco se pokazilo ...")
 
                             # solara.FigurePlotly(figPl)                
                 with solara.lab.Tab("Hledání odlehlých"):
                     with solara.Column():
+                        solara.Warning(
+                            """Pozor, jsou tu inklilnometry blue a yellow, ale mělo by se porovnávat kamera a no-kamera, 
+                            ale asi není potřeba, protože na záložce s trendem pro oba inklinometry jsou 
+                            stejná data už správně a jenom navíc rozseparovaná na jednotlivé dny.   
+                            """)
                         try:
                             prehled()
                         except:
-                            pass
+                            solara.Error("Něco se pokazilo ...")
                 with solara.lab.Tab("Trend (1 senzor)"):
                     with solara.Sidebar():
                         if tab_index.value == 1:
@@ -469,8 +480,9 @@ def Page():
                                 solara.Markdown("**Variable**")
                                 solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
                     with solara.Column():
+                        solara.Warning("Pozor blueMaj a yellowMaj by se mělo nahradit kamera a no-kamera.")
                         slope_trend()
-                with solara.lab.Tab("Trend (více)"):
+                with solara.lab.Tab("Trend (oba inklinometry)"):
                     with solara.Column():
                         slope_trend_more()
         with solara.lab.Tab("Všechny stromy", icon_name="mdi-file-table-box-multiple-outline"):
@@ -478,19 +490,24 @@ def Page():
                 with solara.Sidebar():
                     solara.Markdown("**Gradient**")
                     solara.ToggleButtonsSingle(value=how_to_colorize, values=["All data", "Within tree"])
+                    solara.Markdown("**Limit for R^2:**")
+                    solara.InputFloat("lower bound", value=R2limit_lower)
+                    solara.InputFloat("upper bound", value=R2limit_upper)
+                    solara.Markdown("**Návod:**")
                     solara.Markdown(
                         """
                         * **All data**: jako rozsah se berou všechna data. Tužší stromy jsou jinou barvou než poddajnější. 
                           Dobré pro kontrolu, jestli v rámci stromu jsou data plus minus stejná.
                         * **Within tree**: jako rozsah se berou data pro daný strom. Slouží k nalezení měření, kdy strom 
                           byl tužší nebo poddajnější než obvykle a ve srovnání se všemi daty by tento rozdíl zapadl.
+                        * **Limit for R^2:**: Nechat v tabulce jenom regrese, kde je R^2 v povolených mezích.
                         """
                     )
                 with solara.lab.Tabs(lazy=True, **dark):
-                    with solara.lab.Tab("Blue"):
-                        show_regression_data_inclino("blue")
-                    with solara.lab.Tab("Yellow"):
-                        show_regression_data_inclino("yellow")
+                    with solara.lab.Tab("Camera"):
+                        show_regression_data_inclino("Camera")
+                    with solara.lab.Tab("NoCamera"):
+                        show_regression_data_inclino("NoCamera")
                     with solara.lab.Tab("Elasto strain"):
                         show_regression_data_elasto()
                     with solara.lab.Tab("Pt3"):
@@ -511,13 +528,24 @@ def read_regression_data():
     df = df[(df["lower_cut"] == 0.3) & (~df["failed"])]
     return df
 
+R2limit_upper = solara.reactive(1)
+R2limit_lower = solara.reactive(0.9)
 
 @solara.component
 def show_regression_data_inclino(color, restrict_type=["den","noc"], include_M01=True):
     df = read_regression_data()
-    df = df[df["Dependent"] == color]
+    if color == "Camera":
+        df = df[df["kamera"] == True]
+        df = df[df["Independent"] == "M"]
+    elif color == "NoCamera":
+        df = df[df["kamera"] == False]
+        df = df[df["Independent"] == "M"]
+    else:
+        df = df[df["Dependent"] == color]
     df["Slope x 1e3"] = 1e3 * df["Slope"]
     df = df[~df["optics"]]
+    df = df[df["R^2"]>=R2limit_lower.value]
+    df = df[df["R^2"]<=R2limit_upper.value]
     df_final = df.pivot(index=["tree", "day", "type"], values=["Slope x 1e3"], columns="M")
     custom_display(df_final, how_to_colorize.value == "All data", second_level=True)
 
@@ -528,6 +556,8 @@ def show_regression_data_elasto():
     df = df[df["Dependent"] == "Elasto-strain"]
     df = df[~df["optics"]]
     df["Slope x 1e6"] = 1e6 * df["Slope"]
+    df = df[df["R^2"]>=R2limit_lower.value]
+    df = df[df["R^2"]<=R2limit_upper.value]
     df_final = df.pivot(index=["tree", "type", "day"], values=["Slope x 1e6"], columns="M")
     custom_display(df_final, how_to_colorize.value == "All data", second_level=True)
 
@@ -537,6 +567,8 @@ def show_regression_data_pt(pt):
     df = read_regression_data()
     df = df[df["Dependent"] == pt]
     df["Slope"] = np.abs(df["Slope"])
+    df = df[df["R^2"]>=R2limit_lower.value]
+    df = df[df["R^2"]<=R2limit_upper.value]
     df_final = df.pivot(index=["tree", "type", "day"], values=["Slope"], columns="M")
     custom_display(df_final, how_to_colorize.value == "All data", second_level=True)
 

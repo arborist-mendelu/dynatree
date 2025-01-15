@@ -80,7 +80,7 @@ def read_data():
     df.loc[idx,"reductionNo"]=2
     
     df = df.drop(["optics","lower_cut"], axis=1).reset_index(drop=True)
-    df = df[df["Dependent"].isin(["blue","yellow","Elasto-strain"])]
+    df = df[df["Dependent"].isin(["blueMaj","yellowMaj","Elasto-strain"])]
     
     pairs = df[["Independent","Dependent"]].drop_duplicates()
     
@@ -96,9 +96,9 @@ def main(remove_failed=False, trees=None, width=1000, height=500):
         df = df[~df["failed"]]
     f_ans = {}
     for tree in trees:
-        fig = make_subplots(rows=1, cols=3, subplot_titles=("M/blue", "M/yellow", "M_Elasto/Elasto-strain"))
+        fig = make_subplots(rows=1, cols=3, subplot_titles=("M/blueMaj", "M/yellowMaj", "M_Elasto/Elasto-strain"))
         f = {}
-        for I,_ in enumerate(zip(["M","M","M_Elasto"],["blue", "yellow", "Elasto-strain"])):
+        for I,_ in enumerate(zip(["M","M","M_Elasto"],["blueMaj", "yellowMaj", "Elasto-strain"])):
             i,d = _
             f[I] = px.strip(df[(df["Independent"]==i) & (df["Dependent"]==d) & (df["tree"]==tree)], 
                          x="state", y="Slope", #points="all", 

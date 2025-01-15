@@ -16,7 +16,6 @@ rule all_non_acc:
         "../outputs/FFT_csv_tukey.csv",
         "../outputs/fft_boxplots_for_probes_tukey.pdf",
         "../outputs/static_pull_first_versus_other_pulls.html",
-        "../outputs/static_pull_major_versus_total.html",
         "../outputs/welch.pdf",
         "../outputs/pull_major_minor_check.pdf",
         "../outputs/peak_width.zip",
@@ -136,7 +135,6 @@ rule static_pull_create_regressions:
     """
     input:
         script = "dynatree/static_pull.py",
-        xls = "../data/Popis_Babice_VSE_13082024.xlsx",
         csv = "csv/intervals_split_M01.csv",
         csv_angles_measured = "csv/angles_measured.csv"
     output:
@@ -145,7 +143,7 @@ rule static_pull_create_regressions:
     shell:
         """
         mkdir -p csv_output
-        python -m dynatree.static_pull > {log.stdout} 2> {log.stderr}
+        python -m dynatree.static_pull
         cp ./csv_output/regressions_static.csv {output.csv}
         """
 
@@ -264,7 +262,8 @@ rule static_pull_regressions_anotate:
     input:
         "../outputs/regressions_static.csv", 
         "csv/static_fail.csv",
-        "static_pull_anotatte_regressions.py"
+        "static_pull_anotatte_regressions.py",
+        "csv/angles_measured.csv"
     output:
         "../outputs/anotated_regressions_static.csv"
     shell:
@@ -340,23 +339,23 @@ rule static_1_versus_2_3:
         mv static_pull_first_versus_other_pulls.html {output}
         """
 
-rule static_major_verus_total:
-    """
-    Compares the slopes from momentum-force diagram for the major and total
-    angle.
-    """
-    input:
-        csv = "../outputs/anotated_regressions_static.csv",
-        script = "static_pull_Major_versus_total.py"
-    output:
-        "../outputs/static_pull_major_versus_total.html"
-    shell:
-        """
-        jupytext --to notebook {input.script}
-        jupyter nbconvert --to html --execute static_pull_Major_versus_total.ipynb --no-input
-        rm static_pull_Major_versus_total.ipynb
-        mv static_pull_Major_versus_total.html {output}
-        """
+#rule static_major_verus_total:
+#    """
+#    Compares the slopes from momentum-force diagram for the major and total
+#    angle.
+#    """
+#    input:
+#        csv = "../outputs/anotated_regressions_static.csv",
+#        script = "static_pull_Major_versus_total.py"
+#    output:
+#        "../outputs/static_pull_major_versus_total.html"
+#    shell:
+#        """
+#        jupytext --to notebook {input.script}
+#        jupyter nbconvert --to html --execute static_pull_Major_versus_total.ipynb --no-input
+#        rm static_pull_Major_versus_total.ipynb
+#        mv static_pull_Major_versus_total.html {output}
+#        """
 
 rule welch:
     output:

@@ -28,8 +28,6 @@ synchro_optics_inclino.pdf: Obrázky pro kontrolu synchronizace mezi inklinometr
 
 static_pull_first_versus_other_pulls.html: Porovnání směrnic z regresí, druhý a třetí tah vydělený prvním tahem.
 
-static_pull_major_versus_total.html: Porovnání směrnic z regresí, major versus total.
-
 pull_major_minor_check.pdf: Test, jestli je spravne rozponano major/minor v dynamice
 
 pull_major_minor_check_M01.pdf: Test, jestli je spravne rozponano major/minor ve statice

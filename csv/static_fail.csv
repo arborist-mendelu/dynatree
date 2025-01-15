@@ -1,6 +1,5 @@
 Dependent,type,tree,measurement,day,pullNo,reason
 Elasto-strain,normal,BK10,M04,2022-04-05,0,"Extenzometr vypadl, bez signálu, dointerpolováno."
-Elasto-strain,normal,BK07,M04,2021-06-29,0,Extenzometr vypadl během napínání
 Elasto-strain,normal,BK12,M04,2021-06-29,0,Extenzometr neměřil.
 Elasto-strain,normal,BK12,M03,2021-06-29,0,Extenzometr vypadl během napínání
 Elasto-strain,normal,BK16,M01,2022-04-05,0,Extenzometr měří jenom půlobloučky - divné
@@ -16,11 +15,5 @@ blue,afterro2,BK14,M01,2024-09-02,0,Blue velký skok při druhém zatáhnutí.
 blue,normal,BK08,M03,2021-03-22,0,Inklinometr vypadl během napínání.
 blue,normal,BK16,M02,2022-04-05,0,"Osy major a minor jsou srovnatelné, což je divné. Major by měla mít mnohem vyšší hodnoty."
 yellow,normal,BK04,M02,2024-04-10,0,Inklinometr vypadl během napínání.
-yellow,normal,BK21,M01,2023-07-17,0,"Inklinometr major jde výrazně přes vodorovnou osu a minor je velký. To znamená velký skok u celkové výchylky."
-yellow,normal,BK21,M01,2023-07-17,1,"Inklinometr major jde výrazně přes vodorovnou osu a minor je velký. To znamená velký skok u celkové výchylky."
-yellow,normal,BK21,M01,2023-07-17,2,"Inklinometr major jde výrazně přes vodorovnou osu a minor je velký. To znamená velký skok u celkové výchylky."
 yellow,mraz,BK01,M02,2024-01-16,0,"Osy major a minor jsou srovnatelné, což je divné. Major by měla mít mnohem vyšší hodnoty."
 yellow,normal,BK16,M01,2021-03-22,2,"Žlutý inklinometr přestal měřit při posledním zatáhnutí."
-blue,den,BK07,M01,2021-08-03,0,"Major jde výrazně přes vodorovnou osu a vzorec pro celkový náklon dává nesmysly."
-blue,den,BK07,M01,2021-08-03,1,"Major jde výrazně přes vodorovnou osu a vzorec pro celkový náklon dává nesmysly."
-blue,den,BK07,M01,2021-08-03,2,"Major jde výrazně přes vodorovnou osu a vzorec pro celkový náklon dává nesmysly."
