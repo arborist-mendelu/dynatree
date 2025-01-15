@@ -431,6 +431,7 @@ def Page():
                     if (tab_index.value, subtab_index.value) == (0, 1):
                         dynatree.logger.info("Volba promennych a regrese")
                         with solara.Card(title="Increasing part of the time-force diagram"):
+                            # Detail()
                             try:
                                 Detail()
                             except:
@@ -865,6 +866,7 @@ def Detail():
         _ = d_obj._get_static_pulling_data(optics=s.use_optics.value, restricted='get_all')
         _["Time"] = _.index
         subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value, measurement_type=s.method.value,
+                                                  day = s.day.value,
                                                   extra_columns={"blue": "Inclino(80)", "yellow": "Inclino(81)",
                                                                  **d_obj.identify_major_minor})
         subdf = subdf.data
@@ -959,6 +961,9 @@ def Detail():
         with solara.Card():
             solara.Text("Data used for the regressions")
             solara.DataFrame(df_subj_reg)
+            solara.FileDownload(df_subj_reg.to_csv(),
+                                filename=f"regression_{s.method.value}_{s.day.value}_{s.tree.value}_{s.measurement.value}.csv",
+                                label="Download as csv")
     except:
         pass
     plt.close('all')

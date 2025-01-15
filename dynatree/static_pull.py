@@ -23,6 +23,7 @@ import dynatree.dynatree as dynatree
 import logging
 dynatree.logger.setLevel(logging.INFO)
 
+import rich
 import dynatree.multi_handlers_logger as mhl
 import config
 from parallelbar import progress_map
@@ -371,10 +372,11 @@ class DynatreeStaticPulling:
         self.measurement_type = measurement_type
         self.parent_experiment = parent_experiment
         if ini_forces:
-            pars = dict(height_of_anchorage = DF_PT_NOTES.at[(tree,day,measurement_type),'height_of_anchorage'],
-                height_of_pt = DF_PT_NOTES.at[(tree,day,measurement_type),'height_of_pt'],
-                rope_angle = DF_PT_NOTES.at[(tree,day,measurement_type),'angle_of_anchorage'],
-                height_of_elastometer = DF_PT_NOTES.at[(tree,day,measurement_type),'height_of_elastometer'],
+            coords = (tree,day,measurement_type)
+            pars = dict(height_of_anchorage = DF_PT_NOTES.at[coords,'height_of_anchorage'],
+                height_of_pt = DF_PT_NOTES.at[coords,'height_of_pt'],
+                rope_angle = DF_PT_NOTES.at[coords,'angle_of_anchorage'],
+                height_of_elastometer = DF_PT_NOTES.at[coords,'height_of_elastometer'],
                 suffix = "")
             self._process_forces(**pars)
             # self._process_forces(
