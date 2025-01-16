@@ -1,2 +1,4 @@
-type,day,tree,measurement,pullNo,start,end
-normal,2021-06-29,BK07,M02,0,
+type,day,tree,measurement,pullNo,independent,dependent,start,end
+normal,2021-06-29,BK07,M02,0,M_Elasto,Elasto-strain,61.5,64
+normal,2021-06-29,BK07,M04,0,M_Elasto,Elasto-strain,70.26,71.62
+normal,2021-06-29,BK07,M05,0,M_Elasto,Elasto-strain,59.16,60

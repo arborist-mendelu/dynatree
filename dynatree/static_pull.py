@@ -54,6 +54,9 @@ def arctand(value):
     """
     return np.rad2deg(np.arctan(value))    
 
+DF_MANUAL_LIMITS = pd.read_csv("csv/static_manual_limits.csv",
+                               index_col=[0, 1, 2, 3, 4, 5, 6])
+# rich.print(DF_MANUAL_LIMITS)
 
 class DynatreeStaticMeasurement(dynatree.DynatreeMeasurement):
     """
@@ -72,8 +75,8 @@ class DynatreeStaticMeasurement(dynatree.DynatreeMeasurement):
         self.parent = dynatree.DynatreeMeasurement(**kwargs)
 
     @cached_property    
-    def pullings(self): 
-        return [
+    def pullings(self):
+        ans = [
             DynatreeStaticPulling(i, tree=self.tree, 
                   measurement_type=self.measurement_type, day=self.day,
                   parent_experiment=self,
@@ -82,6 +85,7 @@ class DynatreeStaticMeasurement(dynatree.DynatreeMeasurement):
             for i in self._get_static_pulling_data(
                 optics=self.optics, restricted=self.restricted)
             ]
+        return ans
     @cached_property
     def regresions(self):
         dynatree.logger.debug("Calculating regressions for static measurement")
@@ -228,10 +232,10 @@ class DynatreeStaticMeasurement(dynatree.DynatreeMeasurement):
         return time
 
     @staticmethod
-    def _restrict_dataframe(df, column="Force(100)", restricted=(0.3,0.9), manual_restrictions=None):
+    def _restrict_dataframe(df, column="Force(100)", restricted=(0.3,0.9)):
         """
         Restricts dataframe according to the values in given column.
-        
+
         restricted is a tuple of two numbers.
         It is intended as lower and upper limit for data cut.
         If no restriction is required, use None.
@@ -387,7 +391,8 @@ class DynatreeStaticPulling:
             #     suffix = "Rope"
             #     )
         if ini_regress:
-            self.regressions = self._get_regressions_for_one_pull()
+            coords = (self.measurement_type, self.day, self.tree, self.parent_experiment.measurement)
+            self.regressions = self._get_regressions_for_one_pull(coords=coords)
 
     def __str__(self):
         return f"Dynatree static pulling, data shape {self.data.shape}"
@@ -499,7 +504,7 @@ class DynatreeStaticPulling:
         return f
 
     
-    def _get_regressions_for_one_pull(self):
+    def _get_regressions_for_one_pull(self, coords=None):
         """
         Get regressions for one measurement. 
         """
@@ -513,13 +518,15 @@ class DynatreeStaticPulling:
             [
             ["M", "blueMaj", "yellowMaj"],
             ["M_Elasto", "Elasto-strain"],
-            ["Force(100)", "blueMaj", "yellowMaj", "Elasto(90)"],
-            ]+pt_reg, msg=f"{self.parent_experiment.parent if self.parent_experiment  is not None else None}"
+            # ["Force(100)", "blueMaj", "yellowMaj", "Elasto(90)"],
+            ]+pt_reg,
+             msg=f"{self.parent_experiment.parent if self.parent_experiment  is not None else None}",
+             coords=coords,
             )
         return reg
     
     @staticmethod
-    def _get_regressions(df, collist, msg=""):
+    def _get_regressions(df, collist, msg="", coords=None):
         """
         Return regression in dataframe. 
         
@@ -528,20 +535,24 @@ class DynatreeStaticPulling:
         evaluated.
         """
         data = [DynatreeStaticPulling._get_regressions_for_one_column(
-            df.loc[:, i], i[0], msg=msg) for i in collist]
+            df.loc[:, i], i[0], msg=msg, coords=coords) for i in collist]
         return pd.concat(data)
     
     @staticmethod
-    def _get_regressions_for_one_column(df, independent, msg=""):
+    def _get_regressions_for_one_column(df, independent, msg="", coords=None):
+        # rich.print(f"get regr for one column {independent} {df.columns} {coords}")
         regrese = {}
         dependent = [_ for _ in df.columns if _ !=independent]
         dynatree.logger.debug(
             f"Regressions on dataframe of shape {df.shape}\n    independent {independent}, dependent {dependent}")
         for i in dependent:
-            # remove nan valules, if any
-            cleandf = df.loc[:,[independent,i]].dropna()
+            lower, upper = 0, 1e6
+            if coords is not None:
+                full_coords = (*coords, 0, independent, i)
+                if full_coords in DF_MANUAL_LIMITS.index:
+                    lower, upper = DF_MANUAL_LIMITS.loc[full_coords,:].values
+            cleandf = df.loc[(df.index >= lower) & (df.index <= upper),[independent,i]].dropna()
             # do regresions without nan
-
             try:
                 reg = linregress(cleandf[independent],cleandf[i])
                 regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue ** 2, reg.pvalue, reg.stderr,
@@ -563,7 +574,7 @@ def proces_one_row(row):
     optics = row['optics']
     measurement_type = row['type']
     for cut in [.30]:
-        for use_optics in [False, True]:
+        for use_optics in [False]:
             # try:
                 # get regressions for two cut-out values and merge
             data_obj = DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement,
@@ -596,12 +607,12 @@ def proces_one_row(row):
 
 def main():
     df = get_all_measurements(method='all', type='all')
+    # df = df.sort_index()
     # drop missing optics
     # df = df[~((df["day"]=="2022-04-05")&(df["tree"]=="BK21")&(df["measurement"]=="M5"))]
     # df = df.iloc[:3,:]
     # for _,row in df.iterrows():
     #     proces_one_row(row)
-    # return
     ans = progress_map(proces_one_row, [i for _,i in df.iterrows()])
     ans = pd.concat(ans)
     df_all_data = ans.reset_index(drop=True)
@@ -613,10 +624,11 @@ if __name__ == "__main__":
     # rope_angle(mt, day, tree, 'pulling_tests')
 
     # day, tree, measurement, mt = "2021-06-29", "BK08", "M04", "normal"
+    # mt, day, tree, measurement = 'normal', '2022-04-05', 'BK09', 'M01'
     # m = DynatreeStaticMeasurement(
-    #     day=day, tree=tree, measurement=measurement, measurement_type=mt, optics=True)
-    # import rich
+    #     day=day, tree=tree, measurement=measurement, measurement_type=mt, optics=False)
     # for pull in m.pullings:
+    #     rich.print(pull)
     #     rich.print(pull.data.columns)
     #     rich.print(pull.regressions)
     # m.plot()

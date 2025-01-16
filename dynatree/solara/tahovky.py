@@ -882,7 +882,8 @@ def Detail():
                 target = ydata.value
             else:
                 target = ydata.value + [ydata2.value]
-            reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value] + target], )
+            reg_df = static_pull.DynatreeStaticPulling._get_regressions(subdf, [[xdata.value] + target],
+                            coords = (s.method.value, s.day.value, s.tree.value, s.measurement.value))
             solara.DataFrame(reg_df.iloc[:, :5])
             # solara.display(reg_df.iloc[:, :5])
             df_subj_reg = subdf[[xdata.value] + target]
@@ -911,14 +912,17 @@ def Detail():
                 extradata = []
             cols_to_draw = fix_input(ydata.value + extradata)
             if xdata.value == "Time":
-                px.scatter(subdf, y=cols_to_draw, **kwds)
+                fig = plx.scatter(subdf, y=cols_to_draw, **kwds)
             else:
-                px.scatter(subdf, x=xdata.value, y=cols_to_draw, **kwds)
+                subdf["Time"] = subdf.index
+                fig = plx.scatter(subdf, x=xdata.value, y=cols_to_draw, hover_data=["Time"],
+                                  **kwds)
+            solara.FigurePlotly(fig)
         except:
             solara.Error(solara.Markdown(
-                """### Image failed. 
-                         
-                * Something is wrong. Switch to noninteractive plot or change variables setting. 
+                """### Image failed.
+
+                * Something is wrong. Switch to noninteractive plot or change variables setting.
                 * This error appears especially if you try to plot both forces and inclinometers on vertical axis.
                 """))
         pass
@@ -939,6 +943,7 @@ def Detail():
                             **regression_settings)
         except:
             pass
+        ax.set(ylim=(subdf[ydata.value].to_numpy().min(), subdf[ydata.value].to_numpy().max()))
         if ydata2.value != None:
             ax2 = ax.twinx()
             # see https://stackoverflow.com/questions/24280180/matplotlib-colororder-and-twinx
