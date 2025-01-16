@@ -435,7 +435,7 @@ def Page():
                             try:
                                 Detail()
                             except:
-                                solara.Error("Něco se pokazilo ...")
+                                solara.Error("Něco se pokazilo při volání funkce Detail...")
                 with solara.lab.Tab("Polární graf"):
                     if (tab_index.value, subtab_index.value) == (0, 2):
                         dynatree.logger.info("Polarni graf")
@@ -865,8 +865,13 @@ def Detail():
     if all_data.value:
         _ = d_obj._get_static_pulling_data(optics=s.use_optics.value, restricted='get_all')
         _["Time"] = _.index
+        parent_experiment = static_pull.DynatreeStaticMeasurement(
+            tree=s.tree.value, measurement_type=s.method.value,
+            day=s.day.value, measurement=s.measurement.value,
+        )
         subdf = static_pull.DynatreeStaticPulling(_, tree=s.tree.value, measurement_type=s.method.value,
                                                   day = s.day.value,
+                                                  parent_experiment=parent_experiment,
                                                   extra_columns={"blue": "Inclino(80)", "yellow": "Inclino(81)",
                                                                  **d_obj.identify_major_minor})
         subdf = subdf.data
