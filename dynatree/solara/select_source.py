@@ -129,9 +129,9 @@ styles_css = """
         .v-btn__content { text-transform: none;}
         """
 
-widths = [800,1000,1200, 1400]
+widths = [800,1000,1200, 1400, 1800]
 width = solara.reactive(1000)
-heights = [400,600,800, 1000]
+heights = [400,600,800, 1000, 1400]
 height = solara.reactive(600)
 
 @solara.component

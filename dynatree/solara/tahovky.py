@@ -136,21 +136,24 @@ def nakresli(reset_measurements=False):
 
 @solara.component
 def prehled():
-    solara.Markdown(
-        """
-        **Přehled dat pro jednotlivé veličiny a stromy**
-        
-        * Tady jsou směrnice z regresí M/blueMaj, M/yellowMaj a M_Elasto/Elasto. Pokud nějaká
-          hodnota ulítává, je možné, že inklinometr nebo extenzometr špatně měřil. V takovém případě se 
-          kontroluje asi časový průběh příslušného přístroje.
-        * True/False se vztahuje k přítomnosti listů. 
-        * Číslo 0 až 2 se vztahuje k počtu ořezů.
-        * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
-        """, style={'color':'inherit'}
-    )
-    # with solara.Row():
+    with solara.Info():
+        solara.Markdown(
+            """
+            **Přehled dat pro jednotlivé veličiny a stromy**
+            
+            * Tady jsou směrnice z regresí M/Inclinometr a M_Elasto/Elasto. Pokud nějaká
+              hodnota ulítává, je možné, že inklinometr nebo extenzometr špatně měřil. V takovém případě se 
+              kontroluje asi časový průběh příslušného přístroje.
+            * True/False se vztahuje k přítomnosti listů. 
+            * Číslo 0 až 2 se vztahuje k počtu ořezů.
+            * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
+            * Ručně vyřazené experimenty jsou v obrázku červeně a jsou v tabulce pod obrázkem. Odlehlé experimenty, 
+              které byly ručně zkontorlovány a uznány jako OK jsou v tabulce pod vyřazenými.
+            """, style={'color':'inherit'}
+        )
+        # with solara.Row():
     #     solara.Button("Update Page", on_click=ShowRegressionsHere)
-    images = graphs_regressions.main(trees=[s.tree.value], width=s.width.value, height=s.height.value)
+    images = graphs_regressions.main(trees=[s.tree.value], width=s.width.value, height=s.height.value, limitR2=[R2limit_lower.value, R2limit_upper.value])
     df_failed = pd.read_csv(config.file['static_fail'])
     df_checked = pd.read_csv(config.file['static_checked_OK'])
     for t, f in images.items():
@@ -169,12 +172,18 @@ sort_ascending = solara.reactive(True)
 @solara.component
 def slope_trend():
     df = static_lib_pull_comparison.df_all_M
+    df = df[(df["R^2"]>=R2limit_lower.value) & (df["R^2"]<=R2limit_upper.value)]
     dependent = probe.value
-    filtered_df = df[df['Dependent'] == dependent]
+    if dependent == "Elasto-strain":
+        filtered_df = df[df['Dependent'] == dependent]
+    elif dependent == "Camera":
+        filtered_df = df[df['kamera'] == True]
+    else:
+        filtered_df = df[df['kamera'] == False]
     filtered_df = filtered_df[filtered_df["tree"] == s.tree.value]
     subdf = filtered_df.sort_values(by="day")
     cat_order = subdf["day"].drop_duplicates().tolist()
-
+    filtered_df["kamera"] = filtered_df["kamera"].astype(str)
     # Vykreslení boxplotu
     fig = plx.box(
         filtered_df,
@@ -184,7 +193,7 @@ def slope_trend():
         title=f'Slope by Day and Type, tree {s.tree.value}, slope for momentum and {probe.value}',
         category_orders={"day": cat_order},
         template="plotly_white",
-        hover_data=["tree", "type", "day", "pullNo", "Dependent", "measurement"],
+        hover_data=["tree", "type", "day", "pullNo", "Independent", "Dependent", "measurement","kamera"],
         points='all',
         width=s.width.value,
         height=s.height.value,
@@ -193,6 +202,7 @@ def slope_trend():
     )
     fig.update_layout(xaxis=dict(type='category'))
     solara.FigurePlotly(fig)
+    solara.FileDownload(filtered_df.to_csv(), filename="tahovky_trend_I.csv")
     # solara.DataFrame(filtered_df.sort_values(by="Slope"))
     great_table = (
         GT(filtered_df[["type", "day", "tree", "measurement", "pullNo", "Slope"]]
@@ -274,10 +284,11 @@ def slope_trend_more():
           # .pipe(lambda x: x[~(x['Dependent'].str.contains('Min'))])
           .pipe(lambda x: x[x['tree'].str.contains('BK')])
           .pipe(lambda x: x[x['Independent'] == "M"])
-          .pipe(lambda x: x[["type", "day", "tree", "Dependent", "Slope", "pullNo", "measurement", "kamera"]])
+          .pipe(lambda x: x[["type", "day", "tree", "Independent", "Dependent", "Slope", "pullNo", "measurement", "kamera", "R^2"]])
           # .pivot(values="Slope", columns='pullNo', index=
           #        ['type', 'day', 'tree', 'measurement', 'Dependent'])
           )
+    df = df[(df["R^2"]>=R2limit_lower.value) & (df["R^2"]<=R2limit_upper.value)]
     df["pullNo"] = df["measurement"].astype(str) + "_" + df["pullNo"].astype(str)
     if color.value == "pullNo":
         df = df.pipe(lambda x: x[x['measurement'] == 'M01'])
@@ -285,7 +296,7 @@ def slope_trend_more():
     df["Slope × 1000"] = df["Slope"] * 1000
     df["id"] = df["day"] + " " + df["type"]
     fig = plx.strip(df, x="id", y="Slope × 1000", template="plotly_white",
-                    color=color.value, hover_data=["pullNo", "Dependent", "kamera"],
+                    color=color.value, hover_data=["pullNo", "Independent", "Dependent", "kamera", "R^2"],
                     title=f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship.",
                     width=s.width.value, height=s.height.value
                     )
@@ -321,7 +332,7 @@ def slope_trend_more():
 def normalized_slope():
     df_merged = static_lib_pull_comparison.df_merged
     subdf = df_merged[df_merged["pullNo"] != 0].loc[:,
-            ["type", "day", "tree", "Dependent", "pullNo", "Slope_normalized"]]
+            ["type", "day", "tree", "Dependent", "kamera", "pullNo", "Slope_normalized"]]
     subdf = subdf[subdf["tree"] == s.tree.value].sort_values(by="day")
     cat_order = subdf["day"].drop_duplicates().tolist()
     fig = plx.box(
@@ -330,7 +341,7 @@ def normalized_slope():
         y="Slope_normalized",
         color='type',
         points='all',
-        hover_data=["tree", "type", "pullNo", "Dependent"],
+        hover_data=["tree", "type", "pullNo", "Dependent", "kamera"],
         category_orders={"day": cat_order},
         height=s.height.value, width=s.width.value,
         title=f"Tree {s.tree.value}",
@@ -353,10 +364,10 @@ def normalized_slope():
         items_per_page=20,
         # cell_actions=cell_actions
     )
-
+    solara.FileDownload(subdf.to_csv(), filename="normalized_slope_static.csv")
 
 probe = solara.reactive("Elasto-strain")
-probes = ["Elasto-strain", "blueMaj", "yellowMaj"]
+probes = ["Elasto-strain", "Camera", "NoCamera"]
 how_to_colorize = solara.reactive("All data")
 restrict_to_noc_den = solara.reactive(False)
 include_M01 = solara.reactive(True)
@@ -395,6 +406,12 @@ def custom_display(df_, all_data=True, second_level=False):
                 solara.Markdown(f"##{category}")
                 # Zobrazíme tabulku s aplikovaným gradientem pro tuto skupinu
                 solara.display(ostyluj(group_df))
+
+@solara.component
+def limitR2():
+    with solara.Card(title="Limit for R^2"):
+        solara.InputFloat("lower bound", value=R2limit_lower)
+        solara.InputFloat("upper bound", value=R2limit_upper)
 
 
 @solara.component
@@ -453,8 +470,8 @@ def Page():
                             """
                             **Srovnání následujících zatáhnutí s prvním**
                             
-                            * V grafech je podíl směrnice z druhého nebo třetího zatáhnutí  směrnice z prvního zatáhnutí. Toto je v grafu vedeno jako Slope_normalized.
-                            * Pokud věříme, že při první zatáhnutí je systém tužší, měl by podíl být stabilně pod jedničkou.
+                            * V grafech je podíl směrnice z druhého nebo třetího zatáhnutí a směrnice z prvního zatáhnutí. Toto je v grafu vedeno jako Slope_normalized.
+                            * Pokud věříme, že při prvním zatáhnutí je systém tužší, měl by podíl být stabilně pod jedničkou.
                             * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
                             """)
                         try:
@@ -464,12 +481,9 @@ def Page():
 
                             # solara.FigurePlotly(figPl)                
                 with solara.lab.Tab("Hledání odlehlých"):
+                    with solara.Sidebar():
+                        limitR2()
                     with solara.Column():
-                        solara.Warning(
-                            """Pozor, jsou tu inklilnometry blue a yellow, ale mělo by se porovnávat kamera a no-kamera, 
-                            ale asi není potřeba, protože na záložce s trendem pro oba inklinometry jsou 
-                            stejná data už správně a jenom navíc rozseparovaná na jednotlivé dny.   
-                            """)
                         try:
                             prehled()
                         except:
@@ -478,12 +492,14 @@ def Page():
                     with solara.Sidebar():
                         if tab_index.value == 1:
                             with solara.Card():
-                                solara.Markdown("**Variable**")
+                                solara.Markdown("**Variable** is elastometer or one of inclinometers (Camera and NoCamera). ")
                                 solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
+                            limitR2()
                     with solara.Column():
-                        solara.Warning("Pozor blueMaj a yellowMaj by se mělo nahradit kamera a no-kamera.")
                         slope_trend()
                 with solara.lab.Tab("Trend (oba inklinometry)"):
+                    with solara.Sidebar():
+                        limitR2()
                     with solara.Column():
                         slope_trend_more()
         with solara.lab.Tab("Všechny stromy", icon_name="mdi-file-table-box-multiple-outline"):
@@ -491,9 +507,7 @@ def Page():
                 with solara.Sidebar():
                     solara.Markdown("**Gradient**")
                     solara.ToggleButtonsSingle(value=how_to_colorize, values=["All data", "Within tree"])
-                    solara.Markdown("**Limit for R^2:**")
-                    solara.InputFloat("lower bound", value=R2limit_lower)
-                    solara.InputFloat("upper bound", value=R2limit_upper)
+                    limitR2()
                     solara.Markdown("**Návod:**")
                     solara.Markdown(
                         """

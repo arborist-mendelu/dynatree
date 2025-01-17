@@ -52,7 +52,7 @@ def read_data():
     
     # Načtení a vyčištění dat
     df = pd.read_csv(config.file["outputs/anotated_regressions_static"], index_col=0)
-    
+
     df['evaluation'] = df.apply(lambda row: 1 if row['failed'] 
                                 else (2 if row['R^2'] < 0.5 else 0), axis=1)
     
@@ -78,35 +78,46 @@ def read_data():
     df.loc[idx,"reductionNo"]=1
     idx = (df["type"]=="afterro2")
     df.loc[idx,"reductionNo"]=2
-    
+
     df = df.drop(["optics","lower_cut"], axis=1).reset_index(drop=True)
     df = df[df["Dependent"].isin(["blueMaj","yellowMaj","Elasto-strain"])]
-    
+
     pairs = df[["Independent","Dependent"]].drop_duplicates()
-    
+
     df["state"] = df["leaves"].astype(str) + ", " +df["reductionNo"].astype(str)
     return df
 
-def main(remove_failed=False, trees=None, width=1000, height=500):
-    df = read_data()        
+def main(remove_failed=False, trees=None, width=1000, height=500, limitR2=None):
+    df = read_data()
+    if limitR2 is not None:
+        df = df[df["R^2"] >= limitR2[0]]
+        df = df[df["R^2"] <= limitR2[1]]
     if trees is None:
         trees = df["tree"].drop_duplicates().values
     df['reason'] = df['reason'].fillna("")
     if remove_failed:
         df = df[~df["failed"]]
     f_ans = {}
+    df["kamera"] = df["kamera"].astype(str)
+    print(df)
     for tree in trees:
-        fig = make_subplots(rows=1, cols=3, subplot_titles=("M/blueMaj", "M/yellowMaj", "M_Elasto/Elasto-strain"))
+        fig = make_subplots(rows=1, cols=3, subplot_titles=("M/Inclino_Camera", "M/Inclino_No_Camera", "M_Elasto/Elasto-strain"))
         f = {}
-        for I,_ in enumerate(zip(["M","M","M_Elasto"],["blueMaj", "yellowMaj", "Elasto-strain"])):
-            i,d = _
-            f[I] = px.strip(df[(df["Independent"]==i) & (df["Dependent"]==d) & (df["tree"]==tree)], 
+        masks = [
+            # zip(["M","M","M_Elasto"],["blueMaj", "yellowMaj", "Elasto-strain"])
+            # (df["Independent"]==i) & (df["Dependent"]==d) & (df["tree"]==tree)
+            (df["Independent"] == "M") & (df["kamera"] == "True") & (df["tree"] == tree),
+            (df["Independent"] == "M") & (df["kamera"] == "False") & (df["tree"] == tree),
+            (df["Independent"] == "M_Elasto") & (df["Dependent"] == "Elasto-strain") & (df["tree"] == tree)
+        ]
+        for I,mask in enumerate(masks):
+            f[I] = px.strip(df[mask],
                          x="state", y="Slope", #points="all", 
-                         hover_data=['day', 'tree', "measurement", "type", "pullNo", "R^2", "reason", "Dependent"], width=1000, height=500, 
+                         hover_data=['day', 'tree', "measurement", "type", "pullNo", "R^2", "reason", "Independent","Dependent", "kamera"], width=1000, height=500,
                          color='evaluation',   
                          template =  "plotly_white",
                          # color_discrete_sequence=px.colors.qualitative.Set1,  # Nastavení barevné škály
-                         title = f"Slope in {i} versus {d}")
+                         )
             for trace in f[I]['data']:
                 fig.add_trace(trace, row=1, col=1+I)
         fig.update_layout(height=height, width=width, title_text=f"Tree {tree}")
