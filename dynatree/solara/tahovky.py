@@ -193,7 +193,7 @@ def slope_trend():
         title=f'Slope by Day and Type, tree {s.tree.value}, slope for momentum and {probe.value}',
         category_orders={"day": cat_order},
         template="plotly_white",
-        hover_data=["tree", "type", "day", "pullNo", "Independent", "Dependent", "measurement","kamera"],
+        hover_data=["tree", "type", "day", "pullNo", "Independent", "Dependent", "measurement","kamera", "R^2"],
         points='all',
         width=s.width.value,
         height=s.height.value,
