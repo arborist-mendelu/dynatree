@@ -99,7 +99,6 @@ def main(remove_failed=False, trees=None, width=1000, height=500, limitR2=None):
         df = df[~df["failed"]]
     f_ans = {}
     df["kamera"] = df["kamera"].astype(str)
-    print(df)
     for tree in trees:
         fig = make_subplots(rows=1, cols=3, subplot_titles=("M/Inclino_Camera", "M/Inclino_No_Camera", "M_Elasto/Elasto-strain"))
         f = {}
