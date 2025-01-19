@@ -145,6 +145,7 @@ def click_info():
 * Kliknutí na tečku v grafu zobrazí časový průběh na senzoru a  časový průběh síly. Data jsou dointerpolovaná, 
   rovná čára znamená pravděpodobně chybějící dointerpolovaná data.
 * Se **shiftem** kreslí pomocí bodů, jinak pomocí čar. S **ctrl** kreslí celý experiment a data nejsou dointerpolovaná.
+  S **alt** se kreslí body použité pro regresi, vodorovně je síla, svisle data ze senzoru.
 * Výška obrázku je podle volby v levém sloupci, šířka je přes celé okno.
 * V obrázcích s trendem nejsou ručně vyhozená data (červeně v obrázku "hledání odlehlých").
 """, style={'color': 'inherit'}))
@@ -233,14 +234,16 @@ def click_figure(data,event):
 
     if "_" in str(pullNo):
         pullNo = int(str(pullNo).split("_")[-1])
-    restricted = None
+    if event['device_state']['alt'] == True:
+        restricted = [.3,.9]
+    else:
+        restricted = None
     m = static_pull.DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=mt,
                                               optics=False, restricted=restricted)
     if dep in ["blueMaj", "yellowMaj"]:
         subtitle = f"{dep}, {m.identify_major_minor[dep]}"
     else:
         subtitle = dep
-    fig = make_subplots(rows=2, cols=1, subplot_titles=(subtitle, "Force"), shared_xaxes=True)
     if event['device_state']['ctrl'] == False:
         pull = m.pullings[pullNo]
         df = pull.data
@@ -264,11 +267,19 @@ def click_figure(data,event):
 
 
     # rich.print(df.columns)
-    fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[[dep]].to_numpy().reshape(-1), mode=mode), row=1, col=1)
-    fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[["Force(100)"]].to_numpy().reshape(-1), mode=mode), row=2, col=1)
-    fig.update_layout(title=f"{data}", height=s.height.value)
-    fig.update_layout(hovermode = "x unified")
-    fig.update_traces(xaxis='x2')
+    if event['device_state']['alt'] == True:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df[["Force(100)"]].to_numpy().reshape(-1), y=df[[dep]].to_numpy().reshape(-1), mode='markers'))
+    else:
+        fig = make_subplots(rows=2, cols=1, subplot_titles=(subtitle, "Force"), shared_xaxes=True)
+        fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[[dep]].to_numpy().reshape(-1), mode=mode), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[["Force(100)"]].to_numpy().reshape(-1), mode=mode), row=2, col=1)
+        fig.update_layout(hovermode = "x unified")
+        fig.update_traces(xaxis='x2')
+    newdata = [str(data[i]) for i in [1,-1,0,5, 2,3,4,6, 7]]
+    newdata[-2] = "Kamera "+newdata[-2]
+    newdata[4] = "pullNo "+newdata[4]
+    fig.update_layout(title=", ".join(newdata), height=s.height.value)
     return fig
 
 figdata = None
