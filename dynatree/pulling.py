@@ -10,6 +10,7 @@ from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 from scipy.stats import linregress
 import os
+import rich
 
 from solara.website.pages.documentation.examples.general.deploy_model import slope
 
@@ -154,7 +155,7 @@ def slopes():
 
 def main():
     ans = slopes()
-    print(ans)
+    rich.print(ans)
 
 if __name__ ==  "__main__":
     main()

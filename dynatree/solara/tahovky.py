@@ -12,16 +12,23 @@ from dynatree import static_pull, dynatree_util as du
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import rich
 # import glob
 import solara.express as px
 import plotly.express as plx
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
 import solara.lab
 from solara.lab import task
 import solara
+from solara.lab.components.confirmation_dialog import ConfirmationDialog
 import dynatree.solara.select_source as s
 import graphs_regressions
 import static_lib_pull_comparison
 import dynatree.dynatree as dynatree
+from solara.lab import task
+
 import logging
 dynatree.logger.setLevel(dynatree.logger_level)
 
@@ -133,14 +140,39 @@ def nakresli(reset_measurements=False):
 # first_pass = True
 # http://localhost:8765/tahovky?tree=BK04&method=normal&measurement=M02&use_optics=True&day=2022-08-16
 # http://localhost:8765/tahovky?tree=BK08&method=den&measurement=M03&use_optics=False&day=2022-08-16
+click_info = "Kliknutí na tečku v grafu zobrazí časový průběh na senzoru a  časový průběh síly. Se shiftem kreslí pomocí bodů, jinak pomocí čar. Výška obrázku je podle volby v levém sloupci, šířka je přes celé okno."
 
 @solara.component
 def prehled():
+    global figdata
+
+    solara.Info(click_info)
+        # with solara.Row():
+    #     solara.Button("Update Page", on_click=ShowRegressionsHere)
+    images = graphs_regressions.main(trees=[s.tree.value], width=s.width.value, height=s.height.value, limitR2=[R2limit_lower.value, R2limit_upper.value])
+    df_failed = pd.read_csv(config.file['static_fail'])
+    df_checked = pd.read_csv(config.file['static_checked_OK'])
+    # print(show_dialog.value)
+    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width  = '100%',
+                            title=""):
+        solara.ProgressLinear(on_click_more.pending)
+        if on_click_more.finished:
+            ans = on_click_more.value
+            solara.FigurePlotly(ans)
+    for t, f in images.items():
+        with solara.Card():
+            figdata = f
+            solara.FigurePlotly(f, on_click=on_click_more)
+            solara.Markdown(f"Failed experiments")
+            solara.display(df_failed[df_failed["tree"] == t])
+            solara.Markdown(f"Succesfully checked experiments")
+            solara.display(df_checked[df_checked["tree"] == t])
+    solara.FileDownload(graphs_regressions.read_data().to_csv(), filename="static_dynatree.csv", label="Download data")
     with solara.Info():
         solara.Markdown(
             """
             **Přehled dat pro jednotlivé veličiny a stromy**
-            
+
             * Tady jsou směrnice z regresí M/Inclinometr a M_Elasto/Elasto. Pokud nějaká
               hodnota ulítává, je možné, že inklinometr nebo extenzometr špatně měřil. V takovém případě se 
               kontroluje asi časový průběh příslušného přístroje.
@@ -149,28 +181,59 @@ def prehled():
             * V sidebaru vlevo můžeš přepínat strom, graf by se měl automaticky aktualizovat.
             * Ručně vyřazené experimenty jsou v obrázku červeně a jsou v tabulce pod obrázkem. Odlehlé experimenty, 
               které byly ručně zkontorlovány a uznány jako OK jsou v tabulce pod vyřazenými.
-            """, style={'color':'inherit'}
+            """, style={'color': 'inherit'}
         )
-        # with solara.Row():
-    #     solara.Button("Update Page", on_click=ShowRegressionsHere)
-    images = graphs_regressions.main(trees=[s.tree.value], width=s.width.value, height=s.height.value, limitR2=[R2limit_lower.value, R2limit_upper.value])
-    df_failed = pd.read_csv(config.file['static_fail'])
-    df_checked = pd.read_csv(config.file['static_checked_OK'])
-    for t, f in images.items():
-        with solara.Card():
-            solara.FigurePlotly(f)
-            solara.Markdown(f"Failed experiments")
-            solara.display(df_failed[df_failed["tree"] == t])
-            solara.Markdown(f"Succesfully checked experiments")
-            solara.display(df_checked[df_checked["tree"] == t])
-    solara.FileDownload(graphs_regressions.read_data().to_csv(), filename="static_dynatree.csv", label="Download data")
-
 
 sort_ascending = solara.reactive(True)
+show_dialog = solara.reactive(False)
 
+def close_dialog():
+    show_dialog.value = False
 
+info = solara.reactive("")
+@task
+def on_click(event):
+    group = event['points']['trace_indexes'][0]
+    position = event['points']['point_indexes'][0]
+    data = figdata['data'][group]['customdata'][position]
+    return click_figure(data, event)
+
+@task
+def on_click_more(event):
+    rich.print(event)
+    group = event['points']['trace_indexes'][0]
+    position = event['points']['point_indexes'][0]
+    data = figdata['data'][group]['customdata'][position]
+    day, tree, measurement, mt, pullNo, R, remark, indep, dep,  camera = list(data)
+    data = [tree, mt, pullNo, indep, dep, measurement, camera, R, day ]
+    rich.print(data)
+    return click_figure(data, event)
+
+def click_figure(data,event):
+    tree, mt, pullNo, indep, dep, measurement, camera, R, day = list(data)
+
+    if event['device_state']['shift'] == True:
+        mode = 'markers'
+    else:
+        mode = 'lines'
+    show_dialog.value = True
+
+    if "_" in str(pullNo):
+        pullNo = int(str(pullNo).split("_")[-1])
+    restricted = None
+    m = static_pull.DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=mt, optics=False, restricted=restricted)
+    pull = m.pullings[pullNo]
+    fig = make_subplots(rows=2, cols=1, subplot_titles=(dep, "Force")
+                        )
+    fig.add_trace(go.Scatter(x=pull.data.index.to_list(), y=pull.data[[dep]].to_numpy().reshape(-1), mode=mode), row=1, col=1)
+    fig.add_trace(go.Scatter(x=pull.data.index.to_list(), y=pull.data[["Force(100)"]].to_numpy().reshape(-1), mode=mode), row=2, col=1)
+    fig.update_layout(title=f"{data}", height=s.height.value)
+    return fig
+
+figdata = None
 @solara.component
 def slope_trend():
+    global figdata
     df = static_lib_pull_comparison.df_all_M
     df = df[(df["R^2"]>=R2limit_lower.value) & (df["R^2"]<=R2limit_upper.value)]
     dependent = probe.value
@@ -184,6 +247,7 @@ def slope_trend():
     subdf = filtered_df.sort_values(by="day")
     cat_order = subdf["day"].drop_duplicates().tolist()
     filtered_df["kamera"] = filtered_df["kamera"].astype(str)
+    filtered_df["Day"] = filtered_df["day"]
     # Vykreslení boxplotu
     fig = plx.box(
         filtered_df,
@@ -193,7 +257,7 @@ def slope_trend():
         title=f'Slope by Day and Type, tree {s.tree.value}, slope for momentum and {probe.value}',
         category_orders={"day": cat_order},
         template="plotly_white",
-        hover_data=["tree", "type", "day", "pullNo", "Independent", "Dependent", "measurement","kamera", "R^2"],
+        hover_data=["tree", "type", "day", "pullNo", "Independent", "Dependent", "measurement","kamera", "R^2", "Day"],
         points='all',
         width=s.width.value,
         height=s.height.value,
@@ -201,7 +265,17 @@ def slope_trend():
         # symbol='measurement',      # Tvar bodů na základě sloupce 'measurement'
     )
     fig.update_layout(xaxis=dict(type='category'))
-    solara.FigurePlotly(fig)
+    solara.Info(click_info)
+    solara.FigurePlotly(fig, on_click = on_click)
+    figdata = fig
+    # print(show_dialog.value)
+    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width  = '100%',
+                            title=""):
+        solara.ProgressLinear(on_click.pending)
+        if on_click.finished:
+            ans = on_click.value
+            solara.FigurePlotly(ans)
+            # solara.Info(ans)
     solara.FileDownload(filtered_df.to_csv(), filename="tahovky_trend_I.csv")
     # solara.DataFrame(filtered_df.sort_values(by="Slope"))
     great_table = (
@@ -265,6 +339,8 @@ def ostyluj(subdf, skip_last_column=False, skip_how_many=1):
 
 @solara.component
 def slope_trend_more():
+    global figdata
+
     with solara.Row():
         with solara.Tooltip(solara.Markdown(
                 """
@@ -296,11 +372,19 @@ def slope_trend_more():
     df["Slope × 1000"] = df["Slope"] * 1000
     df["id"] = df["day"] + " " + df["type"]
     fig = plx.strip(df, x="id", y="Slope × 1000", template="plotly_white",
-                    color=color.value, hover_data=["pullNo", "Independent", "Dependent", "kamera", "R^2"],
+                    color=color.value, hover_data=["tree", "type", "pullNo", "Independent", "Dependent", "measurement", "kamera", "R^2", "day"],
                     title=f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship.",
                     width=s.width.value, height=s.height.value
                     )
-    solara.FigurePlotly(fig)
+    figdata = fig
+    solara.Info(click_info)
+    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width  = '100%',
+                            title=""):
+        solara.ProgressLinear(on_click.pending)
+        if on_click.finished:
+            ans = on_click.value
+            solara.FigurePlotly(ans)
+    solara.FigurePlotly(fig, on_click=on_click)
     with solara.Info():
         solara.Markdown(
             """
