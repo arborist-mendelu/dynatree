@@ -162,7 +162,7 @@ def prehled():
     for t, f in images.items():
         with solara.Card():
             figdata = f
-            solara.FigurePlotly(f, on_click=on_click_more)
+            solara.FigurePlotly(f) #, on_click=on_click_more)
             solara.Markdown(f"Failed experiments")
             solara.display(df_failed[df_failed["tree"] == t])
             solara.Markdown(f"Succesfully checked experiments")
