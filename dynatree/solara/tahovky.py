@@ -270,12 +270,21 @@ def click_figure(data,event):
     if event['device_state']['alt'] == True:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df[["Force(100)"]].to_numpy().reshape(-1), y=df[[dep]].to_numpy().reshape(-1), mode='markers'))
+        fig.update_layout(
+            xaxis_title="Force",  # Nastavení popisku osy X
+            yaxis_title=dep,
+        )
     else:
         fig = make_subplots(rows=2, cols=1, subplot_titles=(subtitle, "Force"), shared_xaxes=True)
         fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[[dep]].to_numpy().reshape(-1), mode=mode), row=1, col=1)
         fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[["Force(100)"]].to_numpy().reshape(-1), mode=mode), row=2, col=1)
         fig.update_layout(hovermode = "x unified")
         fig.update_traces(xaxis='x2')
+        fig.update_layout(
+            xaxis2_title="Time",  # Nastavení popisku osy X
+            yaxis_title=dep,
+            yaxis2_title="Force"
+        )
     newdata = [str(data[i]) for i in [1,-1,0,5, 2,3,4,6, 7]]
     newdata[-2] = "Kamera "+newdata[-2]
     newdata[4] = "pullNo "+newdata[4]
