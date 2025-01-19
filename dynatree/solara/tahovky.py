@@ -164,14 +164,8 @@ def prehled():
     images = graphs_regressions.main(trees=[s.tree.value], width=s.width.value, height=s.height.value, limitR2=[R2limit_lower.value, R2limit_upper.value])
     df_failed = pd.read_csv(config.file['static_fail'])
     df_checked = pd.read_csv(config.file['static_checked_OK'])
-    # print(show_dialog.value)
-    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width  = '100%',
-                            title=""):
-        solara.ProgressLinear(on_click_more.pending)
-        if on_click_more.finished:
-            ans = on_click_more.value
-            solara.FigurePlotly(ans)
-            info_figure()
+    overlay(on_click_more)
+
     for t, f in images.items():
         with solara.Card():
             figdata = f
@@ -205,36 +199,56 @@ def close_dialog():
 
 info = solara.reactive("")
 @task
-def on_click(event):
+def on_click(event, kwds=None):
+    if kwds is None:
+        kwds = {i: event['device_state'][i] for i in ['ctrl', 'shift', 'alt']}
     group = event['points']['trace_indexes'][0]
     position = event['points']['point_indexes'][0]
     data = figdata['data'][group]['customdata'][position]
-    return click_figure(data, event)
+    return {'fig': click_figure(data, event, **kwds),
+            'event':event, 'kwds': kwds}
 
 @task
-def on_click_more(event):
-    # rich.print(event)
+def on_click_more(event, kwds=None):
+    if kwds is None:
+        kwds = {i: event['device_state'][i] for i in ['ctrl', 'shift', 'alt']}
     group = event['points']['trace_indexes'][0]
     position = event['points']['point_indexes'][0]
-    # rich.print(group, position)
     data = figdata['data'][group]['customdata'][position]
     day, tree, measurement, mt, pullNo, R, remark, indep, dep,  camera = list(data)
     data = [tree, mt, pullNo, indep, dep, measurement, camera, R, day ]
-    # rich.print(data)
-    return click_figure(data, event)
+    return {'fig': click_figure(data, event, **kwds),
+            'event':event, 'kwds': kwds}
 
-def click_figure(data,event):
+def overlay(task):
+    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width  = '100%',
+                            title=""):
+        solara.ProgressLinear(task.pending)
+        if task.finished:
+            ans = task.value['fig']
+            solara.FigurePlotly(ans)
+            info_figure
+            # solara.display(task.value['event'])
+            kwds=task.value['kwds']
+            def switch(kde, co):
+                kde[co] = not kde[co]
+                return kde
+            solara.Text("Switchers: ")
+            solara.Button(label = "Full time/Just pulling", on_click=lambda : task(task.value['event'],  kwds=switch(kwds,'ctrl')))
+            solara.Button(label = "x axis: Force/Time", on_click=lambda : task(task.value['event'], kwds=switch(kwds,'alt')))
+            solara.Button(label = "Points/Lines", on_click=lambda : task(task.value['event'], kwds=switch(kwds,'shift')))
+
+
+def click_figure(data,event, shift=False, ctrl=False, alt=False):
     tree, mt, pullNo, indep, dep, measurement, camera, R, day = list(data)
-    # rich.print(dep)
-    if event['device_state']['shift'] == True:
+    if shift == True:
         mode = 'markers'
     else:
         mode = 'lines'
     show_dialog.value = True
-
     if "_" in str(pullNo):
         pullNo = int(str(pullNo).split("_")[-1])
-    if event['device_state']['alt'] == True:
+    if alt == True:
         restricted = [.3,.9]
     else:
         restricted = None
@@ -244,7 +258,7 @@ def click_figure(data,event):
         subtitle = f"{dep}, {m.identify_major_minor[dep]}"
     else:
         subtitle = dep
-    if event['device_state']['ctrl'] == False:
+    if ctrl == False:
         pull = m.pullings[pullNo]
         df = pull.data
     else:
@@ -252,22 +266,11 @@ def click_figure(data,event):
             dep = m.identify_major_minor[dep]
         else:
             dep = "Elasto(90)"
-        # rich.print(dep)
-        # d_obj = static_pull.DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=mt,
-        #                                   optics=False, restricted=None)
-        # _ = d_obj._get_static_pulling_data(optics=False, restricted='get_all')
-        # _["Time"] = _.index
-        # parent_experiment = static_pull.DynatreeStaticMeasurement(tree=tree, measurement_type=mt, day=day, measurement=measurement)
-        # subdf = static_pull.DynatreeStaticPulling(_, tree=tree, measurement_type=mt,
-        #                               day=day, parent_experiment=parent_experiment,
-        #                               extra_columns={"blue": "Inclino(80)", "yellow": "Inclino(81)",
-        #                                              **d_obj.identify_major_minor})
-        # df = subdf.data
         df = m.data_pulling[[dep, "Force(100)"]]
 
 
     # rich.print(df.columns)
-    if event['device_state']['alt'] == True:
+    if alt == True:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df[["Force(100)"]].to_numpy().reshape(-1), y=df[[dep]].to_numpy().reshape(-1), mode='markers'))
         fig.update_layout(
@@ -329,15 +332,7 @@ def slope_trend():
     click_info()
     solara.FigurePlotly(fig, on_click = on_click)
     figdata = fig
-    # print(show_dialog.value)
-    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width  = '100%',
-                            title=""):
-        solara.ProgressLinear(on_click.pending)
-        if on_click.finished:
-            ans = on_click.value
-            solara.FigurePlotly(ans)
-            info_figure()
-            # solara.Info(ans)
+    overlay(on_click)
     solara.FileDownload(filtered_df.to_csv(), filename="tahovky_trend_I.csv")
     # solara.DataFrame(filtered_df.sort_values(by="Slope"))
     great_table = (
@@ -440,13 +435,7 @@ def slope_trend_more():
                     )
     figdata = fig
     click_info()
-    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width  = '100%',
-                            title=""):
-        solara.ProgressLinear(on_click.pending)
-        if on_click.finished:
-            ans = on_click.value
-            solara.FigurePlotly(ans)
-            info_figure()
+    overlay(on_click)
     solara.FigurePlotly(fig, on_click=on_click)
     with solara.Info():
         solara.Markdown(
