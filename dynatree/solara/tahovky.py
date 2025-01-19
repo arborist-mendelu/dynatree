@@ -144,9 +144,14 @@ def click_info():
     solara.Info(solara.Markdown( """
 * Kliknutí na tečku v grafu zobrazí časový průběh na senzoru a  časový průběh síly. Data jsou dointerpolovaná, 
   rovná čára znamená pravděpodobně chybějící dointerpolovaná data.
-* Se **shiftem** kreslí pomocí bodů, jinak pomocí čar. S **ctrl** kreslí celý experiment.
+* Se **shiftem** kreslí pomocí bodů, jinak pomocí čar. S **ctrl** kreslí celý experiment a data nejsou dointerpolovaná.
 * Výška obrázku je podle volby v levém sloupci, šířka je přes celé okno.
+* V obrázcích s trendem nejsou ručně vyhozená data (červeně v obrázku "hledání odlehlých").
 """, style={'color': 'inherit'}))
+
+def info_figure():
+    return
+    solara.Info("Ctrl click pro celý experiment, Shift+click pro tečky, Ctrl+Shift+click pro obojí.")
 
 @solara.component
 def prehled():
@@ -165,6 +170,7 @@ def prehled():
         if on_click_more.finished:
             ans = on_click_more.value
             solara.FigurePlotly(ans)
+            info_figure()
     for t, f in images.items():
         with solara.Card():
             figdata = f
@@ -206,19 +212,19 @@ def on_click(event):
 
 @task
 def on_click_more(event):
-    rich.print(event)
+    # rich.print(event)
     group = event['points']['trace_indexes'][0]
     position = event['points']['point_indexes'][0]
-    rich.print(group, position)
+    # rich.print(group, position)
     data = figdata['data'][group]['customdata'][position]
     day, tree, measurement, mt, pullNo, R, remark, indep, dep,  camera = list(data)
     data = [tree, mt, pullNo, indep, dep, measurement, camera, R, day ]
-    rich.print(data)
+    # rich.print(data)
     return click_figure(data, event)
 
 def click_figure(data,event):
     tree, mt, pullNo, indep, dep, measurement, camera, R, day = list(data)
-    rich.print(dep)
+    # rich.print(dep)
     if event['device_state']['shift'] == True:
         mode = 'markers'
     else:
@@ -228,28 +234,41 @@ def click_figure(data,event):
     if "_" in str(pullNo):
         pullNo = int(str(pullNo).split("_")[-1])
     restricted = None
-    fig = make_subplots(rows=2, cols=1, subplot_titles=(dep, "Force"))
     m = static_pull.DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=mt,
                                               optics=False, restricted=restricted)
+    if dep in ["blueMaj", "yellowMaj"]:
+        subtitle = f"{dep}, {m.identify_major_minor[dep]}"
+    else:
+        subtitle = dep
+    fig = make_subplots(rows=2, cols=1, subplot_titles=(subtitle, "Force"), shared_xaxes=True)
     if event['device_state']['ctrl'] == False:
         pull = m.pullings[pullNo]
         df = pull.data
     else:
-        d_obj = static_pull.DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=mt,
-                                          optics=False, restricted=None)
-        _ = d_obj._get_static_pulling_data(optics=False, restricted='get_all')
-        _["Time"] = _.index
-        parent_experiment = static_pull.DynatreeStaticMeasurement(tree=tree, measurement_type=mt, day=day, measurement=measurement)
-        subdf = static_pull.DynatreeStaticPulling(_, tree=tree, measurement_type=mt,
-                                      day=day, parent_experiment=parent_experiment,
-                                      extra_columns={"blue": "Inclino(80)", "yellow": "Inclino(81)",
-                                                     **d_obj.identify_major_minor})
-        df = subdf.data
+        if dep in ["blueMaj", "yellowMaj"]:
+            dep = m.identify_major_minor[dep]
+        else:
+            dep = "Elasto(90)"
+        # rich.print(dep)
+        # d_obj = static_pull.DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=mt,
+        #                                   optics=False, restricted=None)
+        # _ = d_obj._get_static_pulling_data(optics=False, restricted='get_all')
+        # _["Time"] = _.index
+        # parent_experiment = static_pull.DynatreeStaticMeasurement(tree=tree, measurement_type=mt, day=day, measurement=measurement)
+        # subdf = static_pull.DynatreeStaticPulling(_, tree=tree, measurement_type=mt,
+        #                               day=day, parent_experiment=parent_experiment,
+        #                               extra_columns={"blue": "Inclino(80)", "yellow": "Inclino(81)",
+        #                                              **d_obj.identify_major_minor})
+        # df = subdf.data
+        df = m.data_pulling[[dep, "Force(100)"]]
 
-    rich.print(df.columns)
+
+    # rich.print(df.columns)
     fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[[dep]].to_numpy().reshape(-1), mode=mode), row=1, col=1)
     fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[["Force(100)"]].to_numpy().reshape(-1), mode=mode), row=2, col=1)
     fig.update_layout(title=f"{data}", height=s.height.value)
+    fig.update_layout(hovermode = "x unified")
+    fig.update_traces(xaxis='x2')
     return fig
 
 figdata = None
@@ -297,6 +316,7 @@ def slope_trend():
         if on_click.finished:
             ans = on_click.value
             solara.FigurePlotly(ans)
+            info_figure()
             # solara.Info(ans)
     solara.FileDownload(filtered_df.to_csv(), filename="tahovky_trend_I.csv")
     # solara.DataFrame(filtered_df.sort_values(by="Slope"))
@@ -406,6 +426,7 @@ def slope_trend_more():
         if on_click.finished:
             ans = on_click.value
             solara.FigurePlotly(ans)
+            info_figure()
     solara.FigurePlotly(fig, on_click=on_click)
     with solara.Info():
         solara.Markdown(
