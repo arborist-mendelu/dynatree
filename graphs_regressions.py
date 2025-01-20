@@ -87,7 +87,10 @@ def read_data():
     df["state"] = df["leaves"].astype(str) + ", " +df["reductionNo"].astype(str)
     return df
 
-def main(remove_failed=False, trees=None, width=1000, height=500, limitR2=None):
+
+def main(remove_failed=False, trees=None, width=1000, height=500, limitR2=None, include_statics=True,
+         include_dynamics=True):
+    print(include_statics, include_dynamics)
     df = read_data()
     if limitR2 is not None:
         df = df[df["R^2"] >= limitR2[0]]
@@ -99,8 +102,13 @@ def main(remove_failed=False, trees=None, width=1000, height=500, limitR2=None):
         df = df[~df["failed"]]
     f_ans = {}
     df["kamera"] = df["kamera"].astype(str)
+    if not include_statics:
+        df = df[df['measurement'] != "M01"]
+    if not include_dynamics:
+        df = df[df['measurement'] == "M01"]
     for tree in trees:
-        fig = make_subplots(rows=1, cols=3, subplot_titles=("M/Inclino_Camera", "M/Inclino_No_Camera", "M_Elasto/Elasto-strain"))
+        fig = make_subplots(rows=1, cols=3,
+                            subplot_titles=("M/Inclino_Camera", "M/Inclino_No_Camera", "M_Elasto/Elasto-strain"))
         f = {}
         masks = [
             # zip(["M","M","M_Elasto"],["blueMaj", "yellowMaj", "Elasto-strain"])
@@ -109,17 +117,18 @@ def main(remove_failed=False, trees=None, width=1000, height=500, limitR2=None):
             (df["Independent"] == "M") & (df["kamera"] == "False") & (df["tree"] == tree),
             (df["Independent"] == "M_Elasto") & (df["Dependent"] == "Elasto-strain") & (df["tree"] == tree)
         ]
-        for I,mask in enumerate(masks):
+        for I, mask in enumerate(masks):
             f[I] = px.strip(df[mask],
-                         x="state", y="Slope", #points="all", 
-                         hover_data=['day', 'tree', "measurement", "type", "pullNo", "R^2", "reason", "Independent","Dependent", "kamera"], width=1000, height=500,
-                         color='evaluation',   
-                         template =  "plotly_white",
-                         # color_discrete_sequence=px.colors.qualitative.Set1,  # Nastavení barevné škály
-                         )
+                            x="state", y="Slope",  # points="all",
+                            hover_data=['day', 'tree', "measurement", "type", "pullNo", "R^2", "reason", "Independent",
+                                        "Dependent", "kamera"], width=1000, height=500,
+                            color='evaluation',
+                            template="plotly_white",
+                            # color_discrete_sequence=px.colors.qualitative.Set1,  # Nastavení barevné škály
+                            )
             for trace in f[I]['data']:
-                fig.add_trace(trace, row=1, col=1+I)
+                fig.add_trace(trace, row=1, col=1 + I)
         fig.update_layout(height=height, width=width, title_text=f"Tree {tree}")
-        fig.update_layout(showlegend=False, template =  "plotly_white",)
+        fig.update_layout(showlegend=False, template="plotly_white", )
         f_ans[tree] = fig
     return f_ans

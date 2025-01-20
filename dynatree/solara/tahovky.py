@@ -72,6 +72,8 @@ force_interval = solara.reactive("None")
 tab_index = solara.reactive(0)
 subtab_index = solara.reactive(0)
 subtab_indexB = solara.reactive(0)
+include_statics = solara.reactive(True)
+include_dynamics = solara.reactive(True)
 
 
 # data_from_url = solara.reactive(False)
@@ -160,10 +162,13 @@ def prehled():
 
     with solara.Sidebar():
         limitR2()
+        limit_statics_dynamics()
     click_info()
         # with solara.Row():
     #     solara.Button("Update Page", on_click=ShowRegressionsHere)
-    images = graphs_regressions.main(trees=[s.tree.value], width=s.width.value, height=s.height.value, limitR2=[R2limit_lower.value, R2limit_upper.value])
+    images = graphs_regressions.main(trees=[s.tree.value], width=s.width.value, height=s.height.value,
+                                     limitR2=[R2limit_lower.value, R2limit_upper.value],
+                                     include_statics=include_statics.value, include_dynamics=include_dynamics.value)
     df_failed = pd.read_csv(config.file['static_fail'])
     df_checked = pd.read_csv(config.file['static_checked_OK'])
     overlay(on_click_more)
@@ -303,9 +308,13 @@ def slope_trend():
 
     with solara.Sidebar():
         limitR2()
-
+        limit_statics_dynamics()
     df = static_lib_pull_comparison.df_all_M
     df = df[(df["R^2"]>=R2limit_lower.value) & (df["R^2"]<=R2limit_upper.value)]
+    if not include_statics.value:
+        df = df[df['measurement'] != "M01"]
+    if not include_dynamics.value:
+        df = df[df['measurement'] == "M01"]
     dependent = probe.value
     if dependent == "Elasto-strain":
         filtered_df = df[df['Dependent'] == dependent]
@@ -406,7 +415,6 @@ def slope_trend_more():
 
     with solara.Sidebar():
         limitR2()
-
     with solara.Row():
         with solara.Tooltip(solara.Markdown(
                 """
@@ -416,7 +424,7 @@ def slope_trend_more():
                 * Můžeš vybrat "kamera" a sledovat časový vývoj inklinometru v dané pozici stromu.
                 """, style={'color': 'white'})):
             solara.Text("Barevně separovat podle ⓘ:")
-            solara.ToggleButtonsSingle(value=color, values=["pullNo", "kamera"])
+            solara.ToggleButtonsSingle(value=color, values=["pullNo", "kamera", "category"])
     df = (pd.read_csv("../outputs/anotated_regressions_static.csv", index_col=0)
           .pipe(lambda x: x[x['lower_cut'] == 0.3])
           .pipe(lambda x: x[x['tree'] == s.tree.value])
@@ -432,13 +440,16 @@ def slope_trend_more():
           )
     df = df[(df["R^2"]>=R2limit_lower.value) & (df["R^2"]<=R2limit_upper.value)]
     df["pullNo"] = df["measurement"].astype(str) + "_" + df["pullNo"].astype(str)
+    df["category"] = "dynamics"
+    df.loc[df["measurement"]=="M01", "category"] = "statics"
     if color.value == "pullNo":
         df = df.pipe(lambda x: x[x['measurement'] == 'M01'])
     # breakpoint()
     df["Slope × 1000"] = df["Slope"] * 1000
     df["id"] = df["day"] + " " + df["type"]
     fig = plx.strip(df, x="id", y="Slope × 1000", template="plotly_white",
-                    color=color.value, hover_data=["tree", "type", "pullNo", "Independent", "Dependent", "measurement", "kamera", "R^2", "day"],
+                    color=color.value,
+                    hover_data=["tree", "type", "pullNo", "Independent", "Dependent", "measurement", "kamera", "R^2", "day"],
                     title=f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship.",
                     width=s.width.value, height=s.height.value
                     )
@@ -558,6 +569,10 @@ def limitR2():
         solara.InputFloat("lower bound", value=R2limit_lower)
         solara.InputFloat("upper bound", value=R2limit_upper)
 
+def limit_statics_dynamics():
+    with solara.Card(title="Include statics/dynamics?"):
+        solara.Checkbox(label="Statics (M01)", value=include_statics)
+        solara.Checkbox(label="Dynamics (M02, M03, ...)", value=include_dynamics)
 
 @solara.component
 def Page():
