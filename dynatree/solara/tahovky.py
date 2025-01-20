@@ -158,6 +158,8 @@ def info_figure():
 def prehled():
     global figdata
 
+    with solara.Sidebar():
+        limitR2()
     click_info()
         # with solara.Row():
     #     solara.Button("Update Page", on_click=ShowRegressionsHere)
@@ -298,6 +300,10 @@ figdata = None
 @solara.component
 def slope_trend():
     global figdata
+
+    with solara.Sidebar():
+        limitR2()
+
     df = static_lib_pull_comparison.df_all_M
     df = df[(df["R^2"]>=R2limit_lower.value) & (df["R^2"]<=R2limit_upper.value)]
     dependent = probe.value
@@ -397,6 +403,9 @@ def ostyluj(subdf, skip_last_column=False, skip_how_many=1):
 @solara.component
 def slope_trend_more():
     global figdata
+
+    with solara.Sidebar():
+        limitR2()
 
     with solara.Row():
         with solara.Tooltip(solara.Markdown(
@@ -617,8 +626,6 @@ def Page():
 
                             # solara.FigurePlotly(figPl)                
                 with solara.lab.Tab("Hledání odlehlých"):
-                    with solara.Sidebar():
-                        limitR2()
                     with solara.Column():
                         try:
                             prehled()
@@ -630,12 +637,9 @@ def Page():
                             with solara.Card():
                                 solara.Markdown("**Variable** is elastometer or one of inclinometers (Camera and NoCamera). ")
                                 solara.ToggleButtonsSingle(value=probe, values=probes, on_value=slope_trend)
-                            limitR2()
                     with solara.Column():
                         slope_trend()
                 with solara.lab.Tab("Trend (oba inklinometry)"):
-                    with solara.Sidebar():
-                        limitR2()
                     with solara.Column():
                         slope_trend_more()
         with solara.lab.Tab("Všechny stromy", icon_name="mdi-file-table-box-multiple-outline"):
