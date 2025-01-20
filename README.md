@@ -1,5 +1,12 @@
 # Zpracování dat
 
+## Vzorce a zdroje
+
+* Načítání dat pro tahovky (paramemtry lana atd): dynatree.static_pull, class DynatreeStaticPulling, funkce `__init__`
+* Výpočet momentů: dynatree.static_pull, class DynatreeStaticPulling, funkce `_process_forces`
+* Identifikace inklinometru Major/minor: dynatree.dynatree, class DynatreeMeasurement, funkce `identify_major_minor`
+
+
 
 ## Instalace
 
