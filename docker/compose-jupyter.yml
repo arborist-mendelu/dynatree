@@ -1,0 +1,13 @@
+services:
+    dynatree_solara:
+        volumes:
+            - /home/marik/babice/data:/dynatree/data
+            - /home/marik/babice/outputs:/dynatree/outputs
+            - ./solara_log:/root/solara_log
+        network_mode: bridge
+        working_dir: /dynatree/scripts
+        ports:
+            - 8888:8888
+        image: dynatree:latest
+        command: ["jupyter-lab", "--allow-root", "--ip=0.0.0.0"]
+        build: .
