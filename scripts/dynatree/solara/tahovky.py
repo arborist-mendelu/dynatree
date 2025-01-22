@@ -43,6 +43,16 @@ import seaborn as sns
 
 import config
 
+cmap = {
+    'normal': 'steelblue',
+    'den': 'cadetblue',
+    'noc': 'black', 
+    'afterro':'purple', 
+    'afterro2':'orange',
+    'mokro':'blue',
+    'mraz':'red',
+    }
+
 tightcols = {'gap': "0px"}
 regression_settings = {'color': 'gray', 'alpha': 0.5}
 
@@ -340,6 +350,7 @@ def slope_trend():
         points='all',
         width=s.width.value,
         height=s.height.value,
+        color_discrete_map= cmap
         # box=True,
         # symbol='measurement',      # Tvar bodů na základě sloupce 'measurement'
     )
@@ -502,6 +513,7 @@ def normalized_slope():
         height=s.height.value, width=s.width.value,
         title=f"Tree {s.tree.value}",
         template="plotly_white",
+        color_discrete_map= cmap
     )
     fig.update_layout(xaxis=dict(type='category'))
     solara.FigurePlotly(fig)
