@@ -1,5 +1,6 @@
 # Docker pro dynatree
 
-* Stáhni z githubu zdrojové kódy dynatree-optika
+* Zkopíruj sem adresář scripts
 * Sežeň si data. Podívej se do compose souborů, jak mají být umístěná.
+  Typicky do ../data atd.
 * Spusť `make solara` nebo `make jupyter`

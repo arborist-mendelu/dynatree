@@ -6,7 +6,8 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN apt-get install unzip && unzip dynatree-optika-master.zip &&  mv dynatree-optika-master scripts && mkdir /root/solara_log
+COPY scripts ./scripts/
+RUN mkdir /root/solara_log
 
 EXPOSE 8700
 WORKDIR scripts
