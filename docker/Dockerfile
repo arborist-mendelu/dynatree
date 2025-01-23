@@ -2,10 +2,9 @@ FROM python:3.12
 
 WORKDIR /dynatree
 
-COPY requirements.txt ./
+COPY docker/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
 COPY scripts ./scripts/
 RUN mkdir /root/solara_log
 

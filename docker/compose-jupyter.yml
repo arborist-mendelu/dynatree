@@ -10,4 +10,6 @@ services:
             - 8888:8888
         image: dynatree:latest
         command: ["jupyter-lab", "--allow-root", "--ip=0.0.0.0"]
-        build: .
+        build: 
+            context: ..
+            dockerfile: ./docker/Dockerfile
