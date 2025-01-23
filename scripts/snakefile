@@ -40,6 +40,9 @@ rule create_cached_images:
         "../outputs/FFT_acc_average_graph.zip"
     shell:
         """
+	mkdir -p ../outputs/cache
+	mkdir -p ../outputs/cache_FFTavg
+	mkdir -p ../outputs/fft_images_knocks
         python -m dynatree_summary.acc_knocks_merge_data
         cp ./dynatree_summary/FFT_acc_knock.csv ../outputs/FFT_acc_knock.csv
         python -m dynatree_summary.acc_cached_images
