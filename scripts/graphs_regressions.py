@@ -90,8 +90,10 @@ def read_data():
 
 def main(remove_failed=False, trees=None, width=1000, height=500, limitR2=None, include_statics=True,
          include_dynamics=True):
-    print(include_statics, include_dynamics)
     df = read_data()
+    df.loc[df["evaluation"] > 0, "data"] = "failed"
+    df.loc[(df["evaluation"] == 0) & (df["measurement"] == "M01"), "data"] = "static"
+    df.loc[(df["evaluation"] == 0) & (df["measurement"] != "M01"), "data"] = "dynamic"
     if limitR2 is not None:
         df = df[df["R^2"] >= limitR2[0]]
         df = df[df["R^2"] <= limitR2[1]]
@@ -122,13 +124,13 @@ def main(remove_failed=False, trees=None, width=1000, height=500, limitR2=None, 
                             x="state", y="Slope",  # points="all",
                             hover_data=['day', 'tree', "measurement", "type", "pullNo", "R^2", "reason", "Independent",
                                         "Dependent", "kamera"], width=1000, height=500,
-                            color='evaluation',
+                            color='data',
                             template="plotly_white",
-                            # color_discrete_sequence=px.colors.qualitative.Set1,  # Nastavení barevné škály
+                            color_discrete_map={'static':'blue', 'dynamic':'green', 'failed':'red'},  # Nastavení barevné škály
                             )
             for trace in f[I]['data']:
                 fig.add_trace(trace, row=1, col=1 + I)
         fig.update_layout(height=height, width=width, title_text=f"Tree {tree}")
-        fig.update_layout(showlegend=False, template="plotly_white", )
+        fig.update_layout(showlegend=True, template="plotly_white", )
         f_ans[tree] = fig
     return f_ans

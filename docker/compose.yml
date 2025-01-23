@@ -1,9 +1,8 @@
 services:
     dynatree_solara:
         volumes:
-            - /home/marik/babice/data:/dynatree/data
-            - /home/marik/babice/outputs:/dynatree/outputs
-            - ./solara_log:/root/solara_log
+            - ../data:/dynatree/data
+            - ../outputs:/dynatree/outputs
         network_mode: bridge
         working_dir: /dynatree/scripts
         ports:
