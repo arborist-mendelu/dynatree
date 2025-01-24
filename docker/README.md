@@ -10,7 +10,7 @@ You can look at [short demo](https://youtu.be/Li-lFeIvkjs).
   ```
   sudo apt install -y docker.io docker-compose-v2 make
   ```
-* Extract the data with inputs (experimental data) and precomputed script outputs. Use for example NAS disc of our depertement. The data are located
+* Extract the data with inputs (experimental data) and precomputed script outputs. Use for example NAS disc of our department. The data are located
   at `/ERC/Mereni_Babice_zpracovani/` directory, files 
   `data_babice.tar.gz` and `outputs_dynatree.tar.gz`. Extract into `dynatree/data` and `dynatree/outputs`.
   You can use symlinks. Create also symlink `public` to `outputs` if you want to download files from solara. 
