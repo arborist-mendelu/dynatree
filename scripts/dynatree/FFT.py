@@ -28,7 +28,6 @@ from parallelbar import progress_map
 # memory_limit = 5 * 1024 * 1024 * 1024  # v bajtech
 # resource.setrlimit(resource.RLIMIT_AS, (memory_limit, memory_limit))
 
-length = 60  # the length of the signal
 # todo: make min and max different for each tree
 peak_min = .1 # do not look for the peak smaller than this value
 peak_max = 0.7 # do not look for the peak larger than this value
@@ -36,10 +35,11 @@ df_manual_release_times = pd.read_csv(config.file["FFT_release"], index_col=[0,1
 
 class DynatreeSignal:
 
-    def __init__(self, measurement, signal_source, release_source=None, dt=None, tukey=0.1):
+    def __init__(self, measurement, signal_source, release_source=None, dt=None, tukey=0.1, duration=60):
         self.measurement = measurement
         self.signal_source = signal_source
         self.release_source = release_source
+        self.duration = duration
         if self.release_source is None:
             self.release_source = signal_source
         if self.measurement.data_pulling is not None and self.signal_source in self.measurement.data_pulling.columns:
@@ -81,14 +81,20 @@ class DynatreeSignal:
         """
         Returns interpolated signal with zero mean value
         multiplied by tukey window.
+
+        >>> import dynatree.dynatree as dtree
+        >>> import dynatree.FFT as dfft
+        >>> m = dtree.DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M02")
+        >>> s = dfft.DynatreeSignal(m, signal_source="Elasto(90)", duration = 180, tukey=0.1)
+        >>> s.signal.plot()
         """
         if self.signal_full is None:
             return
-        signal = self.signal_full.loc[self.release_time:self.release_time+length]
+        signal = self.signal_full.loc[self.release_time:self.release_time+self.duration]
         signal = signal.dropna()
         signal = signal - signal.mean()
         
-        newindex = np.arange(signal.index[0], signal.index[0]+60+self.dt,self.dt)
+        newindex = np.arange(signal.index[0], signal.index[0]+self.duration+self.dt,self.dt)
         newdata = np.interp(newindex, signal.index, signal.values, right=0)
         
         signal = pd.Series(index=newindex, data=newdata, name=signal.name)
