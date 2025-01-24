@@ -1,6 +1,6 @@
 # DYNATREE in Docker
 
-It is possible to run computations on Dynatree scripts in Docker container. The container gives you access to the data and scripts either in Solara environment or in Jupyter notebook.
+It is possible to work with DYNATREE scripts in a Docker container. The container gives you access to the data and scripts either in Solara environment or in Jupyter notebook.
 You can look at [short demo](https://youtu.be/Li-lFeIvkjs).
 
 ## Instructions
@@ -10,7 +10,8 @@ You can look at [short demo](https://youtu.be/Li-lFeIvkjs).
   ```
   sudo apt install -y docker.io docker-compose-v2 make
   ```
-* Extract the data with inputs (experimental data) and precomputed script outputs. Use for example NAS disc `/ERC/Mereni_Babice_zpracovani/` and files 
+* Extract the data with inputs (experimental data) and precomputed script outputs. Use for example NAS disc of our depertement. The data are located
+  at `/ERC/Mereni_Babice_zpracovani/` directory, files 
   `data_babice.tar.gz` and `outputs_dynatree.tar.gz`. Extract into `dynatree/data` and `dynatree/outputs`.
   You can use symlinks. Create also symlink `public` to `outputs` if you want to download files from solara. 
   Create also `jupyter` symlink or directory to keep the Jupyter notebooks created inside Docker.
