@@ -1,8 +1,11 @@
 # DYNATREE in Docker
 
 It is possible to run computations on Dynatree scripts in Docker container. The container gives you access to the data and scripts either in Solara environment or in Jupyter notebook.
+You can look at [short demo](https://youtu.be/Li-lFeIvkjs).
 
-* Downoad the scripts. Use `git clone` or download zip file from github.
+## Instructions
+
+* Download the scripts. Use `git clone` or download zip file from github.
 * Install docker, docker-compose and make.
   ```
   sudo apt install -y docker.io docker-compose-v2 make
