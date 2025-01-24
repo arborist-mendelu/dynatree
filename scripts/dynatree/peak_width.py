@@ -8,16 +8,16 @@ from dynatree import find_measurements
 from dynatree.dynatree import logger
 import logging
 import pandas as pd
-import sys
 from tqdm import tqdm
+import sys
 
 logger.setLevel(logging.INFO)
 
 peak_min = .1 # do not look for the peak smaller than this value
 peak_max = 0.7 # do not look for the peak larger than this value
 
-def find_peak_width(m):
-    s = DynatreeSignal(m, "Elasto(90)")
+def find_peak_width(m, save_fig=False, sensor="Elasto(90)"):
+    s = DynatreeSignal(m, sensor=sensor)
 
     frequencies = s.fft.index
     amplitudes = s.fft.values
@@ -30,26 +30,29 @@ def find_peak_width(m):
     a = _[0]-1
     b = _[-1]+1
 
-
     def zero(a):
         return frequencies[a]- (amplitudes[a]-treshold)*(frequencies[a+1]-frequencies[a])/(amplitudes[a+1]-amplitudes[a])
 
     ans = (-zero(a) + zero(b-1))/amax
 
-    fig, ax = plt.subplots()
-    ax.plot(frequencies, amplitudes, "o-", label="FFT")
-    plt.hlines(threshold, xmin=zero(a), xmax=zero(b-1), color='red', label="1/sqrt(2)*MAX")
-    ax.set(yscale='log', ylim=(threshold/20, amax*2), xlim = (0.15,0.8),
-           xlabel="freq/Hz", ylabel="Amplitude Elasto",
-          title=f"{m}")
-    ax.grid()
-    ax.legend()
-    return {'width':ans, 'figure':fig}
+    if save_fig:
+        fig, ax = plt.subplots()
+        ax.plot(frequencies, amplitudes, "o-", label="FFT")
+        plt.hlines(threshold, xmin=zero(a), xmax=zero(b-1), color='red', label="1/sqrt(2)*MAX")
+        ax.set(yscale='log', ylim=(threshold/20, amax*2), xlim = (0.15,0.8),
+               xlabel="freq/Hz", ylabel=f"Amplitude {sensor}",
+              title=f"{m}")
+        ax.grid()
+        ax.legend()
+        plt.savefig(f"figs_peak_width/{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}_{sensor}.png")
+        plt.close()
+
+    return {'width':ans}
 
 def process_row(row):
     date, tree, measurement, measurement_type, optics, day = row
     m = DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type)
-    return find_peak_width(m)
+    return find_peak_width(m, save_fig=True)
 
 
 if __name__ == '__main__':
@@ -76,15 +79,21 @@ if __name__ == '__main__':
         matplotlib.use('Agg')
     out = {}
 
+    col_order = ["day","type", "tree", "measurement", "probe"]
     df_failed = pd.read_csv("csv/FFT_failed.csv")
-    df_failed = df_failed[df_failed["probe"]=="Elasto(90)"]
-    df_failed = ["_".join(i) for i in df_failed.values[:,:4]]
+    df_failed = df_failed[col_order]
+    # df_failed = df_failed[df_failed["probe"]=="Elasto(90)"]
+    # df_failed = ["_".join(i) for i in df_failed.values[:,:4]]
 
 
     df = find_measurements.get_all_measurements(method='all', type='all')
     df = df[df["measurement"] != "M01"]
+    df = df.drop("optics", axis=1).drop_duplicates()[col_order[:-1]]
     #df = df[df["type"] != "noc"]
     #df = df[df["type"] != "den"]
+    print(df_failed)
+    print(df)
+    sys.exit()
 
     pbar = tqdm(total=len(df))
     for i,row in df.iterrows():
@@ -98,8 +107,6 @@ if __name__ == '__main__':
         try:
             ans = process_row(row)
             out[tuple(row[:4])] = ans['width']
-            plt.savefig(f"figs_peak_width/{row['date']}_{row['type']}_{row['tree']}_{row['measurement']}.png")
-            plt.close()
         except:
             print(f"Row {row} failed.")
 
