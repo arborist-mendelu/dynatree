@@ -96,7 +96,7 @@ def Page():
             """
             ## Notes from measurements
             
-            Notes are extracted from the file `Popis_Babice_VSE_13082024.xlsx`.
+            Notes are extracted from the file `Popis_Babice_VSE.xlsx`.
             The measurements with no notes are dropped. 
             The table is created automatically by snakemake file. The table does not contain
             data annotated by another label than "Measurement:".

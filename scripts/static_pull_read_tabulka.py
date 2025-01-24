@@ -9,7 +9,7 @@ Created on Tue Sep 10 05:59:28 2024
 import pandas as pd
 from dynatree.dynatree import datapath
 
-df = pd.read_excel(f"{datapath}/Popis_Babice_VSE_09012025.xlsx", sheet_name="Hromadna tabulka")
+df = pd.read_excel(f"{datapath}/Popis_Babice_VSE.xlsx", sheet_name="Hromadna tabulka")
 
 
 # Funkce pro doplnění nuly a převod na datum ve formátu YYYY-MM-DD

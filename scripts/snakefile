@@ -55,7 +55,7 @@ rule measurement_notes:
     Extract the measurement notes from the xlsx file.
     """        
     input:
-        xls = "../data/Popis_Babice_VSE_13082024.xlsx",
+        xls = "../data/Popis_Babice_VSE.xlsx",
     output:
         "csv_output/measurement_notes.csv"
     shell:
@@ -224,11 +224,11 @@ rule static_pulling_error_propagation:
     
 rule angle_from_measurement:
     """
-    Extract angle values from "../data/Popis_Babice_VSE_13082024.xlsx"
+    Extract angle values from "../data/Popis_Babice_VSE.xlsx"
     Used by static pulling.
     """
     input:
-        xls = "../data/Popis_Babice_VSE_13082024.xlsx",
+        xls = "../data/Popis_Babice_VSE.xlsx",
         script = "static_pull_read_tabulka.py"
     output:
         csv = "csv/angles_measured.csv"

@@ -10,7 +10,7 @@ import pandas as pd
 from dynatree.dynatree import datapath
 
 # Načtení Excel souboru
-file_path = f'{datapath}/Popis_Babice_VSE_13082024.xlsx'  # Změň cestu k souboru
+file_path = f'{datapath}/Popis_Babice_VSE.xlsx'  # Změň cestu k souboru
 xls = pd.ExcelFile(file_path)
 
 
