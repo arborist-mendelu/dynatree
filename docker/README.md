@@ -9,18 +9,19 @@ It is possible to run computations on Dynatree scripts in Docker container. The 
   ```
 * Extract the data with inputs (experimental data) and precomputed script outputs. Use for example NAS disc `/ERC/Mereni_Babice_zpracovani/` and files 
   `data_babice.tar.gz` and `outputs_dynatree.tar.gz`. Extract into `dynatree/data` and `dynatree/outputs`.
-  The directory structure shold look like this. You can use symlinks.
+  You can use symlinks. Create also symlink `public` to `outputs` if you want to download files from solara.
   ```
   cd dynatree
   ln -s /my/directory/data .
   ln -s /my/directory/outputs .
+  ln -s outputs public
   ```
   The directory structure should look like this
   ```
   dynatree
-  ├── data -> ../babice/data
+  ├── data -> /my/directory/data
   ├── docker
-  ├── outputs -> ../babice/outputs
+  ├── outputs -> /my/directory/outputs
   ├── public -> outputs
   └── scripts
   ```
