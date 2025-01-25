@@ -59,9 +59,9 @@ fft_boxplots_for_probes_tukey.pdf: Obrázky, přehled. Srovnání frekvencí, ja
 
 welch.pdf: Obrázky, welchovo spektrum. Obrázky s wechovým spektrem. Jdou vidět peaky při vyšší frekvenci, hladší křivka než z FFT.
 
-peak_width.csv: Šířka peaku pro Elasto(90).
+peak_width.csv: Šířka peaku pro Elasto(90), blueMaj, yellowMaj, acc y a z.
 
-peak_width.zip: Zazipované obrázky ke stanovení šířky peaku pro Elasto(90) a konfigurace kromě den a noc.
+peak_width.zip: Zazipované obrázky ke stanovení šířky peaku z předchozího csv.
 
 ---
 title: "To všecho odnés čas?"

@@ -21,16 +21,29 @@ peak_min = .1 # do not look for the peak smaller than this value
 peak_max = 0.7 # do not look for the peak larger than this value
 
 def find_peak_width(m, save_fig=False, sensor="Elasto(90)"):
+    """
+    Return relative width of the peak (the width divided by the peak frequency)
+    If save_fig is True, return a dictionary with a figure and peak width.
+    If save_fig is False (default), return only a peak width.
+    Otherwise the save_fig is assumed to be a name of the figure.
+
+    :param m: Dynatree measurement object
+    :param save_fig: True to return the figure, string to save the figure into a file
+    :param sensor: sensor to use
+    :return: the relative peak width and optionally a picture of the peak and the width.
+    """
+    if sensor in ["blueMaj", "yellowMaj"]:
+        sensor = m.identify_major_minor[sensor]
     s = DynatreeSignal(m, signal_source=sensor)
     logger.info(f"Finding peak width. {m} {sensor}")
     try:
         fft = s.fft
     except:
         logger.error(f"Failed fft for {m} {sensor}")
-        return []
+        return None
     if fft is None:
         logger.error(f"Failed {m} {sensor}")
-        return []
+        return None
 
     frequencies = s.fft.index
     amplitudes = s.fft.values
@@ -48,18 +61,23 @@ def find_peak_width(m, save_fig=False, sensor="Elasto(90)"):
 
     ans = (-zero(a) + zero(b-1))/amax
 
-    if save_fig:
-        fig, ax = plt.subplots()
-        ax.plot(frequencies, amplitudes, "o-", label="FFT")
-        plt.hlines(threshold, xmin=zero(a), xmax=zero(b-1), color='red', label="1/sqrt(2)*MAX")
-        ax.set(yscale='log', ylim=(threshold/20, amax*2), xlim = (0.15,0.8),
-               xlabel="freq/Hz", ylabel=f"Amplitude {sensor}",
-              title=f"{m.day}, {m.measurement_type}, {m.tree}, {m.measurement}, {sensor}")
-        ax.grid()
-        ax.legend()
-        plt.savefig(f"../temp/figs_peak_width/{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}_{sensor}.png")
-        plt.close()
+    if save_fig == False:
+        return ans
 
+    fig, ax = plt.subplots()
+    ax.plot(frequencies, amplitudes, "o-", label="FFT")
+    plt.hlines(threshold, xmin=zero(a), xmax=zero(b-1), color='red', label="1/sqrt(2)*MAX")
+    ax.set(yscale='log', ylim=(threshold/20, amax*2), xlim = (0.15,0.8),
+           xlabel="freq/Hz", ylabel=f"Amplitude {sensor}",
+          title=f"{m.day}, {m.measurement_type}, {m.tree}, {m.measurement}, {sensor}")
+    ax.grid()
+    ax.legend()
+
+    if save_fig == True:
+        return {'fig': fig, 'width': ans}
+    else:
+        plt.savefig(save_fig)
+        plt.close()
     return ans
 
 def process_row(row):
@@ -67,7 +85,11 @@ def process_row(row):
     m = DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type)
     if not m.is_optics_available:
         probes = [i for i in probes if "Pt" not in i]
-    ans = [list(row[:-1])+ [sensor, find_peak_width(m, save_fig=True, sensor=sensor)] for sensor in probes]
+    prefix = source_dir
+    ans = [list(row[:-1])+ [
+        sensor,
+        find_peak_width(m, save_fig=f"{prefix}/peak_{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}_{sensor}.png", sensor=sensor)
+        ] for sensor in probes]
     return ans
 
 
@@ -103,7 +125,7 @@ if __name__ == '__main__':
     df = df[df["measurement"] != "M01"]
     df = df.drop("optics", axis=1).drop_duplicates()[col_order[:-1]]
 
-    probes = ["Elasto(90)", #"blueMaj", "yellowMaj",
+    probes = ["Elasto(90)", "blueMaj", "yellowMaj",
               "Pt3", "Pt4"] + [f"a0{i}_{j}" for i in [1, 2, 3, 4] for j in ["y","z"]]
 
     # Rozšíření tabulky df pro každou hodnotu 'probe'
@@ -119,10 +141,6 @@ if __name__ == '__main__':
         .agg({'probe': list})
     )
     df = df_result.copy()
-
-    # out = [process_row(row) for i, row in df.iterrows()]
-    # data = sum(out, [])
-    # pd.DataFrame(data)
 
     out = progress_map(process_row, [i for _,i in df.iterrows()], chunk_size=100)
     out = sum(out,[])
