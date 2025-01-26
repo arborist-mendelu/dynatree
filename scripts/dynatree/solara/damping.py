@@ -44,7 +44,7 @@ def resetuj(x=None):
     draw_images()
 
 data_source = solara.reactive("Pt3")
-data_sources = ["Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "a01_y", "a02_y", "a03_y"]
+data_sources = ["Elasto(90)", "Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "a01_y", "a02_y", "a03_y"]
 
 @solara.component()
 def Page():
@@ -94,8 +94,10 @@ def draw_images(temp=None):
             solara.Warning(f"No optics for {m}")
             print(f"Neni optika pro {m}")
             return None
-    else:
+    elif "A" in data_source.value:
         dt = 0.0002
+    else:
+        dt = 0.12
     sig = DynatreeDampedSignal(m, data_source.value, dt=dt)
 
     data = {}
