@@ -11,8 +11,12 @@ import pandas as pd
 from dynatree import dynatree
 import logging
 import time
+import config
 
 dynatree.logger.setLevel(dynatree.logger_level)
+dynatree.logger.setLevel(logging.ERROR)
+
+df_failed = pd.read_csv(config.file["FFT_failed"]).values.tolist()
 
 loading_start = time.time()
 def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1 ):
@@ -43,25 +47,31 @@ def resetuj(x=None):
     s.measurement.set(s.measurements.value[0])
     draw_images()
 
-data_source = solara.reactive("Pt3")
-data_sources = ["Elasto(90)", "Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "a01_y", "a02_y", "a03_y"]
+data_source = solara.reactive("Elasto(90)")
+data_sources = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "a01_y", "a02_y", "a03_y"]
 
 @solara.component()
 def Page():
     solara.Title("DYNATREE: Damping")
     solara.Style(s.styles_css)
     with solara.Sidebar():
-        with solara.Sidebar():
-            s.Selection(exclude_M01=True,
-                        optics_switch=False,
-                        day_action=resetuj,
-                        tree_action=resetuj,
-                        measurement_action=draw_images
-                        )
-            # s.ImageSizes()
-            with solara.Card(title="Signal source choice"):
-                solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value = draw_images)
+        s.Selection(exclude_M01=True,
+                    optics_switch=False,
+                    day_action=resetuj,
+                    tree_action=resetuj,
+                    measurement_action=draw_images
+                    )
+        # s.ImageSizes()
+    damping_graphs()
+
+@solara.component()
+def damping_graphs():
+    with solara.Sidebar():
+        with solara.Card(title="Signal source choice"):
+            solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value = draw_images)
     solara.ProgressLinear(draw_images.pending)
+    coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
+    solara.Markdown(f"## {" ".join(coords)}")
     if draw_images.not_called:
         draw_images()
         return
@@ -77,7 +87,9 @@ def Page():
     if ans is None:
         solara.Error("Nekde nastala chyba")
     else:
-        df, fig = ans
+        df, fig, marked_failed = ans
+        if marked_failed == True:
+            solara.Error(f"This measurement was marked as failed.")
         solara.display(df)
         solara.FigurePlotly(fig)
 
@@ -88,6 +100,7 @@ def draw_images(temp=None):
                             measurement=s.measurement.value,
                             measurement_type=s.method.value)
     dynatree.logger.info(f"Measurement {m}")
+    signal_source = data_source.value
     if "Pt" in data_source.value:
         dt = 0.01
         if not m.is_optics_available:
@@ -98,6 +111,8 @@ def draw_images(temp=None):
         dt = 0.0002
     else:
         dt = 0.12
+        if data_source.value in ["blueMaj", "yellowMaj"]:
+            pass
     sig = DynatreeDampedSignal(m, data_source.value, dt=dt)
 
     data = {}
@@ -114,7 +129,7 @@ def draw_images(temp=None):
 
     envelope, k, q, freq, fft_data = sig.wavelet_envelope.values()
     maximum = np.argmax(envelope)
-    dynatree.logger.info(f"Maximum obalky je pro {maximum}")
+    # dynatree.logger.info(f"Maximum obalky je pro {maximum}")
     fig = draw_signal_with_envelope(sig, fig, envelope, k=k, q=q, row=3)
     data['wavelets'] = [k]
 
@@ -128,6 +143,6 @@ def draw_images(temp=None):
 
     df = pd.DataFrame.from_dict(data)
     df.index = ['k']
-    return df,fig
+    return df, fig, sig.marked_failed
 
 dynatree.logger.info(f"File damping.py loaded in {time.time()-loading_start} sec.")

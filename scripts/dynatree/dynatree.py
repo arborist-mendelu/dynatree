@@ -23,7 +23,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 logFile = config.file['logfile']
 
-logger_level = logging.INFO
+logger_level = logging.ERROR
 
 try:
     logger = logging.getLogger("lib_dynatree")
@@ -641,6 +641,8 @@ class DynatreeMeasurement:
                     shift = df.loc[value:,key].dropna().iloc[0]
                     df[key] = df[key] - shift
         df = DynatreeMeasurement.add_total_angle(df,self.identify_major_minor)
+        for i in ["blueMaj", "yellowMaj"]:
+            df[i] = df[self.identify_major_minor[i]]
         return df
     
     @cached_property

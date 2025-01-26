@@ -1,4 +1,4 @@
-from dynatree.FFT import DynatreeSignal
+from dynatree.FFT import DynatreeSignal, df_failed_FFT_experiments
 import numpy as np
 from scipy.signal import hilbert
 from scipy.signal import savgol_filter
@@ -10,7 +10,10 @@ import plotly.graph_objects as go
 from dynatree.dynatree import timeit
 import time
 from dynatree.dynatree import logger
+import logging
 from scipy.signal import decimate
+import rich
+logger.setLevel(logging.ERROR)
 
 class DynatreeDampedSignal(DynatreeSignal):
 
@@ -31,7 +34,8 @@ class DynatreeDampedSignal(DynatreeSignal):
         # Ořízni Series od první záporné hodnoty do konce
         data = data[first_negative_index:]
         data = data - data.mean()
-        # TODO: Pro akcelerometry se bere samplovani taky po 0.01? Proc?
+        # TODO: Pro akcelerometry se bere samplovani taky po 0.01? Jinak je Hilberova obalka i wavelet i
+        #       metoda pomoci maxim nepouzitelna.
         if "a0" in self.signal_source:
             self.dt = 0.01
             df = pd.DataFrame(decimate(data.values, 50))
@@ -40,6 +44,16 @@ class DynatreeDampedSignal(DynatreeSignal):
         self.damped_data = data
         self.damped_signal = data.values.reshape(-1)
         self.damped_time = data.index
+
+    @property
+    def marked_failed(self):
+        m = self.measurement
+        coords = [m.measurement_type, m.day, m.tree, m.measurement,
+                  self.signal_source]
+        test_failed = coords in df_failed_FFT_experiments.values.tolist()
+        logger.info(f"testing if failed {coords}")
+        return test_failed
+
 
     @property
     @timeit
@@ -54,7 +68,7 @@ class DynatreeDampedSignal(DynatreeSignal):
     def fit_maxima(self):
         distance = 50
         window_length = 100
-        if "Elasto" in self.signal_source:
+        if self.signal_source in ["Elasto(90)","blueMaj","yellowMaj"]:
             distance = 5
         if "a0" in self.signal_source:
             pass
@@ -103,7 +117,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         yf_r = 2.0 / N * np.abs(yf[0:N // 2])
         df_fft = pd.Series(index=xf_r, data=yf_r, name=self.damped_signal_interpolated.name)
         freq = xf_r[yf_r.argmax()]
-        logger.info(f"FFT finished in {time.time() - start}, peak is at frequency {freq} Hz")
+        # logger.info(f"FFT finished in {time.time() - start}, peak is at frequency {freq} Hz")
 
         def normalizace_waveletu(freq=0.2, dt=0.01):
             time = np.arange(0, 120, dt)
@@ -122,16 +136,16 @@ class DynatreeDampedSignal(DynatreeSignal):
         coef, freqs = pywt.cwt(data, scale, wavelet,
                                sampling_period=dt)
         coef = coef.reshape(-1)
-        logger.info(f"data.shape = {data.shape}, coef.shape = {coef.shape}")
-        logger.info(f"CWT finished in {time.time() - start}")
-        logger.info(f"wavelet normalize finished in {time.time() - start}, the norm is {wavlet_norm}")
+        # logger.info(f"data.shape = {data.shape}, coef.shape = {coef.shape}")
+        # logger.info(f"CWT finished in {time.time() - start}")
+        # logger.info(f"wavelet normalize finished in {time.time() - start}, the norm is {wavlet_norm}")
         coef = np.abs(coef) / wavlet_norm
         maximum = np.argmax(coef)
-        logger.info(f"""
-            Coef normalization finished in {time.time() - start}, 
-            maximal coefficient at {maximum}, data are {data.index[maximum:-maximum]}
-            and coef values are {coef[maximum:-maximum]} 
-            """)
+        # logger.info(f"""
+        #     Coef normalization finished in {time.time() - start},
+        #     maximal coefficient at {maximum}, data are {data.index[maximum:-maximum]}
+        #     and coef values are {coef[maximum:-maximum]}
+        #     """)
         try:
             k, q = np.polyfit(data.index[maximum:-maximum], np.log(coef[maximum:-maximum]), 1)
         except:
@@ -139,3 +153,11 @@ class DynatreeDampedSignal(DynatreeSignal):
         return {'data': pd.Series(coef, index=data.index), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft}
 
 
+def main():
+    from dynatree import find_measurements
+    df = find_measurements.get_all_measurements(method='all', type='all')
+    df = df[df["measurement"] != "M01"]
+    print (df)
+
+if __name__ == "__main__":
+    main()
