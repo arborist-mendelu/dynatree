@@ -9,6 +9,23 @@ Created on Wed May  1 17:24:26 2024
 import solara
 import yaml
 import os
+from datetime import datetime
+
+def get_file_modification_date(file_path):
+    """
+    Vrátí datum a čas poslední modifikace souboru.
+
+    :param file_path: Cesta k souboru
+    :return: Datum a čas poslední modifikace jako řetězec
+    """
+    try:
+        timestamp = os.path.getmtime(file_path)
+        modification_date = datetime.fromtimestamp(timestamp)
+        return modification_date.strftime('%Y-%m-%d %H:%M:%S')
+    except FileNotFoundError:
+        return "???"
+    except Exception as e:
+        return "???"
 
 # Funkce pro získání velikosti souboru v MB na 2 desetinná místa
 def velikost_souboru_v_mb(cesta_k_souboru):
@@ -61,7 +78,9 @@ def Page():
                                 solara.Button(
                                     label=f"Download ({velikost_souboru_v_mb('../outputs/'+k)})",
                                     attributes={"href": f"./static/public/{k}", "target": "_blank"}, color='primary')
-                                solara.Markdown(f"**{popis}.** {detail}")
+                                solara.Markdown(f"""
+**{popis}.** {detail} (*Version {get_file_modification_date('../outputs/'+k)}*)
+""")
 
 
     
