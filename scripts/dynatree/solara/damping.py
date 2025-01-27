@@ -77,11 +77,41 @@ def Page():
                 damping_graphs()
             except:
                 solara.Error("Some problem appeared")
-        with solara.lab.Tab("From FFT"):
+        with solara.lab.Tab("From FFT (images)"):
             # try:
             peak_width_graph()
+        with solara.lab.Tab("From FFT (tables)"):
+            # try:
+            peak_width_table()
         # except:
         #     solara.Error("Some problem appeared")
+
+gradient_axis = solara.reactive("Columns")
+gradient_axes = ["Rows", "Columns", "Table"]
+@solara.component
+def peak_width_table():
+    df = pd.read_csv(config.file['outputs/peak_width'])
+    df = df.pivot(index=df.columns[:4], columns="probe", values="width").drop(["a04_y", "a04_z"], axis=1)
+    trees = df.index.get_level_values('tree').drop_duplicates()
+
+
+    with solara.Card(title="Background gradient"):
+        solara.ToggleButtonsSingle(value=gradient_axis, values=gradient_axes)
+    if gradient_axis.value == "Rows":
+        axis = 0
+    elif gradient_axis.value == "Columns":
+        axis = 1
+    else:
+        axis = None
+    for tree in trees:
+        _ = (
+            df[df.index.get_level_values('tree') == tree]
+            .style.format(precision=3).background_gradient(axis=axis)
+            .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+            .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+        )
+        with solara.Card(title=f"Tree {tree}"):
+            solara.display(_)
 
 
 @solara.component
