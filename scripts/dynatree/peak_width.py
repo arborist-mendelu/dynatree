@@ -47,7 +47,7 @@ def find_peak_width(m, save_fig=False, sensor="Elasto(90)"):
 
     frequencies = s.fft.index
     amplitudes = s.fft.values
-    amplitudes[:10] = 0
+    amplitudes[:8] = 0
     threshold = np.max(amplitudes)/np.sqrt(2)
 
     amax = np.max(amplitudes)
