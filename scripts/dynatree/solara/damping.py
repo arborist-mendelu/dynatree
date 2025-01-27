@@ -4,7 +4,7 @@ import dynatree.solara.select_source as s
 from dynatree.dynatree import DynatreeMeasurement
 from dynatree.damping import DynatreeDampedSignal
 from dynatree.peak_width import find_peak_width
-from dynatree.FFT import df_failed_FFT_experiments
+from dynatree.FFT import df_failed_FFT_experiments, DynatreeSignal
 import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
@@ -114,7 +114,8 @@ def peak_width_graph():
                     return solara.Button(label=label, on_click=lambda x=None: open_dialog(target_probe, output=output))
 
                 # Vytvoření tlačítek
-                create_button("Show signal", target_probe, output='signal')
+                create_button("Show experiment", target_probe, output='experiment')
+                create_button("Show signal for FFT", target_probe, output='signal')
                 create_button("Show FFT spectrum", target_probe, output='fft')
 
                 # solara.Button(label="Show signal", on_click=lambda x=None: open_dialog(target_probe, output='signal'))
@@ -128,9 +129,10 @@ def peak_width_graph():
 def create_overlay():
     with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width='100%',
                             title=""):
-        solara.Info(f"target_probe")
         if open_dialog.finished:
-            solara.FigureMatplotlib(open_dialog.value)
+            ans = open_dialog.value
+            solara.Markdown(f"## {" ".join(ans['coords'])}")
+            solara.display(ans['data'])
 
 
 show_dialog = solara.reactive(False)
@@ -146,10 +148,14 @@ def open_dialog(probe, output):
                             measurement=s.measurement.value,
                             measurement_type=s.method.value)
     show_dialog.value = True
-    fig, ax = plt.subplots()
-    m.signal(senzor=probe).plot(ax=ax)
-    return fig
-
+    coords = [s.day.value, s.method.value, s.tree.value, s.measurement.value, probe]
+    if output=='experiment':
+        ans = m.signal(senzor=probe)
+        return {'coords':coords, 'data':ans}
+    sig = DynatreeSignal(m, signal_source=probe, tukey=0.1)
+    if output=='signal':
+        return {'coords':coords, 'data':sig.signal}
+    return {'coords':coords, 'data':sig.fft}
 
 def do_find_peaks():
     m = DynatreeMeasurement(day=s.day.value,
