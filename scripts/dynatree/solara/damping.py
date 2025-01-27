@@ -125,10 +125,24 @@ def peak_width_graph():
         f"Relative peak width (peak width at given height divided by the peak position). Click Plot/Replot for another measurement. It takes few seconds to draw all sensors.")
     solara.ProgressLinear(find_peak_widths.pending)
     if not find_peak_widths.finished:
+        with solara.v.Snackbar(
+                v_model=True,
+                timeout=5000,
+                # on_v_model=lambda *_: error.set(None),
+                left=False,
+                right=True,
+                top=True,
+                color="error",
+        ):
+            solara.Markdown("This computation may take some time",
+                            style={"--dark-color-text": "white", "--color-text": "white"})
+            # solara.Button(icon=True, icon_name="mdi-close", color="white")
         return
     with solara.Row(style={'flex-wrap': 'wrap'}):
         for target_probe, ans in zip(data_sources, find_peak_widths.value):
             coordsf = [s.method.value, s.day.value, s.tree.value, s.measurement.value, target_probe]
+            if ans is None:
+                continue
             with solara.Card(title=f"{target_probe}: {round(ans['width'], 4)}", style={'min-width': '150px'}):
                 if coordsf in df_failed_FFT_experiments.values.tolist():
                     solara.Error("This measurement has been marked as failed.")
