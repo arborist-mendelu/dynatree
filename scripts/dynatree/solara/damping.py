@@ -53,6 +53,9 @@ def resetuj(x=None):
     s.measurement.set(s.measurements.value[0])
     draw_images()
 
+def resetuj2(x=None):
+    s.measurement.set(s.measurements.value[0])
+    do_find_peaks()
 
 data_source = solara.reactive("Elasto(90)")
 data_sources = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "a01_y", "a02_y",
@@ -63,6 +66,7 @@ data_sources = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3", "Pt4", "a01_z", "a0
 def Page():
     solara.Title("DYNATREE: Damping")
     solara.Style(s.styles_css)
+    snack()
     with solara.lab.Tabs(lazy=True):
         with solara.lab.Tab("From amplitudes"):
             with solara.Sidebar():
@@ -81,9 +85,9 @@ def Page():
             with solara.Sidebar():
                 s.Selection(exclude_M01=True,
                             optics_switch=False,
-                            day_action=resetuj,
-                            tree_action=resetuj,
-                            measurement_action= lambda x=None:do_find_peaks()
+                            day_action=resetuj2,
+                            tree_action=resetuj2,
+                            measurement_action= do_find_peaks
                             )
                 # s.ImageSizes()
             try:
@@ -124,30 +128,38 @@ def peak_width_table():
         with solara.Card(title=f"Tree {tree}"):
             solara.display(_)
 
+snackbar_text_error = solara.reactive("")
+snackbar_color = solara.reactive("error")
+@solara.component
+def snack():
+    with solara.v.Snackbar(
+            v_model=snackbar_text_error.value != "",
+            timeout=5000,
+            on_v_model=lambda *_: snackbar_text_error.set(""),
+            left=False,
+            right=True,
+            top=True,
+            color=snackbar_color.value,
+    ):
+        solara.Markdown(snackbar_text_error.value,
+                        style={"--dark-color-text": "white", "--color-text": "white"})
+        solara.Button(icon=True, icon_name="mdi-close", color="white", on_click=lambda: snackbar_text_error.set(""))
+
 
 @solara.component
 def peak_width_graph():
+
     with solara.Sidebar():
         with solara.Column():
             solara.Button("Plot/Replot", on_click=do_find_peaks, color='primary')
+    if find_peak_widths.not_called:
+        do_find_peaks()
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value]
     solara.Markdown(f"## {" ".join(coords)}")
     solara.Info(
         f"Relative peak width (peak width at given height divided by the peak position). Click Plot/Replot for another measurement. It takes few seconds to draw all sensors.")
     solara.ProgressLinear(find_peak_widths.pending)
     if not find_peak_widths.finished:
-        with solara.v.Snackbar(
-                v_model=True,
-                timeout=5000,
-                # on_v_model=lambda *_: error.set(None),
-                left=False,
-                right=True,
-                top=True,
-                color="error",
-        ):
-            solara.Markdown("This computation may take some time",
-                            style={"--dark-color-text": "white", "--color-text": "white"})
-            # solara.Button(icon=True, icon_name="mdi-close", color="white")
         return
     with solara.Row(style={'flex-wrap': 'wrap'}):
         for target_probe, ans in zip(data_sources, find_peak_widths.value):
@@ -219,7 +231,8 @@ def open_dialog(probe, output):
         return {'coords':coords, 'data':sig.signal, 'output':output}
     return {'coords':coords, 'data':sig.fft, 'output':output}
 
-def do_find_peaks():
+def do_find_peaks(x=None):
+    snackbar_text_error.value = "This computation may take some time!"
     m = DynatreeMeasurement(day=s.day.value,
                             tree=s.tree.value,
                             measurement=s.measurement.value,
@@ -238,6 +251,7 @@ def damping_graphs():
         with solara.Card(title="Signal source choice"):
             solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
     solara.ProgressLinear(draw_images.pending)
+    solara.Warning("TODO: Nepoužívat příiš dlouhý časový interval.")
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
     solara.Markdown(f"## {" ".join(coords)}")
     if draw_images.not_called:
