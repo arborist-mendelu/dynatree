@@ -63,24 +63,37 @@ data_sources = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3", "Pt4", "a01_z", "a0
 def Page():
     solara.Title("DYNATREE: Damping")
     solara.Style(s.styles_css)
-    with solara.Sidebar():
-        s.Selection(exclude_M01=True,
-                    optics_switch=False,
-                    day_action=resetuj,
-                    tree_action=resetuj,
-                    measurement_action=draw_images
-                    )
-        # s.ImageSizes()
     with solara.lab.Tabs(lazy=True):
         with solara.lab.Tab("From amplitudes"):
+            with solara.Sidebar():
+                s.Selection(exclude_M01=True,
+                            optics_switch=False,
+                            day_action=resetuj,
+                            tree_action=resetuj,
+                            measurement_action=draw_images
+                            )
+                # s.ImageSizes()
             try:
                 damping_graphs()
             except:
                 solara.Error("Some problem appeared")
         with solara.lab.Tab("From FFT (images)"):
-            # try:
-            peak_width_graph()
+            with solara.Sidebar():
+                s.Selection(exclude_M01=True,
+                            optics_switch=False,
+                            day_action=resetuj,
+                            tree_action=resetuj,
+                            measurement_action= lambda x=None:do_find_peaks()
+                            )
+                # s.ImageSizes()
+            try:
+                peak_width_graph()
+            except:
+                pass
         with solara.lab.Tab("From FFT (tables)"):
+            with solara.Sidebar():
+                with solara.Card(title="Background gradient"):
+                    solara.ToggleButtonsSingle(value=gradient_axis, values=gradient_axes)
             # try:
             peak_width_table()
         # except:
@@ -95,8 +108,6 @@ def peak_width_table():
     trees = df.index.get_level_values('tree').drop_duplicates()
 
 
-    with solara.Card(title="Background gradient"):
-        solara.ToggleButtonsSingle(value=gradient_axis, values=gradient_axes)
     if gradient_axis.value == "Rows":
         axis = 1
     elif gradient_axis.value == "Columns":
