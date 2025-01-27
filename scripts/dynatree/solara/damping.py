@@ -89,12 +89,10 @@ def peak_width_graph():
     with solara.Sidebar():
         with solara.Column():
             solara.Button("Plot/Replot", on_click=do_find_peaks, color='primary')
-        # with solara.Card(title="Signal source choice"):
-        #     solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
-        #     solara.Checkbox(label="Show all probes", value=show_all_probes)
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value]
     solara.Markdown(f"## {" ".join(coords)}")
-    solara.Info(f"Relative peak width (peak width at given height divided by the peak position)")
+    solara.Info(
+        f"Relative peak width (peak width at given height divided by the peak position). Click Plot/Replot for another measurement. It takes few seconds to draw all sensors.")
     solara.ProgressLinear(find_peak_widths.pending)
     if not find_peak_widths.finished:
         return
@@ -127,12 +125,21 @@ def peak_width_graph():
 
 @solara.component
 def create_overlay():
-    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width='100%',
+    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width='90%',
                             title=""):
         if open_dialog.finished:
             ans = open_dialog.value
             solara.Markdown(f"## {" ".join(ans['coords'])}")
-            solara.display(ans['data'])
+            ans['data'].name = "value"
+            fig = ans['data'].plot(backend='plotly')
+            if ans['output'] == 'fft':
+                fig.update_layout(
+                    yaxis=dict(type="log"),
+                    xaxis=dict(range=[0, 10]),
+                    height=500,
+                    width=700,
+                )
+            solara.FigurePlotly(fig)
 
 
 show_dialog = solara.reactive(False)
@@ -151,11 +158,11 @@ def open_dialog(probe, output):
     coords = [s.day.value, s.method.value, s.tree.value, s.measurement.value, probe]
     if output=='experiment':
         ans = m.signal(senzor=probe)
-        return {'coords':coords, 'data':ans}
+        return {'coords':coords, 'data':ans, 'output':output}
     sig = DynatreeSignal(m, signal_source=probe, tukey=0.1)
     if output=='signal':
-        return {'coords':coords, 'data':sig.signal}
-    return {'coords':coords, 'data':sig.fft}
+        return {'coords':coords, 'data':sig.signal, 'output':output}
+    return {'coords':coords, 'data':sig.fft, 'output':output}
 
 def do_find_peaks():
     m = DynatreeMeasurement(day=s.day.value,
@@ -212,7 +219,6 @@ def draw_images(temp=None):
         dt = 0.01
         if not m.is_optics_available:
             solara.Warning(f"No optics for {m}")
-            print(f"Neni optika pro {m}")
             return None
     elif "A" in data_source.value:
         dt = 0.0002
