@@ -16,7 +16,7 @@ xls = pd.ExcelFile(file_path)
 
 def fix(sheet_name):
     n = sheet_name.split("_")
-    return f"{n[0][4:]}-{n[0][2:4]}-{n[0][:2]}_{n[1]}"
+    return f"{n[0][:4]}-{n[0][4:6]}-{n[0][6:8]}_{n[1]}"
 
 ansdata = {}
 # Iterace přes všechny listy v souboru
@@ -60,3 +60,5 @@ df = (df.loc[:,["day","tree","measurement","remark1","remark2"]]
           )
 
 df.to_csv("csv_output/measurement_notes.csv")
+
+print(df)

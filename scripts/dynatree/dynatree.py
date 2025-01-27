@@ -753,3 +753,25 @@ class DynatreeMeasurement:
         if self.measurement == "M01":
             return 0
         return self.data_pulling["Force(100)"].idxmax()
+
+    def signal(self, senzor="Elasto(90)"):
+        """
+
+        Parameters
+        ----------
+        senzor
+
+        Returns
+        -------
+        Looks for the sensor in data_pulling, data_optics_Pt34 and data_acc and returns
+        the corresponding columns. Returns None if no sensor is available.
+
+        """
+        if senzor in ["Pt3", "Pt4"]:
+            senzor = (senzor, "Y0")
+        ans = None
+        for i in [self.data_pulling, self.data_optics_pt34, self.data_acc]:
+            if senzor in i.columns:
+                ans = i[senzor]
+                break
+        return ans

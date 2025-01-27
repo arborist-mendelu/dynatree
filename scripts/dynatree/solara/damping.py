@@ -1,11 +1,10 @@
 import solara
 from solara.lab import task
-
 import dynatree.solara.select_source as s
 from dynatree.dynatree import DynatreeMeasurement
 from dynatree.damping import DynatreeDampedSignal
 from dynatree.peak_width import find_peak_width
-from dynatree.FFT import df_failed_FFT_experiments
+from dynatree.FFT import df_failed_FFT_experiments, DynatreeSignal
 import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
@@ -14,14 +13,17 @@ from dynatree import dynatree
 import logging
 import time
 import config
+import matplotlib.pyplot as plt
+from solara.lab.components.confirmation_dialog import ConfirmationDialog
 
 dynatree.logger.setLevel(dynatree.logger_level)
 dynatree.logger.setLevel(logging.ERROR)
 
 df_failed = pd.read_csv(config.file["FFT_failed"]).values.tolist()
-
 loading_start = time.time()
-def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1 ):
+
+
+def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1):
     signal, time = s.damped_signal.reshape(-1), s.damped_time
     x = time
     y = np.exp(k * time + q)
@@ -39,20 +41,25 @@ def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1 ):
             env_time = envelope.index
             envelope = envelope.values
         fig.add_trace(
-            go.Scatter(x=env_time, y=envelope, mode='lines', name='envelope', line=dict(color='red'), legendgroup='obalka'), row=row, col=col)
+            go.Scatter(x=env_time, y=envelope, mode='lines', name='envelope', line=dict(color='red'),
+                       legendgroup='obalka'), row=row, col=col)
         fig.add_trace(go.Scatter(x=env_time, y=-envelope, mode='lines', showlegend=False, line=dict(color='red'),
                                  legendgroup='obalka'), row=row, col=col)
     # fig.update_layout(xaxis_title="Čas", yaxis_title="Signál")
     return fig
 
+
 def resetuj(x=None):
     s.measurement.set(s.measurements.value[0])
     draw_images()
 
-data_source = solara.reactive("Elasto(90)")
-data_sources = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "a01_y", "a02_y", "a03_y"]
 
-@solara.component()
+data_source = solara.reactive("Elasto(90)")
+data_sources = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "a01_y", "a02_y",
+                "a03_y"]
+
+
+@solara.component
 def Page():
     solara.Title("DYNATREE: Damping")
     solara.Style(s.styles_css)
@@ -71,38 +78,110 @@ def Page():
             except:
                 solara.Error("Some problem appeared")
         with solara.lab.Tab("From FFT"):
-            try:
-                peak_width_graph()
-            except:
-                solara.Error("Some problem appeared")
+            # try:
+            peak_width_graph()
+        # except:
+        #     solara.Error("Some problem appeared")
 
-@solara.component()
+
+@solara.component
 def peak_width_graph():
     with solara.Sidebar():
-        with solara.Card(title="Signal source choice"):
-            solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
+        with solara.Column():
+            solara.Button("Plot/Replot", on_click=do_find_peaks, color='primary')
+    coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value]
+    solara.Markdown(f"## {" ".join(coords)}")
+    solara.Info(
+        f"Relative peak width (peak width at given height divided by the peak position). Click Plot/Replot for another measurement. It takes few seconds to draw all sensors.")
+    solara.ProgressLinear(find_peak_widths.pending)
+    if not find_peak_widths.finished:
+        return
+    with solara.Row(style={'flex-wrap': 'wrap'}):
+        for target_probe, ans in zip(data_sources, find_peak_widths.value):
+            coordsf = [s.method.value, s.day.value, s.tree.value, s.measurement.value, target_probe]
+            with solara.Card(title=f"{target_probe}: {round(ans['width'], 4)}", style={'min-width': '150px'}):
+                if coordsf in df_failed_FFT_experiments.values.tolist():
+                    solara.Error("This measurement has been marked as failed.")
+                try:
+                    solara.FigureMatplotlib(ans['fig'])
+                except:
+                    pass
+
+                def create_button(label, target_probe, output):
+                    # Funkce vytvoří tlačítko a uzavře aktuální hodnotu target_probe
+                    return solara.Button(label=label, on_click=lambda x=None: open_dialog(target_probe, output=output))
+
+                # Vytvoření tlačítek
+                create_button("Show experiment", target_probe, output='experiment')
+                create_button("Show signal for FFT", target_probe, output='signal')
+                create_button("Show FFT spectrum", target_probe, output='fft')
+
+                # solara.Button(label="Show signal", on_click=lambda x=None: open_dialog(target_probe, output='signal'))
+                # solara.Button(label="Show FFT spectrum",
+                #               on_click=lambda x=None: open_dialog(target_probe, output='fft'))
+    plt.close('all')
+    create_overlay()
+
+
+@solara.component
+def create_overlay():
+    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width='90%',
+                            title=""):
+        if open_dialog.finished:
+            ans = open_dialog.value
+            solara.Markdown(f"## {" ".join(ans['coords'])}")
+            ans['data'].name = "value"
+            fig = ans['data'].plot(backend='plotly')
+            if ans['output'] == 'fft':
+                fig.update_layout(
+                    yaxis=dict(type="log"),
+                    xaxis=dict(range=[0, 10]),
+                    height=500,
+                    width=700,
+                )
+            solara.FigurePlotly(fig)
+
+
+show_dialog = solara.reactive(False)
+
+
+def close_dialog():
+    show_dialog.value = False
+
+@task
+def open_dialog(probe, output):
     m = DynatreeMeasurement(day=s.day.value,
                             tree=s.tree.value,
                             measurement=s.measurement.value,
                             measurement_type=s.method.value)
-    ans = find_peak_width(m, sensor=data_source.value, save_fig=True)
+    show_dialog.value = True
+    coords = [s.day.value, s.method.value, s.tree.value, s.measurement.value, probe]
+    if output=='experiment':
+        ans = m.signal(senzor=probe)
+        return {'coords':coords, 'data':ans, 'output':output}
+    sig = DynatreeSignal(m, signal_source=probe, tukey=0.1)
+    if output=='signal':
+        return {'coords':coords, 'data':sig.signal, 'output':output}
+    return {'coords':coords, 'data':sig.fft, 'output':output}
 
-    coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
-    solara.Markdown(f"## {" ".join(coords)}")
-    coordsf = [s.method.value, s.day.value, s.tree.value, s.measurement.value, data_source.value]
-    if coordsf in df_failed_FFT_experiments.values.tolist():
-        solara.Error("This measurement has beee marked as failed.")
-    try:
-        solara.Info(f"Relative peak width (peak width at given height divided by the peak position)")
-        solara.Text(f"Value: {ans['width']} ")
-        solara.display(ans['fig'])
-    except:
-        pass
-@solara.component()
+def do_find_peaks():
+    m = DynatreeMeasurement(day=s.day.value,
+                            tree=s.tree.value,
+                            measurement=s.measurement.value,
+                            measurement_type=s.method.value)
+    find_peak_widths(m)
+
+
+@task
+def find_peak_widths(m):
+    return [find_peak_width(m, sensor=target_probe, save_fig=True) for target_probe in data_sources]
+
+
+@solara.component
 def damping_graphs():
     with solara.Sidebar():
         with solara.Card(title="Signal source choice"):
-            solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value = draw_images)
+            solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
     solara.ProgressLinear(draw_images.pending)
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
     solara.Markdown(f"## {" ".join(coords)}")
@@ -127,6 +206,7 @@ def damping_graphs():
         solara.display(df)
         solara.FigurePlotly(fig)
 
+
 @task
 def draw_images(temp=None):
     m = DynatreeMeasurement(day=s.day.value,
@@ -139,7 +219,6 @@ def draw_images(temp=None):
         dt = 0.01
         if not m.is_optics_available:
             solara.Warning(f"No optics for {m}")
-            print(f"Neni optika pro {m}")
             return None
     elif "A" in data_source.value:
         dt = 0.0002
@@ -168,7 +247,7 @@ def draw_images(temp=None):
     data['wavelets'] = [k]
 
     fig.update_layout(title=f"Proložení exponenciely pomocí několika metod",
-                      height = 800,
+                      height=800,
                       )
 
     fig.update_yaxes(title_text="Hilbert", row=1, col=1)
@@ -179,4 +258,5 @@ def draw_images(temp=None):
     df.index = ['k']
     return df, fig, sig.marked_failed
 
-dynatree.logger.info(f"File damping.py loaded in {time.time()-loading_start} sec.")
+
+dynatree.logger.info(f"File damping.py loaded in {time.time() - loading_start} sec.")
