@@ -98,9 +98,9 @@ def peak_width_table():
     with solara.Card(title="Background gradient"):
         solara.ToggleButtonsSingle(value=gradient_axis, values=gradient_axes)
     if gradient_axis.value == "Rows":
-        axis = 0
-    elif gradient_axis.value == "Columns":
         axis = 1
+    elif gradient_axis.value == "Columns":
+        axis = 0
     else:
         axis = None
     for tree in trees:
