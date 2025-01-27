@@ -66,9 +66,15 @@ def Page():
         # s.ImageSizes()
     with solara.lab.Tabs(lazy=True):
         with solara.lab.Tab("From amplitudes"):
-            damping_graphs()
+            try:
+                damping_graphs()
+            except:
+                solara.Error("Some problem appeared")
         with solara.lab.Tab("From FFT"):
-            peak_width_graph()
+            try:
+                peak_width_graph()
+            except:
+                solara.Error("Some problem appeared")
 
 @solara.component()
 def peak_width_graph():
