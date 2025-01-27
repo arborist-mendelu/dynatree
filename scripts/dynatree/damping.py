@@ -13,7 +13,9 @@ from dynatree.dynatree import logger
 import logging
 from scipy.signal import decimate
 import rich
+import config
 logger.setLevel(logging.ERROR)
+
 
 class DynatreeDampedSignal(DynatreeSignal):
 
@@ -153,11 +155,32 @@ class DynatreeDampedSignal(DynatreeSignal):
         return {'data': pd.Series(coef, index=data.index), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft}
 
 
-def main():
+def get_measurement_table():
     from dynatree import find_measurements
     df = find_measurements.get_all_measurements(method='all', type='all')
     df = df[df["measurement"] != "M01"]
-    print (df)
+
+    probes = ["Elasto(90)", "blueMaj", "yellowMaj",
+              "Pt3", "Pt4"] + [f"a0{i}_{j}" for i in [1, 2, 3, 4] for j in ["y","z"]]
+
+    # Rozšíření tabulky df pro každou hodnotu 'probe'
+    df_expanded = df.loc[df.index.repeat(len(probes))].copy()
+    df_expanded['probe'] = probes * len(df)
+
+    df_failed = pd.read_csv(config.file['FFT_failed'])
+    # Odstranění řádků, které se již nachází v df_failed
+    df_result = df_expanded.merge(df_failed, how='left', on=['day', 'type', 'tree', 'measurement', 'probe'],
+                                  indicator=True)
+    df_result ["failed"] = df_result["_merge"] == "both"
+    df = df_result.drop("_merge", axis=1).copy()
+
+    df = df_result.copy()
+    df = df[~((df["probe"].isin(["Pt3","Pt4"])) & (df["optics"]==False))]
+    return (df)
+
+def main():
+    df = get_measurement_table()
+    print(df.head())
 
 if __name__ == "__main__":
     main()

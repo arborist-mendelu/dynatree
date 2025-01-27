@@ -4,6 +4,7 @@ from solara.lab import task
 import dynatree.solara.select_source as s
 from dynatree.dynatree import DynatreeMeasurement
 from dynatree.damping import DynatreeDampedSignal
+from dynatree.peak_width import find_peak_width
 import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
@@ -62,7 +63,25 @@ def Page():
                     measurement_action=draw_images
                     )
         # s.ImageSizes()
-    damping_graphs()
+    with solara.lab.Tabs(lazy=True):
+        with solara.lab.Tab("From amplitudes"):
+            damping_graphs()
+        with solara.lab.Tab("From FFT"):
+            peak_width_graph()
+
+@solara.component()
+def peak_width_graph():
+    with solara.Sidebar():
+        with solara.Card(title="Signal source choice"):
+            solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
+    m = DynatreeMeasurement(day=s.day.value,
+                            tree=s.tree.value,
+                            measurement=s.measurement.value,
+                            measurement_type=s.method.value)
+    ans = find_peak_width(m, sensor=data_source.value, save_fig=True)
+    solara.Info(f"Ralative peak width (peak width at given height divided by the peak position)")
+    solara.Text(f"Value: {ans['width']} ")
+    solara.display(ans['fig'])
 
 @solara.component()
 def damping_graphs():
