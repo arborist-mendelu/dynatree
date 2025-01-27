@@ -5,6 +5,7 @@ import dynatree.solara.select_source as s
 from dynatree.dynatree import DynatreeMeasurement
 from dynatree.damping import DynatreeDampedSignal
 from dynatree.peak_width import find_peak_width
+from dynatree.FFT import df_failed_FFT_experiments
 import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
@@ -79,7 +80,13 @@ def peak_width_graph():
                             measurement=s.measurement.value,
                             measurement_type=s.method.value)
     ans = find_peak_width(m, sensor=data_source.value, save_fig=True)
-    solara.Info(f"Ralative peak width (peak width at given height divided by the peak position)")
+
+    coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
+    solara.Markdown(f"## {" ".join(coords)}")
+    coordsf = [s.method.value, s.day.value, s.tree.value, s.measurement.value, data_source.value]
+    if coordsf in df_failed_FFT_experiments.values.tolist():
+        solara.Error("This measurement has beee marked as failed.")
+    solara.Info(f"Relative peak width (peak width at given height divided by the peak position)")
     solara.Text(f"Value: {ans['width']} ")
     solara.display(ans['fig'])
 
