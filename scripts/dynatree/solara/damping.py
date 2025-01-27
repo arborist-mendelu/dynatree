@@ -92,10 +92,12 @@ def peak_width_graph():
     coordsf = [s.method.value, s.day.value, s.tree.value, s.measurement.value, data_source.value]
     if coordsf in df_failed_FFT_experiments.values.tolist():
         solara.Error("This measurement has beee marked as failed.")
-    solara.Info(f"Relative peak width (peak width at given height divided by the peak position)")
-    solara.Text(f"Value: {ans['width']} ")
-    solara.display(ans['fig'])
-
+    try:
+        solara.Info(f"Relative peak width (peak width at given height divided by the peak position)")
+        solara.Text(f"Value: {ans['width']} ")
+        solara.display(ans['fig'])
+    except:
+        pass
 @solara.component()
 def damping_graphs():
     with solara.Sidebar():
