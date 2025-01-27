@@ -23,7 +23,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         super().__init__(*args, **kwargs)
         data = self.signal_full
         data = data.dropna()
-        data = data - data[0]
+        data = data - data.iloc[0]
         if damped_start_time is not None:
             start_signal = damped_start_time
         else:
