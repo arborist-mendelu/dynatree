@@ -261,10 +261,16 @@ def damping_graphs():
         solara.Error("Nekde nastala chyba")
     else:
         df, fig, marked_failed = ans
+        background_color = 'transparent'
         if marked_failed == True:
             solara.Error(f"This measurement was marked as failed.")
-        solara.display(df)
-        solara.FigurePlotly(fig)
+            background_color = '#f8d7da'
+        with solara.Card(style={'background-color': background_color}):
+            solara.display(df)
+            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',  # Pozadí celého plátna
+                              #plot_bgcolor='rgba(0,0,0,0)'
+                              )
+            solara.FigurePlotly(fig)
 
 
 @task
@@ -291,21 +297,21 @@ def draw_images(temp=None):
 
     data = {}
     fig = make_subplots(rows=3, cols=1, shared_xaxes='all', shared_yaxes='all')
-    envelope, k, q = sig.hilbert_envelope.values()
+    envelope, k, q, R2 = sig.hilbert_envelope.values()
     fig = draw_signal_with_envelope(sig, fig, envelope, k, q, row=1)
-    data['hilbert'] = [k]
+    data['hilbert'] = [k, R2]
 
-    peaks, k, q = sig.fit_maxima(maxpoints=10, skip=1).values()
+    peaks, k, q, R2 = sig.fit_maxima(maxpoints=10, skip=1).values()
     fig = draw_signal_with_envelope(sig, fig, k=k, q=q, row=2)
     fig.add_trace(go.Scatter(x=peaks.index, y=peaks.values.reshape(-1),
                              mode='markers', name='peaks', line=dict(color='red')), row=2, col=1)
-    data['extrema'] = [k]
+    data['extrema'] = [k, R2]
 
-    envelope, k, q, freq, fft_data = sig.wavelet_envelope.values()
+    envelope, k, q, freq, fft_data, R2 = sig.wavelet_envelope.values()
     maximum = np.argmax(envelope)
     # dynatree.logger.info(f"Maximum obalky je pro {maximum}")
     fig = draw_signal_with_envelope(sig, fig, envelope, k=k, q=q, row=3)
-    data['wavelets'] = [k]
+    data['wavelets'] = [k, R2]
 
     fig.update_layout(title=f"Proložení exponenciely pomocí několika metod",
                       height=800,
@@ -316,7 +322,7 @@ def draw_images(temp=None):
     fig.update_yaxes(title_text="Wavelet", row=3, col=1)
 
     df = pd.DataFrame.from_dict(data)
-    df.index = ['k']
+    df.index = ['k','R^2']
 
     return df, fig, sig.marked_failed
 

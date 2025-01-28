@@ -13,6 +13,8 @@ from dynatree.dynatree import logger
 import logging
 from scipy.signal import decimate
 import config
+from scipy.stats import linregress
+
 logger.setLevel(logging.ERROR)
 
 
@@ -64,9 +66,11 @@ class DynatreeDampedSignal(DynatreeSignal):
         signal = signal[:int(30/self.dt)]
         time = time[:int(30/self.dt)]
         amplitude_envelope = np.abs(hilbert(signal))
-        k, q = np.polyfit(time[1:-1],
-                          np.log(amplitude_envelope[1:-1]), 1)
-        return {'data': amplitude_envelope, 'k': k, 'q': q}
+        k, q, R2, p_value, std_err = linregress(
+            time[1:-1],
+            np.log(amplitude_envelope[1:-1])
+                   )
+        return {'data': amplitude_envelope, 'k': k, 'q': q, 'R2': R2}
 
     # @property
     @timeit
@@ -86,10 +90,12 @@ class DynatreeDampedSignal(DynatreeSignal):
             maxpoints = len(peaks)
         peaks = peaks[skip:maxpoints]
 
-        k, q = np.polyfit(self.damped_time[peaks],
-                          np.log(np.abs(self.damped_signal[peaks])), 1)
+        k, q, R2, p_value, std_err = linregress(
+            self.damped_time[peaks],
+            np.log(np.abs(self.damped_signal[peaks]))
+        )
 
-        return {'peaks': self.damped_data.iloc[peaks], 'k': k, 'q': q}
+        return {'peaks': self.damped_data.iloc[peaks], 'k': k, 'q': q, 'R2': R2}
 
     @property
     @timeit
@@ -156,10 +162,12 @@ class DynatreeDampedSignal(DynatreeSignal):
         #     and coef values are {coef[maximum:-maximum]}
         #     """)
         try:
-            k, q = np.polyfit(data.index[maximum:-maximum], np.log(coef[maximum:-maximum]), 1)
+            k, q, R2, p_value, std_err = linregress(
+                data.index[maximum:-maximum], np.log(coef[maximum:-maximum])
+            )
         except:
-            k, q = 0, 0
-        return {'data': pd.Series(coef, index=data.index), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft}
+            k, q, R2 = None, None, None
+        return {'data': pd.Series(coef[maximum:-maximum], index=data.index[maximum:-maximum]), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft, 'R2': R2}
 
 
 def get_measurement_table():
