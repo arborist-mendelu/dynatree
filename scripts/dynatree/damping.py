@@ -65,19 +65,21 @@ class DynatreeDampedSignal(DynatreeSignal):
                           np.log(amplitude_envelope[:-1]), 1)
         return {'data': amplitude_envelope, 'k': k, 'q': q}
 
-    @property
+    # @property
     @timeit
-    def fit_maxima(self):
+    def fit_maxima(self, maxpoints = np.inf):
         distance = 50
         window_length = 100
         if self.signal_source in ["Elasto(90)","blueMaj","yellowMaj"]:
-            distance = 5
+            distance = 4
         if "a0" in self.signal_source:
             pass
             # distance = 50*100
             # window_length = 100*50
         smooth_signal = savgol_filter(self.damped_signal, window_length, 2)
         peaks, _ = find_peaks(np.abs(smooth_signal), distance=distance)
+        peaks, _ = find_peaks(np.abs(self.damped_signal), distance=distance)
+        # peaks = peaks.iloc[:maxpoints]
 
         k, q = np.polyfit(self.damped_time[peaks],
                           np.log(np.abs(self.damped_signal[peaks])), 1)
