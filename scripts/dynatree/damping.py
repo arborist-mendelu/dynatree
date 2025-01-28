@@ -12,7 +12,6 @@ import time
 from dynatree.dynatree import logger
 import logging
 from scipy.signal import decimate
-import rich
 import config
 logger.setLevel(logging.ERROR)
 
@@ -60,14 +59,18 @@ class DynatreeDampedSignal(DynatreeSignal):
     @property
     @timeit
     def hilbert_envelope(self):
-        amplitude_envelope = np.abs(hilbert(self.damped_signal))
-        k, q = np.polyfit(self.damped_time[:-1],
-                          np.log(amplitude_envelope[:-1]), 1)
+        signal = self.damped_signal_interpolated.values
+        time = self.damped_signal_interpolated.index
+        signal = signal[:int(30/self.dt)]
+        time = time[:int(30/self.dt)]
+        amplitude_envelope = np.abs(hilbert(signal))
+        k, q = np.polyfit(time[1:-1],
+                          np.log(amplitude_envelope[1:-1]), 1)
         return {'data': amplitude_envelope, 'k': k, 'q': q}
 
     # @property
     @timeit
-    def fit_maxima(self, maxpoints = np.inf):
+    def fit_maxima(self, skip=0, maxpoints = None):
         distance = 50
         window_length = 100
         if self.signal_source in ["Elasto(90)","blueMaj","yellowMaj"]:
@@ -79,7 +82,9 @@ class DynatreeDampedSignal(DynatreeSignal):
         smooth_signal = savgol_filter(self.damped_signal, window_length, 2)
         peaks, _ = find_peaks(np.abs(smooth_signal), distance=distance)
         peaks, _ = find_peaks(np.abs(self.damped_signal), distance=distance)
-        # peaks = peaks.iloc[:maxpoints]
+        if (maxpoints is None) or (maxpoints > len(peaks)):
+            maxpoints = len(peaks)
+        peaks = peaks[skip:maxpoints]
 
         k, q = np.polyfit(self.damped_time[peaks],
                           np.log(np.abs(self.damped_signal[peaks])), 1)
