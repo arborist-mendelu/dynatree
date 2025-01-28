@@ -42,6 +42,9 @@ def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1):
             dynatree.logger.info("Series to data in envelope function")
             env_time = envelope.index
             envelope = envelope.values
+        if isinstance(envelope, list):
+            env_time = envelope[0]
+            envelope = envelope[1]
         fig.add_trace(
             go.Scatter(x=env_time, y=envelope, mode='lines', name='envelope', line=dict(color='red'),
                        legendgroup='obalka'), row=row, col=col)
@@ -240,7 +243,7 @@ def damping_graphs():
         with solara.Card(title="Signal source choice"):
             solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
     solara.ProgressLinear(draw_images.pending)
-    solara.Warning("TODO: Nepoužívat příiš dlouhý časový interval. Opravit hledání peaků (optika a akcelerometry).")
+    solara.Warning("TODO: Nepoužívat příiš dlouhý časový interval. Opravit hledání peaků a další parametry pro optiku a akcelerometry.")
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
     solara.Markdown(f"## {" ".join(coords)}")
     # if current['from_amplitudes'] != coords:

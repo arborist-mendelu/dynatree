@@ -66,11 +66,11 @@ class DynatreeDampedSignal(DynatreeSignal):
         signal = signal[:int(30/self.dt)]
         time = time[:int(30/self.dt)]
         amplitude_envelope = np.abs(hilbert(signal))
-        k, q, R2, p_value, std_err = linregress(
-            time[1:-1],
-            np.log(amplitude_envelope[1:-1])
-                   )
-        return {'data': amplitude_envelope, 'k': k, 'q': q, 'R2': R2}
+        start, end = 20,-20
+        x = time[start:end]
+        y = amplitude_envelope[start:end]
+        k, q, R2, p_value, std_err = linregress(x, np.log(y))
+        return {'data': [x,y], 'k': k, 'q': q, 'R2': R2}
 
     # @property
     @timeit
