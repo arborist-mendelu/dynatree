@@ -2,6 +2,7 @@ import solara
 from solara.lab import task
 import dynatree.solara.select_source as s
 from dynatree.dynatree import DynatreeMeasurement
+from dynatree.dynatree import timeit
 from dynatree.damping import DynatreeDampedSignal
 from dynatree.peak_width import find_peak_width
 from dynatree.FFT import df_failed_FFT_experiments, DynatreeSignal
@@ -15,6 +16,7 @@ import time
 import config
 import matplotlib.pyplot as plt
 from solara.lab.components.confirmation_dialog import ConfirmationDialog
+from dynatree.solara.snackbar import show_snack, snack
 
 dynatree.logger.setLevel(dynatree.logger_level)
 dynatree.logger.setLevel(logging.ERROR)
@@ -103,6 +105,7 @@ def Page():
         # except:
         #     solara.Error("Some problem appeared")
 
+current = {'from_amplitudes': None, 'from_fft': None}
 gradient_axis = solara.reactive("Columns")
 gradient_axes = ["Rows", "Columns", "Table"]
 @solara.component
@@ -128,37 +131,21 @@ def peak_width_table():
         with solara.Card(title=f"Tree {tree}"):
             solara.display(_)
 
-snackbar_text_error = solara.reactive("")
-snackbar_color = solara.reactive("error")
-@solara.component
-def snack():
-    with solara.v.Snackbar(
-            v_model=snackbar_text_error.value != "",
-            timeout=5000,
-            on_v_model=lambda *_: snackbar_text_error.set(""),
-            left=False,
-            right=True,
-            top=True,
-            color=snackbar_color.value,
-    ):
-        solara.Markdown(snackbar_text_error.value,
-                        style={"--dark-color-text": "white", "--color-text": "white"})
-        solara.Button(icon=True, icon_name="mdi-close", color="white", on_click=lambda: snackbar_text_error.set(""))
-
-
 @solara.component
 def peak_width_graph():
-
+    global current
     with solara.Sidebar():
         with solara.Column():
             solara.Button("Plot/Replot", on_click=do_find_peaks, color='primary')
-    if find_peak_widths.not_called:
-        do_find_peaks()
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value]
+    if current['from_fft'] != coords:
+        current['from_fft'] = coords
+        do_find_peaks()
     solara.Markdown(f"## {" ".join(coords)}")
     solara.Info(
         f"Relative peak width (peak width at given height divided by the peak position). Click Plot/Replot for another measurement. It takes few seconds to draw all sensors.")
     solara.ProgressLinear(find_peak_widths.pending)
+
     if not find_peak_widths.finished:
         return
     with solara.Row(style={'flex-wrap': 'wrap'}):
@@ -232,7 +219,7 @@ def open_dialog(probe, output):
     return {'coords':coords, 'data':sig.fft, 'output':output}
 
 def do_find_peaks(x=None):
-    snackbar_text_error.value = "This computation may take some time!"
+    show_snack(text = "This computation may take some time!")
     m = DynatreeMeasurement(day=s.day.value,
                             tree=s.tree.value,
                             measurement=s.measurement.value,
@@ -241,22 +228,26 @@ def do_find_peaks(x=None):
 
 
 @task
+@timeit
 def find_peak_widths(m):
     return [find_peak_width(m, sensor=target_probe, save_fig=True) for target_probe in data_sources]
 
 
 @solara.component
 def damping_graphs():
+    # global current
     with solara.Sidebar():
         with solara.Card(title="Signal source choice"):
             solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
     solara.ProgressLinear(draw_images.pending)
-    solara.Warning("TODO: Nepoužívat příiš dlouhý časový interval.")
+    solara.Warning("TODO: Nepoužívat příiš dlouhý časový interval. Opravit hledání peaků.")
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
     solara.Markdown(f"## {" ".join(coords)}")
-    if draw_images.not_called:
-        draw_images()
-        return
+    # if current['from_amplitudes'] != coords:
+    #     current['from_amplitudes'] = coords
+    #     dynatree.logger.info("Graphs from peaks are not current. Calling draw_images.")
+    #     draw_images()
+    #     # return
     if not draw_images.finished:
         solara.Error("""
         Probíhá výpočet. Trvá řádově vteřiny.Pokud se tato zpráva zobrazuje déle, něco je špatně. 
@@ -277,6 +268,7 @@ def damping_graphs():
 
 
 @task
+@timeit
 def draw_images(temp=None):
     m = DynatreeMeasurement(day=s.day.value,
                             tree=s.tree.value,
@@ -325,6 +317,7 @@ def draw_images(temp=None):
 
     df = pd.DataFrame.from_dict(data)
     df.index = ['k']
+
     return df, fig, sig.marked_failed
 
 
