@@ -304,7 +304,7 @@ def draw_images(temp=None):
     fig = draw_signal_with_envelope(sig, fig, envelope, k, q, row=1)
     data['hilbert'] = [k, R2]
 
-    peaks, k, q, R2 = sig.fit_maxima(maxpoints=10, skip=1).values()
+    peaks, k, q, R2 = sig.fit_maxima().values()
     fig = draw_signal_with_envelope(sig, fig, k=k, q=q, row=2)
     fig.add_trace(go.Scatter(x=peaks.index, y=peaks.values.reshape(-1),
                              mode='markers', name='peaks', line=dict(color='red')), row=2, col=1)

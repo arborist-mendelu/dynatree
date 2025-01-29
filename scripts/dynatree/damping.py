@@ -93,7 +93,7 @@ class DynatreeDampedSignal(DynatreeSignal):
 
     # @property
     @timeit
-    def fit_maxima(self, skip=0, maxpoints = None):
+    def fit_maxima(self, skip=1, maxpoints=10):
         distance = 50
         window_length = 100
         if self.signal_source in ["Elasto(90)","blueMaj","yellowMaj"]:
