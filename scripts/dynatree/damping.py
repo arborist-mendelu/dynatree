@@ -16,7 +16,7 @@ import config
 from scipy.stats import linregress
 from parallelbar import progress_map
 
-from scripts.dynatree.dynatree import DynatreeMeasurement
+from dynatree.dynatree import DynatreeMeasurement
 
 logger.setLevel(logging.ERROR)
 
