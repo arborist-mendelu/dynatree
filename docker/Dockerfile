@@ -5,7 +5,6 @@ WORKDIR /dynatree
 COPY docker/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY scripts ./scripts/
 RUN mkdir /root/solara_log
 
 EXPOSE 8700

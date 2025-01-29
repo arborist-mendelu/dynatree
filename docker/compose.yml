@@ -3,6 +3,7 @@ services:
         volumes:
             - ../data:/dynatree/data
             - ../outputs:/dynatree/outputs
+            - ../scripts:/dynatree/scripts
         network_mode: bridge
         working_dir: /dynatree/scripts
         ports:
