@@ -19,7 +19,8 @@ rule all_non_acc:
         "../outputs/welch.pdf",
         "../outputs/pull_major_minor_check.pdf",
         "../outputs/peak_width.zip",
-        "../outputs/peak_width.csv"
+        "../outputs/peak_width.csv",
+        "../outputs/damping_factor.csv"
 
 rule all_acc:
     input:
@@ -384,4 +385,15 @@ rule peak_width:
     shell:
         """
         python -m dynatree.peak_width
+        """
+
+rule damping_coefficients:
+    output:
+        "../outputs/damping_factor.csv"
+    input:
+        "csv/FFT_failed.csv",
+        "dynatree/damping.py"
+    shell:
+        """
+        python -m dynatree.damping
         """

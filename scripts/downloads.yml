@@ -57,11 +57,15 @@ FFT_spectra.zip: Obrázky nepovedených experimentů. Spektra, která jsou vylou
 
 fft_boxplots_for_probes_tukey.pdf: Obrázky, přehled. Srovnání frekvencí, jak se u jednotlivých stromů měnila frekvence s roční dobou, číslem ořezu.
 
-welch.pdf: Obrázky, welchovo spektrum. Obrázky s wechovým spektrem. Jdou vidět peaky při vyšší frekvenci, hladší křivka než z FFT.
+welch.pdf: Obrázky, welchovo spektrum. Obrázky s welchovým spektrem. Jdou vidět peaky při vyšší frekvenci, hladší křivka než z FFT.
 
-peak_width.csv: Šířka peaku pro Elasto(90), blueMaj, yellowMaj, acc y a z.
+peak_width.csv: Šířka peaku pro Elasto(90), blueMaj, yellowMaj, acc y a z. Nejsou zde zahrnuty proby, které jsou zahrnuty
+    v souboru `csv/FFT_failed.csv`.
 
 peak_width.zip: Zazipované obrázky ke stanovení šířky peaku z předchozího csv.
+
+damping_factor.csv: Útlum Elasto(90) stanovený třemi metodami (peaky, hilbert, wavelet). Nejsou zde zahrnuty proby, které jsou zahrnuty
+    v souboru `csv/FFT_failed.csv`.
 
 ---
 title: "To všecho odnés čas?"

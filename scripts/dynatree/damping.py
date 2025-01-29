@@ -14,12 +14,24 @@ import logging
 from scipy.signal import decimate
 import config
 from scipy.stats import linregress
+from parallelbar import progress_map
+
+from scripts.dynatree.dynatree import DynatreeMeasurement
 
 logger.setLevel(logging.ERROR)
 
 
 class DynatreeDampedSignal(DynatreeSignal):
+    """
+    Usage example:
 
+    >>> from dynatree.dynatree import DynatreeMeasurement
+    >>> from dynatree.damping import DynatreeDampedSignal
+    >>> m = DynatreeMeasurement(day="2022-08-16", tree="BK08", measurement="M02")
+    >>> sig = DynatreeDampedSignal(m, signal_source="Elasto(90)")
+    >>> sig.hilbert_envelope['k']
+    >>> sig.damped_data.plot()
+    """
     def __init__(self, *args, damped_start_time=None, **kwargs):
         super().__init__(*args, **kwargs)
         data = self.signal_full
@@ -33,6 +45,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         if data.iloc[0] < 0:
             data = data * (-1)
         # Najdi index první záporné hodnoty
+        data = data - data.mean()  # Fix the case when the sensor is shifted
         first_negative_index = data[data < 0].index[0]
         # Ořízni Series od první záporné hodnoty do konce
         data = data[first_negative_index:]
@@ -66,14 +79,16 @@ class DynatreeDampedSignal(DynatreeSignal):
         signal = signal[:int(30/self.dt)]
         time = time[:int(30/self.dt)]
         amplitude_envelope = np.abs(hilbert(signal))
-        print (self)
         if self.signal_source in ["Pt3","Pt4"]:
             start, end = 200,-200
         else:
             start, end = 20,-20
         x = time[start:end]
         y = amplitude_envelope[start:end]
-        k, q, R2, p_value, std_err = linregress(x, np.log(y))
+        try:
+            k, q, R2, p_value, std_err = linregress(x, np.log(y))
+        except:
+            k, q, R2 = [None] * 3
         return {'data': [x,y], 'k': k, 'q': q, 'R2': R2}
 
     # @property
@@ -96,10 +111,13 @@ class DynatreeDampedSignal(DynatreeSignal):
             maxpoints = len(peaks)
         peaks = peaks[skip:maxpoints]
 
-        k, q, R2, p_value, std_err = linregress(
-            self.damped_time[peaks],
-            np.log(np.abs(self.damped_signal[peaks]))
-        )
+        try:
+            k, q, R2, p_value, std_err = linregress(
+                self.damped_time[peaks],
+                np.log(np.abs(self.damped_signal[peaks]))
+            )
+        except:
+            k, q, R2 = [None]*3
 
         return {'peaks': self.damped_data.iloc[peaks], 'k': k, 'q': q, 'R2': R2}
 
@@ -195,13 +213,43 @@ def get_measurement_table():
     df_result ["failed"] = df_result["_merge"] == "both"
     df = df_result.drop("_merge", axis=1).copy()
 
-    df = df_result.copy()
     df = df[~((df["probe"].isin(["Pt3","Pt4"])) & (df["optics"]==False))]
+    df = df[df["failed"] == False]
+    df = df.drop("failed", axis=1)
     return (df)
+
+def process_row(index):
+    day, method, tree, measurement, probe = index
+    try:
+        m = DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=method)
+        s = DynatreeDampedSignal(m, signal_source=probe)
+        out = [
+            s.fit_maxima()['k'], s.fit_maxima()['R2'],
+            s.hilbert_envelope['k'], s.hilbert_envelope['R2'],
+            s.wavelet_envelope['k'], s.wavelet_envelope['R2'],
+        ]
+    except:
+        print(f"Fail. {m}")
+        out = [None]*6
+    return out
+
 
 def main():
     df = get_measurement_table()
-    print(df.head())
+    df = df[df["probe"] == "Elasto(90)"].reset_index(drop=True)
+    df = df.set_index(["day", "type", "tree", "measurement", "probe"])
+
+    columns = [i + j for i in ['peaks', 'hilbert', 'wavelet'] for j in ['', '_R2']]
+
+    results = progress_map(
+        process_row,
+        df.index.values,
+    )
+
+    output = pd.DataFrame(results, index=df.index, columns=columns)
+    return output
+
 
 if __name__ == "__main__":
-    main()
+    df = main()
+    df.to_csv(config.file['outputs/damping_factor'])

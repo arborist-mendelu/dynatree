@@ -27,6 +27,7 @@ file["solara_FFT"] = "csv/solara_FFT.csv"
 file["outputs/regressions_static"] = "../outputs/regressions_static.csv"
 file['outputs/anotated_regressions_static'] = "../outputs/anotated_regressions_static.csv"
 file['outputs/peak_width'] = "../outputs/peak_width.csv"
+file['outputs/damping_factor'] = "../outputs/damping_factor.csv"
 
 
 file["tsv_dirs"] = "csv/tsv_dirs.csv"
