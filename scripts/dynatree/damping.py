@@ -66,7 +66,11 @@ class DynatreeDampedSignal(DynatreeSignal):
         signal = signal[:int(30/self.dt)]
         time = time[:int(30/self.dt)]
         amplitude_envelope = np.abs(hilbert(signal))
-        start, end = 20,-20
+        print (self)
+        if self.signal_source in ["Pt3","Pt4"]:
+            start, end = 200,-200
+        else:
+            start, end = 20,-20
         x = time[start:end]
         y = amplitude_envelope[start:end]
         k, q, R2, p_value, std_err = linregress(x, np.log(y))
@@ -79,9 +83,11 @@ class DynatreeDampedSignal(DynatreeSignal):
         window_length = 100
         if self.signal_source in ["Elasto(90)","blueMaj","yellowMaj"]:
             distance = 4
+        if self.signal_source in ["Pt3","Pt4"]:
+            distance = 80
         if "a0" in self.signal_source:
             pass
-            # distance = 50*100
+            distance = 50*100
             # window_length = 100*50
         smooth_signal = savgol_filter(self.damped_signal, window_length, 2)
         peaks, _ = find_peaks(np.abs(smooth_signal), distance=distance)
