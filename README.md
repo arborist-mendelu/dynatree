@@ -1,6 +1,6 @@
 # DYNATREE
 
-The repository contains script required to process and visialize data
+The repository contains script required to process and visualize data
 obtained as a part of the ERC CZ project DYNATREE - Tree Dynamics: Understanding of Mechanical Response to Loading. 
 
 ![FFT spectrum of the pull-release test](images/solara.png)
