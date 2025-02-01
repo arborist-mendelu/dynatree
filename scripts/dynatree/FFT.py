@@ -34,6 +34,17 @@ peak_max = 0.7 # do not look for the peak larger than this value
 df_manual_release_times = pd.read_csv(config.file["FFT_release"], index_col=[0,1,2,3,4])
 
 class DynatreeSignal:
+    """
+    Extract signal for FFT.
+
+    >>> from dynatree.dynatree import DynatreeMeasurement
+    >>> from dynatree.FFT import DynatreeSignal
+    >>>
+    >>> m = DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M02")
+    >>> sig = DynatreeSignal(m, signal_source="Elasto(90)")
+    >>> sig.main_peak
+    ...
+    """
 
     def __init__(self, measurement, signal_source, release_source=None, dt=None, tukey=0.1, duration=60):
         self.measurement = measurement

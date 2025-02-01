@@ -22,6 +22,7 @@ file['synchronization_finetune_inclinometers_fix'] = "csv/synchronization_finetu
 file['angles_measured'] = "csv/angles_measured.csv"
 file['oscillation_times_remarks'] = "csv/oscillation_times_remarks.csv"
 file["solara_FFT"] = "csv/solara_FFT.csv"
+file['static_manual_limits'] = "csv/static_manual_limits.csv"
 
 
 file["outputs/regressions_static"] = "../outputs/regressions_static.csv"

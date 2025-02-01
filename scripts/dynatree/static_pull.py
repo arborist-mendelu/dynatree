@@ -29,7 +29,8 @@ import config
 from parallelbar import progress_map
 
 def read_tree_configuration():
-    file_path = f"csv/angles_measured.csv"
+
+    file_path = config.file['angles_measured']
 
     # Načtení dat s vynecháním druhého řádku a nastavením sloupce D jako index
     df = pd.read_csv(file_path)
@@ -54,7 +55,7 @@ def arctand(value):
     """
     return np.rad2deg(np.arctan(value))    
 
-DF_MANUAL_LIMITS = pd.read_csv("csv/static_manual_limits.csv",
+DF_MANUAL_LIMITS = pd.read_csv(config.file["static_manual_limits"],
                                index_col=[0, 1, 2, 3, 4, 5, 6])
 # rich.print(DF_MANUAL_LIMITS)
 
