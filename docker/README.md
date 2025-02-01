@@ -6,6 +6,9 @@ You can look at [short demo](https://youtu.be/Li-lFeIvkjs).
 ## Instructions
 
 * Download the scripts. Use `git clone` or download zip file from github.
+  ```
+  git clone https://github.com/arborist-mendelu/dynatree.git
+  ```
 * Install docker, docker-compose and make.
   ```
   sudo apt install -y docker.io docker-compose-v2 make
