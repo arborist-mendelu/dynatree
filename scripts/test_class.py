@@ -8,11 +8,11 @@ Created on Mon Aug 26 12:35:00 2024
 
 
 import unittest
-import static_pull
+from dynatree.static_pull import DynatreeStaticMeasurement
 
 class Test1(unittest.TestCase):
     def test_vzniku_objektu(self):
-        do = static_pull.DynatreeStaticMeasurement(
+        do = DynatreeStaticMeasurement(
             day="2022-04-05",
             tree="BK04",
             measurement="M02",

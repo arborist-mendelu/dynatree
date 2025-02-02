@@ -213,8 +213,8 @@ def process_one_row(row):
     date, tree, measurement, measurement_type, optics, day, probe = row
     try:
         ansrow = process_one_probe(day, tree, measurement, measurement_type, probe=probe, plot='failed')
-    except:
-        msg = f"Spectral analysis failed for {date} {tree} {measurement} {measurement_type} {optics} {day} {probe}"
+    except Exception as e:
+        msg = f"Spectral analysis failed for {date} {tree} {measurement} {measurement_type} {optics} {day} {probe}: {e}"
         print(msg)
         ansrow = None
     return [measurement_type, day, tree, measurement, probe, ansrow]
