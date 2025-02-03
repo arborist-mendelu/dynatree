@@ -247,7 +247,8 @@ def damping_graphs():
         solara.Markdown("""
         TODO: 
         
-        * Nepoužívat příliš dlouhý časový interval. Konec nastavit na 25% maxima. 
+        * Nepoužívat příliš dlouhý časový interval. Konec nastavit na 25% maxima. Zatím je nastaveno 
+          u metody využívající extrémy.
         * Opravit hledání peaků a další parametry pro optiku a akcelerometry.   
         * Doladit vycentrování signálu tak, aby hilbert měl co nejmenší zvlnění.     
         """, style={'color':'inherit'})
@@ -281,7 +282,14 @@ def damping_graphs():
             T = 1/ans['peak']
             with solara.Row():
                 df.loc["LDD",:] = df.loc['b',:] * T
-                solara.display(df)
+
+                # Vlastní funkce pro formátování
+                def custom_format(x):
+                    if abs(x) < 1e-5 and x != 0:  # Pokud je číslo menší než 1e-5 (kromě nuly), zobrazí se ve vědeckém formátu
+                        return f"{x:.2e}"
+                    else:  # Jinak zobrazí 8 desetinných míst
+                        return f"{x:.8f}"
+                solara.display(df.style.format(custom_format))
                 with solara.Column():
                     solara.Markdown("The signal envelope is $e^{-bt}$.")
                     solara.Text(f"Main freq is f={ans['peak']:.5} Hz, period is T={T:.5} s.")
@@ -290,6 +298,15 @@ def damping_graphs():
                               #plot_bgcolor='rgba(0,0,0,0)'
                               )
             solara.FigurePlotly(fig)
+        with solara.Info():
+            solara.Markdown(
+                """
+                * **Extrémy**: 
+                    * Po vypuštění se vynechá perioda. 
+                    * Peaky nesmí být blíže než 75 procent periody.
+                    * Po prvním peaku, který je pod 25 procent maxima se signál už neuvažuje.
+                """, style={'color':'inherit'}
+            )
 
 
 @task
@@ -316,21 +333,21 @@ def draw_images(temp=None):
 
     data = {}
     fig = make_subplots(rows=3, cols=1, shared_xaxes='all', shared_yaxes='all')
-    envelope, k, q, R2 = sig.hilbert_envelope.values()
+    envelope, k, q, R2, p_value, std_err = sig.hilbert_envelope.values()
     fig = draw_signal_with_envelope(sig, fig, envelope, k, q, row=1)
-    data['hilbert'] = [-k, R2]
+    data['hilbert'] = [-k, R2, p_value, std_err]
 
-    peaks, k, q, R2 = sig.fit_maxima().values()
+    peaks, k, q, R2, p_value, std_err = sig.fit_maxima().values()
     fig = draw_signal_with_envelope(sig, fig, k=k, q=q, row=2)
     fig.add_trace(go.Scatter(x=peaks.index, y=peaks.values.reshape(-1),
                              mode='markers', name='peaks', line=dict(color='red')), row=2, col=1)
-    data['extrema'] = [-k, R2]
+    data['extrema'] = [-k, R2, p_value, std_err ]
 
-    envelope, k, q, freq, fft_data, R2 = sig.wavelet_envelope.values()
+    envelope, k, q, freq, fft_data, R2, p_value, std_err = sig.wavelet_envelope.values()
     maximum = np.argmax(envelope)
     # dynatree.logger.info(f"Maximum obalky je pro {maximum}")
     fig = draw_signal_with_envelope(sig, fig, envelope, k=k, q=q, row=3)
-    data['wavelets'] = [-k, R2]
+    data['wavelets'] = [-k, R2, p_value, std_err ]
 
     fig.update_layout(title=f"Proložení exponenciely pomocí několika metod",
                       height=800,
@@ -341,7 +358,7 @@ def draw_images(temp=None):
     fig.update_yaxes(title_text="Wavelet", row=3, col=1)
 
     df = pd.DataFrame.from_dict(data)
-    df.index = ['b','R^2']
+    df.index = ['b','R^2','p_value','std_err']
 
     return {'df':df, 'fig':fig, 'failed':sig.marked_failed, 'peak':sig.main_peak}
 

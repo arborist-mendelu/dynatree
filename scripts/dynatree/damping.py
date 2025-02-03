@@ -88,8 +88,8 @@ class DynatreeDampedSignal(DynatreeSignal):
         try:
             k, q, R2, p_value, std_err = linregress(x, np.log(y))
         except:
-            k, q, R2 = [None] * 3
-        return {'data': [x,y], 'k': k, 'q': q, 'R2': R2}
+            k, q, R2, p_value, std_err = [None] * 5
+        return {'data': [x,y], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err}
 
     # @property
     @timeit
@@ -104,22 +104,38 @@ class DynatreeDampedSignal(DynatreeSignal):
             pass
             distance = 50*100
             # window_length = 100*50
-        smooth_signal = savgol_filter(self.damped_signal, window_length, 2)
-        peaks, _ = find_peaks(np.abs(smooth_signal), distance=distance)
+        # smooth_signal = savgol_filter(self.damped_signal, window_length, 2)
+        # peaks, _ = find_peaks(np.abs(smooth_signal), distance=distance)
         peaks, _ = find_peaks(np.abs(self.damped_signal), distance=distance)
-        if (maxpoints is None) or (maxpoints > len(peaks)):
-            maxpoints = len(peaks)
-        peaks = peaks[skip:maxpoints]
+
+        threshold = 0.25
+        T = 1/self.main_peak
+        start = self.damped_signal_interpolated.index[0]
+        analyzed = self.damped_signal_interpolated[start+T:]
+        maximum = max(abs(analyzed))
+        distance = int(T/self.dt/2*0.75)
+        peaks, _ = find_peaks(np.abs(analyzed), distance=distance)
+        print(peaks)
+        peaks_number = np.argmax(np.abs(analyzed.iloc[peaks])-threshold*maximum < 0)-1
+        print(peaks_number)
+        peaks = peaks[:peaks_number]
+        print(peaks)
+
+
+        # if (maxpoints is None) or (maxpoints > len(peaks)):
+        #     maxpoints = len(peaks)
+        # peaks = peaks[skip:maxpoints]
 
         try:
             k, q, R2, p_value, std_err = linregress(
-                self.damped_time[peaks],
-                np.log(np.abs(self.damped_signal[peaks]))
+                analyzed.iloc[peaks].index,
+                np.log(np.abs(analyzed.iloc[peaks].values))
             )
-        except:
-            k, q, R2 = [None]*3
+        except Exception as e:
+            logger.error(f"Error in fit_maxima {e}")
+            k, q, R2, p_value, std_err = [None] * 5
 
-        return {'peaks': self.damped_data.iloc[peaks], 'k': k, 'q': q, 'R2': R2}
+        return {'peaks': analyzed.iloc[peaks], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err}
 
     @property
     @timeit
@@ -192,8 +208,9 @@ class DynatreeDampedSignal(DynatreeSignal):
                 data.index[maximum:-maximum], np.log(coef[maximum:-maximum])
             )
         except:
-            k, q, R2 = None, None, None
-        return {'data': pd.Series(coef[maximum:-maximum], index=data.index[maximum:-maximum]), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft, 'R2': R2}
+            k, q, R2, p_value, std_err = [None] * 5
+        return {'data': pd.Series(coef[maximum:-maximum], index=data.index[maximum:-maximum]), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft, 'R2': R2,
+                'p': p_value, 'std_err': std_err}
 
 
 def get_measurement_table():
