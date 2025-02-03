@@ -248,9 +248,9 @@ def damping_graphs():
         TODO: 
         
         * Nepoužívat příliš dlouhý časový interval. Konec nastavit na 25% maxima. Zatím je nastaveno 
-          u metody využívající extrémy.
-        * Opravit hledání peaků a další parametry pro optiku a akcelerometry.   
-        * Doladit vycentrování signálu tak, aby hilbert měl co nejmenší zvlnění.     
+          u metody využívající extrémy. Hilbert a wavelety tuto informaci přebírají. Je to tak dostatečné?
+        * Možná bude potřeba opravit hledání peaků a další parametry pro optiku a akcelerometry.   
+        * Možná bude potřeba doladit vycentrování signálu tak, aby hilbert měl co nejmenší zvlnění.     
         """, style={'color':'inherit'})
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
     solara.Markdown(f"## {" ".join(coords)}")
@@ -305,6 +305,13 @@ def damping_graphs():
                     * Po vypuštění se vynechá perioda. 
                     * Peaky nesmí být blíže než 75 procent periody.
                     * Po prvním peaku, který je pod 25 procent maxima se signál už neuvažuje.
+                * **Hilbert**
+                    * Analyzovaný časový úsek stejný jako u metody extrémů.
+                    * Zvážit, jestli by se nedalo zvlnění ovlivnit odstraněním trendu.
+                * **Wavelet**
+                    * Analyzovaný časový úsek stejný jako u metody extrémů.
+                * V tabulce jsou i další metriky z lineární regrese, ale hilbertova obálka i wavelet používají 
+                  řádově jiný počet bodů a proto není možné srovnávat například p-hodnoty.
                 """, style={'color':'inherit'}
             )
 

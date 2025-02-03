@@ -76,15 +76,11 @@ class DynatreeDampedSignal(DynatreeSignal):
     def hilbert_envelope(self):
         signal = self.damped_signal_interpolated.values
         time = self.damped_signal_interpolated.index
-        signal = signal[:int(30/self.dt)]
-        time = time[:int(30/self.dt)]
         amplitude_envelope = np.abs(hilbert(signal))
-        if self.signal_source in ["Pt3","Pt4"]:
-            start, end = 200,-200
-        else:
-            start, end = 20,-20
-        x = time[start:end]
-        y = amplitude_envelope[start:end]
+        peaks = self.fit_maxima()['peaks']
+        mask = (time > peaks.index[0]) & (time < peaks.index[-1])
+        x = time[mask]
+        y = amplitude_envelope[mask]
         try:
             k, q, R2, p_value, std_err = linregress(x, np.log(y))
         except:
@@ -93,38 +89,29 @@ class DynatreeDampedSignal(DynatreeSignal):
 
     # @property
     @timeit
-    def fit_maxima(self, skip=1, maxpoints=10):
-        distance = 50
-        window_length = 100
-        if self.signal_source in ["Elasto(90)","blueMaj","yellowMaj"]:
-            distance = 4
-        if self.signal_source in ["Pt3","Pt4"]:
-            distance = 80
-        if "a0" in self.signal_source:
-            pass
-            distance = 50*100
+    def fit_maxima(self, threshold = 0.25):
+        # distance = 50
+        # window_length = 100
+        # if self.signal_source in ["Elasto(90)","blueMaj","yellowMaj"]:
+        #     distance = 4
+        # if self.signal_source in ["Pt3","Pt4"]:
+        #     distance = 80
+        # if "a0" in self.signal_source:
+        #     pass
+        #     distance = 50*100
             # window_length = 100*50
         # smooth_signal = savgol_filter(self.damped_signal, window_length, 2)
         # peaks, _ = find_peaks(np.abs(smooth_signal), distance=distance)
-        peaks, _ = find_peaks(np.abs(self.damped_signal), distance=distance)
+        # peaks, _ = find_peaks(np.abs(self.damped_signal), distance=distance)
 
-        threshold = 0.25
         T = 1/self.main_peak
         start = self.damped_signal_interpolated.index[0]
         analyzed = self.damped_signal_interpolated[start+T:]
         maximum = max(abs(analyzed))
         distance = int(T/self.dt/2*0.75)
         peaks, _ = find_peaks(np.abs(analyzed), distance=distance)
-        print(peaks)
         peaks_number = np.argmax(np.abs(analyzed.iloc[peaks])-threshold*maximum < 0)-1
-        print(peaks_number)
         peaks = peaks[:peaks_number]
-        print(peaks)
-
-
-        # if (maxpoints is None) or (maxpoints > len(peaks)):
-        #     maxpoints = len(peaks)
-        # peaks = peaks[skip:maxpoints]
 
         try:
             k, q, R2, p_value, std_err = linregress(
@@ -166,12 +153,6 @@ class DynatreeDampedSignal(DynatreeSignal):
         wavelet = "cmor1-1.5"
         data = self.damped_signal_interpolated
 
-        # N = self.damped_signal_interpolated.shape[0]  # get the number of points
-        # xf_r = fftfreq(N, self.dt)[:N // 2]
-        # yf = fft(self.damped_signal_interpolated.values)  # preform FFT analysis
-        # yf_r = 2.0 / N * np.abs(yf[0:N // 2])
-        # df_fft = pd.Series(index=xf_r, data=yf_r, name=self.damped_signal_interpolated.name)
-        # freq = xf_r[yf_r.argmax()]
         freq = self.main_peak
         df_fft = self.fft
         # logger.info(f"FFT finished in {time.time() - start}, peak is at frequency {freq} Hz")
@@ -198,18 +179,27 @@ class DynatreeDampedSignal(DynatreeSignal):
         # logger.info(f"wavelet normalize finished in {time.time() - start}, the norm is {wavlet_norm}")
         coef = np.abs(coef) / wavlet_norm
         maximum = np.argmax(coef)
+
+        peaks = self.fit_maxima()['peaks']
+        mask = (data.index > peaks.index[0]) & (data.index < peaks.index[-1])
         # logger.info(f"""
         #     Coef normalization finished in {time.time() - start},
         #     maximal coefficient at {maximum}, data are {data.index[maximum:-maximum]}
         #     and coef values are {coef[maximum:-maximum]}
         #     """)
+        # import rich
+        # rich.print("Data",data)
+        # rich.print("Coeff",coef)
+        # rich.print("Msk",mask)
+        independent = data.index[mask]
+        dependent = coef[mask]
         try:
             k, q, R2, p_value, std_err = linregress(
-                data.index[maximum:-maximum], np.log(coef[maximum:-maximum])
+                independent, np.log(dependent)
             )
         except:
             k, q, R2, p_value, std_err = [None] * 5
-        return {'data': pd.Series(coef[maximum:-maximum], index=data.index[maximum:-maximum]), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft, 'R2': R2,
+        return {'data': pd.Series(dependent, index=independent), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft, 'R2': R2,
                 'p': p_value, 'std_err': std_err}
 
 
