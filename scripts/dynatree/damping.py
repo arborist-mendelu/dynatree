@@ -119,7 +119,7 @@ class DynatreeDampedSignal(DynatreeSignal):
                 np.log(np.abs(analyzed.iloc[peaks].values))
             )
         except Exception as e:
-            logger.error(f"Error in fit_maxima {e}")
+            logger.error(f"Error in fit_maxima {e}. {self.measurement}")
             k, q, R2, p_value, std_err = [None] * 5
 
         return {'peaks': analyzed.iloc[peaks], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err}
@@ -232,14 +232,14 @@ def process_row(index):
     try:
         m = DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=method)
         s = DynatreeDampedSignal(m, signal_source=probe)
-        out = [
-            s.fit_maxima()['k'], s.fit_maxima()['R2'],
-            s.hilbert_envelope['k'], s.hilbert_envelope['R2'],
-            s.wavelet_envelope['k'], s.wavelet_envelope['R2'],
-        ]
+        fit_M = s.fit_maxima()
+        fit_H = s.hilbert_envelope
+        fit_W = s.wavelet_envelope
+        out = [fit_W['freq'], fit_W['data'].index[0], fit_W['data'].index[-1]]
+        out = out + [i[j] for i in [fit_M, fit_H, fit_W]  for j in ['k', 'R2', 'p', 'std_err'] ]
     except:
         print(f"Fail. {m}")
-        out = [None]*6
+        out = [None]*15
     return out
 
 
@@ -247,8 +247,9 @@ def main():
     df = get_measurement_table()
     df = df[df["probe"] == "Elasto(90)"].reset_index(drop=True)
     df = df.set_index(["day", "type", "tree", "measurement", "probe"])
+    metody = ['maxima', 'hilbert', 'wavelet']
 
-    columns = [i + j for i in ['peaks', 'hilbert', 'wavelet'] for j in ['', '_R2']]
+    columns = ["freq", "start", "end"] + [i + j for i in metody for j in ['_b', '_R2', '_p', '_std_err']]
 
     results = progress_map(
         process_row,
@@ -256,6 +257,10 @@ def main():
     )
 
     output = pd.DataFrame(results, index=df.index, columns=columns)
+    for i in metody:
+        output[f"{i}_b"] = np.abs(output[f"{i}_b"])
+        output[f"{i}_LDD"] = output[f"{i}_b"]/output['freq']
+
     return output
 
 
