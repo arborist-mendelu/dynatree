@@ -510,22 +510,22 @@ class DynatreeStaticPulling:
         Get regressions for one measurement. 
         """
         if "Pt3" in self.data.columns:
-            pt_reg = [
+            regressions = [
                 ["M_Pt","Pt3", "Pt4"],
                 ]
         else:
-            pt_reg = []
-        reg = DynatreeStaticPulling._get_regressions(self.data,
-            [
+            regressions = [
             ["M", "blueMaj", "yellowMaj"],
             ["M_Elasto", "Elasto-strain"],
             # ["Force(100)", "blueMaj", "yellowMaj", "Elasto(90)"],
-            ]+pt_reg,
+            ]
+        reg = DynatreeStaticPulling._get_regressions(self.data,
+             regressions,
              msg=f"{self.parent_experiment.parent if self.parent_experiment  is not None else None}",
              coords=coords,
             )
         return reg
-    
+
     @staticmethod
     def _get_regressions(df, collist, msg="", coords=None):
         """
@@ -575,7 +575,7 @@ def proces_one_row(row):
     optics = row['optics']
     measurement_type = row['type']
     for cut in [.30]:
-        for use_optics in [False]:
+        for use_optics in [False, True]:
             # try:
                 # get regressions for two cut-out values and merge
             data_obj = DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement,
