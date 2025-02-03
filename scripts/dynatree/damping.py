@@ -150,12 +150,14 @@ class DynatreeDampedSignal(DynatreeSignal):
         wavelet = "cmor1-1.5"
         data = self.damped_signal_interpolated
 
-        N = self.damped_signal_interpolated.shape[0]  # get the number of points
-        xf_r = fftfreq(N, self.dt)[:N // 2]
-        yf = fft(self.damped_signal_interpolated.values)  # preform FFT analysis
-        yf_r = 2.0 / N * np.abs(yf[0:N // 2])
-        df_fft = pd.Series(index=xf_r, data=yf_r, name=self.damped_signal_interpolated.name)
-        freq = xf_r[yf_r.argmax()]
+        # N = self.damped_signal_interpolated.shape[0]  # get the number of points
+        # xf_r = fftfreq(N, self.dt)[:N // 2]
+        # yf = fft(self.damped_signal_interpolated.values)  # preform FFT analysis
+        # yf_r = 2.0 / N * np.abs(yf[0:N // 2])
+        # df_fft = pd.Series(index=xf_r, data=yf_r, name=self.damped_signal_interpolated.name)
+        # freq = xf_r[yf_r.argmax()]
+        freq = self.main_peak
+        df_fft = self.fft
         # logger.info(f"FFT finished in {time.time() - start}, peak is at frequency {freq} Hz")
 
         def normalizace_waveletu(freq=0.2, dt=0.01):

@@ -243,7 +243,14 @@ def damping_graphs():
         with solara.Card(title="Signal source choice"):
             solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
     solara.ProgressLinear(draw_images.pending)
-    solara.Warning("TODO: Nepoužívat příiš dlouhý časový interval. Opravit hledání peaků a další parametry pro optiku a akcelerometry.")
+    with solara.Warning():
+        solara.Markdown("""
+        TODO: 
+        
+        * Nepoužívat příliš dlouhý časový interval. Konec nastavit na 25% maxima. 
+        * Opravit hledání peaků a další parametry pro optiku a akcelerometry.   
+        * Doladit vycentrování signálu tak, aby hilbert měl co nejmenší zvlnění.     
+        """, style={'color':'inherit'})
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
     solara.Markdown(f"## {" ".join(coords)}")
     # if current['from_amplitudes'] != coords:
@@ -263,13 +270,22 @@ def damping_graphs():
     if ans is None:
         solara.Error("Nekde nastala chyba")
     else:
-        df, fig, marked_failed = ans
+        df = ans['df']
+        fig = ans['fig']
+        marked_failed = ans['failed']
         background_color = 'transparent'
         if marked_failed == True:
             solara.Error(f"This measurement was marked as failed.")
             background_color = '#f8d7da'
         with solara.Card(style={'background-color': background_color}):
-            solara.display(df)
+            T = 1/ans['peak']
+            with solara.Row():
+                df.loc["LDD",:] = df.loc['b',:] * T
+                solara.display(df)
+                with solara.Column():
+                    solara.Markdown("The signal envelope is $e^{-bt}$.")
+                    solara.Text(f"Main freq is f={ans['peak']:.5} Hz, period is T={T:.5} s.")
+                    solara.Text("LDD = b*T")
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',  # Pozadí celého plátna
                               #plot_bgcolor='rgba(0,0,0,0)'
                               )
@@ -302,19 +318,19 @@ def draw_images(temp=None):
     fig = make_subplots(rows=3, cols=1, shared_xaxes='all', shared_yaxes='all')
     envelope, k, q, R2 = sig.hilbert_envelope.values()
     fig = draw_signal_with_envelope(sig, fig, envelope, k, q, row=1)
-    data['hilbert'] = [k, R2]
+    data['hilbert'] = [-k, R2]
 
     peaks, k, q, R2 = sig.fit_maxima().values()
     fig = draw_signal_with_envelope(sig, fig, k=k, q=q, row=2)
     fig.add_trace(go.Scatter(x=peaks.index, y=peaks.values.reshape(-1),
                              mode='markers', name='peaks', line=dict(color='red')), row=2, col=1)
-    data['extrema'] = [k, R2]
+    data['extrema'] = [-k, R2]
 
     envelope, k, q, freq, fft_data, R2 = sig.wavelet_envelope.values()
     maximum = np.argmax(envelope)
     # dynatree.logger.info(f"Maximum obalky je pro {maximum}")
     fig = draw_signal_with_envelope(sig, fig, envelope, k=k, q=q, row=3)
-    data['wavelets'] = [k, R2]
+    data['wavelets'] = [-k, R2]
 
     fig.update_layout(title=f"Proložení exponenciely pomocí několika metod",
                       height=800,
@@ -325,9 +341,9 @@ def draw_images(temp=None):
     fig.update_yaxes(title_text="Wavelet", row=3, col=1)
 
     df = pd.DataFrame.from_dict(data)
-    df.index = ['k','R^2']
+    df.index = ['b','R^2']
 
-    return df, fig, sig.marked_failed
+    return {'df':df, 'fig':fig, 'failed':sig.marked_failed, 'peak':sig.main_peak}
 
 
 dynatree.logger.info(f"File damping.py loaded in {time.time() - loading_start} sec.")
