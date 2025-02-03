@@ -65,7 +65,7 @@ peak_width.csv: Šířka peaku pro Elasto(90), blueMaj, yellowMaj, acc y a z. Ne
 peak_width.zip: Zazipované obrázky ke stanovení šířky peaku z předchozího csv.
 
 damping_factor.csv: Útlum Elasto(90) stanovený třemi metodami (maxima, hilbert, wavelet). Nejsou zde zahrnuty proby, které jsou zahrnuty
-    v souboru `csv/FFT_failed.csv`. U každé z metod je koeficient b z vnější obálky exp(-b*t), logaritmický dekrement úlumu
+    v souboru `csv/FFT_failed.csv`. U každé z metod je koeficient b z vnější obálky exp(-b\*t), logaritmický dekrement úlumu
     LDD, statistické veličiny z lineární regrese (p-value, R^2 a std_err). Kromě toho čas použitý pro anlaýzu a 
     frekvence použitá pro výpočet LDD a pro wavelet. Délka analyzovaného intervalu je stanovena tak, že po vypuštění se najde
     první nulový bod, vynechá se první perioda, najdou se peaky a odřízne se část za peakem který je pod 25% maxima.
