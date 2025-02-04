@@ -72,6 +72,10 @@ data_sources = sum(devices.values(), [])
 damping_parameter = solara.reactive("b")
 damping_parameters = ["b","LDD"]
 
+filtr_R_min = solara.reactive(-1)
+filtr_R_max = solara.reactive(-0.9)
+filtr_T_min = solara.reactive(2)
+filtr_T_max = solara.reactive(1000)
 
 @solara.component
 def Page():
@@ -106,6 +110,15 @@ def Page():
                             )
                 with solara.Card(title="Parameter"):
                     solara.ToggleButtonsSingle(value=damping_parameter, values = damping_parameters)
+                with solara.Card(title="Bounds for the filter in the table"):
+                    solara.InputFloat("Lower bound for R^2", filtr_R_min)
+                    solara.InputFloat("Upper bound for R^2", filtr_R_max)
+                    solara.InputFloat("Lower bound for t/T", filtr_T_min)
+                    solara.InputFloat("Upper bound for t/T", filtr_T_max)
+                    solara.Text("""
+                    Here you can set the bounds for R^2 and the ratio of the length of the signal and the period. Note that R2 is negative and should be close to -1 for a good match.
+                    The values which do not fulfill the filter conditions are replaced by nan values. 
+                    """)
                 with solara.Card(title="Popis"):
                     solara.Markdown(f"""
                     * Zelené dny odpovídají olistěnému stavu
@@ -308,11 +321,25 @@ def damping_graphs():
         fig = ans['fig']
         marked_failed = ans['failed']
         background_color = 'transparent'
+        T = 1 / ans['peak']
+        interval_length = ans['signal_peaks'].index[-1]-ans['signal_peaks'].index[0]
+        err_info = ""
         if marked_failed == True:
-            solara.Error(f"This measurement was marked as failed.")
-            background_color = '#f8d7da'
+            err_info = f"{err_info} This measurement was marked as failed."
+        if interval_length/T<2:
+            err_info = f"{err_info} The interval is shorter than the double of the period."
+        if df.loc["R^2"].max()>-0.9:
+            err_info = f"{err_info} Some of the R^2 is outside the interval (-1,-0.9)."
+        if err_info:
+            solara.Error(solara.Markdown(f"""
+            {err_info} You may want to add the following line to the file `csv/damping_failed.csv`
+            ```
+            {s.method.value},{s.day.value},{s.tree.value},{s.measurement.value},{data_source.value}
+            ```
+            """,
+            style = {'color':'inherit'}))
+            # background_color = '#f8d7da'
         with solara.Card(style={'background-color': background_color}):
-            T = 1/ans['peak']
             with solara.Row():
                 df.loc["LDD",:] = df.loc['b',:] * T
 
@@ -327,7 +354,8 @@ def damping_graphs():
                     solara.Markdown("The signal envelope is $e^{-bt}$.")
                     solara.Text(f"Main freq is f={ans['peak']:.5} Hz, period is T={T:.5} s.")
                     solara.Text("LDD = b*T")
-                    solara.Text("The length of the anlayzed time interval is ... TODO")
+                    solara.Text(f"The length of the anlayzed time interval is {interval_length:.2f}.")
+                    solara.Text(f"The length of the anlayzed time interval is {interval_length/T:.2f} times the period.")
 
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',  # Pozadí celého plátna
                               #plot_bgcolor='rgba(0,0,0,0)'
@@ -390,9 +418,9 @@ def draw_images(temp=None):
     fig = draw_signal_with_envelope(sig, fig, envelope, k, q, row=1)
     data['hilbert'] = [None if k is None else -k, R2, p_value, std_err]
 
-    peaks, k, q, R2, p_value, std_err = sig.fit_maxima().values()
+    signal_peaks, k, q, R2, p_value, std_err = sig.fit_maxima().values()
     fig = draw_signal_with_envelope(sig, fig, k=k, q=q, row=2)
-    fig.add_trace(go.Scatter(x=peaks.index, y=peaks.values.reshape(-1),
+    fig.add_trace(go.Scatter(x=signal_peaks.index, y=signal_peaks.values.reshape(-1),
                              mode='markers', name='peaks', line=dict(color='red')), row=2, col=1)
     data['extrema'] = [None if k is None else -k, R2, p_value, std_err ]
 
@@ -411,23 +439,34 @@ def draw_images(temp=None):
     df = pd.DataFrame.from_dict(data)
     df.index = ['b','R^2','p_value','std_err']
 
-    return {'df':df, 'fig':fig, 'failed':sig.marked_failed, 'peak':sig.main_peak}
+    return {'df':df, 'fig':fig, 'failed':sig.marked_failed, 'peak':sig.main_peak,
+            'signal_peaks':signal_peaks}
 
 
 @solara.component
 def show_data_one_tree():
+    list_of_methods = ['maxima', 'hilbert', 'wavelet']
     with solara.Card():
         solara.Markdown(f"## {s.tree.value}")
         df = pd.read_csv(config.file['outputs/damping_factor'])
         # Nahradí hodnoty ve sloupcích bez "_R2" None pokud odpovídající "_R2" sloupec má hodnotu > -0.9
-        for col in ['maxima', 'hilbert', 'wavelet']:
-            df.loc[df[f"{col}_R2"] > -0.9, col] = None
+        # for col in list_of_methods:
+        #     df.loc[df[f"{col}_R2"] > -0.9, f"{col}_R2"] = None
 
         df = df[df["tree"]==s.tree.value]
+        df["#_of_periods"] = (df["end"]-df["start"]) * df["freq"]
+
         type_order = ['normal', 'noc', 'den', 'afterro', 'afterro2', 'mraz', 'mokro']
         df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
         df = df.set_index(["tree","day", "type", "measurement"])
         df = df.sort_index()
+
+        cols = [i for i in df.columns if "_" in i]
+        df.loc[~((df["#_of_periods"] > filtr_T_min.value) & (df["#_of_periods"] < filtr_T_max.value)), cols] = np.nan
+        for i in list_of_methods:
+            df.loc[
+                ~((df[f"{i}_R2"] > filtr_R_min.value) & (df[f"{i}_R2"] < filtr_R_max.value)), [f"{i}_b", f"{i}_LDD"]] = np.nan
+        # df[~ ((df["#_of_periods"] > filtr_T_min.value) & (df["#_of_periods"] < filtr_T_max.value)),:] = np.nan
 
         cols = [i for i in df.columns if f"_{damping_parameter.value}" in i]
         df = df[cols]
