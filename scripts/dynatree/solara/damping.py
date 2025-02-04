@@ -28,13 +28,14 @@ loading_start = time.time()
 def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1):
     signal, time = s.damped_signal.reshape(-1), s.damped_time
     x = time
-    y = np.exp(k * time + q)
-    fig.add_trace(go.Scatter(x=np.concatenate([x, x[::-1]]),
-                             y=np.concatenate([y, -y[::-1]]),
-                             fill='toself',
-                             fillcolor='lightblue',
-                             line=dict(color='lightblue'),
-                             showlegend=False), row=row, col=col)
+    if k is not None:
+        y = np.exp(k * time + q)
+        fig.add_trace(go.Scatter(x=np.concatenate([x, x[::-1]]),
+                                 y=np.concatenate([y, -y[::-1]]),
+                                 fill='toself',
+                                 fillcolor='lightblue',
+                                 line=dict(color='lightblue'),
+                                 showlegend=False), row=row, col=col)
     fig.add_trace(go.Scatter(x=time, y=signal, mode='lines', name='signal', line=dict(color='blue')), row=row, col=col)
     if envelope is not None:
         env_time = time
@@ -63,8 +64,10 @@ def resetuj2(x=None):
     do_find_peaks()
 
 data_source = solara.reactive("Elasto(90)")
-data_sources = ["Elasto(90)", "blueMaj", "yellowMaj", "Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "a01_y", "a02_y",
-                "a03_y"]
+devices = {'pulling': ["Elasto(90)", "blueMaj", "yellowMaj"],
+           'optics': ["Pt3", "Pt4"],
+           'acc': ["a01_z", "a02_z", "a03_z", "a01_y", "a02_y",  "a03_y"]}
+data_sources = sum(devices.values(), [])
 
 
 @solara.component
@@ -201,7 +204,6 @@ def create_overlay():
 
 show_dialog = solara.reactive(False)
 
-
 def close_dialog():
     show_dialog.value = False
 
@@ -235,6 +237,9 @@ def do_find_peaks(x=None):
 def find_peak_widths(m):
     return [find_peak_width(m, sensor=target_probe, save_fig=True) for target_probe in data_sources]
 
+def create_overlay_signal(output):
+    show_dialog.value = True
+    return None
 
 @solara.component
 def damping_graphs():
@@ -242,16 +247,25 @@ def damping_graphs():
     with solara.Sidebar():
         with solara.Card(title="Signal source choice"):
             solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
+        with solara.Card(title="Plot data"):
+            solara.Button("Signal", on_click=lambda :create_overlay_signal('signal'))
+            # solara.Button("FFT", on_click=lambda :create_overlay_signal('fft'))
+
+    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width='90%',
+                            title=""):
+        if show_dialog.value:
+            solara.Markdown(f"## {s.day.value} {s.tree.value} {s.measurement.value} {s.method.value} {data_source.value}")
+            m = DynatreeMeasurement(day=s.day.value, tree=s.tree.value, measurement=s.measurement.value, measurement_type=s.method.value)
+            fig, ax = plt.subplots()
+            if data_source.value in devices['pulling']:
+                curr_data = m.data_pulling[data_source.value]
+            elif data_source.value in devices['optics']:
+                curr_data = m.data_optics[(data_source.value,"Y0")]
+            else:
+                curr_data = m.data_acc5000[data_source.value]
+            curr_data.plot(ax=ax)
+            solara.FigureMatplotlib(fig)
     solara.ProgressLinear(draw_images.pending)
-    with solara.Warning():
-        solara.Markdown("""
-        TODO: 
-        
-        * Nepoužívat příliš dlouhý časový interval. Konec nastavit na 25% maxima. Zatím je nastaveno 
-          u metody využívající extrémy. Hilbert a wavelety tuto informaci přebírají. Je to tak dostatečné?
-        * Možná bude potřeba opravit hledání peaků a další parametry pro optiku a akcelerometry.   
-        * Možná bude potřeba doladit vycentrování signálu tak, aby hilbert měl co nejmenší zvlnění.     
-        """, style={'color':'inherit'})
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
     solara.Markdown(f"## {" ".join(coords)}")
     # if current['from_amplitudes'] != coords:
@@ -294,10 +308,21 @@ def damping_graphs():
                     solara.Markdown("The signal envelope is $e^{-bt}$.")
                     solara.Text(f"Main freq is f={ans['peak']:.5} Hz, period is T={T:.5} s.")
                     solara.Text("LDD = b*T")
+                    solara.Text("The length of the anlayzed time interval is ... TODO")
+
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',  # Pozadí celého plátna
                               #plot_bgcolor='rgba(0,0,0,0)'
                               )
             solara.FigurePlotly(fig)
+        with solara.Warning():
+            solara.Markdown("""
+            TODO: 
+
+            * Nepoužívat příliš dlouhý časový interval. Konec nastavit na 25% maxima. Zatím je nastaveno 
+              u metody využívající extrémy. Hilbert a wavelety tuto informaci přebírají. Je to tak dostatečné?
+            * Možná bude potřeba opravit hledání peaků a další parametry pro optiku a akcelerometry.   
+            * Možná bude potřeba doladit vycentrování signálu tak, aby hilbert měl co nejmenší zvlnění.     
+            """, style={'color': 'inherit'})
         with solara.Info():
             solara.Markdown(
                 """
@@ -319,6 +344,7 @@ def damping_graphs():
 @task
 @timeit
 def draw_images(temp=None):
+
     m = DynatreeMeasurement(day=s.day.value,
                             tree=s.tree.value,
                             measurement=s.measurement.value,
@@ -326,35 +352,34 @@ def draw_images(temp=None):
     dynatree.logger.info(f"Measurement {m}")
     signal_source = data_source.value
     if "Pt" in data_source.value:
+        dynatree.logger.info(f"Damping, optics {data_source.value}")
         dt = 0.01
         if not m.is_optics_available:
             solara.Warning(f"No optics for {m}")
             return None
-    elif "A" in data_source.value:
+    elif "a" in data_source.value[:2]:
+        dynatree.logger.info(f"Damping, accelerometer {data_source.value}")
         dt = 0.0002
     else:
+        dynatree.logger.info(f"Damping, pulling {data_source.value}")
         dt = 0.12
-        if data_source.value in ["blueMaj", "yellowMaj"]:
-            pass
     sig = DynatreeDampedSignal(m, data_source.value, dt=dt)
 
     data = {}
     fig = make_subplots(rows=3, cols=1, shared_xaxes='all', shared_yaxes='all')
     envelope, k, q, R2, p_value, std_err = sig.hilbert_envelope.values()
     fig = draw_signal_with_envelope(sig, fig, envelope, k, q, row=1)
-    data['hilbert'] = [-k, R2, p_value, std_err]
+    data['hilbert'] = [None if k is None else -k, R2, p_value, std_err]
 
     peaks, k, q, R2, p_value, std_err = sig.fit_maxima().values()
     fig = draw_signal_with_envelope(sig, fig, k=k, q=q, row=2)
     fig.add_trace(go.Scatter(x=peaks.index, y=peaks.values.reshape(-1),
                              mode='markers', name='peaks', line=dict(color='red')), row=2, col=1)
-    data['extrema'] = [-k, R2, p_value, std_err ]
+    data['extrema'] = [None if k is None else -k, R2, p_value, std_err ]
 
     envelope, k, q, freq, fft_data, R2, p_value, std_err = sig.wavelet_envelope.values()
-    maximum = np.argmax(envelope)
-    # dynatree.logger.info(f"Maximum obalky je pro {maximum}")
     fig = draw_signal_with_envelope(sig, fig, envelope, k=k, q=q, row=3)
-    data['wavelets'] = [-k, R2, p_value, std_err ]
+    data['wavelets'] = [None if k is None else -k, R2, p_value, std_err ]
 
     fig.update_layout(title=f"Proložení exponenciely pomocí několika metod",
                       height=800,
