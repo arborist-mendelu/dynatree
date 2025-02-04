@@ -47,18 +47,18 @@ def read_data_inclinometers(m, release=None, delta_time=0):
     return df_pulling_tests
 
 
-def add_horizontal_line(df, second_level=False):
+def add_horizontal_line(df, second_level=False, level0=0, level1=1):
     styles = pd.DataFrame('', index=df.index, columns=df.columns)
 
     if second_level:
         # Projdi všechny řádky a přidej stylování
         for i in range(1, len(df)):
-            if df.index[i][1] != df.index[i - 1][1]:  # Pokud se změní druhý sloupec
+            if df.index[i][level1] != df.index[i - 1][level1]:  # Pokud se změní druhý sloupec
                 styles.iloc[i, :] = 'border-top: 1px solid black'  # Přidej hranici    
     
     # Projdi všechny řádky a přidej stylování
     for i in range(1, len(df)):
-        if df.index[i][0] != df.index[i - 1][0]:  # Pokud se změní první sloupec
+        if df.index[i][level0] != df.index[i - 1][level0]:  # Pokud se změní první sloupec
             styles.iloc[i, :] = 'border-top: 3px solid red'  # Přidej hranici
     return styles
 

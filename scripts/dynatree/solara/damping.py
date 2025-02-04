@@ -17,6 +17,7 @@ import config
 import matplotlib.pyplot as plt
 from solara.lab.components.confirmation_dialog import ConfirmationDialog
 from dynatree.solara.snackbar import show_snack, snack
+from dynatree.dynatree_util import add_horizontal_line
 
 dynatree.logger.setLevel(dynatree.logger_level)
 dynatree.logger.setLevel(logging.ERROR)
@@ -68,6 +69,8 @@ devices = {'pulling': ["Elasto(90)", "blueMaj", "yellowMaj"],
            'optics': ["Pt3", "Pt4"],
            'acc': ["a01_z", "a02_z", "a03_z", "a01_y", "a02_y",  "a03_y"]}
 data_sources = sum(devices.values(), [])
+damping_parameter = solara.reactive("b")
+damping_parameters = ["b","LDD"]
 
 
 @solara.component
@@ -76,7 +79,7 @@ def Page():
     solara.Style(s.styles_css)
     snack()
     with solara.lab.Tabs(lazy=True):
-        with solara.lab.Tab("From amplitudes"):
+        with solara.lab.Tab("From amplitudes (single measurement)"):
             with solara.Sidebar():
                 s.Selection(exclude_M01=True,
                             optics_switch=False,
@@ -85,10 +88,32 @@ def Page():
                             measurement_action=draw_images
                             )
                 # s.ImageSizes()
+                with solara.Card(title="Signal source choice"):
+                    solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
+                with solara.Card(title="Plot data"):
+                    solara.Button("Signal", on_click=lambda: create_overlay_signal('signal'))
+                    # solara.Button("FFT", on_click=lambda :create_overlay_signal('fft'))
             try:
                 damping_graphs()
             except:
                 solara.Error("Some problem appeared")
+        with solara.lab.Tab("From amplitudes (tree overview)"):
+            with solara.Sidebar():
+                s.Selection(exclude_M01=True,
+                            optics_switch=False,
+                            day_action=resetuj,
+                            tree_action=resetuj,
+                            )
+                with solara.Card(title="Parameter"):
+                    solara.ToggleButtonsSingle(value=damping_parameter, values = damping_parameters)
+                with solara.Card(title="Popis"):
+                    solara.Markdown(f"""
+                    * Zelené dny odpovídají olistěnému stavu
+                    * Přepnutím stromu se aktualizuje tabulka
+                    * Nastavením ostatních parametrů a přepnutím na předchozí panel je možné zobrazit 
+                      kmity, proložení nebo celý experiment.    
+                    """)
+            show_data_one_tree()
         with solara.lab.Tab("From FFT (images)"):
             with solara.Sidebar():
                 s.Selection(exclude_M01=True,
@@ -244,12 +269,6 @@ def create_overlay_signal(output):
 @solara.component
 def damping_graphs():
     # global current
-    with solara.Sidebar():
-        with solara.Card(title="Signal source choice"):
-            solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
-        with solara.Card(title="Plot data"):
-            solara.Button("Signal", on_click=lambda :create_overlay_signal('signal'))
-            # solara.Button("FFT", on_click=lambda :create_overlay_signal('fft'))
 
     with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width='90%',
                             title=""):
@@ -394,5 +413,40 @@ def draw_images(temp=None):
 
     return {'df':df, 'fig':fig, 'failed':sig.marked_failed, 'peak':sig.main_peak}
 
+
+@solara.component
+def show_data_one_tree():
+    with solara.Card():
+        solara.Markdown(f"## {s.tree.value}")
+        df = pd.read_csv(config.file['outputs/damping_factor'])
+        # Nahradí hodnoty ve sloupcích bez "_R2" None pokud odpovídající "_R2" sloupec má hodnotu > -0.9
+        for col in ['maxima', 'hilbert', 'wavelet']:
+            df.loc[df[f"{col}_R2"] > -0.9, col] = None
+
+        df = df[df["tree"]==s.tree.value]
+        type_order = ['normal', 'noc', 'den', 'afterro', 'afterro2', 'mraz', 'mokro']
+        df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
+        df = df.set_index(["tree","day", "type", "measurement"])
+        df = df.sort_index()
+
+        cols = [i for i in df.columns if f"_{damping_parameter.value}" in i]
+        df = df[cols]
+        df = df.sort_index()
+
+        # Definujeme styly pro index
+        def highlight_index(val):
+            if val in config.summer_dates:
+                return "background-color: lightgreen; font-weight: bold;"
+            return ""
+
+        _ = (
+            df
+            .style.format(precision=3).background_gradient(axis=None)
+            .apply( lambda x:add_horizontal_line(x, second_level=False, level0=1), axis = None)
+            .map_index(highlight_index, level=1)  # Obarví druhou úroveň indexu
+            .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+            .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+        )
+        display(_)
 
 dynatree.logger.info(f"File damping.py loaded in {time.time() - loading_start} sec.")
