@@ -57,12 +57,7 @@ df_reset_inclinometers = pd.read_csv(
     config.file["reset_inclinometers"], index_col=[0,1,2,3]
     ).sort_index()
 
-
-try:
-    datapath = os.environ["DYNATREE_DATAPATH"]
-except:
-    datapath = "../data"
-
+datapath = config.datapath
 
 # def get_notes():
 #     """

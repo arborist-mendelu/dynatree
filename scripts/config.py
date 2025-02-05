@@ -7,10 +7,9 @@ Created on Fri Sep 27 07:03:03 2024
 """
 
 import os
-try:
-    PREFIX = os.environ["PREFIX_DYNATREE"]
-except:
-    PREFIX = ""
+
+PREFIX = os.environ.get("PREFIX_DYNATREE", "")
+datapath = os.environ.get("DYNATREE_DATAPATH", "../data")
 
 file = {}
 
@@ -45,6 +44,8 @@ file['FFT_failed'] = "csv/FFT_failed.csv"
 file['outputs/FFT_acc_knock'] = "../outputs/FFT_acc_knock.csv"
 file['cachedir'] = "../outputs/cache"
 file['cachedir_large'] = "../outputs/fft_images_knocks"
+
+file["trans_vse.csv"] = f"{datapath}/puda/trans_vse.csv"
 
 for key in file.keys():
     file[key] = PREFIX + file[key]
