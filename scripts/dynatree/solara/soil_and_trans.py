@@ -88,8 +88,8 @@ def penetrologger():
 
     with solara.Info():
         solara.Markdown("""
-        * Časový vývoj pro jednotlivá místa
-        * Letní měsíce jsou tečkovaně
+        * Hodnota z penetrometru jako funkce hloubky.
+        * Letní měsíce jsou tečkovaně.
         """, style={'color': 'inherit'})
     # Definice letních měsíců
     letni_mesice = {"06", "07", "08", "09"}
