@@ -308,8 +308,8 @@ def damping_graphs():
     if not draw_images.finished:
         solara.Error("""
         Probíhá výpočet. Trvá řádově vteřiny.Pokud se tato zpráva zobrazuje déle, něco je špatně. 
-        Možná je vybrán probe pro optiku, ale optika není k dispozici. 
-        V takovém případě vyber jiný den nebo jiný probe.
+        Možná je vybrána kombinace vstupů, která není zpracována.  
+        V takovém případě vyber jiný druh měření, den, strom nebo jiný probe.
         """)
         solara.SpinnerSolara(size="100px")
         return
