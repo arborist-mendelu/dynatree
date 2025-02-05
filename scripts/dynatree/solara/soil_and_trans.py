@@ -19,7 +19,7 @@ active_columns = solara.reactive([df.columns[0]])
 all_columns = list(df.columns)
 
 def reset_columns():
-    active_columns.set([all_columns[0]])
+    active_columns.value = [all_columns[0]]
 
 @solara.component
 def Page():
@@ -40,8 +40,11 @@ def draw_graphs():
     df_plot = df[active_columns.value]
     # display(df_plot)
     num_cols = len(df_plot.columns)
-    fig = make_subplots(rows=num_cols, cols=1, shared_xaxes=True, subplot_titles=df_plot.columns)
+
+    fig = make_subplots(rows=num_cols, cols=1, shared_xaxes=True, subplot_titles=df_plot.columns,
+                        vertical_spacing=0.1/num_cols)
     for i, col in enumerate(df_plot.columns, start=1):
         fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot[col], mode="lines", name=col), row=i, col=1)
-    fig.update_layout(height=300 * num_cols, title="Všechny sloupce v subgrafech", showlegend=False)
+    fig.update_layout(height=300 * num_cols, title="", showlegend=False)
+
     solara.FigurePlotly(fig)
