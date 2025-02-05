@@ -7,6 +7,7 @@ import config
 import dynatree.solara.select_source as s
 import glob
 import numpy as np
+import matplotlib.pyplot as plt
 
 active_columns = solara.reactive([])
 def reset_columns():
@@ -27,6 +28,7 @@ def Page():
             solara.Button(label="Reset", on_click=reset_columns)
             draw_graphs(df)
         with solara.lab.Tab("Penetrologger"):
+            s.Selection_trees_only()
             penetrologger()
 
 def read_csv_to_df():
@@ -53,44 +55,55 @@ def draw_graphs(df):
 
 @solara.component
 def penetrologger():
-    def fixname(string):
-        string = string.split('/')[-1]
-        string = string.split('.')[0]
-        string = string.replace("penetrologger ","")
-        return string
-    def fix_column_name(string):
-        if not ("Unnamed" in string):
-            return string
-        string = string.replace("Unnamed: ", "")
-        string = int(string)-4
-        return string
+    df = pd.read_csv(config.file["penetrologger.csv"])
+    solara.Markdown(f"# Tree {s.tree.value}")
+    df = df[df["tree"]==s.tree.value]
 
-    # Funkce, která nahradí nuly na konci řádku za NaN
-    def replace_trailing_zeros(row):
-        # Zjistí, kde jsou nuly na konci řádku a nahradí je NaN
-        for i in range(len(row) - 1, -1, -1):  # Procházíme řádek zpětně
-            if row.iloc[i] == 0:
-                row.iloc[i] = np.nan  # Nahradíme nulu NaN
-            else:
-                break  # Jakmile narazíme na hodnotu jinou než nula, zastavíme
-        return row
+    df_grouped = df.drop(["poznámka", "PENETRATION DATA", "tree"], axis=1).groupby(["day", "směr"],
+                                                                                   as_index=False).mean()
+    newdf = df_grouped.set_index(["směr", "day"]).sort_index().T
 
-    files = glob.glob(config.file["penetrologgers"])
-    data = {fixname(file): pd.read_excel(file) for file in files}
-    # data = {file: data[file].insert(0,'file',file) for file in files}
-    # for key in data.keys():
-    #     data[key].insert(0,'file', fixname(key))
-    # display(data)
-    df = pd.concat(data)
-    df = df.reset_index()
-    df = df.drop( df.columns[1], axis=1)
-    df.columns.values[0] = 'Day'
-    df.columns = [fix_column_name(i) for i in df.columns]
-    df = df.apply(replace_trailing_zeros, axis=1)
-    # display(df["Day"].drop_duplicates())
-    # return
-    # df["Day"] = pd.to_datetime(df["Day"], format='%Y%m%d')
+    # highlight_dates = ["2021-06-29", "2022-08-16", '2024-09-02', '2024-09-02_mokro']
+    # existing_columns = [col for col in newdf.columns if col[1] in highlight_dates]
 
-    # df = pd.read_excel(config.file["penetrologgers"])
-    display(df)
+    # Funkce pro stylování buněk
+    def highlight_text(val):
+        return "color: red;"
 
+    styled_df = (
+        newdf.style.background_gradient(axis=None)
+        .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+        .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+    )
+
+    with solara.Info():
+        solara.Markdown(f"""
+    * Data pro jeden strom. Svisle sleduj hodnoty jako funkci hloubky, vodorovne sleduj jak se ve stejne hloubce 
+      hodnoty meni v case.
+    * U stromu 13 a 10 to nejak nehraje.
+    """, style={'color': 'inherit'})
+    display(styled_df)
+
+    solara.FileDownload(df.to_csv(), filename=f"penetrologger_{s.tree.value}.csv")
+
+    with solara.Info():
+        solara.Markdown("""
+        * Časový vývoj pro jednotlivá místa
+        * Letní měsíce jsou tečkovaně
+        """, style={'color': 'inherit'})
+    # Definice letních měsíců
+    letni_mesice = {"06", "07", "08", "09"}
+
+    fig, axs = plt.subplots(3, 1, figsize=(15, 15), sharex=True)
+
+    for ax, smer in zip(axs, np.unique([col[0] for col in newdf.columns])):
+        for day, data in newdf[smer].items():
+            linestyle = ":" if any(mesic in day for mesic in letni_mesice) else "-"
+            linewidth = 3 if any(mesic in day for mesic in letni_mesice) else 2
+            data.plot(ax=ax, linestyle=linestyle, label=day, linewidth=linewidth)
+
+        ax.set(title=f"{s.tree.value} {smer}")
+        ax.legend()
+        ax.grid()
+
+    solara.FigureMatplotlib(fig)

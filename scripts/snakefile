@@ -20,7 +20,8 @@ rule all_non_acc:
         "../outputs/pull_major_minor_check.pdf",
         "../outputs/peak_width.zip",
         "../outputs/peak_width.csv",
-        "../outputs/damping_factor.csv"
+        "../outputs/damping_factor.csv",
+        "../outputs/penetrologger.csv"
 
 rule all_acc:
     input:
@@ -397,3 +398,20 @@ rule damping_coefficients:
         """
         python -m dynatree.damping
         """
+
+rule penetrologger_merge:
+    output:
+        "../outputs/penetrologger.csv"
+    input:
+        "../data/puda/Puda/penetrologger 20210323.ods",
+        "../data/puda/Puda/penetrologger 20210629.ods",
+        "../data/puda/Puda/penetrologger 20220420.ods",
+        "../data/puda/Puda/penetrologger 20220816.ods",
+        "../data/puda/Puda/penetrologger 20240410.ods",
+        "../data/puda/Puda/penetrologger 20240902_mokro.xlsx",
+        "../data/puda/Puda/penetrologger 20240902.xlsx"
+    shell:
+        """
+        python penetro_merge_xls.py
+        """
+
