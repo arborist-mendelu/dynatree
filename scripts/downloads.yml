@@ -1,4 +1,11 @@
 ---
+title: "Půda"
+
+popis: |
+    * Penetrologger
+
+penetrologger.csv: Spojená data z penetrologeru z xlsx a ods souborů.
+---
 title: "Statika"
 
 popis: |
