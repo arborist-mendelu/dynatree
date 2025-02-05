@@ -365,7 +365,7 @@ def damping_graphs():
             solara.Markdown("""
             TODO: 
 
-            * Nepoužívat příliš dlouhý časový interval. Konec nastavit na 25% maxima. Zatím je nastaveno 
+            * Nepoužívat příliš dlouhý časový interval. Konec nastavit na 15% maxima. Zatím je nastaveno 
               u metody využívající extrémy. Hilbert a wavelety tuto informaci přebírají. Je to tak dostatečné?
             * Možná bude potřeba opravit hledání peaků a další parametry pro optiku a akcelerometry.   
             * Možná bude potřeba doladit vycentrování signálu tak, aby hilbert měl co nejmenší zvlnění.     
@@ -376,7 +376,7 @@ def damping_graphs():
                 * **Extrémy**: 
                     * Po vypuštění se vynechá perioda. 
                     * Peaky nesmí být blíže než 75 procent periody.
-                    * Po prvním peaku, který je pod 25 procent maxima se signál už neuvažuje.
+                    * Po prvním peaku, který je pod 15 procent maxima se signál už neuvažuje.
                 * **Hilbert**
                     * Analyzovaný časový úsek stejný jako u metody extrémů.
                     * Zvážit, jestli by se nedalo zvlnění ovlivnit odstraněním trendu.
