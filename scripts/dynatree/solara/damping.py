@@ -448,6 +448,13 @@ def show_data_one_tree():
     list_of_methods = ['maxima', 'hilbert', 'wavelet']
     with solara.Card():
         solara.Markdown(f"## {s.tree.value}")
+        with solara.Info():
+            solara.Markdown(f"""
+            * Odkaz otevře obrázek v externím okně.
+            * Chybějící hodnoty (nan) odpovídají tomu, že průběh nespadá do limitů pro R^2 a pro délku intervalu nastaveného v levém sloupci. 
+              Vyfiltruj si buď pěkná data pro zpracování nebo škaredá pro posouzení jak dál.
+            """, style = {'color':'inherit'})
+
         df = pd.read_csv(config.file['outputs/damping_factor'])
         # Nahradí hodnoty ve sloupcích bez "_R2" None pokud odpovídající "_R2" sloupec má hodnotu > -0.9
         # for col in list_of_methods:
