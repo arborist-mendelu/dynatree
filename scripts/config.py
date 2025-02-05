@@ -52,3 +52,4 @@ for key in file.keys():
 file['logfile'] = '/tmp/dynatree.log'
 
 summer_dates = ["2021-06-29", "2022-08-16", "2021-08-03", "2023-07-17", "2024-09-02"]
+damping_threshold = 0.15

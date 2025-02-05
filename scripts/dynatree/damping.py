@@ -89,7 +89,7 @@ class DynatreeDampedSignal(DynatreeSignal):
 
     # @property
     @timeit
-    def fit_maxima(self, threshold = 0.25):
+    def fit_maxima(self, threshold = config.damping_threshold):
         # distance = 50
         # window_length = 100
         # if self.signal_source in ["Elasto(90)","blueMaj","yellowMaj"]:
