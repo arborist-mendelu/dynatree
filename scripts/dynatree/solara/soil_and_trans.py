@@ -27,6 +27,8 @@ def Page():
     # display(all_columns)
 
     solara.Style(s.styles_css)
+    solara.Title("DYNATREE: Soil, transpiration, air condition, ...")
+
     solara.ToggleButtonsMultiple(value=active_columns, values=all_columns)
     solara.Button(label="Reset", on_click=reset_columns)
     draw_graphs()
