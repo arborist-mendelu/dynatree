@@ -46,6 +46,7 @@ file['cachedir'] = "../outputs/cache"
 file['cachedir_large'] = "../outputs/fft_images_knocks"
 
 file["trans_vse.csv"] = f"{datapath}/puda/trans_vse.csv"
+file["penetrologgers"] = f"{datapath}/puda/Puda/penetrologger*"
 
 for key in file.keys():
     file[key] = PREFIX + file[key]

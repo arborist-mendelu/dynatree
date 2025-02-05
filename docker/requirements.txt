@@ -24,3 +24,4 @@ weasyprint
 toml
 parallelbar
 pydantic
+odfpy
