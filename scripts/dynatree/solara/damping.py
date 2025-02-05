@@ -488,6 +488,8 @@ def show_data_one_tree():
             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
             .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
         )
+
+        solara.Style(".level1 {border-style: solid !important; border-color:gray !important; border-width:1px !important;}")
         display(_)
 
 dynatree.logger.info(f"File damping.py loaded in {time.time() - loading_start} sec.")
