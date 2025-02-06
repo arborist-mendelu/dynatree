@@ -59,9 +59,9 @@ def penetrologger():
     solara.Markdown(f"# Tree {s.tree.value}")
     df = df[df["tree"]==s.tree.value]
 
-    df_grouped = df.drop(["poznámka", "PENETRATION DATA", "tree"], axis=1).groupby(["day", "směr"],
+    df_grouped = df.drop(["poznámka", "PENETRATION DATA", "tree", "směr"], axis=1).groupby(["day"],
                                                                                    as_index=False).mean()
-    newdf = df_grouped.set_index(["směr", "day"]).sort_index().T
+    newdf = df_grouped.set_index(["day"]).sort_index().T
 
     # highlight_dates = ["2021-06-29", "2022-08-16", '2024-09-02', '2024-09-02_mokro']
     # existing_columns = [col for col in newdf.columns if col[1] in highlight_dates]
@@ -94,16 +94,15 @@ def penetrologger():
     # Definice letních měsíců
     letni_mesice = {"06", "07", "08", "09"}
 
-    fig, axs = plt.subplots(3, 1, figsize=(15, 15), sharex=True)
+    fig, ax = plt.subplots(1, 1, figsize=(15, 5), sharex=True)
 
-    for ax, smer in zip(axs, np.unique([col[0] for col in newdf.columns])):
-        for day, data in newdf[smer].items():
-            linestyle = ":" if any(mesic in day for mesic in letni_mesice) else "-"
-            linewidth = 3 if any(mesic in day for mesic in letni_mesice) else 2
-            data.plot(ax=ax, linestyle=linestyle, label=day, linewidth=linewidth)
+    for day, data in newdf.items():
+        linestyle = ":" if any(mesic in day for mesic in letni_mesice) else "-"
+        linewidth = 3 if any(mesic in day for mesic in letni_mesice) else 2
+        data.plot(ax=ax, linestyle=linestyle, label=day, linewidth=linewidth)
 
-        ax.set(title=f"{s.tree.value} {smer}")
-        ax.legend()
-        ax.grid()
+    ax.set(title=f"{s.tree.value}")
+    ax.legend()
+    ax.grid()
 
     solara.FigureMatplotlib(fig)
