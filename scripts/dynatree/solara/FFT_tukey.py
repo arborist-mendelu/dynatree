@@ -36,13 +36,6 @@ import logging
 logger = dynatree.logger
 filelogger = dynatree.logger
 
-# filelogger.setLevel(logging.INFO)
-# filehandler = logging.handlers.RotatingFileHandler(f"{os.path.expanduser('~')}/solara_log/solara_FFT.log", maxBytes=10000000, backupCount=10)
-# log_format = logging.Formatter("[%(asctime)s] %(levelname)s | %(message)s")
-# filehandler.setFormatter(log_format)
-# filelogger.addHandler(filehandler)
-
-
 pd.options.display.float_format = '{:.3f}'.format
 df_komentare = pd.read_csv(config.file['FFT_comments'], index_col=[0,1,2,3,4])
 df_failed = pd.read_csv(config.file["FFT_failed"]).values.tolist()
@@ -422,6 +415,11 @@ def Page():
                         with solara.Row():
                             solara.Switch(label="Use manual peaks (if any)", value=use_manual_peaks)
                             solara.Switch(label="Include accelerometers", value=use_acc_in_fft_table)
+                        with solara.Info():
+                            solara.Markdown(f"""
+2025-02-06: Oprava, ukazují se vypočtené peaky s opravami podle [csv souboru](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/csv/FFT_manual_peaks.csv). 
+Volba "Use manual" se vztahuje k peakům, které si nakliknete a uložíte v rámci této session do paměti.
+""", style={'color':'inherit'})
                         with solara.Card(title=f"All days for tree {s.tree.value}"):
                             # try:
                             subdfA = df_fft_all.loc[(slice(None),slice(None),s.tree.value,slice(None)),:]

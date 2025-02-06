@@ -52,13 +52,12 @@ FFT_acc_average_graph.zip: Obrázky průměrných FFT spekter
 ---
 title: "FFT, oscilace, pull and release"
 
-popis: 
-    FFT analýza nově (k 2024-09-22), tj. automatické (doladit? připustit výjimky?) 
-    detekování okamžiku vypuštění, tukey window, automatické detekování peaků.
-
-FFT_csv_tukey.csv: Data, výstupy z FFT analýzy. Bez podsamplování ACC, automatická volba intervalu.
+FFT_csv_tukey.csv: |
+    Data, výstupy z FFT analýzy. Bez podsamplování ACC, automatická volba intervalu.
     Long format. (Wide format vzniká za běhu a je ke stažení na stráce FFT_tukey_all. 
     Tam jsou ke stažení i csv, které s v průběhu zpracování používají.)
+    
+    Oprava 2025-02-06. Zohledňují se opravy v [csv souboru](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/csv/FFT_manual_peaks.csv).
 
 FFT_spectra.zip: Obrázky nepovedených experimentů. Spektra, která jsou vyloučena ze zpracování jako nepovedené experimenty. 
 

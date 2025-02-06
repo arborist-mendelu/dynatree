@@ -36,6 +36,7 @@ file["FFT_release"] = "csv/FFT_release.csv"
 file["FFT_failed"] = "csv/FFT_failed.csv"
 
 file['outputs/FFT_csv_tukey'] = "../outputs/FFT_csv_tukey.csv"
+file['outputs/FFT_csv_tukey_raw'] = "../outputs/FFT_csv_tukey_raw.csv"
 file['FFT_manual_peaks'] = "csv/FFT_manual_peaks.csv"
 file['solara_FFT'] = "csv/solara_FFT.csv"
 file['FFT_comments'] = "csv/FFT_comments.csv"

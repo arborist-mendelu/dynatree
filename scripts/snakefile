@@ -14,6 +14,7 @@ rule all_non_acc:
         "csv_output/measurement_notes.csv",
         "../outputs/static_pull_suspicious_experiments.zip",
         "../outputs/FFT_csv_tukey.csv",
+        "../outputs/FFT_csv_tukey_raw.csv",
         "../outputs/fft_boxplots_for_probes_tukey.pdf",
         "../outputs/static_pull_first_versus_other_pulls.html",
         "../outputs/welch.pdf",
@@ -21,6 +22,7 @@ rule all_non_acc:
         "../outputs/peak_width.zip",
         "../outputs/peak_width.csv",
         "../outputs/damping_factor.csv",
+        "../outputs/sondy_a_stromy.csv",
         "../outputs/penetrologger.csv"
 
 rule all_acc:
@@ -299,7 +301,7 @@ rule fft_all_probes:
     input: 
         "csv/FFT_failed.csv"
     output: 
-        csv = "../outputs/FFT_csv_tukey.csv",
+        csv = "../outputs/FFT_csv_tukey_raw.csv",
         zip = "../outputs/FFT_spectra.zip"
     shell:
         """
@@ -311,7 +313,22 @@ rule fft_all_probes:
         rm ../{output.zip} || true
         zip -q ../{output.zip} *
         """
-        
+
+rule fft_all_probes_merge:
+    """
+    Merge data from FFT with manually determined peaks
+    """
+    input:
+        "../outputs/FFT_csv_tukey_raw.csv",
+        "csv/FFT_failed.csv",
+        "csv/FFT_manual_peaks.csv"
+    output:
+        csv = "../outputs/FFT_csv_tukey.csv",
+    shell:
+        """
+        python -m dynatree.FFT_merge_manual
+        """
+
 rule fft_all_probes_boxplots:
     """
     Draw boxplots from fft
@@ -414,4 +431,14 @@ rule penetrologger_merge:
         """
         python penetro_merge_xls.py
         """
-
+rule vlhkosti:
+    output:
+        "../outputs/sondy_a_stromy.csv",
+        "../outputs/vlhkosti_babice.csv"
+    input:
+        "../data/puda/Puda/vlhkosti_babice.ods"
+    shell:
+        """
+        cd puda
+        python puda_vlhost_to_csv.py
+        """
