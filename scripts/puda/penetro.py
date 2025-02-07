@@ -15,3 +15,6 @@ group_df["mean"] = group_df[cisla].mean(axis=1)
 
 prehled = group_df.pivot_table(index="day", columns="tree", values="mean")
 print(prehled)
+# vykresleni tabulky pomoci heatmap
+sns.heatmap(prehled, cmap="viridis")
+plt.show()
