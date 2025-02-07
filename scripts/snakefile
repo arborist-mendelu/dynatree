@@ -420,7 +420,7 @@ rule penetrologger_merge:
     output:
         "../outputs/penetrologger.csv"
     input:
-        "../data/puda/Puda/penetrologger 20210323.ods",
+        "../data/puda/Puda/penetrologger 20210322.ods",
         "../data/puda/Puda/penetrologger 20210629.ods",
         "../data/puda/Puda/penetrologger 20220420.ods",
         "../data/puda/Puda/penetrologger 20220816.ods",
