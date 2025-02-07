@@ -1,10 +1,15 @@
+
 ---
 title: "Půda"
 
-popis: |
-    * Penetrologger
+popis: "Vlhkost, data z penetrologgeru. Pro následné spojení s tuhostmi kořenového systému nebo případně stromu."
 
-penetrologger.csv: Spojená data z penetrologeru z xlsx a ods souborů.
+penetrologger.csv: Spojená data z ods a xls souborů se záznamy z penetrologgeru.
+
+vlhkosti_babice.csv: Vlhkosti půdy. Spojená data ze sešitů v souboru `vlhkosti_babice.ods`.
+
+sondy_a_stromy.csv: Přiřazení stromů k sondám.
+
 ---
 title: "Statika"
 
