@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moje Stránka</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 1600px;
+            margin: auto;
+        }
+        .image-container {
+            margin: 20px 0;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+        .controls {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <h1>Grafy pro {{ method }} {{ tree }} {{ measurement }}</h1>
+
+        <div class="controls">
+            <label>Začátek: <input v-model="start" type="number"></label>
+            <label>Konec: <input v-model="end" type="number"></label>
+            <button @click="updateImages">Aktualizovat</button>
+        </div>
+
+        <div v-if="imageUrl1" class="image-container">
+            <h2>{{ probe1 }}</h2>
+            <img :src="imageUrl1" alt="Graf 1">
+        </div>
+
+        <div v-if="imageUrl2" class="image-container">
+            <h2>{{ probe2 }}</h2>
+            <img :src="imageUrl2" alt="Graf 2">
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, watch } = Vue;
+
+        createApp({
+            setup() {
+                const params = new URLSearchParams(window.location.search);
+                const method = params.get('method') || 'Neznámé';
+                const tree = params.get('tree') || 'Neznámé';
+                const measurement = params.get('measurement') || 'Neznámé';
+                const probe1 = params.get('probe1');
+                const probe2 = params.get('probe2');
+                const start = ref(params.get('start') || '0');
+                const end = ref(params.get('end') || '1000000000');
+                const format = params.get('format') || 'png';
+
+                const imageUrl1 = ref('');
+                const imageUrl2 = ref('');
+
+                const generateImageUrl = (probe, delay = 0) => {
+                    if (!probe) return '';
+                    setTimeout(() => {
+                        const url = `https://math4u.mendelu.cz/draw_graph/?method=${method}&tree=${tree}&measurement=${measurement}&probe=${probe}&start=${start.value}&end=${end.value}&format=${format}&timestamp=${Date.now()}`;
+                        if (probe === probe1) {
+                            imageUrl1.value = url;
+                        } else {
+                            imageUrl2.value = url;
+                        }
+                    }, delay);
+                };
+
+                const updateImages = () => {
+                    generateImageUrl(probe1, 0);
+                    generateImageUrl(probe2, 500);
+                };
+
+                updateImages();
+                return {
+                    method, tree, measurement, probe1, probe2, start, end,
+                    imageUrl1, imageUrl2, updateImages
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
