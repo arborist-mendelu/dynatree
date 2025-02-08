@@ -71,7 +71,7 @@ def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement=
         day,method = method.split("_")
     print("   Received request:", tree, method, day, measurement, format, probe)
     m = dynatree.DynatreeMeasurement(tree=tree, measurement_type=method, day=day, measurement=measurement)
-    if ("Elasto" in probe) or ("Inclino" in probe):
+    if ("Elasto" in probe) or ("Inclino" in probe) or ("Force" in probe) or ("Maj" in probe):
         data = m.data_pulling
     elif "a0" in probe:
         data = m.data_acc5000
