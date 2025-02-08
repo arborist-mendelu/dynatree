@@ -1170,13 +1170,19 @@ def stahni_csv(file, label="Download", msg=None):
 
 
 def Help():
-    with solara.Card():
-        with solara.Column():
-            solara.Text("Použité parametry")
-            stahni_csv("csv/static_fail.csv", msg="Zkoušky klasifikované jako nepovedené")
-            stahni_csv("csv/static_checked_OK.csv",
-                       msg="Zkoušky klasifikované jako OK, i když se hodnoty liší od ostatních")
-            stahni_csv("csv/reset_inclinometers.csv", msg="Ručně vynulované inklinometry")
+    with solara.Card(title="Použité parametry"):
+        solara.Markdown(""" 
+        * [`csv/static_fail.csv`](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/csv/static_fail.csv) 
+          Zkoušky klasifikované jako nepovedené
+        * [`ccsv/static_checked_OK.csv`](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/csv/static_checked_OK.csv) 
+          Zkoušky klasifikované jako OK, i když se hodnoty liší od ostatních
+        * [`csv/reset_inclinometers.csv`](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/csv/reset_inclinometers.csv) 
+          Ručně vynulované inklinometry
+        * [`csv/static_manual_limits.csv`](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/csv/static_manual_limits.csv) 
+          Ručně nastavené časové limity pro regresi. Používá se, pokud regrese není pěkná, ale dá se identifikovat, že k problému došlo na začátku nebo na konci a zbytek 
+          je pro regresi dostetačně dlouhý.
+        """, style={'color':'inherit'})
+
     solara.Markdown(
         """
 ### Práce
