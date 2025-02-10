@@ -4,9 +4,9 @@ title: "Půda"
 
 popis: "Vlhkost, data z penetrologgeru. Pro následné spojení s tuhostmi kořenového systému nebo případně stromu."
 
-penetrologger.csv: Spojená data z ods a xls souborů se záznamy z penetrologgeru.
+penetrologger.csv: Spojená data z ods souborů se záznamy z penetrologgeru.
 
-vlhkosti_babice.csv: Vlhkosti půdy. Spojená data ze sešitů v souboru `vlhkosti_babice.ods`.
+vlhkosti_babice.csv: Vlhkosti půdy. Spojená data ze sešitů v souboru `ERC_vlhkost_upraveno.ods`.
 
 sondy_a_stromy.csv: Přiřazení stromů k sondám.
 
