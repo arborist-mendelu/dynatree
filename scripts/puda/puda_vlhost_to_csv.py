@@ -8,7 +8,7 @@ import pandas as pd
 import os
 
 # cesta k souboru
-cesta = os.path.join("..", "..", "data", "puda", "Puda", "vlhkosti_babice.ods")
+cesta = os.path.join("..", "..", "data", "puda", "Puda", "ERC_vlhkost_upraveno.ods")
 
 # načtení dat
 data = pd.read_excel(cesta, sheet_name=None, header=None)

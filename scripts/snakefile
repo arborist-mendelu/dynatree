@@ -425,8 +425,8 @@ rule penetrologger_merge:
         "../data/puda/Puda/penetrologger 20220405.ods",
         "../data/puda/Puda/penetrologger 20220816.ods",
         "../data/puda/Puda/penetrologger 20240410.ods",
-        "../data/puda/Puda/penetrologger 20240902_mokro.xlsx",
-        "../data/puda/Puda/penetrologger 20240902.xlsx"
+        "../data/puda/Puda/penetrologger 20240902_mokro.ods",
+        "../data/puda/Puda/penetrologger 20240902.ods"
     shell:
         """
         python penetro_merge_xls.py
@@ -436,7 +436,7 @@ rule vlhkosti:
         "../outputs/sondy_a_stromy.csv",
         "../outputs/vlhkosti_babice.csv"
     input:
-        "../data/puda/Puda/vlhkosti_babice.ods"
+        "../data/puda/Puda/ERC_vlhkost_upraveno.ods"
     shell:
         """
         cd puda
