@@ -517,7 +517,7 @@ class DynatreeStaticPulling:
             regressions = [
             ["M", "blueMaj", "yellowMaj"],
             ["M_Elasto", "Elasto-strain"],
-            # ["Force(100)", "blueMaj", "yellowMaj", "Elasto(90)"],
+            ["Force(100)", "blueMaj", "yellowMaj", "Elasto(90)"],
             ]
         reg = DynatreeStaticPulling._get_regressions(self.data,
              regressions,
