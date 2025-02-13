@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# %%
 """
 Created on Tue Sep 24 20:47:57 2024
 
@@ -34,33 +35,31 @@ df = pd.read_csv(config.file["outputs/anotated_regressions_static"], index_col=0
 df = df.dropna(subset=["Independent","Dependent"],how='all')
 df = df[df["lower_cut"]==0.3]
 df = df.dropna(how='all', axis=0)
-df = df[~df['Dependent'].str.contains('Min')]
+df = df[~df['Independent'].str.contains('Min')]
 df = df[~df['tree'].str.contains('JD')]
 df = df[~ df["failed"]]
 df = df.drop(["Intercept","p-value","stderr","intercept_stderr","lower_cut", "upper_cut"], axis=1)
 
-a = df[(df["optics"]) & (df['Dependent'].str.contains('Pt'))]
+a = df[(df["optics"]) & (df['Independent'].str.contains('Pt'))]
 b = df[~df["optics"]]
 oridf = pd.concat([a,b]).reset_index(drop=True)
 
-#%%
-
+# %%
 df = oridf.copy()
 df = df[
     (df["measurement"]=="M01") & 
-     ((df["Independent"]=="M") |
-      (df["Independent"]=="M_Elasto"))
+     ((df["Dependent"]=="M") |
+      (df["Dependent"]=="M_Elasto"))
     ].drop(["optics"], axis=1)
 
-#%%
-
+# %%
 df_all_M = oridf.copy()
 df_all_M = df_all_M[
-     ((df_all_M["Independent"]=="M") |
-      (df_all_M["Independent"]=="M_Elasto"))
+     ((df_all_M["Dependent"]=="M") |
+      (df_all_M["Dependent"]=="M_Elasto"))
     ].drop(["optics"], axis=1)
 
-#%%
+# %%
 # Nejprve vytáhneme hodnoty Slope pro pull=0
 df_zero_pull = df[df['pullNo'] == 0].copy()
 
@@ -80,5 +79,7 @@ df_merged = pd.merge(df_nonzero_pull, df_zero_pull[['day', 'tree', 'Independent'
 for i in ['Slope']:
     df_merged[f'{i}_normalized'] = df_merged[i] / df_merged[f'{i}_zero_pull']
 df_merged = df_merged.drop(columns=["reason"])
-df_merged = df_merged.dropna()
+df_merged = df_merged.dropna(subset=[col for col in df_merged.columns if col != 'kamera'])
 
+
+# %%

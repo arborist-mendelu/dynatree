@@ -18,7 +18,7 @@ df = df.dropna(subset=["Independent","Dependent"],how='all')
 df = df[df["lower_cut"]==0.3]
 df = df[df["optics"]==False]
 df = df.dropna(how='all', axis=0)
-df = df[df['Dependent'].isin(['blueMaj', 'yellowMaj', 'Elasto-strain'])]
+df = df[df['Independent'].isin(['blueMaj', 'yellowMaj', 'Elasto-strain'])]
 # df = df[~df['Dependent'].str.contains('Min')]
 df = df.sort_values(by="R^2")
 df = df[(df['R^2'] < 0.9) | (df['failed']==True)]
@@ -26,7 +26,7 @@ df = df[(df['R^2'] < 0.9) | (df['failed']==True)]
 print(df.shape)
 
 def plot_row(row):
-    if row['Dependent'] in ["Pt3","Pt4"]:
+    if row['Independent'] in ["Pt3","Pt4"]:
         return
     m = static_pull.DynatreeStaticMeasurement(
         day=row['day'], tree=row['tree'], measurement=row['measurement'], 
@@ -34,17 +34,17 @@ def plot_row(row):
     pull = m.pullings[row['pullNo']]
     fig, ax = plt.subplots(3,2,figsize=(12,8))
     data = pull.data
-    if row['Dependent'] in ['blue', 'blueMaj']:  # consider only Major
+    if row['Independent'] in ['blue', 'blueMaj']:  # consider only Major
         data.plot(y=["Inclino(80)X","Inclino(80)Y"], ax=ax[0,1], style='.')
         data.plot(x="Force(100)", y=["Inclino(80)X","Inclino(80)Y"], ax=ax[2,0], style='.')
         m.data_pulling.plot(y=["Inclino(80)X","Inclino(80)Y"], ax = ax[0,0], style='.')
     
-    if row['Dependent'] in ['yellow','yellowMaj']: # consider only Major
+    if row['Independent'] in ['yellow','yellowMaj']: # consider only Major
         data.plot(y=["Inclino(81)X","Inclino(81)Y"], ax=ax[0,1], style='.')
         data.plot(x="Force(100)", y=["Inclino(81)X","Inclino(81)Y"], ax=ax[2,0], style='.')
         m.data_pulling.plot(y=["Inclino(81)X","Inclino(81)Y"], ax = ax[0,0], style='.')
         
-    if row['Dependent'] == 'Elasto-strain':
+    if row['Independent'] == 'Elasto-strain':
         data.plot(y=["Elasto(90)"], ax=ax[0,1], style='.')
         data.plot(x="Force(100)", y=["Elasto(90)"], ax=ax[2,0], style='.')
         m.data_pulling.plot(y=["Elasto(90)"], ax = ax[0,0], style='.')

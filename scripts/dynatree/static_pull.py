@@ -531,40 +531,54 @@ class DynatreeStaticPulling:
         """
         Return regression in dataframe. 
         
-        The variable colist is list. This variable is assumed to be list of lists. 
+        The variable collist is list. This variable is assumed to be list of lists.
         In each sublist, the regression of the first item to the other ones is 
-        evaluated.
+        evaluated. The first columns is the dependent variable (typically momentum or Force)
+        and the other columns are considered as independent variables (typically angle or strain).
         """
         data = [DynatreeStaticPulling._get_regressions_for_one_column(
             df.loc[:, i], i[0], msg=msg, coords=coords) for i in collist]
         return pd.concat(data)
     
     @staticmethod
-    def _get_regressions_for_one_column(df, independent, msg="", coords=None):
+    def _get_regressions_for_one_column(df, zavisla, msg="", coords=None):
+        """
+
+        Parameters
+        ----------
+        df
+        zavisla
+        msg
+        coords
+
+        Returns
+        -------
+
+        """
         # rich.print(f"get regr for one column {independent} {df.columns} {coords}")
         regrese = {}
-        dependent = [_ for _ in df.columns if _ !=independent]
+        nezavisla = [_ for _ in df.columns if _ != zavisla]
         dynatree.logger.debug(
-            f"Regressions on dataframe of shape {df.shape}\n    independent {independent}, dependent {dependent}")
-        for i in dependent:
+            f"Regressions on dataframe of shape {df.shape}\n    independent {nezavisla}, dependent {zavisla}")
+        for i in nezavisla:
             lower, upper = 0, 1e6
             if coords is not None:
-                full_coords = (*coords, 0, independent, i)
+                full_coords = (*coords, 0, zavisla, i)
                 if full_coords in DF_MANUAL_LIMITS.index:
                     lower, upper = DF_MANUAL_LIMITS.loc[full_coords,:].values
-            cleandf = df.loc[(df.index >= lower) & (df.index <= upper),[independent,i]].dropna()
+            cleandf = df.loc[(df.index >= lower) & (df.index <= upper),[zavisla, i]].dropna()
             # do regresions without nan
             try:
-                reg = linregress(cleandf[independent],cleandf[i])
-                regrese[i] = [independent, i, reg.slope, reg.intercept, reg.rvalue ** 2, reg.pvalue, reg.stderr,
+                reg = linregress(cleandf[i], cleandf[zavisla])
+                regrese[i] = [i, zavisla, reg.slope, reg.intercept, reg.rvalue ** 2, reg.pvalue, reg.stderr,
                               reg.intercept_stderr]
             except:
-                dynatree.logger.error(f"Linear regression failed for {independent} versus {i}. {msg}")
+                dynatree.logger.error(f"Linear regression failed for {zavisla} versus {i}. {msg}")
                 pass
 
         ans_df = pd.DataFrame(regrese,
                               index=["Independent", "Dependent", "Slope", "Intercept", "R^2", "p-value", "stderr",
-                                     "intercept_stderr"], columns=dependent).T
+                                     "intercept_stderr"], columns=nezavisla).T
         return ans_df    
 
 def proces_one_row(row):
