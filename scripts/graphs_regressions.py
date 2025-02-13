@@ -38,11 +38,11 @@ import config
 #  '2024-09-02']
 
 # +
-# df = df.query("not (Dependent == 'blue' and tree == 'BK08' and measurement == 'M03' and day == '2021-03-22')")
-# df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-04-05')")
-# df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-08-16')")
-# df = df.query("not (Dependent == 'Elasto-strain' and tree == 'BK08' and measurement == 'M03' and day == '2024-09-02')")
-# df = df.query("not (Dependent == 'blue' and tree == 'BK13' and measurement == 'M01' and day == '2024-09-02' and 'pullNo' == '0')")
+# df = df.query("not (Independent == 'blue' and tree == 'BK08' and measurement == 'M03' and day == '2021-03-22')")
+# df = df.query("not (Independent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-04-05')")
+# df = df.query("not (Independent == 'Elasto-strain' and tree == 'BK10' and measurement == 'M04' and day == '2022-08-16')")
+# df = df.query("not (Independent == 'Elasto-strain' and tree == 'BK08' and measurement == 'M03' and day == '2024-09-02')")
+# df = df.query("not (Independent == 'blue' and tree == 'BK13' and measurement == 'M01' and day == '2024-09-02' and 'pullNo' == '0')")
 # -
 
 
@@ -80,7 +80,7 @@ def read_data():
     df.loc[idx,"reductionNo"]=2
 
     df = df.drop(["optics","lower_cut"], axis=1).reset_index(drop=True)
-    df = df[df["Dependent"].isin(["blueMaj","yellowMaj","Elasto-strain"])]
+    df = df[df["Independent"].isin(["blueMaj","yellowMaj","Elasto-strain"])]
 
     pairs = df[["Independent","Dependent"]].drop_duplicates()
 
@@ -110,14 +110,14 @@ def main(remove_failed=False, trees=None, width=1000, height=500, limitR2=None, 
         df = df[df['measurement'] == "M01"]
     for tree in trees:
         fig = make_subplots(rows=1, cols=3,
-                            subplot_titles=("M/Inclino_Camera", "M/Inclino_No_Camera", "M_Elasto/Elasto-strain"))
+                            subplot_titles=("Inclino_Camera/M", "Inclino_No_Camera/M", "Elasto-strain/M_Elasto"))
         f = {}
         masks = [
             # zip(["M","M","M_Elasto"],["blueMaj", "yellowMaj", "Elasto-strain"])
             # (df["Independent"]==i) & (df["Dependent"]==d) & (df["tree"]==tree)
-            (df["Independent"] == "M") & (df["kamera"] == "True") & (df["tree"] == tree),
-            (df["Independent"] == "M") & (df["kamera"] == "False") & (df["tree"] == tree),
-            (df["Independent"] == "M_Elasto") & (df["Dependent"] == "Elasto-strain") & (df["tree"] == tree)
+            (df["Dependent"] == "M") & (df["kamera"] == "True") & (df["tree"] == tree),
+            (df["Dependent"] == "M") & (df["kamera"] == "False") & (df["tree"] == tree),
+            (df["Dependent"] == "M_Elasto") & (df["Independent"] == "Elasto-strain") & (df["tree"] == tree)
         ]
         for I, mask in enumerate(masks):
             f[I] = px.strip(df[mask],

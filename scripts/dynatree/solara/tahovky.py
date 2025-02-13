@@ -271,38 +271,38 @@ def click_figure(data,event, shift=False, ctrl=False, alt=False):
         restricted = None
     m = static_pull.DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=mt,
                                               optics=False, restricted=restricted)
-    if dep in ["blueMaj", "yellowMaj"]:
-        subtitle = f"{dep}, {m.identify_major_minor[dep]}"
+    if indep in ["blueMaj", "yellowMaj"]:
+        subtitle = f"{indep}, {m.identify_major_minor[indep]}"
     else:
-        subtitle = dep
+        subtitle = indep
     if ctrl == False:
         pull = m.pullings[pullNo]
         df = pull.data
     else:
-        if dep in ["blueMaj", "yellowMaj"]:
-            dep = m.identify_major_minor[dep]
+        if indep in ["blueMaj", "yellowMaj"]:
+            indep = m.identify_major_minor[indep]
         else:
-            dep = "Elasto(90)"
-        df = m.data_pulling[[dep, "Force(100)"]]
+            indep = "Elasto(90)"
+        df = m.data_pulling[[indep, "Force(100)"]]
 
 
     # rich.print(df.columns)
     if alt == True:
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df[["Force(100)"]].to_numpy().reshape(-1), y=df[[dep]].to_numpy().reshape(-1), mode='markers'))
+        fig.add_trace(go.Scatter(y=df[["Force(100)"]].to_numpy().reshape(-1), x=df[[indep]].to_numpy().reshape(-1), mode='markers'))
         fig.update_layout(
-            xaxis_title="Force",  # Nastavení popisku osy X
-            yaxis_title=dep,
+            yaxis_title="Force",  # Nastavení popisku osy X
+            xaxis_title=indep,
         )
     else:
         fig = make_subplots(rows=2, cols=1, subplot_titles=(subtitle, "Force"), shared_xaxes=True)
-        fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[[dep]].to_numpy().reshape(-1), mode=mode), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[[indep]].to_numpy().reshape(-1), mode=mode), row=1, col=1)
         fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[["Force(100)"]].to_numpy().reshape(-1), mode=mode), row=2, col=1)
         fig.update_layout(hovermode = "x unified")
         fig.update_traces(xaxis='x2')
         fig.update_layout(
             xaxis2_title="Time",  # Nastavení popisku osy X
-            yaxis_title=dep,
+            yaxis_title=indep,
             yaxis2_title="Force"
         )
     newdata = [str(data[i]) for i in [1,-1,0,5, 2,3,4,6, 7]]
@@ -325,10 +325,10 @@ def slope_trend():
         df = df[df['measurement'] != "M01"]
     if not include_dynamics.value:
         df = df[df['measurement'] == "M01"]
-    dependent = probe.value
-    if dependent == "Elasto-strain":
-        filtered_df = df[df['Dependent'] == dependent]
-    elif dependent == "Camera":
+    independent = probe.value
+    if independent == "Elasto-strain":
+        filtered_df = df[df['Independent'] == independent]
+    elif independent == "Camera":
         filtered_df = df[df['kamera'] == True]
     else:
         filtered_df = df[df['kamera'] == False]
@@ -372,7 +372,7 @@ def slope_trend():
             ],
             locations=loc.body(columns="Slope")
         )
-        .tab_header(title=f"Slope of momentum versus {dependent}")
+        .tab_header(title=f"Slope of momentum versus {independent}")
         .tab_spanner(label="Measurement", columns=["type", "day", "tree", "measurement", "pullNo"])
         .cols_label({"type": "", "day": "", "measurement": "", "tree": "", "pullNo": ""})
     )
@@ -444,7 +444,7 @@ def slope_trend_more():
           .pipe(lambda x: x[~x['optics']])
           # .pipe(lambda x: x[~(x['Dependent'].str.contains('Min'))])
           .pipe(lambda x: x[x['tree'].str.contains('BK')])
-          .pipe(lambda x: x[x['Independent'] == "M"])
+          .pipe(lambda x: x[x['Dependent'] == "M"])
           .pipe(lambda x: x[["type", "day", "tree", "Independent", "Dependent", "Slope", "pullNo", "measurement", "kamera", "R^2"]])
           # .pivot(values="Slope", columns='pullNo', index=
           #        ['type', 'day', 'tree', 'measurement', 'Dependent'])
@@ -456,12 +456,13 @@ def slope_trend_more():
     if color.value == "pullNo":
         df = df.pipe(lambda x: x[x['measurement'] == 'M01'])
     # breakpoint()
-    df["Slope × 1000"] = df["Slope"] * 1000
+    df["Slope / 1000"] = df["Slope"] / 1000
+    df["Slope / 1000"] = df["Slope"] / 1000
     df["id"] = df["day"] + " " + df["type"]
-    fig = plx.strip(df, x="id", y="Slope × 1000", template="plotly_white",
+    fig = plx.strip(df, x="id", y="Slope", template="plotly_white",
                     color=color.value,
                     hover_data=["tree", "type", "pullNo", "Independent", "Dependent", "measurement", "kamera", "R^2", "day"],
-                    title=f"Tree {s.tree.value}, inclinometers, slope from the momentum-angle relationship.",
+                    title=f"Tree {s.tree.value}, inclinometers, slope from the angle-momentum relationship.",
                     width=s.width.value, height=s.height.value
                     )
     figdata = fig
@@ -471,7 +472,7 @@ def slope_trend_more():
     with solara.Info():
         solara.Markdown(
             """
-            * V tabulce jsou data pro M01, pokud je vybráno "PullNo" a všechna data, pokud je vybráno "kamera".
+            * V tabulce jsou data pro M01, pokud je vybráno "PullNo" a všechna data, pokud je vybráno "kamera" nebo "category".
             * Barvné rozseparování podle pullNo (číslo zatáhnutí) umožní sledovat, jestli 
               se během experimentu liší první zatáhnutí od ostatních a jak. 
             * Barevné rozseparování podle kamera umožní studovat časový vývoj v daném místě stromu. Kamera true/false 
@@ -479,7 +480,7 @@ def slope_trend_more():
             """,
             style={'color': 'inherit'}
         )
-    df = df.pivot(index=["day", "type"], columns=["kamera", "pullNo"], values="Slope × 1000")
+    df = df.pivot(index=["day", "type"], columns=["kamera", "pullNo"], values="Slope")
     df_kamera = static_pull.DF_PT_NOTES["kamera"].copy().reset_index()
     df_kamera = df_kamera[df_kamera["tree"] == s.tree.value].drop("tree", axis=1).set_index(["day","type"])
     df_kamera.columns = [("kamera","")]
@@ -499,16 +500,17 @@ def slope_trend_more():
 def normalized_slope():
     df_merged = static_lib_pull_comparison.df_merged
     subdf = df_merged[df_merged["pullNo"] != 0].loc[:,
-            ["type", "day", "tree", "Dependent", "kamera", "pullNo", "Slope_normalized"]]
+            ["type", "day", "tree", "Independent", "kamera", "pullNo", "Slope_normalized"]]
     subdf = subdf[subdf["tree"] == s.tree.value].sort_values(by="day")
     cat_order = subdf["day"].drop_duplicates().tolist()
+    subdf["kamera"] = subdf["kamera"].astype(str)
     fig = plx.box(
         subdf,
         x="day",
         y="Slope_normalized",
         color='type',
         points='all',
-        hover_data=["tree", "type", "pullNo", "Dependent", "kamera"],
+        hover_data=["tree", "type", "pullNo", "Independent", "kamera"],
         category_orders={"day": cat_order},
         height=s.height.value, width=s.width.value,
         title=f"Tree {s.tree.value}",
@@ -616,9 +618,9 @@ def Page():
                         dynatree.logger.info("Zakladni graf")
                         with solara.Card():
                             Graphs()
-                with solara.lab.Tab("Volba proměnných a regrese"):
+                with solara.lab.Tab("Detaily závislostí"):
                     if (tab_index.value, subtab_index.value) == (0, 1):
-                        dynatree.logger.info("Volba promennych a regrese")
+                        dynatree.logger.info("Volba promennych a diagramy")
                         with solara.Card(title="Increasing part of the time-force diagram"):
                             # Detail()
                             try:
@@ -631,6 +633,14 @@ def Page():
                         with solara.Card():
                             try:
                                 Polarni()
+                            except:
+                                solara.Error("Něco se pokazilo ...")
+                with solara.lab.Tab("Regrese, tuhosti"):
+                    if (tab_index.value, subtab_index.value) == (0, 3):
+                        dynatree.logger.info("Tuhosti")
+                        with solara.Card():
+                            try:
+                                solara.Info("To appear")
                             except:
                                 solara.Error("Něco se pokazilo ...")
 
@@ -718,36 +728,36 @@ def show_regression_data_inclino(color, restrict_type=["den","noc"], include_M01
     df = read_regression_data()
     if color == "Camera":
         df = df[df["kamera"] == True]
-        df = df[df["Independent"] == "M"]
+        df = df[df["Dependent"] == "M"]
     elif color == "NoCamera":
         df = df[df["kamera"] == False]
-        df = df[df["Independent"] == "M"]
+        df = df[df["Dependent"] == "M"]
     else:
-        df = df[df["Dependent"] == color]
-    df["Slope x 1e3"] = 1e3 * df["Slope"]
+        df = df[df["Independent"] == color]
+    df["Slope x 1e-3"] = 1e-3 * df["Slope"]
     df = df[~df["optics"]]
     df = df[df["R^2"]>=R2limit_lower.value]
     df = df[df["R^2"]<=R2limit_upper.value]
-    df_final = df.pivot(index=["tree", "day", "type"], values=["Slope x 1e3"], columns="M")
+    df_final = df.pivot(index=["tree", "day", "type"], values=["Slope x 1e-3"], columns="M")
     custom_display(df_final, how_to_colorize.value == "All data", second_level=True)
 
 
 @solara.component
 def show_regression_data_elasto():
     df = read_regression_data()
-    df = df[df["Dependent"] == "Elasto-strain"]
+    df = df[df["Independent"] == "Elasto-strain"]
     df = df[~df["optics"]]
-    df["Slope x 1e6"] = 1e6 * df["Slope"]
+    df["Slope x 1e-6"] = 1e-6 * df["Slope"]
     df = df[df["R^2"]>=R2limit_lower.value]
     df = df[df["R^2"]<=R2limit_upper.value]
-    df_final = df.pivot(index=["tree", "type", "day"], values=["Slope x 1e6"], columns="M")
+    df_final = df.pivot(index=["tree", "type", "day"], values=["Slope x 1e-6"], columns="M")
     custom_display(df_final, how_to_colorize.value == "All data", second_level=True)
 
 
 @solara.component
 def show_regression_data_pt(pt):
     df = read_regression_data()
-    df = df[df["Dependent"] == pt]
+    df = df[df["Independent"] == pt]
     df["Slope"] = np.abs(df["Slope"])
     df = df[df["R^2"]>=R2limit_lower.value]
     df = df[df["R^2"]<=R2limit_upper.value]
@@ -953,9 +963,12 @@ def Detail():
             solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
             solara.SpinnerSolara(size="100px")
             return
-    solara.Markdown("""
-            Pro výběr proměnných na vodorovnou a svislou osu otevři menu v sidebaru (tři čárky v horním panelu). Po výběru můžeš sidebar zavřít. Přednastavený je moment vypočítaný z pevného naměřeného úhlu lana na vodorovné ose a oba inlinometry na svislé ose.
-            """)
+    with solara.Info():
+        solara.Markdown("""
+            * **Pokud chceš vidět tuhost, dej na vodorovnou osu náklon a na svislou osu moment.** 
+            * Pro výběr proměnných na vodorovnou a svislou osu otevři menu v sidebaru (tři čárky v horním panelu). Po výběru můžeš sidebar zavřít. Přednastavený je moment vypočítaný z pevného naměřeného úhlu lana na vodorovné ose a oba inlinometry na svislé ose, 
+            aby šly vidět oba inlikonmetry na stejném definičním oboru. Pro směrnici udávající moment to potřebuješ přehodit nebo jít na poslední záložku. 
+            """, style={'color':'inherit'})
 
     with solara.Sidebar():
         cols = ['Time', 'Pt3', 'Pt4', 'Force(100)', 'Elasto(90)', 'Elasto-strain',
