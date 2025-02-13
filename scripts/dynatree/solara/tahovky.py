@@ -613,13 +613,22 @@ def Page():
     with solara.lab.Tabs(value=tab_index, **dark):
         with solara.lab.Tab("Jedno měření (detail, ...)", icon_name="mdi-chart-line"):
             with solara.lab.Tabs(lazy=True, value=subtab_index, **dark):
-                with solara.lab.Tab("Průběh síly"):
+                with solara.lab.Tab("Regrese pro získání tuhostí"):
                     if (tab_index.value, subtab_index.value) == (0, 0):
+                        dynatree.logger.info("Regrese pro ziskani tuhosti")
+                        with solara.Card(title="Regressions to get the stiffness"):
+                            # Detail()
+                            try:
+                                Regrese()
+                            except:
+                                solara.Error("Něco se pokazilo při volání funkce Regrese...")
+                with solara.lab.Tab("Průběh síly"):
+                    if (tab_index.value, subtab_index.value) == (0, 1):
                         dynatree.logger.info("Zakladni graf")
                         with solara.Card():
                             Graphs()
                 with solara.lab.Tab("Detaily závislostí"):
-                    if (tab_index.value, subtab_index.value) == (0, 1):
+                    if (tab_index.value, subtab_index.value) == (0, 2):
                         dynatree.logger.info("Volba promennych a diagramy")
                         with solara.Card(title="Increasing part of the time-force diagram"):
                             # Detail()
@@ -628,19 +637,11 @@ def Page():
                             except:
                                 solara.Error("Něco se pokazilo při volání funkce Detail...")
                 with solara.lab.Tab("Polární graf"):
-                    if (tab_index.value, subtab_index.value) == (0, 2):
+                    if (tab_index.value, subtab_index.value) == (0, 3):
                         dynatree.logger.info("Polarni graf")
                         with solara.Card():
                             try:
                                 Polarni()
-                            except:
-                                solara.Error("Něco se pokazilo ...")
-                with solara.lab.Tab("Regrese, tuhosti"):
-                    if (tab_index.value, subtab_index.value) == (0, 3):
-                        dynatree.logger.info("Tuhosti")
-                        with solara.Card():
-                            try:
-                                solara.Info("To appear")
                             except:
                                 solara.Error("Něco se pokazilo ...")
 
@@ -951,6 +952,80 @@ def Polarni():
     plt.close('all')
 
 
+def Regrese():
+    dynatree.logger.info("Function Regrese entered")
+    with solara.Info():
+        solara.Markdown("""
+        * Obrázky pro posouzení dat, ze kterých se počítají tuhosti.
+        * Pokud chceš vidět, jaká konkrétní data tu jsou a zobrazovat si je různými způsoby 
+          (časový průběh, volba veličin na osách, volba ořezu atd), použij třetí podzáložku 
+          (Jedno měření, detaily závislostí).
+        """, style={'color':'inherit'})
+    global subdf
+    if nakresli.not_called:
+        solara.Info(
+            "Nejdřív nakresli graf v první záložce. Klikni na Run calculation v sidebaru.")
+        return
+    if not nakresli.finished:
+        with solara.Row():
+            solara.Text("Pracuji jako ďábel. Může to ale nějakou dobu trvat.")
+            solara.SpinnerSolara(size="100px")
+            return
+
+    with solara.Row():
+
+        temp_data_object = static_pull.DynatreeStaticMeasurement(
+            day=s.day.value, tree=s.tree.value,
+            measurement=s.measurement.value, measurement_type=s.method.value,
+            optics=False)
+        if s.measurement.value == "M01":
+            with solara.Card():
+                solara.Markdown("**Pull No. of M01:**")
+                with solara.Column(**tightcols):
+                    pulls = list(range(len(temp_data_object.pullings)))
+                    solara.ToggleButtonsSingle(values=pulls, value=pull)
+                pull_value = pull.value
+        else:
+            pull_value = 0
+        if (s.use_optics.value) and (not temp_data_object.is_optics_available):
+            s.use_optics.value = False
+            return
+
+    restricted = (0.3, 0.9)
+
+    d_obj = static_pull.DynatreeStaticMeasurement(
+        day=s.day.value, tree=s.tree.value,
+        measurement=s.measurement.value,
+        measurement_type=s.method.value,
+        optics=s.use_optics.value,
+        restricted=restricted)
+    dataset = d_obj.pullings[pull_value]
+    subdf = dataset.data
+
+    title = f"{s.day.value} {s.tree.value} {s.measurement.value} {s.method.value} Pull {pull_value}"
+
+    fig, ax = plt.subplots()
+    subdf.plot(x="blueMaj", y="M", style='.', ax=ax, legend=False)
+    subdf.plot(x="yellowMaj", y="M", style='.', ax=ax, legend=False)
+    ax.legend(["blueMaj","yellowMaj"])
+    # ax.set(ylim=(subdf[ydata.value].to_numpy().min(), subdf[ydata.value].to_numpy().max()))
+    ax.grid()
+    ax.set(title=title, xlabel="Inclinometers", ylabel="M")
+
+    fig2, ax2 = plt.subplots()
+    subdf.plot(x="Elasto-strain", y="M_Elasto", style='.', ax=ax2, legend=False)
+    # ax.set(ylim=(subdf[ydata.value].to_numpy().min(), subdf[ydata.value].to_numpy().max()))
+    ax2.grid()
+    ax2.set(title=title, xlabel="Elasto-strain", ylabel="M_Elasto")
+    with solara.Card(
+            style={"max-width": "1800px"}
+    ):
+        with solara.Row():
+            solara.FigureMatplotlib(fig)
+            solara.FigureMatplotlib(fig2)
+    plt.close('all')
+
+
 def Detail():
     dynatree.logger.info("Function Detail entered")
     global subdf
@@ -967,7 +1042,7 @@ def Detail():
         solara.Markdown("""
             * **Pokud chceš vidět tuhost, dej na vodorovnou osu náklon a na svislou osu moment.** 
             * Pro výběr proměnných na vodorovnou a svislou osu otevři menu v sidebaru (tři čárky v horním panelu). Po výběru můžeš sidebar zavřít. Přednastavený je moment vypočítaný z pevného naměřeného úhlu lana na vodorovné ose a oba inlinometry na svislé ose, 
-            aby šly vidět oba inlikonmetry na stejném definičním oboru. Pro směrnici udávající moment to potřebuješ přehodit nebo jít na poslední záložku. 
+            aby šly vidět oba inlikonmetry na stejném definičním oboru. Pro směrnici udávající moment to potřebuješ přehodit nebo jít na první záložku. 
             """, style={'color':'inherit'})
 
     with solara.Sidebar():
