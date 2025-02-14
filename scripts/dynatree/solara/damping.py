@@ -185,7 +185,7 @@ def peak_width_graph():
     if current['from_fft'] != coords:
         current['from_fft'] = coords
         do_find_peaks()
-    solara.Markdown(f"## {" ".join(coords)}")
+    solara.Markdown(f"## {' '.join(coords)}")
     solara.Info(
         f"Relative peak width (peak width at given height divided by the peak position). Click Plot/Replot for another measurement. It takes few seconds to draw all sensors.")
     solara.ProgressLinear(find_peak_widths.pending)
@@ -227,7 +227,7 @@ def create_overlay():
                             title=""):
         if open_dialog.finished:
             ans = open_dialog.value
-            solara.Markdown(f"## {" ".join(ans['coords'])}")
+            solara.Markdown(f"## {' '.join(ans['coords'])}")
             ans['data'].name = "value"
             fig = ans['data'].plot(backend='plotly')
             if ans['output'] == 'fft':
@@ -299,7 +299,7 @@ def damping_graphs():
             solara.FigureMatplotlib(fig)
     solara.ProgressLinear(draw_images.pending)
     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value, data_source.value]
-    solara.Markdown(f"## {" ".join(coords)}")
+    solara.Markdown(f"## {' '.join(coords)}")
     # if current['from_amplitudes'] != coords:
     #     current['from_amplitudes'] = coords
     #     dynatree.logger.info("Graphs from peaks are not current. Calling draw_images.")
