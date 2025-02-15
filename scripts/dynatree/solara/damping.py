@@ -428,7 +428,7 @@ def draw_images(temp=None):
     fig = draw_signal_with_envelope(sig, fig, envelope, k=k, q=q, row=3)
     data['wavelets'] = [None if k is None else -k, R2, p_value, std_err ]
 
-    fig.update_layout(title=f"Proložení exponenciely pomocí několika metod",
+    fig.update_layout(title=f"{m}",
                       height=800,
                       )
 
