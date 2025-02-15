@@ -217,18 +217,37 @@
                 this.selectedTree = null;
                 this.selectedMeasurement = null;
                 this.fetchTrees();
+                this.updateURL(); // Opravila ChatGPT
             },
             selectTree(tree) {
                 this.selectedTree = tree;
                 this.selectedMeasurement = null;
                 this.fetchMeasurements();
+                this.updateURL(); // Opravila ChatGPT
             },
             selectMeasurement(measurement) {
                 this.selectedMeasurement = measurement;
+                this.updateURL(); // Opravila ChatGPT
             },
             selectSensor(sensor) {
                 this.selectedSensor = sensor;
+                this.updateURL(); // Opravila ChatGPT
             },
+            updateURL() { // Opravila ChatGPT
+                const params = new URLSearchParams();
+                if (this.selectedMethod) params.set("method", this.selectedMethod);
+                if (this.selectedTree) params.set("tree", this.selectedTree);
+                if (this.selectedMeasurement) params.set("measurement", this.selectedMeasurement);
+                if (this.selectedSensor) params.set("sensor", this.selectedSensor);
+                history.replaceState(null, "", `?${params.toString()}`);
+            },
+            loadFromURL() { // Opravila ChatGPT
+                const params = new URLSearchParams(window.location.search);
+                if (params.has("method")) this.selectedMethod = params.get("method");
+                if (params.has("tree")) this.selectedTree = params.get("tree");
+                if (params.has("measurement")) this.selectedMeasurement = params.get("measurement");
+                if (params.has("sensor")) this.selectedSensor = params.get("sensor");
+            }
         };
 
         appMethods.fetchGraphData = function (){
@@ -326,10 +345,12 @@
             methods: appMethods,
             created() {
                 this.fetchMethods();
+                this.loadFromURL(); // Opravila ChatGPT
                 this.notyf = new Notyf({
-                duration: 2000, // Doba zobrazení notifikace (v ms)
-                position: { x: 'right', y: 'top' }, // Pozice notifikace
+                    duration: 2000,
+                    position: { x: 'right', y: 'top' },
                 });
+                this.fetchGraphData();
             }
         });
 

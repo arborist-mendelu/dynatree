@@ -465,7 +465,8 @@ def show_data_one_tree():
 
         type_order = ['normal', 'noc', 'den', 'afterro', 'afterro2', 'mraz', 'mokro']
         df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
-        df["link"] = df.apply(lambda row:f"<a href='https://math4u.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'>link</a>", axis=1)
+        df["linkPNG"] = df.apply(lambda row:f"<a href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'>PNG</a>", axis=1)
+        df["linkHTML"] = df.apply(lambda row:f"<a href='https://euler.mendelu.cz/fast/index.html?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&sensor=Elasto%2890%29&start=0&end=1000000000&format=html'>html</a>", axis=1)
         df = df.set_index(["tree","day", "type", "measurement"])
         df = df.sort_index()
 
@@ -476,7 +477,7 @@ def show_data_one_tree():
                 ~((df[f"{i}_R2"] > filtr_R_min.value) & (df[f"{i}_R2"] < filtr_R_max.value)), [f"{i}_b", f"{i}_LDD"]] = np.nan
         # df[~ ((df["#_of_periods"] > filtr_T_min.value) & (df["#_of_periods"] < filtr_T_max.value)),:] = np.nan
 
-        cols = [i for i in df.columns if f"_{damping_parameter.value}" in i] + ["link"]
+        cols = [i for i in df.columns if f"_{damping_parameter.value}" in i] + ["linkPNG", "linkHTML"]
         df = df[cols]
         df = df.sort_index()
 
