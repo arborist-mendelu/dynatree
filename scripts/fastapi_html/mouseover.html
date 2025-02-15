@@ -242,7 +242,7 @@
                 end: this.bounds.upper,
                 format: 'png'
             }
-            const url = `${server}/draw_graph?${new URLSearchParams(params)}`;
+            const url = `${server}/draw_graph/?${new URLSearchParams(params)}`;
             this.ansUrl = url;
             this.showPngGraph = true;
         };
@@ -260,7 +260,7 @@
                 end: this.bounds.upper,
                 format: 'bokeh'
             }
-            const url = `${server}/draw_graph?${new URLSearchParams(params)}`;
+            const url = `${server}/draw_graph/?${new URLSearchParams(params)}`;
             axios.get(url)
                 .then((response) => 
                 {
@@ -316,7 +316,7 @@
     </script>
 
     <script>
-        const server = "https://math4u.mendelu.cz/api";
+        const server = "https://euler.mendelu.cz/api";
         //const server = "https://jupyter.mendelu.cz:8770";
         //const server = "http://localhost:8005";
         new Vue({
