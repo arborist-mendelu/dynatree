@@ -456,6 +456,13 @@ def show_data_one_tree():
             """, style = {'color':'inherit'})
 
         df = pd.read_csv(config.file['outputs/damping_factor'])
+        df_matlab = pd.read_csv("../data/matlab/damping_factor_porovnani.csv", sep=";")
+        df_matlab = (df_matlab
+                        .loc[:, ["day", "type", "tree", "measurement", "probe", "b", "R2", "LDD"]]
+                        .rename(columns={'R2': 'FFT_R2', 'b':"FFT_b", "LDD": "FFT_LDD"})
+                     )
+        df_matlab.day = df_matlab.day.map(lambda x: x if pd.isna(x) else "-".join(x.split(".")[::-1]))
+        df = df.merge(df_matlab, how='left')
         # Nahradí hodnoty ve sloupcích bez "_R2" None pokud odpovídající "_R2" sloupec má hodnotu > -0.9
         # for col in list_of_methods:
         #     df.loc[df[f"{col}_R2"] > -0.9, f"{col}_R2"] = None
@@ -466,7 +473,7 @@ def show_data_one_tree():
         type_order = ['normal', 'noc', 'den', 'afterro', 'afterro2', 'mraz', 'mokro']
         df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
         df["linkPNG"] = df.apply(lambda row:f"<a href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'>PNG</a>", axis=1)
-        df["linkHTML"] = df.apply(lambda row:f"<a href='https://euler.mendelu.cz/fast/index.html?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&sensor=Elasto%2890%29&start=0&end=1000000000&format=html'>html</a>", axis=1)
+        df["linkHTML"] = df.apply(lambda row:f"<a href='https://euler.mendelu.cz/fast/index.html?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&sensor=Elasto%2890%29&start=0&end=1000000000&format=html '>html</a>", axis=1)
         df = df.set_index(["tree","day", "type", "measurement"])
         df = df.sort_index()
 
