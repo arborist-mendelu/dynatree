@@ -546,7 +546,7 @@ def show_data_one_tree():
         <div id="preview-container" class="preview-container">
         <img id="preview-image" src="" alt="Náhled">
        </div>
-       <button id="startBtn">Začni sledovat pohyb myši</button>
+       <button id="startBtn" class="v-btn v-btn--contained theme--light v-size--default">Začni sledovat pohyb myši</button>
         """)
         solara.HTML(tag="script", unsafe_innerHTML="""
     document.getElementById('startBtn').addEventListener('click', function() {
