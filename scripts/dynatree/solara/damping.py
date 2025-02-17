@@ -80,7 +80,37 @@ filtr_T_max = solara.reactive(1000)
 @solara.component
 def Page():
     solara.Title("DYNATREE: Damping")
-    solara.Style(s.styles_css)
+    styles_css = s.styles_css + """
+        .image-preview {
+            color: #007bff;
+            text-decoration: none;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .preview-container {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: none;
+            z-index: 1000;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            padding: 5px;
+        }
+
+        .preview-container img {
+            max-width: 800px;
+            height: auto;
+            display: block;
+            
+        #startBtn {
+            background-color: lightgray !important;
+            padding: 5px;
+        }        
+    """
+    solara.Style(styles_css)
     snack()
     with solara.lab.Tabs(lazy=True):
         with solara.lab.Tab("From amplitudes (single measurement)"):
@@ -453,6 +483,8 @@ def show_data_one_tree():
             * Odkaz otevře obrázek v externím okně.
             * Chybějící hodnoty (nan) odpovídají tomu, že průběh nespadá do limitů pro R^2 a pro délku intervalu nastaveného v levém sloupci. 
               Vyfiltruj si buď pěkná data pro zpracování nebo škaredá pro posouzení jak dál.
+            * Odkaz "Začít sledovat pohyb myši" (pod rámečkem) aktivuje náhledy při najetí myší na odkaz pro PNG. Náhled je v pravém horním rohu. Tlačítko je potřeba použít pokaždé, 
+            když otevřeš tuto stránku nebo přepneš strom. To že jsou náhledy aktivní se pozná podle zelené barvy textu PNG."
             """, style = {'color':'inherit'})
 
         df = pd.read_csv(config.file['outputs/damping_factor'])
@@ -472,7 +504,12 @@ def show_data_one_tree():
 
         type_order = ['normal', 'noc', 'den', 'afterro', 'afterro2', 'mraz', 'mokro']
         df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
-        df["linkPNG"] = df.apply(lambda row:f"<a href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'>PNG</a>", axis=1)
+        df["linkPNG"] = df.apply(lambda row:f"""
+        <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'
+        class="image-preview" 
+        data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'        
+        >PNG</a>"""
+                                 , axis=1)
         df["linkHTML"] = df.apply(lambda row:f"<a href='https://euler.mendelu.cz/fast/index.html?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&sensor=Elasto%2890%29&start=0&end=1000000000&format=html '>html</a>", axis=1)
         df = df.set_index(["tree","day", "type", "measurement"])
         df = df.sort_index()
@@ -505,6 +542,37 @@ def show_data_one_tree():
         )
 
         solara.Style(".level1 {border-style: solid !important; border-color:gray !important; border-width:1px !important;}")
+        solara.HTML(tag="div", unsafe_innerHTML="""
+        <div id="preview-container" class="preview-container">
+        <img id="preview-image" src="" alt="Náhled">
+       </div>
+       <button id="startBtn">Začni sledovat pohyb myši</button>
+        """)
+        solara.HTML(tag="script", unsafe_innerHTML="""
+    document.getElementById('startBtn').addEventListener('click', function() {
+        const previewContainer = document.getElementById("preview-container");
+        const previewImage = document.getElementById("preview-image");
+        const links = document.querySelectorAll(".image-preview");
+        links.forEach(link => {
+            link.addEventListener("mouseenter", function (event) {
+                const imageUrl = this.getAttribute("data-src");
+                previewImage.src = imageUrl;
+                previewContainer.style.display = "block";
+            });
+
+            link.addEventListener("mouseleave", function () {
+                previewContainer.style.display = "none";
+            });
+            
+            link.style.color = "green";
+            console.log("link")
+        });
+        console.log("Listener byl přidán po kliknuti.");
+    });
+        """)
+
         display(_)
+
+
 
 dynatree.logger.info(f"File damping.py loaded in {time.time() - loading_start} sec.")
