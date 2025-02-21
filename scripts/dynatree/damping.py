@@ -15,10 +15,11 @@ from scipy.signal import decimate
 import config
 from scipy.stats import linregress
 from parallelbar import progress_map
-
+import statistics
 from dynatree.dynatree import DynatreeMeasurement
 
 logger.setLevel(logging.ERROR)
+# logger.setLevel(logging.INFO)
 
 
 class DynatreeDampedSignal(DynatreeSignal):
@@ -60,6 +61,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         self.damped_data = data
         self.damped_signal = data.values.reshape(-1)
         self.damped_time = data.index
+        self.vertical_finetuning = False
 
     @property
     def marked_failed(self):
@@ -76,16 +78,29 @@ class DynatreeDampedSignal(DynatreeSignal):
     def hilbert_envelope(self):
         signal = self.damped_signal_interpolated.values
         time = self.damped_signal_interpolated.index
-        amplitude_envelope = np.abs(hilbert(signal))
         peaks = self.fit_maxima()['peaks']
-        mask = (time > peaks.index[0]) & (time < peaks.index[-1])
-        x = time[mask]
-        y = amplitude_envelope[mask]
-        try:
-            k, q, R2, p_value, std_err = linregress(x, np.log(y))
-        except:
-            k, q, R2, p_value, std_err = [None] * 5
-        return {'data': [x,y], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err}
+
+        out = {}
+        if self.vertical_finetuning:
+            candidates = np.linspace(-5,5)
+        else:
+            candidates = [0]
+        for yshift in candidates:
+            amplitude_envelope = np.abs(hilbert(signal+yshift))
+            mask = (time > peaks.index[0]) & (time < peaks.index[-1])
+            x = time[mask]
+            y = amplitude_envelope[mask]
+            try:
+                k, q, R2, p_value, std_err = linregress(x, np.log(y))
+            except:
+                k, q, R2, p_value, std_err = [None] * 5
+            out[yshift] = [k, q, R2, p_value, std_err]
+        df = pd.DataFrame.from_dict(out).T
+        yshift = df[2].idxmin()
+        k,q,R2,p_value,std_err = out[yshift]
+
+
+        return {'data': [x,y], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err, 'yshift': yshift}
 
     # @property
     @timeit
@@ -113,16 +128,43 @@ class DynatreeDampedSignal(DynatreeSignal):
         peaks_number = np.argmax(np.abs(analyzed.iloc[peaks])-threshold*maximum < 0)-1
         peaks = peaks[:peaks_number]
 
-        try:
-            k, q, R2, p_value, std_err = linregress(
-                analyzed.iloc[peaks].index,
-                np.log(np.abs(analyzed.iloc[peaks].values))
-            )
-        except Exception as e:
-            logger.error(f"Error in fit_maxima {e}. {self.measurement}")
-            k, q, R2, p_value, std_err = [None] * 5
+        out = {}
+        if self.vertical_finetuning:
+            candidates = np.linspace(-5,5)
+        else:
+            candidates = [0]
+        for yshift in candidates:
+            try:
+                k, q, R2, p_value, std_err = linregress(
+                    analyzed.iloc[peaks].index,
+                    np.log(np.abs(analyzed.iloc[peaks].values+yshift))
+                )
+            except Exception as e:
+                logger.error(f"Error in fit_maxima {e}. {self.measurement}")
+                k, q, R2, p_value, std_err = [None] * 5
+            out[yshift] = [k, q, R2, p_value, std_err]
+        df = pd.DataFrame.from_dict(out).T
+        yshift = df[2].idxmin()
+        k,q,R2,p_value,std_err = out[yshift]
 
-        return {'peaks': analyzed.iloc[peaks], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err}
+        return {'peaks': analyzed.iloc[peaks], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err, 'yshift':yshift}
+
+    def ldd_from_definition(self):
+        peaks = self.fit_maxima()['peaks']
+        # logger.setLevel(logging.INFO)
+        logger.info(f"peaks: {peaks}")
+        positive = peaks[peaks > 0]
+        ans = list(np.log(positive.iloc[:-1].values / positive.iloc[1:].values))
+        negative = peaks[peaks < 0]
+        ans = list(np.log(negative.iloc[:-1].values / negative.iloc[1:].values)) + ans
+        ans = [i for i in ans if i>0]
+        ldd = statistics.median(ans)
+        T = 2 * np.nanmean(peaks.index.diff())
+        b = ldd / T
+        logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
+        answer = {'k':b, 'LDD':ldd, 'T':T}
+        logger.info(f"answer: {answer}")
+        return answer
 
     @property
     @timeit
@@ -242,8 +284,32 @@ def process_row(index):
         out = [None]*15
     return out
 
+def process_row_definition(index):
+    """
+    Evaluates LDD from the definition. The period is taken from peak distance rather from the
+    FFT analysis
+    """
+    day, method, tree, measurement, probe = index
+    try:
+        m = DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=method)
+        s = DynatreeDampedSignal(m, signal_source=probe)
+        fit_ldd = s.ldd_from_definition()
+        # logger.setLevel(logging.INFO)
+        out = [fit_ldd['k'], fit_ldd['LDD'], fit_ldd['T']]
+        logger.info(f"OUTPUT :{out}")
+    except:
+        print("Fail.")
+        out = [None]*3
+    return out
 
 def main():
+    """
+    Evaluate damping using several methods
+
+    Three methods are based on linear regression. We fit a line to points which form envelope
+    (obtained by hilbert or wavelet transformation) in log space. With maxima method we use the
+    same approach for points obtained as maxima and minima.
+    """
     df = get_measurement_table()
     df = df[df["probe"] == "Elasto(90)"].reset_index(drop=True)
     df = df.set_index(["day", "type", "tree", "measurement", "probe"])
@@ -251,19 +317,20 @@ def main():
 
     columns = ["freq", "start", "end"] + [i + j for i in metody for j in ['_b', '_R2', '_p', '_std_err']]
 
-    results = progress_map(
-        process_row,
-        df.index.values,
-    )
+    results = progress_map(process_row, df.index.values)
+    results_def = progress_map(process_row_definition, df.index.values)
 
     output = pd.DataFrame(results, index=df.index, columns=columns)
+    output_def = pd.DataFrame(results_def, index=df.index, columns=['b','LDD','T'])
+
     for i in metody:
         output[f"{i}_b"] = np.abs(output[f"{i}_b"])
         output[f"{i}_LDD"] = output[f"{i}_b"]/output['freq']
 
-    return output
+    return output, output_def
 
 
 if __name__ == "__main__":
-    df = main()
+    df, df_def = main()
     df.to_csv(config.file['outputs/damping_factor'])
+    df_def.to_csv(config.file['outputs/damping_factor_def'])

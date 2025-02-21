@@ -69,7 +69,7 @@ devices = {'pulling': ["Elasto(90)", "blueMaj", "yellowMaj"],
            'optics': ["Pt3", "Pt4"],
            'acc': ["a01_z", "a02_z", "a03_z", "a01_y", "a02_y",  "a03_y"]}
 data_sources = sum(devices.values(), [])
-damping_parameter = solara.reactive("b")
+damping_parameter = solara.reactive("LDD")
 damping_parameters = ["b","LDD"]
 
 filtr_R_min = solara.reactive(-1)
@@ -444,11 +444,11 @@ def draw_images(temp=None):
 
     data = {}
     fig = make_subplots(rows=3, cols=1, shared_xaxes='all', shared_yaxes='all')
-    envelope, k, q, R2, p_value, std_err = sig.hilbert_envelope.values()
+    envelope, k, q, R2, p_value, std_err, _ = sig.hilbert_envelope.values()
     fig = draw_signal_with_envelope(sig, fig, envelope, k, q, row=1)
     data['hilbert'] = [None if k is None else -k, R2, p_value, std_err]
 
-    signal_peaks, k, q, R2, p_value, std_err = sig.fit_maxima().values()
+    signal_peaks, k, q, R2, p_value, std_err, _ = sig.fit_maxima().values()
     fig = draw_signal_with_envelope(sig, fig, k=k, q=q, row=2)
     fig.add_trace(go.Scatter(x=signal_peaks.index, y=signal_peaks.values.reshape(-1),
                              mode='markers', name='peaks', line=dict(color='red')), row=2, col=1)
@@ -493,8 +493,14 @@ def show_data_one_tree():
                         .loc[:, ["day", "type", "tree", "measurement", "probe", "b", "R2", "LDD"]]
                         .rename(columns={'R2': 'FFT_R2', 'b':"FFT_b", "LDD": "FFT_LDD"})
                      )
+        df_definice = (pd.read_csv(config.file["outputs/damping_factor_def"])
+                       .loc[:, ["day", "type", "tree", "measurement", "probe", "b", "LDD"]]
+                       .rename(columns={'b': "def_b", "LDD": "def_LDD"})
+                       )
+        df_definice.loc[:,"def_R2"] = 1
         df_matlab.day = df_matlab.day.map(lambda x: x if pd.isna(x) else "-".join(x.split(".")[::-1]))
         df = df.merge(df_matlab, how='left')
+        df = df.merge(df_definice, how='left')
         # Nahradí hodnoty ve sloupcích bez "_R2" None pokud odpovídající "_R2" sloupec má hodnotu > -0.9
         # for col in list_of_methods:
         #     df.loc[df[f"{col}_R2"] > -0.9, f"{col}_R2"] = None
