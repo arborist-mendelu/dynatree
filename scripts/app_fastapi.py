@@ -17,6 +17,7 @@ from bokeh.resources import CDN
 from typing import Optional
 from bokeh.models import HoverTool
 from dynatree.find_measurements import get_all_measurements_acc
+import numpy as np
 
 df = get_all_measurements_acc()
 df["mtype"] = df["date"]+"_"+ df["type"]
@@ -134,3 +135,55 @@ def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement=
         "probe":probe}
 
 #http://127.0.0.1:8001/image/?tree=BK01&method=normal&measurement=M03&day=2021-03-22&probe=
+
+
+@app.post("/draw_graph_damping/")
+def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement="M02",
+              probe="Elasto(90)", damping_method="extrema",
+              format='png'):
+    if "_" in method:
+        day,method = method.split("_")
+    print("   Received request:", tree, method, day, measurement, format, probe)
+    from dynatree.damping import  DynatreeDampedSignal
+    m = dynatree.DynatreeMeasurement(tree=tree, measurement_type=method, day=day, measurement=measurement)
+    sig = DynatreeDampedSignal(m, signal_source=probe)
+
+    fig, ax = plt.subplots(figsize=(12,5))
+
+    if damping_method=='extrema':
+        ans = sig.fit_maxima()
+        sig.damped_signal_interpolated.plot(ax=ax)
+        t = sig.damped_time
+        upper_envelope = np.exp(ans['k'] * sig.damped_time + ans['q'])
+        plt.plot(ans['peaks'], "o")
+        plt.fill_between(t, -upper_envelope, upper_envelope, color="gray", alpha=0.3, label="Envelope")
+    elif damping_method=='hilbert':
+        ansh = sig.hilbert_envelope
+        t = sig.damped_time
+        sig.damped_signal_interpolated.plot(ax=ax)
+        plt.plot(ansh['data'][0], ansh['data'][1], "C3")
+        plt.plot(ansh['data'][0], -ansh['data'][1], "C3")
+        upper_envelope = np.exp(ansh['k'] * sig.damped_time + ansh['q'])
+        plt.fill_between(t, -upper_envelope, upper_envelope, color="gray", alpha=0.3, label="Envelope")
+    elif damping_method=='wavelet':
+        answ = sig.wavelet_envelope
+        t = sig.damped_time
+        sig.damped_signal_interpolated.plot(ax=ax)
+        answ['data'].plot(ax=ax, color="C1")
+        (-answ['data']).plot(ax=ax, color="C1")
+        upper_envelope = np.exp(answ['k'] * sig.damped_time + answ['q'])
+        plt.fill_between(t, -upper_envelope, upper_envelope, color="gray", alpha=0.3, label="Envelope")
+    ax.set(title=f"{damping_method} {m} {probe}")
+    plt.tight_layout()
+    plt.grid()
+
+    plt.tight_layout()
+    # Uložení grafu do paměti jako PNG
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format="png")
+    plt.close(fig)
+    buffer.seek(0)
+    return Response(content=buffer.getvalue(), media_type="image/png")
+
+
+
