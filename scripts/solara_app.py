@@ -7,6 +7,7 @@ Created on Wed Aug 28 18:41:25 2024
 """
 import time
 from datetime import timedelta
+import solara_auth
 
 start_imports = time.time()
 
@@ -52,9 +53,16 @@ def monitoring():
     dt_object = datetime.fromtimestamp(timestamp)    
     date = f"{dt_object.strftime('%Y-%m-%d %H:%M:%S')}"
     return [cpu, memory, date]
-    
+
+def logout():
+    solara_auth.user.set(None)
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.user.value = solara_auth.session_storage.get(solara.get_session_id(), None)
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     logger.info("Page in solara_app.py started")
     with solara.Sidebar():
         solara.Success("Přístup povolen. Vítejte ve zpracování dat projektu Dynatree.")
@@ -63,7 +71,7 @@ def Page():
         with solara.Tooltip("Logout"):
             solara.Button(icon_name="mdi-logout",
                           icon=True,
-                          attributes={"href": f"/logout"},
+                          on_click=lambda: solara_auth.user.set(None),
                           )
 
     solara.Title("DYNATREE")

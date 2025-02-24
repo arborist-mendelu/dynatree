@@ -30,6 +30,7 @@ import dynatree.dynatree as dynatree
 from solara.lab import task
 
 import logging
+import solara_auth
 dynatree.logger.setLevel(dynatree.logger_level)
 
 loading_start = time.time()
@@ -590,6 +591,9 @@ def limit_statics_dynamics():
 
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     solara.Title(title)
     solara.Style(s.styles_css)
     with solara.Sidebar():

@@ -19,8 +19,10 @@ def is_authenticated(request: Request) -> bool:
     return request.session.get("user") is not None
 
 async def myroot(request: Request):
+    print("myroot")
     if not is_authenticated(request):
         return RedirectResponse(url="/login")
+    print("redirecting, user authenticated")
     return RedirectResponse(url="/dynatree/")
 
 async def login(request: Request):
@@ -103,4 +105,4 @@ routes = [
 ]
 
 app = Starlette(routes=routes)
-app.add_middleware(SessionMiddleware, secret_key="supersecretkey")
+app.add_middleware(SessionMiddleware, secret_key="supersecretkeystarlette")

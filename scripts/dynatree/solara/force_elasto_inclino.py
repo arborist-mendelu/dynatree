@@ -1,5 +1,5 @@
 from dynatree.solara.FFT_tukey import loading_start
-
+import solara_auth
 DATA_PATH = "../data"
 
 navod = """
@@ -105,6 +105,9 @@ def nakresli():
 tab_value = solara.reactive(1)
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
     solara.Title("DYNATREE: optics, inclinometers, elastometer, force synchro")
     with solara.Sidebar():

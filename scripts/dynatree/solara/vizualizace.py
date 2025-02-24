@@ -15,6 +15,7 @@ import solara
 import pandas as pd
 import dynatree.solara.select_source as s
 from plotly_resampler import FigureResampler
+import solara_auth
 
 dynatree.logger.setLevel(dynatree.logger_level)
 
@@ -221,6 +222,9 @@ def posun_doleva():
 
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     data_object = dynatree.DynatreeMeasurement(
         s.day.value, 
         s.tree.value, 
