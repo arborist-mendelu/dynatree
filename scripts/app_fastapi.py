@@ -136,7 +136,7 @@ def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement=
 
 #http://127.0.0.1:8001/image/?tree=BK01&method=normal&measurement=M03&day=2021-03-22&probe=
 
-
+@app.get("/draw_graph_damping/")
 @app.post("/draw_graph_damping/")
 def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement="M02",
               probe="Elasto(90)", damping_method="extrema",
