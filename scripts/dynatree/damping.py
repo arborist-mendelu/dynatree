@@ -79,6 +79,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         signal = self.damped_signal_interpolated.values
         time = self.damped_signal_interpolated.index
         peaks = self.fit_maxima()['peaks']
+        start_peak_index = 2
 
         out = {}
         if self.vertical_finetuning:
@@ -87,7 +88,7 @@ class DynatreeDampedSignal(DynatreeSignal):
             candidates = [0]
         for yshift in candidates:
             amplitude_envelope = np.abs(hilbert(signal+yshift))
-            mask = (time > peaks.index[0]) & (time < peaks.index[-1])
+            mask = (time > peaks.index[start_peak_index]) & (time < peaks.index[-1])
             x = time[mask]
             y = amplitude_envelope[mask]
             try:
@@ -98,7 +99,6 @@ class DynatreeDampedSignal(DynatreeSignal):
         df = pd.DataFrame.from_dict(out).T
         yshift = df[2].idxmin()
         k,q,R2,p_value,std_err = out[yshift]
-
 
         return {'data': [x,y], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err, 'yshift': yshift}
 
@@ -121,7 +121,7 @@ class DynatreeDampedSignal(DynatreeSignal):
 
         T = 1/self.main_peak
         start = self.damped_signal_interpolated.index[0]
-        analyzed = self.damped_signal_interpolated[start+T:]
+        analyzed = self.damped_signal_interpolated[start:]
         maximum = max(abs(analyzed))
         distance = int(T/self.dt/2*0.75)
         peaks, _ = find_peaks(np.abs(analyzed), distance=distance)
@@ -146,7 +146,6 @@ class DynatreeDampedSignal(DynatreeSignal):
         df = pd.DataFrame.from_dict(out).T
         yshift = df[2].idxmin()
         k,q,R2,p_value,std_err = out[yshift]
-
         return {'peaks': analyzed.iloc[peaks], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err, 'yshift':yshift}
 
     def ldd_from_definition(self):
@@ -223,7 +222,8 @@ class DynatreeDampedSignal(DynatreeSignal):
         maximum = np.argmax(coef)
 
         peaks = self.fit_maxima()['peaks']
-        mask = (data.index > peaks.index[0]) & (data.index < peaks.index[-1])
+        start_peak_index = 2
+        mask = (data.index > peaks.index[start_peak_index]) & (data.index < peaks.index[-1])
         # logger.info(f"""
         #     Coef normalization finished in {time.time() - start},
         #     maximal coefficient at {maximum}, data are {data.index[maximum:-maximum]}
@@ -241,7 +241,8 @@ class DynatreeDampedSignal(DynatreeSignal):
             )
         except:
             k, q, R2, p_value, std_err = [None] * 5
-        return {'data': pd.Series(dependent, index=independent), 'k': k, 'q': q, "freq": freq, 'fft_data': df_fft, 'R2': R2,
+        return {'data': pd.Series(dependent, index=independent),
+                'k': k, 'q': q, "freq": freq, 'fft_data': df_fft, 'R2': R2,
                 'p': p_value, 'std_err': std_err}
 
 
