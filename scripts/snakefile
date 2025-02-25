@@ -409,7 +409,6 @@ rule peak_width:
 rule damping_coefficients:
     output:
         "../outputs/damping_factor.csv",
-        "../outputs/damping_factor_def.csv"
     input:
         "csv/FFT_failed.csv",
         "dynatree/damping.py"

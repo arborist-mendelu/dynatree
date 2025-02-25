@@ -493,14 +493,14 @@ def show_data_one_tree():
                         .loc[:, ["day", "type", "tree", "measurement", "probe", "b", "R2", "LDD"]]
                         .rename(columns={'R2': 'FFT_R2', 'b':"FFT_b", "LDD": "FFT_LDD"})
                      )
-        df_definice = (pd.read_csv(config.file["outputs/damping_factor_def"])
-                       .loc[:, ["day", "type", "tree", "measurement", "probe", "b", "LDD"]]
-                       .rename(columns={'b': "def_b", "LDD": "def_LDD"})
-                       )
-        df_definice.loc[:,"def_R2"] = 1
+        # df_definice = (pd.read_csv(config.file["outputs/damping_factor_def"])
+        #                .loc[:, ["day", "type", "tree", "measurement", "probe", "b", "LDD"]]
+        #                .rename(columns={'b': "def_b", "LDD": "def_LDD"})
+        #                )
+        # df_definice.loc[:,"def_R2"] = 1
         df_matlab.day = df_matlab.day.map(lambda x: x if pd.isna(x) else "-".join(x.split(".")[::-1]))
         df = df.merge(df_matlab, how='left')
-        df = df.merge(df_definice, how='left')
+        # df = df.merge(df_definice, how='left')
         # Nahradí hodnoty ve sloupcích bez "_R2" None pokud odpovídající "_R2" sloupec má hodnotu > -0.9
         # for col in list_of_methods:
         #     df.loc[df[f"{col}_R2"] > -0.9, f"{col}_R2"] = None

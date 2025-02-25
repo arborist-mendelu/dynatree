@@ -80,6 +80,8 @@ damping_factor.csv: Útlum Elasto(90) stanovený třemi metodami (maxima, hilber
     LDD, statistické veličiny z lineární regrese (p-value, R^2 a std_err). Kromě toho čas použitý pro anlaýzu a 
     frekvence použitá pro výpočet LDD a pro wavelet. Délka analyzovaného intervalu je stanovena tak, že po vypuštění se najde
     první nulový bod, vynechá se první perioda, najdou se peaky a odřízne se část za peakem který je pod 25% maxima.
+    Obsahuje i útlum Elasto(90) stanovený podle definice výpočtem poměrů amplitud a logaritmováním. Bere se jenom 
+    začátek signálu (ale bez úplného začátku s bordelem po vypuštění).
 
 ---
 title: "To všecho odnés čas?"

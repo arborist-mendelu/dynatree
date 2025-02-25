@@ -79,7 +79,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         signal = self.damped_signal_interpolated.values
         time = self.damped_signal_interpolated.index
         peaks = self.fit_maxima()['peaks']
-        start_peak_index = 2
+        start_peak_index = 1
 
         out = {}
         if self.vertical_finetuning:
@@ -98,8 +98,10 @@ class DynatreeDampedSignal(DynatreeSignal):
             out[yshift] = [k, q, R2, p_value, std_err]
         df = pd.DataFrame.from_dict(out).T
         yshift = df[2].idxmin()
-        k,q,R2,p_value,std_err = out[yshift]
-
+        try:
+            k,q,R2,p_value,std_err = out[yshift]
+        except:
+            k, q, R2, p_value, std_err = [None]*5
         return {'data': [x,y], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err, 'yshift': yshift}
 
     # @property
@@ -121,7 +123,7 @@ class DynatreeDampedSignal(DynatreeSignal):
 
         T = 1/self.main_peak
         start = self.damped_signal_interpolated.index[0]
-        analyzed = self.damped_signal_interpolated[start:]
+        analyzed = self.damped_signal_interpolated[start+T/2:]
         maximum = max(abs(analyzed))
         distance = int(T/self.dt/2*0.75)
         peaks, _ = find_peaks(np.abs(analyzed), distance=distance)
@@ -164,6 +166,30 @@ class DynatreeDampedSignal(DynatreeSignal):
         answer = {'k':b, 'LDD':ldd, 'T':T}
         logger.info(f"answer: {answer}")
         return answer
+
+    def ldd_from_two_amplitudes(self):
+        try:
+            peaks = self.fit_maxima()['peaks']
+            # logger.setLevel(logging.INFO)
+            logger.info(f"peaks: {peaks}")
+            try:
+                differences = (peaks.values[::2] - peaks.values[1::2])
+            except:
+                differences = (peaks.values[:-1:2] - peaks.values[1::2])
+            logger.info(f"differences: {differences}")
+            quotients = np.log(differences[:-1]/differences[1:])
+            ans = [i for i in quotients if i>0]
+            ldd = statistics.median(ans)
+            T = 2 * np.nanmean(peaks.index.diff())
+            b = ldd / T
+            logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
+            answer = {'k':b, 'LDD':ldd, 'T':T}
+            logger.info(f"answer: {answer}")
+        except:
+            answer = {'k':None, 'LDD':None, 'T':None}
+            logger.error(f"Failed {self}")
+        return answer
+
 
     @property
     @timeit
@@ -222,7 +248,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         maximum = np.argmax(coef)
 
         peaks = self.fit_maxima()['peaks']
-        start_peak_index = 2
+        start_peak_index = 1
         mask = (data.index > peaks.index[start_peak_index]) & (data.index < peaks.index[-1])
         # logger.info(f"""
         #     Coef normalization finished in {time.time() - start},
@@ -290,17 +316,25 @@ def process_row_definition(index):
     Evaluates LDD from the definition. The period is taken from peak distance rather from the
     FFT analysis
     """
-    day, method, tree, measurement, probe = index
     try:
+        day, method, tree, measurement, probe = index
         m = DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=method)
         s = DynatreeDampedSignal(m, signal_source=probe)
-        fit_ldd = s.ldd_from_definition()
-        # logger.setLevel(logging.INFO)
-        out = [fit_ldd['k'], fit_ldd['LDD'], fit_ldd['T']]
+        try:
+            ldd = s.ldd_from_definition()
+        except:
+            ldd = {'k':None, 'LDD':None, 'T':None}
+            logger.error(f"Failed LDD from definition: {m}")
+        try:
+            ldd_multi = s.ldd_from_two_amplitudes()
+        except:
+            ldd_multi = {'k': None, 'LDD': None, 'T': None}
+            logger.error(f"Failed LDD from multiple amplitudes: {m}")
+        out = [ldd['k'], ldd['LDD'], ldd['T'], ldd_multi['k'], ldd_multi['LDD'], ldd_multi['T']]
         logger.info(f"OUTPUT :{out}")
     except:
-        print("Fail.")
-        out = [None]*3
+        logger.error(f"Failed LDD: {m}")
+        out = [None]*6
     return out
 
 def main():
@@ -322,7 +356,7 @@ def main():
     results_def = progress_map(process_row_definition, df.index.values)
 
     output = pd.DataFrame(results, index=df.index, columns=columns)
-    output_def = pd.DataFrame(results_def, index=df.index, columns=['b','LDD','T'])
+    output_def = pd.DataFrame(results_def, index=df.index, columns=['def_b','def_LDD','def_T','defmulti_b','defmulti_LDD','defmulti_T'])
 
     for i in metody:
         output[f"{i}_b"] = np.abs(output[f"{i}_b"])
@@ -333,5 +367,6 @@ def main():
 
 if __name__ == "__main__":
     df, df_def = main()
+    df = df.merge(df_def, how='left', left_index=True, right_index=True)
     df.to_csv(config.file['outputs/damping_factor'])
-    df_def.to_csv(config.file['outputs/damping_factor_def'])
+
