@@ -447,7 +447,7 @@ def draw_images(temp=None):
     fig = make_subplots(rows=3, cols=1, shared_xaxes='all', shared_yaxes='all')
 
     ans = sig.hilbert_envelope.values()
-    fig = draw_signal_with_envelope(sig, fig, ans['envelope'], ans['b'], ans['q'], row=1)
+    fig = draw_signal_with_envelope(sig, fig, ans['data'], ans['b'], ans['q'], row=1)
     data['hilbert'] = [ans[key] for key in keys]
 
     ans = sig.fit_maxima().values()
@@ -457,7 +457,7 @@ def draw_images(temp=None):
     data['extrema'] = [ans[key] for key in keys]
 
     ans = sig.wavelet_envelope.values()
-    fig = draw_signal_with_envelope(sig, fig, ans['envelope'], k=ans['b'], q=ans['q'], row=3)
+    fig = draw_signal_with_envelope(sig, fig, ans['data'], k=ans['b'], q=ans['q'], row=3)
     data['wavelets'] = [ans[key] for key in keys]
 
     fig.update_layout(title=f"{m}", height=800)
