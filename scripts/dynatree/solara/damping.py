@@ -358,7 +358,7 @@ def damping_graphs():
             err_info = f"{err_info} This measurement was marked as failed."
         if interval_length/T<2:
             err_info = f"{err_info} The interval is shorter than the double of the period."
-        if df.loc["R^2"].max()>-0.9:
+        if df.loc["R2"].max()>-0.9:
             err_info = f"{err_info} Some of the R^2 is outside the interval (-1,-0.9)."
         if err_info:
             solara.Error(solara.Markdown(f"""
@@ -443,20 +443,21 @@ def draw_images(temp=None):
     sig = DynatreeDampedSignal(m, data_source.value, dt=dt)
 
     data = {}
-    keys = ['b', 'R2', 'p_value', 'std_err', 'LDD']
+    keys = ['b', 'R2', 'p', 'std_err', 'LDD']
     fig = make_subplots(rows=3, cols=1, shared_xaxes='all', shared_yaxes='all')
 
-    ans = sig.hilbert_envelope.values()
+    ans = sig.hilbert_envelope
     fig = draw_signal_with_envelope(sig, fig, ans['data'], ans['b'], ans['q'], row=1)
     data['hilbert'] = [ans[key] for key in keys]
 
-    ans = sig.fit_maxima().values()
+    ans = sig.fit_maxima()
+    signal_peaks = ans['peaks']
     fig = draw_signal_with_envelope(sig, fig, k=ans['b'], q=ans['q'], row=2)
     fig.add_trace(go.Scatter(x=signal_peaks.index, y=signal_peaks.values.reshape(-1),
                              mode='markers', name='peaks', line=dict(color='red')), row=2, col=1)
     data['extrema'] = [ans[key] for key in keys]
 
-    ans = sig.wavelet_envelope.values()
+    ans = sig.wavelet_envelope
     fig = draw_signal_with_envelope(sig, fig, ans['data'], k=ans['b'], q=ans['q'], row=3)
     data['wavelets'] = [ans[key] for key in keys]
 
