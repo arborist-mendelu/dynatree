@@ -155,7 +155,7 @@ class DynatreeDampedSignal(DynatreeSignal):
     def ldd_from_definition(self):
         peaks = self.fit_maxima()['peaks']
         # logger.setLevel(logging.INFO)
-        logger.info(f"peaks: {peaks}")
+        # logger.info(f"peaks: {peaks}")
         positive = peaks[peaks > 0]
         ans = list(np.log(positive.iloc[:-1].values / positive.iloc[1:].values))
         negative = peaks[peaks < 0]
@@ -164,32 +164,39 @@ class DynatreeDampedSignal(DynatreeSignal):
         ldd = statistics.median(ans)
         T = 2 * np.nanmean(peaks.index.diff())
         b = ldd / T
-        logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
-        answer = {'b':b, 'LDD':ldd, 'T':T}
-        logger.info(f"answer: {answer}")
+        # logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
+        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans)}
+        # logger.info(f"answer: {answer}")
         return answer
 
     def ldd_from_two_amplitudes(self):
-        try:
-            peaks = self.fit_maxima()['peaks']
-            # logger.setLevel(logging.INFO)
-            logger.info(f"peaks: {peaks}")
-            try:
-                differences = (peaks.values[::2] - peaks.values[1::2])
-            except:
-                differences = (peaks.values[:-1:2] - peaks.values[1::2])
-            logger.info(f"differences: {differences}")
-            quotients = np.log(differences[:-1]/differences[1:])
-            ans = [i for i in quotients if i>0]
-            ldd = statistics.median(ans)
-            T = 2 * np.nanmean(peaks.index.diff())
-            b = ldd / T
-            logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
-            answer = {'b':b, 'LDD':ldd, 'T':T}
-            logger.info(f"answer: {answer}")
-        except:
-            answer = {'b':None, 'LDD':None, 'T':None}
-            logger.error(f"Failed {self}")
+        # try:
+        peaks = self.fit_maxima()['peaks']
+        # logger.setLevel(logging.INFO)
+        logger.info(f"peaks: {peaks}")
+        # # Version 1: use four consecutive amplitudes
+        # # LDD = ln (  ( |y0| \pm |y1| )  / ( |y2| \pm |y3| )  )
+        # try:
+        #     differences = (peaks.values[::2] - peaks.values[1::2])
+        # except:
+        #     differences = (peaks.values[:-1:2] - peaks.values[1::2])
+        # logger.info(f"differences: {differences}")
+        # quotients = np.log(differences[:-1]/differences[1:])
+        # # Version 2: use three consecutive amplitudes
+        # # LDD = 2 * ln (  ( |y0| \pm |y1| )  / ( |y1| \pm |y2| )  )
+        # # LDD = 2 * ln (  ( y0 - y1 )  / ( - y1  + y2 )  )
+        a = peaks.values
+        ans = [2 * np.log( np.abs(a[i] - a[i+1]) / np.abs(-a[i+1]+a[i+2]) ) for i in range(len(a)-2)]
+        ans = [i for i in ans if i>0]
+        ldd = statistics.median(ans)
+        T = 2 * np.nanmean(peaks.index.diff())
+        b = ldd / T
+        logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
+        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans)}
+        logger.info(f"answer: {answer}")
+        # except:
+        #     answer = {'b':None, 'LDD':None, 'T':None}
+        #     logger.error(f"Failed {self}")
         return answer
 
 
@@ -334,13 +341,13 @@ def process_row_definition(index):
     try:
         ldd = s.ldd_from_definition()
     except:
-        ldd = {'b':None, 'LDD':None, 'T':None}
+        ldd = {'b':None, 'LDD':None, 'T':None, 'std_err':None}
         logger.error(f"Failed LDD from definition: {m}")
 
     try:
         ldd_multi = s.ldd_from_two_amplitudes()
     except:
-        ldd_multi = {'b': None, 'LDD': None, 'T': None}
+        ldd_multi = {'b': None, 'LDD': None, 'T': None, 'std_err':None}
         logger.error(f"Failed LDD from multiple amplitudes: {m}")
 
     out = [ldd['b'], ldd['LDD'], ldd['T'], ldd_multi['b'], ldd_multi['LDD'], ldd_multi['T']]

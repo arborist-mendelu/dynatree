@@ -398,13 +398,13 @@ def damping_graphs():
             * Nepoužívat příliš dlouhý časový interval. Konec nastavit na 15% maxima. Zatím je nastaveno 
               u metody využívající extrémy. Hilbert a wavelety tuto informaci přebírají. Je to tak dostatečné?
             * Možná bude potřeba opravit hledání peaků a další parametry pro optiku a akcelerometry.   
-            * Možná bude potřeba doladit vycentrování signálu tak, aby hilbert měl co nejmenší zvlnění.     
+            * Možná bude potřeba doladit vycentrování signálu tak, aby hilbert měl co nejmenší zvlnění. UPDATE: pokus byl. moc to vliv nemělo     
             """, style={'color': 'inherit'})
         with solara.Info():
             solara.Markdown(
                 """
                 * **Extrémy**: 
-                    * Po vypuštění se vynechá perioda. 
+                    * Po vypuštění se vynechá půlperioda. 
                     * Peaky nesmí být blíže než 75 procent periody.
                     * Po prvním peaku, který je pod 15 procent maxima se signál už neuvažuje.
                 * **Hilbert**
@@ -412,6 +412,15 @@ def damping_graphs():
                     * Zvážit, jestli by se nedalo zvlnění ovlivnit odstraněním trendu.
                 * **Wavelet**
                     * Analyzovaný časový úsek stejný jako u metody extrémů.
+                * **Definice**
+                    * Vzorec $$\\mathrm{LDD} = \\ln \\frac{y_0}{y_2},$$ kde $y_0$ a $y_2$ jsou amplitudy ve dvou po sobě jdoucích
+                      maximech nebo minimech. Ze všech hodnot se bere medián. Variabilitu popisuje směrodatná odchlka, ale ta není 
+                      porovnávatelná s metodami založenými na obálkách.
+                * **Definice s více amplitudami**
+                    * Snaží se odfiltrovat nežádoucí vliv toho, že střední hodnota může růst, dokonce nelineárně. Proto nepracuje s amplitudami 
+                      (vzdálenost peaku od střední hodnoty), ale s vertikální vzdáleností po sobě následujících peaků. Je možné mít víc variant. 
+                      Jako první nástřel je použita metoda využívající dvě po sobě jdoucí maxima a minimum mezi nimi, nebo naopak. 
+                      $$\\mathrm{LDD} = 2 \\ln \\frac{|y_0-y_1|}{|-y_1+y_2|}$$
                 * V tabulce jsou i další metriky z lineární regrese, ale hilbertova obálka i wavelet používají 
                   řádově jiný počet bodů a proto není možné srovnávat například p-hodnoty.
                 """, style={'color':'inherit'}
@@ -469,9 +478,15 @@ def draw_images(temp=None):
 
     df = pd.DataFrame.from_dict(data)
     df.index = keys
+    df.loc["T",:] = 1/sig.main_peak
+    temp = sig.ldd_from_definition()
+    df.loc[["b","LDD","T", "std_err"], "def"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
+    temp = sig.ldd_from_two_amplitudes()
+    df.loc[["b","LDD","T", "std_err"], "defmulti"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
 
     return {'df':df, 'fig':fig, 'failed':sig.marked_failed, 'peak':sig.main_peak,
-            'signal_peaks':signal_peaks}
+            'signal_peaks':signal_peaks
+            }
 
 
 @solara.component
