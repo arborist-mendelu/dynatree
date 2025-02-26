@@ -25,7 +25,8 @@ rule all_non_acc:
         "../outputs/damping_factor_def.csv",
         "../outputs/sondy_a_stromy.csv",
         "../outputs/penetrologger.csv",
-        "../outputs/Popis_Babice_VSE.xlsx"
+        "../outputs/Popis_Babice_VSE.xlsx",
+        "../outputs/velocity_babice_oprava.csv"
 rule all_acc:
     input:
         "../outputs/FFT_acc_average_graph.zip"
@@ -451,4 +452,14 @@ rule copy_description:
     shell:
         """
         cp ../data/Popis_Babice_VSE.xlsx ../outputs/Popis_Babice_VSE.xlsx
+        """
+
+rule copy_velocity:
+    output:
+        "../outputs/velocity_babice_oprava.csv"
+    input:
+        "../data/velocity_babice_oprava.csv"
+    shell:
+        """
+        cp ../data/velocity_babice_oprava.csv ../outputs/velocity_babice_oprava.csv
         """
