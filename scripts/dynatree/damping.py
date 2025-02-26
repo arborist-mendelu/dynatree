@@ -80,6 +80,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         time = self.damped_signal_interpolated.index
         peaks = self.fit_maxima()['peaks']
         start_peak_index = 1
+        T = 1/self.main_peak
 
         out = {}
         if self.vertical_finetuning:
@@ -92,43 +93,40 @@ class DynatreeDampedSignal(DynatreeSignal):
             x = time[mask]
             y = amplitude_envelope[mask]
             try:
-                k, q, R2, p_value, std_err = linregress(x, np.log(y))
+                b, q, R2, p_value, std_err = linregress(x, np.log(y))
             except:
-                k, q, R2, p_value, std_err = [None] * 5
-            out[yshift] = [k, q, R2, p_value, std_err]
+                b, q, R2, p_value, std_err = [None] * 5
+            out[yshift] = [b, q, R2, p_value, std_err]
         df = pd.DataFrame.from_dict(out).T
         yshift = df[2].idxmin()
         try:
-            k,q,R2,p_value,std_err = out[yshift]
+            b,q,R2,p_value,std_err = out[yshift]
         except:
-            k, q, R2, p_value, std_err = [None]*5
-        return {'data': [x,y], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err, 'yshift': yshift}
+            b, q, R2, p_value, std_err = [None]*5
+        b = np.abs(b) if b is not None else None
+        LDD = b*T if b is not None else None
+
+        return {'data': [x,y], 'b': b, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err,
+                'LDD':LDD, 'yshift': yshift}
 
     # @property
     @timeit
     def fit_maxima(self, threshold = config.damping_threshold):
-        # distance = 50
-        # window_length = 100
-        # if self.signal_source in ["Elasto(90)","blueMaj","yellowMaj"]:
-        #     distance = 4
-        # if self.signal_source in ["Pt3","Pt4"]:
-        #     distance = 80
-        # if "a0" in self.signal_source:
-        #     pass
-        #     distance = 50*100
-            # window_length = 100*50
-        # smooth_signal = savgol_filter(self.damped_signal, window_length, 2)
-        # peaks, _ = find_peaks(np.abs(smooth_signal), distance=distance)
-        # peaks, _ = find_peaks(np.abs(self.damped_signal), distance=distance)
-
+        """
+        Returns
+        -------
+        dict with keys 'peaks', 'b', 'q', 'R2', 'p', 'std_err', 'LDD', 'yshift'
+        """
         T = 1/self.main_peak
         start = self.damped_signal_interpolated.index[0]
-        analyzed = self.damped_signal_interpolated[start+T/2:]
+        analyzed = self.damped_signal_interpolated[start+T/2:] # skip first peak after release
         maximum = max(abs(analyzed))
         distance = int(T/self.dt/2*0.75)
         peaks, _ = find_peaks(np.abs(analyzed), distance=distance)
         peaks_number = np.argmax(np.abs(analyzed.iloc[peaks])-threshold*maximum < 0)-1
         peaks = peaks[:peaks_number]
+        if peaks_number <5:
+            logger.warning(f"Fit maxima {self}. Only {peaks_number} peaks used.")
 
         out = {}
         if self.vertical_finetuning:
@@ -137,18 +135,22 @@ class DynatreeDampedSignal(DynatreeSignal):
             candidates = [0]
         for yshift in candidates:
             try:
-                k, q, R2, p_value, std_err = linregress(
+                b, q, R2, p_value, std_err = linregress(
                     analyzed.iloc[peaks].index,
                     np.log(np.abs(analyzed.iloc[peaks].values+yshift))
                 )
             except Exception as e:
                 logger.error(f"Error in fit_maxima {e}. {self.measurement}")
-                k, q, R2, p_value, std_err = [None] * 5
-            out[yshift] = [k, q, R2, p_value, std_err]
+                b, q, R2, p_value, std_err = [None] * 5
+            out[yshift] = [b, q, R2, p_value, std_err]
         df = pd.DataFrame.from_dict(out).T
         yshift = df[2].idxmin()
-        k,q,R2,p_value,std_err = out[yshift]
-        return {'peaks': analyzed.iloc[peaks], 'k': k, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err, 'yshift':yshift}
+        b,q,R2,p_value,std_err = out[yshift]
+        b = np.abs(b) if b is not None else None
+        LDD = b*T if b is not None else None
+        return {
+            'peaks': analyzed.iloc[peaks], 'b': b, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err, 'LDD': LDD,
+            'yshift':yshift}
 
     def ldd_from_definition(self):
         peaks = self.fit_maxima()['peaks']
@@ -163,7 +165,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         T = 2 * np.nanmean(peaks.index.diff())
         b = ldd / T
         logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
-        answer = {'k':b, 'LDD':ldd, 'T':T}
+        answer = {'b':b, 'LDD':ldd, 'T':T}
         logger.info(f"answer: {answer}")
         return answer
 
@@ -183,10 +185,10 @@ class DynatreeDampedSignal(DynatreeSignal):
             T = 2 * np.nanmean(peaks.index.diff())
             b = ldd / T
             logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
-            answer = {'k':b, 'LDD':ldd, 'T':T}
+            answer = {'b':b, 'LDD':ldd, 'T':T}
             logger.info(f"answer: {answer}")
         except:
-            answer = {'k':None, 'LDD':None, 'T':None}
+            answer = {'b':None, 'LDD':None, 'T':None}
             logger.error(f"Failed {self}")
         return answer
 
@@ -221,6 +223,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         data = self.damped_signal_interpolated
 
         freq = self.main_peak
+        T = 1/freq
         df_fft = self.fft
         # logger.info(f"FFT finished in {time.time() - start}, peak is at frequency {freq} Hz")
 
@@ -262,14 +265,17 @@ class DynatreeDampedSignal(DynatreeSignal):
         independent = data.index[mask]
         dependent = coef[mask]
         try:
-            k, q, R2, p_value, std_err = linregress(
+            b, q, R2, p_value, std_err = linregress(
                 independent, np.log(dependent)
             )
         except:
-            k, q, R2, p_value, std_err = [None] * 5
+            b, q, R2, p_value, std_err = [None] * 5
+        b = np.abs(b) if b is not None else None
+        LDD = b*T if b is not None else None
+
         return {'data': pd.Series(dependent, index=independent),
-                'k': k, 'q': q, "freq": freq, 'fft_data': df_fft, 'R2': R2,
-                'p': p_value, 'std_err': std_err}
+                'b': b, 'q': q, "freq": freq, 'fft_data': df_fft, 'R2': R2,
+                'p': p_value, 'std_err': std_err, 'LDD': LDD}
 
 
 def get_measurement_table():
@@ -305,10 +311,10 @@ def process_row(index):
         fit_H = s.hilbert_envelope
         fit_W = s.wavelet_envelope
         out = [fit_W['freq'], fit_W['data'].index[0], fit_W['data'].index[-1]]
-        out = out + [i[j] for i in [fit_M, fit_H, fit_W]  for j in ['k', 'R2', 'p', 'std_err'] ]
-    except:
-        print(f"Fail. {m}")
-        out = [None]*15
+        out = out + [i[j] for i in [fit_M, fit_H, fit_W]  for j in ['b', 'R2', 'p', 'std_err', 'LDD'] ]
+    except Exception as e:
+        print(f"Fail. {m} {e}")
+        out = [None]*18
     return out
 
 def process_row_definition(index):
@@ -320,21 +326,25 @@ def process_row_definition(index):
         day, method, tree, measurement, probe = index
         m = DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=method)
         s = DynatreeDampedSignal(m, signal_source=probe)
-        try:
-            ldd = s.ldd_from_definition()
-        except:
-            ldd = {'k':None, 'LDD':None, 'T':None}
-            logger.error(f"Failed LDD from definition: {m}")
-        try:
-            ldd_multi = s.ldd_from_two_amplitudes()
-        except:
-            ldd_multi = {'k': None, 'LDD': None, 'T': None}
-            logger.error(f"Failed LDD from multiple amplitudes: {m}")
-        out = [ldd['k'], ldd['LDD'], ldd['T'], ldd_multi['k'], ldd_multi['LDD'], ldd_multi['T']]
-        logger.info(f"OUTPUT :{out}")
     except:
         logger.error(f"Failed LDD: {m}")
-        out = [None]*6
+        out = [None] * 6
+        return out
+
+    try:
+        ldd = s.ldd_from_definition()
+    except:
+        ldd = {'b':None, 'LDD':None, 'T':None}
+        logger.error(f"Failed LDD from definition: {m}")
+
+    try:
+        ldd_multi = s.ldd_from_two_amplitudes()
+    except:
+        ldd_multi = {'b': None, 'LDD': None, 'T': None}
+        logger.error(f"Failed LDD from multiple amplitudes: {m}")
+
+    out = [ldd['b'], ldd['LDD'], ldd['T'], ldd_multi['b'], ldd_multi['LDD'], ldd_multi['T']]
+    logger.info(f"Dataset: {m}, {probe}, OUTPUT :{out}")
     return out
 
 def main():
@@ -350,17 +360,13 @@ def main():
     df = df.set_index(["day", "type", "tree", "measurement", "probe"])
     metody = ['maxima', 'hilbert', 'wavelet']
 
-    columns = ["freq", "start", "end"] + [i + j for i in metody for j in ['_b', '_R2', '_p', '_std_err']]
+    columns = ["freq", "start", "end"] + [i + j for i in metody for j in ['_b', '_R2', '_p', '_std_err', '_LDD']]
 
     results = progress_map(process_row, df.index.values)
     results_def = progress_map(process_row_definition, df.index.values)
 
     output = pd.DataFrame(results, index=df.index, columns=columns)
     output_def = pd.DataFrame(results_def, index=df.index, columns=['def_b','def_LDD','def_T','defmulti_b','defmulti_LDD','defmulti_T'])
-
-    for i in metody:
-        output[f"{i}_b"] = np.abs(output[f"{i}_b"])
-        output[f"{i}_LDD"] = output[f"{i}_b"]/output['freq']
 
     return output, output_def
 

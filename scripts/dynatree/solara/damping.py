@@ -30,7 +30,7 @@ def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1):
     signal, time = s.damped_signal.reshape(-1), s.damped_time
     x = time
     if k is not None:
-        y = np.exp(k * time + q)
+        y = np.exp(-k * time + q)
         fig.add_trace(go.Scatter(x=np.concatenate([x, x[::-1]]),
                                  y=np.concatenate([y, -y[::-1]]),
                                  fill='toself',
@@ -371,7 +371,7 @@ def damping_graphs():
             # background_color = '#f8d7da'
         with solara.Card(style={'background-color': background_color}):
             with solara.Row():
-                df.loc["LDD",:] = df.loc['b',:] * T
+                # df.loc["LDD",:] = df.loc['b',:] * T
 
                 # Vlastní funkce pro formátování
                 def custom_format(x):
@@ -443,31 +443,31 @@ def draw_images(temp=None):
     sig = DynatreeDampedSignal(m, data_source.value, dt=dt)
 
     data = {}
+    keys = ['b', 'R2', 'p_value', 'std_err', 'LDD']
     fig = make_subplots(rows=3, cols=1, shared_xaxes='all', shared_yaxes='all')
-    envelope, k, q, R2, p_value, std_err, _ = sig.hilbert_envelope.values()
-    fig = draw_signal_with_envelope(sig, fig, envelope, k, q, row=1)
-    data['hilbert'] = [None if k is None else -k, R2, p_value, std_err]
 
-    signal_peaks, k, q, R2, p_value, std_err, _ = sig.fit_maxima().values()
-    fig = draw_signal_with_envelope(sig, fig, k=k, q=q, row=2)
+    ans = sig.hilbert_envelope.values()
+    fig = draw_signal_with_envelope(sig, fig, ans['envelope'], ans['b'], ans['q'], row=1)
+    data['hilbert'] = [ans[key] for key in keys]
+
+    ans = sig.fit_maxima().values()
+    fig = draw_signal_with_envelope(sig, fig, k=ans['b'], q=ans['q'], row=2)
     fig.add_trace(go.Scatter(x=signal_peaks.index, y=signal_peaks.values.reshape(-1),
                              mode='markers', name='peaks', line=dict(color='red')), row=2, col=1)
-    data['extrema'] = [None if k is None else -k, R2, p_value, std_err ]
+    data['extrema'] = [ans[key] for key in keys]
 
-    envelope, k, q, freq, fft_data, R2, p_value, std_err = sig.wavelet_envelope.values()
-    fig = draw_signal_with_envelope(sig, fig, envelope, k=k, q=q, row=3)
-    data['wavelets'] = [None if k is None else -k, R2, p_value, std_err ]
+    ans = sig.wavelet_envelope.values()
+    fig = draw_signal_with_envelope(sig, fig, ans['envelope'], k=ans['b'], q=ans['q'], row=3)
+    data['wavelets'] = [ans[key] for key in keys]
 
-    fig.update_layout(title=f"{m}",
-                      height=800,
-                      )
+    fig.update_layout(title=f"{m}", height=800)
 
     fig.update_yaxes(title_text="Hilbert", row=1, col=1)
     fig.update_yaxes(title_text="Maxima/minima", row=2, col=1)
     fig.update_yaxes(title_text="Wavelet", row=3, col=1)
 
     df = pd.DataFrame.from_dict(data)
-    df.index = ['b','R^2','p_value','std_err']
+    df.index = keys
 
     return {'df':df, 'fig':fig, 'failed':sig.marked_failed, 'peak':sig.main_peak,
             'signal_peaks':signal_peaks}
