@@ -24,8 +24,8 @@ rule all_non_acc:
         "../outputs/damping_factor.csv",
         "../outputs/damping_factor_def.csv",
         "../outputs/sondy_a_stromy.csv",
-        "../outputs/penetrologger.csv"
-
+        "../outputs/penetrologger.csv",
+        "../outputs/Popis_Babice_VSE.xlsx"
 rule all_acc:
     input:
         "../outputs/FFT_acc_average_graph.zip"
@@ -442,4 +442,13 @@ rule vlhkosti:
         """
         cd puda
         python puda_vlhost_to_csv.py
+        """
+rule copy_description:
+    output:
+        "../outputs/Popis_Babice_VSE.xlsx"
+    input:
+        "../data/Popis_Babice_VSE.xlsx"
+    shell:
+        """
+        cp ../data/Popis_Babice_VSE.xlsx ../outputs/Popis_Babice_VSE.xlsx
         """
