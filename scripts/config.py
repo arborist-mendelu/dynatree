@@ -48,6 +48,8 @@ file['cachedir'] = "../outputs/cache"
 file['cachedir_large'] = "../outputs/fft_images_knocks"
 
 file["trans_vse.csv"] = f"{datapath}/puda/trans_vse.csv"
+file["WWP_vse.csv"] = f"{datapath}/puda/WWP_vse.csv"
+
 file["penetrologgers"] = f"{datapath}/puda/Puda/penetrologger*"
 file["penetrologger.csv"] = f"../outputs/penetrologger.csv"
 

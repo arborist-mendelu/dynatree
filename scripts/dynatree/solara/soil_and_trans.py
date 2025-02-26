@@ -23,7 +23,9 @@ def Page():
 
     with solara.lab.Tabs(lazy=True):
         with solara.lab.Tab("Trans vse"):
-            df = read_csv_to_df()
+            df1 = read_csv_to_df()
+            df2 = read_csv_to_df(name = "WWP_vse.csv", sep="\t")
+            df = df1.merge(df2, how='outer', left_index=True, right_index=True)
             solara.ToggleButtonsMultiple(value=active_columns, values=list(df.columns))
             solara.Button(label="Reset", on_click=reset_columns)
             draw_graphs(df)
@@ -31,10 +33,11 @@ def Page():
             s.Selection_trees_only()
             penetrologger()
 
-def read_csv_to_df():
-    df = pd.read_csv(config.file["trans_vse.csv"])
+def read_csv_to_df(name = "trans_vse.csv", sep=","):
+    df = pd.read_csv(config.file[name], sep=sep).rename(columns={"time":"Time"})
     df["Time"] = pd.to_datetime(df["Time"])  # , errors="coerce")
-    df = df.drop(columns=["Unnamed: 0"])
+    if "Unnamed: 0" in df.columns:
+        df = df.drop(columns=["Unnamed: 0"])
     df = df.set_index("Time")
     return df
 
