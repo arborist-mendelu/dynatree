@@ -92,28 +92,6 @@ def Page():
         #     """
         #       )
 
-        with solara.lab.Tab("Notes from measurements"):
-            solara.Markdown(
-            """
-            ## Notes from measurements
-            
-            Notes are extracted from the file `Popis_Babice_VSE.xlsx`.
-            The measurements with no notes are dropped. 
-            The table is created automatically by snakemake file. The table does not contain
-            data annotated by another label than "Measurement:".
-            """
-              )
-
-            df = pd.read_csv("csv_output/measurement_notes.csv", index_col=0).dropna(subset=["remark1","remark2"], how='all')
-            df = df.set_index(["day","tree","measurement"])
-#             solara.display(GT(df.reset_index(),
-#                               groupname_col="day",
-#                               rowname_col="tree",
-#                               ).tab_header(
-#     title="Large Landmasses of the World",
-#     subtitle="The top ten largest are presented"
-# ))
-            solara.display(df)
         with solara.lab.Tab("Monitoring serveru"):
             with solara.Card():
                 if monitoring.not_called:
