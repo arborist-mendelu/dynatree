@@ -22,7 +22,7 @@ nbconvert
 great_tables
 weasyprint
 toml
-bioconda::snakemake
+bioconda::snakemake==8.20.1
 passlib
 gunicorn
 statsmodels
