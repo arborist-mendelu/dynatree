@@ -8,6 +8,7 @@ import dynatree.solara.select_source as s
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
+import solara_auth
 
 active_columns = solara.reactive([])
 def reset_columns():
@@ -15,6 +16,9 @@ def reset_columns():
 
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     # display(df)
     # display(all_columns)
 

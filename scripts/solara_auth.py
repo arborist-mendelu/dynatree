@@ -43,17 +43,15 @@ def store_in_session_storage(value):
 def LoginForm():
     username = solara.use_reactive("")
     password = solara.use_reactive("")
-    with solara.Card("Login"):
+    with solara.Card("Přihlášení do autentizované části"):
         solara.Markdown(
-            """
-        This is an example login form.
-
-          * use unod as username
-          * use the same password used in other parts of the project
+        """
+          * Na username nezáleží
+          * Heslo je obvyklé
         """
         )
         solara.InputText(label="Username", value=username)
-        solara.InputText(label="Password", password=True, value=password)
+        solara.InputText(label="Password", password=True, value=password, on_value=lambda x: login(username.value, x))
 
         solara.Button(label="Login", on_click=lambda: login(username.value, password.value))
         if login_failed.value:
@@ -61,7 +59,8 @@ def LoginForm():
 
 def login(username: str, password: str):
     # this function can be replace by a custom username/password check
-    if username == "unod" and  (True in [pbkdf2_sha256.verify(password, i) for i in valid_hashes]):
+    # if username == "unod" and  (True in [pbkdf2_sha256.verify(password, i) for i in valid_hashes]):
+    if True in [pbkdf2_sha256.verify(password, i) for i in valid_hashes]:
         user.value = User(username)
         login_failed.value = False
         store_in_session_storage(user.value)

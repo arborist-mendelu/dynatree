@@ -21,6 +21,7 @@ import seaborn as sns
 import time
 # import os
 import config
+import solara_auth
 # from weasyprint import HTML, CSS
 
 loading_start = time.time()
@@ -284,6 +285,9 @@ use_manual_peaks = solara.reactive(True)
 @solara.component
 @dynatree.timeit
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     global subdf
 
     initime = time.time()

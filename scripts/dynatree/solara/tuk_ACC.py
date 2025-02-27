@@ -22,6 +22,7 @@ import time
 from functools import lru_cache
 import urllib.parse
 import jinja2
+import solara_auth
 
 allow_save = False
 loading_start = time.time()
@@ -125,6 +126,9 @@ def get_rdf(value, all=True):
 
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     dynatree.logger.info("Page in tuk_ACC.py entered")
     router = solara.use_router()
     parsed_values = urllib.parse.parse_qs(router.search, keep_blank_values=True)

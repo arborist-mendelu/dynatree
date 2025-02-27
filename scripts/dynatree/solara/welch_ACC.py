@@ -16,6 +16,7 @@ import plotly.express as px
 import dynatree.dynatree as dynatree
 import dynatree.FFT as FFT
 import time
+import solara_auth
 
 # https://stackoverflow.com/questions/37470734/matplotlib-giving-error-overflowerror-in-draw-path-exceeded-cell-block-limit
 import matplotlib as mpl
@@ -78,6 +79,9 @@ def nakresli(x=None):
 
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     solara.Title("DYNATREE: Welch for ACC")
     solara.Style(s.styles_css)
     with solara.Sidebar():

@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from solara.lab.components.confirmation_dialog import ConfirmationDialog
 from dynatree.solara.snackbar import show_snack, snack
 from dynatree.dynatree_util import add_horizontal_line
+import solara_auth
 
 dynatree.logger.setLevel(dynatree.logger_level)
 dynatree.logger.setLevel(logging.ERROR)
@@ -79,6 +80,9 @@ filtr_T_max = solara.reactive(1000)
 
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     solara.Title("DYNATREE: Damping")
     styles_css = s.styles_css + """
         .image-preview {

@@ -10,6 +10,7 @@ import solara
 import yaml
 import os
 from datetime import datetime
+import solara_auth
 
 def get_file_modification_date(file_path):
     """
@@ -38,6 +39,9 @@ def velikost_souboru_v_mb(cesta_k_souboru):
 
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
     # with open('downloads.yml', 'r') as file:
     #     data = yaml.load_all(file, yaml.FullLoader)
     solara.Title("DYNATREE: Download site")

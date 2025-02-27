@@ -2,6 +2,7 @@ import solara
 import os
 from io import BytesIO
 import plotly.express as px
+import solara_auth
 
 from dynatree.pulling import PullingTest, major_minor_axes, slopes
 
@@ -49,6 +50,10 @@ def on_file(f):
 
 @solara.component
 def Page():
+    if not solara_auth.user.value:
+        solara_auth.LoginForm()
+        return
+
     solara.Style(styles_css)
     with solara.Sidebar():
         solara.Switch(label = "Consider only static data", value = static_restriction)

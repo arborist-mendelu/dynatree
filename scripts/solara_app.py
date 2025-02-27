@@ -58,8 +58,8 @@ def logout():
     solara_auth.user.set(None)
 @solara.component
 def Page():
-    if not solara_auth.user.value:
-        solara_auth.user.value = solara_auth.session_storage.get(solara.get_session_id(), None)
+    # if not solara_auth.user.value:
+    #     solara_auth.user.value = solara_auth.session_storage.get(solara.get_session_id(), None)
     if not solara_auth.user.value:
         solara_auth.LoginForm()
         return
