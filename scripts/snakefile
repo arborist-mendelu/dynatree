@@ -11,7 +11,6 @@ rule all_non_acc:
         "../outputs/static_pulling_error_propagation.xlsx",
         "../outputs/anotated_regressions_static.csv",
         "csv/angles_measured.csv",
-        "csv_output/measurement_notes.csv",
         "../outputs/static_pull_suspicious_experiments.zip",
         "../outputs/FFT_csv_tukey.csv",
         "../outputs/FFT_csv_tukey_raw.csv",
@@ -56,19 +55,6 @@ rule create_cached_images:
         zip -qj ../outputs/FFT_acc_average_graph.zip ../outputs/cache_FFTavg/*.png
         """
 
-rule measurement_notes:
-    """
-    Extract the measurement notes from the xlsx file.
-    """        
-    input:
-        xls = "../data/Popis_Babice_VSE.xlsx",
-    output:
-        "csv_output/measurement_notes.csv"
-    shell:
-        """
-        python read_measurements_notes.py
-        """
-        
 rule fft_boxplots:
     """
     Draw frequencies grouped by trees with distingushed date and leaf status.
