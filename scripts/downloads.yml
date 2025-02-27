@@ -1,5 +1,13 @@
 
 ---
+title: "Souhrn"
+
+popis: Spojená data z různých analýz.
+
+dynatree_data_merge.csv: Spojení tahovek, dynamiky, dendroparametrů, útlumu.
+
+---
+
 title: "Půda"
 
 popis: "Vlhkost, data z penetrologgeru. Pro následné spojení s tuhostmi kořenového systému nebo případně stromu."

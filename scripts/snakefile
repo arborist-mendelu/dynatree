@@ -25,7 +25,8 @@ rule all_non_acc:
         "../outputs/sondy_a_stromy.csv",
         "../outputs/penetrologger.csv",
         "../outputs/Popis_Babice_VSE.xlsx",
-        "../outputs/velocity_babice_oprava.csv"
+        "../outputs/velocity_babice_oprava.csv",
+        "../outputs/dynatree_data_merge.csv"
 rule all_acc:
     input:
         "../outputs/FFT_acc_average_graph.zip"
@@ -448,4 +449,22 @@ rule copy_velocity:
     shell:
         """
         cp ../data/velocity_babice_oprava.csv ../outputs/velocity_babice_oprava.csv
+        """
+
+rule merge_data:
+    output:
+        "../outputs/dynatree_data_merge.csv"
+    input:
+        "../data/Popis_Babice_VSE.xlsx",
+        "../outputs/FFT_csv_tukey.csv",
+        "../outputs/anotated_regressions_static.csv",
+        "../outputs/damping_factor.csv",
+        "../outputs/vlhkosti_babice.csv",
+        "../outputs/sondy_a_stromy.csv",
+        "../outputs/penetrologger.csv",
+        "../outputs/velocity_babice_oprava.csv"
+    shell:
+        """
+        jupyter nbconvert --to html --execute merge_dynatree_data.ipynb --no-input
+        rm merge_dynatree_data.html
         """
