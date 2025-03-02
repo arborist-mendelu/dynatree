@@ -51,7 +51,7 @@ def LoginForm():
         """
         )
         solara.InputText(label="Username", value=username)
-        solara.InputText(label="Password", password=True, value=password, on_value=lambda x: login(username.value, x))
+        solara.InputText(label="Password", password=True, value=password, on_value=lambda x: login(username.value, x), autofocus=True)
 
         solara.Button(label="Login", on_click=lambda: login(username.value, password.value))
         if login_failed.value:
