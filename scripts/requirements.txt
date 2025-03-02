@@ -5,7 +5,7 @@ jupyterlab
 scipy
 streamlit
 emd
-solara
+solara==1.43
 seaborn
 pywavelets
 emd
