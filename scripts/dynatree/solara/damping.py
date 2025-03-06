@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from solara.lab.components.confirmation_dialog import ConfirmationDialog
 from dynatree.solara.snackbar import show_snack, snack
 from dynatree.dynatree_util import add_horizontal_line
+import requests
 
 dynatree.logger.setLevel(dynatree.logger_level)
 dynatree.logger.setLevel(logging.ERROR)
@@ -73,9 +74,11 @@ damping_parameter = solara.reactive("LDD")
 damping_parameters = ["b","LDD"]
 
 filtr_R_min = solara.reactive(-1)
-filtr_R_max = solara.reactive(-0.9)
-filtr_T_min = solara.reactive(2)
+filtr_R_max = solara.reactive(1)
+filtr_T_min = solara.reactive(0)
 filtr_T_max = solara.reactive(1000)
+data_selection = solara.reactive("optimistic")
+data_selection_types = ["all", "optimistic", "pesimistic"]
 
 @solara.component
 def Page():
@@ -140,6 +143,15 @@ def Page():
                             )
                 with solara.Card(title="Parameter"):
                     solara.ToggleButtonsSingle(value=damping_parameter, values = damping_parameters)
+
+                with solara.Card(title="Selection type"):
+                    solara.ToggleButtonsSingle(value=data_selection, values = data_selection_types)
+                    solara.Markdown("""
+                    * **all**: show all data
+                    * **optimistic**: remove data marked as failed by all people
+                    * **pesimistic**: remove data marked as failed by at least one person
+                    """)
+
                 with solara.Card(title="Bounds for the filter in the table"):
                     solara.InputFloat("Lower bound for R^2", filtr_R_min)
                     solara.InputFloat("Upper bound for R^2", filtr_R_max)
@@ -157,27 +169,27 @@ def Page():
                       kmity, proložení nebo celý experiment.    
                     """)
             show_data_one_tree()
-        with solara.lab.Tab("From FFT (images)"):
-            with solara.Sidebar():
-                s.Selection(exclude_M01=True,
-                            optics_switch=False,
-                            day_action=resetuj2,
-                            tree_action=resetuj2,
-                            measurement_action= do_find_peaks
-                            )
-                # s.ImageSizes()
-            try:
-                peak_width_graph()
-            except:
-                pass
-        with solara.lab.Tab("From FFT (tables)"):
-            with solara.Sidebar():
-                with solara.Card(title="Background gradient"):
-                    solara.ToggleButtonsSingle(value=gradient_axis, values=gradient_axes)
-            # try:
-            peak_width_table()
-        # except:
-        #     solara.Error("Some problem appeared")
+        # with solara.lab.Tab("From FFT (images)"):
+        #     with solara.Sidebar():
+        #         s.Selection(exclude_M01=True,
+        #                     optics_switch=False,
+        #                     day_action=resetuj2,
+        #                     tree_action=resetuj2,
+        #                     measurement_action= do_find_peaks
+        #                     )
+        #         # s.ImageSizes()
+        #     try:
+        #         peak_width_graph()
+        #     except:
+        #         pass
+        # with solara.lab.Tab("From FFT (tables)"):
+        #     with solara.Sidebar():
+        #         with solara.Card(title="Background gradient"):
+        #             solara.ToggleButtonsSingle(value=gradient_axis, values=gradient_axes)
+        #     # try:
+        #     peak_width_table()
+        # # except:
+        # #     solara.Error("Some problem appeared")
 
 current = {'from_amplitudes': None, 'from_fft': None}
 gradient_axis = solara.reactive("Columns")
@@ -504,19 +516,18 @@ def show_data_one_tree():
             """, style = {'color':'inherit'})
 
         df = pd.read_csv(config.file['outputs/damping_factor'])
-        df_matlab = pd.read_csv("../data/matlab/damping_factor_porovnani.csv", sep=";")
-        df_matlab = (df_matlab
-                        .loc[:, ["day", "type", "tree", "measurement", "probe", "b", "R2", "LDD"]]
-                        .rename(columns={'R2': 'FFT_R2', 'b':"FFT_b", "LDD": "FFT_LDD"})
+        df_matlab = (pd.read_csv("../data/matlab/utlum_FFT_3citlivost_15amp.csv")
+                     .rename(columns = {'folder':'day', 'b':'FFT_b', 'LDD':'FFT_LDD', 'R2':'FFT_R2'})
                      )
-        # df_definice = (pd.read_csv(config.file["outputs/damping_factor_def"])
-        #                .loc[:, ["day", "type", "tree", "measurement", "probe", "b", "LDD"]]
-        #                .rename(columns={'b': "def_b", "LDD": "def_LDD"})
-        #                )
-        # df_definice.loc[:,"def_R2"] = 1
-        df_matlab.day = df_matlab.day.map(lambda x: x if pd.isna(x) else "-".join(x.split(".")[::-1]))
+        df_matlab[['type', 'tree', 'measurement']] = df_matlab['Name'].str.split('_', expand=True)
+        df_matlab['probe'] = "Elasto(90)"
+        df_matlab['day'] = df_matlab['day'].str.replace('_', '-')
+
+        df_matlab = (df_matlab
+                        .loc[:, ["day", "type", "tree", "measurement", "probe", "FFT_b", "FFT_R2", "FFT_LDD"]]
+                        .dropna()
+                     )
         df = df.merge(df_matlab, how='left')
-        # df = df.merge(df_definice, how='left')
         # Nahradí hodnoty ve sloupcích bez "_R2" None pokud odpovídající "_R2" sloupec má hodnotu > -0.9
         # for col in list_of_methods:
         #     df.loc[df[f"{col}_R2"] > -0.9, f"{col}_R2"] = None
@@ -557,6 +568,35 @@ def show_data_one_tree():
             df.loc[
                 ~((df[f"{i}_R2"] > filtr_R_min.value) & (df[f"{i}_R2"] < filtr_R_max.value)), [f"{i}_b", f"{i}_LDD"]] = np.nan
         # df[~ ((df["#_of_periods"] > filtr_T_min.value) & (df["#_of_periods"] < filtr_T_max.value)),:] = np.nan
+
+        def get_zero_rating(key="min", tree = None):
+            url = "https://euler.mendelu.cz/gallery/api/all_comments/utlum"
+            response = requests.get(url)
+            data = response.json()
+            df = pd.DataFrame(data)
+            df = df["comments"].apply(pd.Series).drop(["id", "directory", "text"], axis=1)
+            df[["day", "type", "tree", "measurement"]] = df["image"].str.split('_', expand=True)
+            df["measurement"] = df["measurement"].str.replace(".png", "", regex=False)
+            df = df.drop(["image"], axis=1)
+            if key == "min":
+                df = df.groupby(['day', 'type', 'tree', 'measurement']).min()
+            else:
+                df = df.groupby(['day', 'type', 'tree', 'measurement']).max()
+            df = df[df["rating"] <= 2]
+            df = df.reset_index()
+            if tree is not None:
+                df = df[df["tree"] == tree]
+            return df
+        if data_selection.value != "all":
+            if data_selection.value == "optimistic":
+                key = "max"
+            else:
+                key = "min"
+            failed = get_zero_rating(key=key, tree=s.tree.value)
+            failed = [tuple(i) for i in failed[["tree","day", "type", "measurement"]].values]
+            # breakpoint()
+            # print (df.index.isin(failed))
+            df.loc[df.index.isin(failed), cols] = np.nan
 
         cols = [i for i in df.columns if f"_{damping_parameter.value}" in i] + [
             "linkPNG", "links", "linkHTML"]
@@ -610,6 +650,10 @@ def show_data_one_tree():
         """)
 
         display(_)
+
+        if data_selection.value != 'all':
+            with solara.Card(title = "Data manually marked as failed"):
+                display(failed)
 
 
 
