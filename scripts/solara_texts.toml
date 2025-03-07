@@ -26,13 +26,12 @@ vizualizace = """
         * Použití: vykreslení jedné nebo několika položek, kontrola (např. vynulování u přistrojů, které se nulují), hledání peaků, hledání intervalů zájmu (dají se vybrat data nástrojem a souřadnice výběru uložit pro pozdější použití).
         """
 general_info = """ 
-        ## Obecné info
+        ## O aplikaci
                 
-        * Někdy se po přepnutí aplikací neaktualizuje menu v levém sidebaru. 
-          To je možné opravit kliknutím na jinou položku v typu měření (normal/den/noc/...)
-        * Někdy se objeví chybová hláška, ale hned zmizí, to je neškodné.
+        * Podpora zpracování a vizualizace dat pro projekt Dynatree.
+        * Chyby hlásit na marik@mendelu.cz
         * Některé aplikace aktualizují výstup hned po změně parametrů, některé po stisku tlačítka na
-          přeskreslení nebo přepočet.
+          překreslení nebo přepočet.
         """
 tahovky = """
         ## Tahovky
