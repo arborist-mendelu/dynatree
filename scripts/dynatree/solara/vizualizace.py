@@ -214,9 +214,9 @@ def posun_t_from(value, limit=500):
         t_from.value = limit-1
 
 def posun_doprava():
-    t_from.value = t_from.value + length.value
+    t_from.value = t_from.value + length.value/2
 def posun_doleva():
-    t_from.value = t_from.value - length.value
+    t_from.value = t_from.value - length.value/2
 
 
 @solara.component
@@ -322,18 +322,27 @@ def Page():
                     if (tab_index.value==4):
                         df5 = data_object.data_acc5000
                         solara.Warning(
+                            solara.Markdown(
 """
-Data jsou dynamicky přesamplovaná pomocí plotly-resample. Mohou tedy vypadat trochu jinak než v jiném zobrazovátku, ale bez downsamplování by se s nimi 
-nedalo pracovat. Downsamplování je pouze při zobrazování, nepoužívá se pro výpočty.
-"""
-                            )
+* Data jsou dynamicky přesamplovaná pomocí plotly-resample. Mohou tedy vypadat trochu jinak než v jiném zobrazovátku, ale bez downsamplování by se s nimi 
+**nedalo rozumně pracovat** v plotly. 
+* Downsamplování je pouze při zobrazování, **nepoužívá se pro výpočty**.
+* Alternativně je možné zkusit zobrazovátko založené na **bookeh** na [https://euler.mendelu.cz/fast/](https://euler.mendelu.cz/fast/)
+""", style={'color':'inherit'}
+                            ))
                         plot(df5, dependent_acc, resample=True)
-                        solara.Info("Detail bez přesamplování je níže. Začátek inervalu zadej z klávesnice nebo kliknutím do horního obrázku. Délka signálu je volitelná. Po změně začátku je asi potřeba resetovat zobrazení os v dolním obrázku - dvojklik do obrázku.")
+                        solara.Info(solara.Markdown(
+                            """
+                            * Detail bez přesamplování je níže. Začátek inervalu zadej z klávesnice nebo kliknutím do horního obrázku. 
+                            * Délka signálu je volitelná. Po změně začátku je asi potřeba resetovat zobrazení os v dolním obrázku - dvojklik do obrázku.
+                            * Šipky posouvají zobrazený časový interval o polovinu délky okna.
+                            * Rozměry obrázku se nastavují v bočním panelu nalevo.
+                            """, style={'color':'inherit'}))
                         solara.InputFloat("From", value=t_from)
                         # solara.InputFloat("To", value=t_to)
                         with solara.Row():
                             solara.Text("Délka intervalu pro detail")
-                            solara.ToggleButtonsSingle(value=length, values = [0.5,1,2,3,5])
+                            solara.ToggleButtonsSingle(value=length, values = [0.5,1,2,3,5,10,20,40,60])
                         with solara.Row():
                              solara.Button(label=f"<-", on_click=posun_doleva)
                              solara.Button(label=f"->", on_click=posun_doprava)
