@@ -113,7 +113,53 @@ def Page():
         #startBtn {
             background-color: lightgray !important;
             padding: 5px;
-        }        
+        }       
+        
+        #preview-comment table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#preview-comment th, #preview-comment td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#preview-comment th {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+}
+
+#preview-comment tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+#preview-comment tr:hover {
+    background-color: #ddd;
+    transition: 0.3s;
+}
+
+#preview-comment td {
+    color: #333;
+}
+
+/* Responsivní úprava */
+@media (max-width: 600px) {
+    #preview-comment table {
+        font-size: 14px;
+    }
+
+    #preview-comment th, #preview-comment td {
+        padding: 10px;
+    }
+}
+ 
     """
     solara.Style(styles_css)
     snack()
@@ -543,7 +589,8 @@ def show_data_one_tree():
         df["linkPNG"] = df.apply(lambda row:f"""
         <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'
         class="image-preview" 
-        data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'        
+        data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'
+        data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'        
         >PNG</a>"""
                                  , axis=1)
         df["links"] = df.apply(lambda row:f"""
@@ -559,6 +606,10 @@ def show_data_one_tree():
         class="image-preview" 
         data-src='https://euler.mendelu.cz/draw_graph_damping/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png&damping_method=wavelet'        
         >W</a>
+        <a  href='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'
+        class="image-preview" 
+        data-src='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'        
+        >Comments</a>
 """
                                  , axis=1)
         df["linkHTML"] = df.apply(lambda row:f"<a href='https://euler.mendelu.cz/fast/index.html?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&sensor=Elasto%2890%29&start=0&end=1000000000&format=html '>html</a>", axis=1)
@@ -626,6 +677,7 @@ def show_data_one_tree():
         solara.HTML(tag="div", unsafe_innerHTML="""
         <div id="preview-container" class="preview-container">
         <img id="preview-image" src="" alt="Náhled">
+        <div id="preview-comment">AAAA</div>
        </div>
        <button id="startBtn" class="v-btn v-btn--contained theme--light v-size--default">Začni sledovat pohyb myši</button>
         """)
@@ -633,16 +685,45 @@ def show_data_one_tree():
 function initPreview() {
     const previewContainer = document.getElementById("preview-container");
     const previewImage = document.getElementById("preview-image");
+    const previewComment = document.getElementById("preview-comment");    
     const links = document.querySelectorAll(".image-preview");
-
     links.forEach(link => {
         if (!link.dataset.listenerAdded) { // Zabrání opakovanému přidání posluchačů
             link.addEventListener("mouseenter", function () {
                 const imageUrl = this.getAttribute("data-src");
                 previewImage.src = imageUrl;
                 previewContainer.style.display = "block";
+                // Zpracování textového náhledu
+                const textSrc = this.getAttribute("data-text-src");
+                if (textSrc) {
+                    fetch(textSrc)
+                        .then(response => {
+                            console.log("Status odpovědi:", response.status);
+                            console.log("Content-Type:", response.headers.get("Content-Type"));
+                            if (!response.ok) throw new Error("Chyba při načítání JSON");
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log("Načtená data:", data);
+                            
+                            if (Array.isArray(data.comments)) {
+                                // Spojení všech textů do jednoho stringu
+                                // const commentText = data.comments.map(comment => comment.text).join(" | ");
+                                // previewComment.textContent = commentText || "Žádné komentáře";
+                                previewComment.innerHTML = createTable(data.comments);
+                            } else {
+                                previewComment.textContent = "Neplatná data";
+                            }
+                            //previewComment.textContent = data.comments || "Žádný komentář";
+                        })
+                        .catch(error => {
+                            console.error("Nepodařilo se načíst komentář:", error);
+                            previewComment.textContent = "Chyba při načítání komentáře";
+                        });
+                } else {
+                    previewComment.textContent = ""; // Vyčistit obsah, pokud není `data-text-src`
+                }
             });
-
             link.addEventListener("mouseleave", function () {
                 previewContainer.style.display = "none";
             });
@@ -669,6 +750,31 @@ observer.observe(document.body, { childList: true, subtree: true });
 window.addEventListener('load', function() {
     setTimeout(initPreview, 1000);
 });
+
+// Funkce pro generování tabulky z JSON dat
+function createTable(comments) {
+    let table = `<table>
+        <tr>
+            <th>ID</th>
+            <th>Directory</th>
+            <th>Text</th>
+            <th>Rating</th>
+            <th>Image</th>
+        </tr>`;
+
+    comments.forEach(comment => {
+        table += `<tr>
+            <td>${comment.id}</td>
+            <td>${comment.directory}</td>
+            <td>${comment.text}</td>
+            <td>${comment.rating}</td>
+            <td>${comment.image}</td>
+        </tr>`;
+    });
+
+    table += `</table>`;
+    return table;
+}
         """)
 
         display(_)
