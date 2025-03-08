@@ -516,7 +516,7 @@ def show_data_one_tree():
               Vyfiltruj si buď pěkná data pro zpracování nebo škaredá pro posouzení jak dál.
             * Odkaz "Začít sledovat pohyb myši" (pod rámečkem) aktivuje náhledy při najetí myší na odkaz pro PNG. Náhled je v pravém horním rohu. Tlačítko je potřeba použít pokaždé, 
             když otevřeš tuto stránku nebo přepneš strom. To že jsou náhledy aktivní se pozná podle zelené barvy textu PNG."
-            * **NEW Experimentálně se náhledy spouští automaticky. Na n8hledu PNG (celý experiment) jsou i komentáře a hodnocení.**
+            * **NEW Experimentálně se náhledy spouští automaticky. Na náhledu PNG (celý experiment) jsou i komentáře a hodnocení.**
             """, style = {'color':'inherit'})
 
         df = pd.read_csv(config.file['outputs/damping_factor'])
