@@ -115,51 +115,6 @@ def Page():
             padding: 5px;
         }       
         
-        #preview-comment table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-#preview-comment th, #preview-comment td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-#preview-comment th {
-    background-color: #4CAF50;
-    color: white;
-    font-weight: bold;
-}
-
-#preview-comment tr:nth-child(even) {
-    background-color: #f2f2f2;
-}
-
-#preview-comment tr:hover {
-    background-color: #ddd;
-    transition: 0.3s;
-}
-
-#preview-comment td {
-    color: #333;
-}
-
-/* Responsivní úprava */
-@media (max-width: 600px) {
-    #preview-comment table {
-        font-size: 14px;
-    }
-
-    #preview-comment th, #preview-comment td {
-        padding: 10px;
-    }
-}
- 
     """
     solara.Style(styles_css)
     snack()
@@ -753,26 +708,16 @@ window.addEventListener('load', function() {
 
 // Funkce pro generování tabulky z JSON dat
 function createTable(comments) {
-    let table = `<table>
-        <tr>
-            <th>ID</th>
-            <th>Directory</th>
-            <th>Text</th>
-            <th>Rating</th>
-            <th>Image</th>
-        </tr>`;
+    let table = `<ul>`;
 
     comments.forEach(comment => {
-        table += `<tr>
-            <td>${comment.id}</td>
-            <td>${comment.directory}</td>
-            <td>${comment.text}</td>
-            <td>${comment.rating}</td>
-            <td>${comment.image}</td>
-        </tr>`;
+        table += `<li>
+            <b>${comment.text}</b>
+            <b>(Hodnocení ${comment.rating})</b>
+        </li>`;
     });
 
-    table += `</table>`;
+    table += `</ul>`;
     return table;
 }
         """)
