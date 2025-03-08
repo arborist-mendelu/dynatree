@@ -516,7 +516,7 @@ def show_data_one_tree():
               Vyfiltruj si buď pěkná data pro zpracování nebo škaredá pro posouzení jak dál.
             * Odkaz "Začít sledovat pohyb myši" (pod rámečkem) aktivuje náhledy při najetí myší na odkaz pro PNG. Náhled je v pravém horním rohu. Tlačítko je potřeba použít pokaždé, 
             když otevřeš tuto stránku nebo přepneš strom. To že jsou náhledy aktivní se pozná podle zelené barvy textu PNG."
-            * **NEW Experimentálně se náhledy spouští automaticky.**
+            * **NEW Experimentálně se náhledy spouští automaticky. Na n8hledu PNG (celý experiment) jsou i komentáře a hodnocení.**
             """, style = {'color':'inherit'})
 
         df = pd.read_csv(config.file['outputs/damping_factor'])
@@ -561,9 +561,7 @@ def show_data_one_tree():
         class="image-preview" 
         data-src='https://euler.mendelu.cz/draw_graph_damping/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png&damping_method=wavelet'        
         >W</a>
-        <a  href='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'
-        class="image-preview" 
-        data-src='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'        
+        <a  href='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'        
         >Comments</a>
 """
                                  , axis=1)
