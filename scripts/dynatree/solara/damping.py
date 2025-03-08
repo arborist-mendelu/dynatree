@@ -80,6 +80,8 @@ filtr_T_max = solara.reactive(1000)
 data_selection = solara.reactive("optimistic")
 data_selection_types = ["all", "optimistic", "pesimistic"]
 
+tab_index = solara.reactive(1)
+
 @solara.component
 def Page():
     solara.Title("DYNATREE: Damping")
@@ -115,7 +117,7 @@ def Page():
     """
     solara.Style(styles_css)
     snack()
-    with solara.lab.Tabs(lazy=True):
+    with solara.lab.Tabs(lazy=True, value=tab_index):
         with solara.lab.Tab("From amplitudes (single measurement)"):
             with solara.Sidebar():
                 s.Selection(exclude_M01=True,
@@ -513,6 +515,7 @@ def show_data_one_tree():
               Vyfiltruj si buď pěkná data pro zpracování nebo škaredá pro posouzení jak dál.
             * Odkaz "Začít sledovat pohyb myši" (pod rámečkem) aktivuje náhledy při najetí myší na odkaz pro PNG. Náhled je v pravém horním rohu. Tlačítko je potřeba použít pokaždé, 
             když otevřeš tuto stránku nebo přepneš strom. To že jsou náhledy aktivní se pozná podle zelené barvy textu PNG."
+            * **NEW Experimentálně se náhledy spouští automaticky.**
             """, style = {'color':'inherit'})
 
         df = pd.read_csv(config.file['outputs/damping_factor'])
@@ -627,12 +630,14 @@ def show_data_one_tree():
        <button id="startBtn" class="v-btn v-btn--contained theme--light v-size--default">Začni sledovat pohyb myši</button>
         """)
         solara.HTML(tag="script", unsafe_innerHTML="""
-    document.getElementById('startBtn').addEventListener('click', function() {
-        const previewContainer = document.getElementById("preview-container");
-        const previewImage = document.getElementById("preview-image");
-        const links = document.querySelectorAll(".image-preview");
-        links.forEach(link => {
-            link.addEventListener("mouseenter", function (event) {
+function initPreview() {
+    const previewContainer = document.getElementById("preview-container");
+    const previewImage = document.getElementById("preview-image");
+    const links = document.querySelectorAll(".image-preview");
+
+    links.forEach(link => {
+        if (!link.dataset.listenerAdded) { // Zabrání opakovanému přidání posluchačů
+            link.addEventListener("mouseenter", function () {
                 const imageUrl = this.getAttribute("data-src");
                 previewImage.src = imageUrl;
                 previewContainer.style.display = "block";
@@ -641,12 +646,29 @@ def show_data_one_tree():
             link.addEventListener("mouseleave", function () {
                 previewContainer.style.display = "none";
             });
-            
+
             link.style.color = "green";
-            console.log("link")
-        });
-        console.log("Listener byl přidán po kliknuti.");
+            link.dataset.listenerAdded = "true"; // Označíme, že posluchač už byl přidán
+            console.log("Listener přidán k odkazu");
+        }
     });
+}
+
+// Spuštění kódu po kliknutí na tlačítko
+document.getElementById('startBtn').addEventListener('click', initPreview);
+
+// Automatické sledování změn v DOM pro nové prvky
+const observer = new MutationObserver(() => {
+    initPreview();
+});
+
+// Sledování změn v celém dokumentu (můžeš omezit na konkrétní kontejner)
+observer.observe(document.body, { childList: true, subtree: true });
+
+// První inicializace sekundu po načtení stránky
+window.addEventListener('load', function() {
+    setTimeout(initPreview, 1000);
+});
         """)
 
         display(_)
