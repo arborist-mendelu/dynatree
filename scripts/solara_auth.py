@@ -43,19 +43,26 @@ username = solara.reactive("")
 password = solara.reactive("")
 
 def LoginForm():
-    with solara.Card("Přihlášení do autentizované části"):
-        solara.Markdown(
-        f"""
-          * Na username nezáleží
-          * Heslo je obvyklé
-        """
-        )
-        solara.InputText(label="Username", value=username)
-        solara.InputText(label="Password", password=True, value=password, on_value=lambda x: login(username.value, x))
+    with solara.Row():
+        with solara.Card():
+            with solara.Warning():
+                solara.Markdown("""
+                  * **Na username nezáleží**
+                  * **Heslo/hesla jako obvykle**
+                  * Přihlášení by mělo vydržet i reload stránky, duplikování tabu a podobně. Dokonce přežije i zavření prohlížeče.
+                    Naopak nepřežije restart aplikace, například při nějaké úpravě.
+                  * Odhlašování na stránce Home, ale asi není potřeba nic odhlašovat.
+                  * Někdy při přihlášení to vypadá, 
+                    že se nic nestalo. Ale stačí **reloadnout stránku** nebo se přepnout na jinou podstránku (vizualizace, tahovky, ...). Stává se to, pokud nezadávám heslo z klávesnice, 
+                    ale prohlížeč použije uložené heslo.   
+                """, style={"color":"inherit"})
+        with solara.Card("Přihlášení do autentizované části"):
+            solara.InputText(label="Username", value=username)
+            solara.InputText(label="Password", password=True, value=password, on_value=lambda x: login(username.value, x))
 
-        solara.Button(label="Login", on_click=lambda: login(username.value, password.value))
-        if login_failed.value:
-            solara.Error("Wrong username or password")
+            solara.Button(label="Login", on_click=lambda: login(username.value, password.value))
+            if login_failed.value:
+                solara.Error("Wrong username or password")
 
 def login(username: str, password: str):
     # this function can be replace by a custom username/password check
