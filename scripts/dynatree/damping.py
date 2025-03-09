@@ -21,6 +21,16 @@ from dynatree.dynatree import DynatreeMeasurement
 logger.setLevel(logging.ERROR)
 # logger.setLevel(logging.INFO)
 
+def save_failed(text, ini = False):
+    filename = "../temp/failed_damping.html"
+    if ini:
+        with open(filename, "w") as f:
+            f.write(text)
+    else:
+        with open(filename, "a") as f:
+            f.write(text)
+
+save_failed("<h1>Failed Damping</h1>", ini=True)
 
 class DynatreeDampedSignal(DynatreeSignal):
     """
@@ -33,7 +43,7 @@ class DynatreeDampedSignal(DynatreeSignal):
     >>> sig.hilbert_envelope['k']
     >>> sig.damped_data.plot()
     """
-    def __init__(self, *args, damped_start_time=None, **kwargs):
+    def __init__(self, *args, damped_start_time=None, damped_end_time=None, **kwargs):
         super().__init__(*args, **kwargs)
         data = self.signal_full
         data = data.dropna()
@@ -43,6 +53,8 @@ class DynatreeDampedSignal(DynatreeSignal):
         else:
             start_signal = self.release_time
         data = data.loc[start_signal:]
+        if damped_end_time is not None:
+            data = data.loc[:damped_end_time]
         if data.iloc[0] < 0:
             data = data * (-1)
         # Najdi index první záporné hodnoty
@@ -320,7 +332,12 @@ def process_row(index):
         out = [fit_W['freq'], fit_W['data'].index[0], fit_W['data'].index[-1]]
         out = out + [i[j] for i in [fit_M, fit_H, fit_W]  for j in ['b', 'R2', 'p', 'std_err', 'LDD'] ]
     except Exception as e:
-        print(f"Fail. {m} {e}")
+        print(f"FAIL. {m} {e}")
+        print(f"SEE THIS URL https://euler.mendelu.cz/gallery/static/images/utlum/{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}.png")
+        save_failed(f"""<h2>{m}</h2> 
+        <img src="https://euler.mendelu.cz/gallery/static/images/utlum/{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}.png">
+        <img src="https://euler.mendelu.cz/api/draw_graph/?method={m.day}_{m.measurement_type}&tree={m.tree}&measurement={m.measurement}&probe=Elasto%2890%29&start=0&end=1000000000&format=png">
+        """)
         out = [None]*18
     return out
 
@@ -335,6 +352,10 @@ def process_row_definition(index):
         s = DynatreeDampedSignal(m, signal_source=probe)
     except:
         logger.error(f"Failed LDD: {m}")
+        save_failed(f"""<h2>{m}, failed LDD</h2> 
+        <img src="https://euler.mendelu.cz/gallery/static/images/utlum/{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}.png">
+        <img src="https://euler.mendelu.cz/api/draw_graph/?method={m.day}_{m.measurement_type}&tree={m.tree}&measurement={m.measurement}&probe=Elasto%2890%29&start=0&end=1000000000&format=png">
+        """)
         out = [None] * 6
         return out
 
@@ -343,12 +364,21 @@ def process_row_definition(index):
     except:
         ldd = {'b':None, 'LDD':None, 'T':None, 'std_err':None}
         logger.error(f"Failed LDD from definition: {m}")
+        save_failed(f"""<h2>{m}, failed LDD from definition</h2> 
+        <img src="https://euler.mendelu.cz/gallery/static/images/utlum/{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}.png">
+        <img src="https://euler.mendelu.cz/api/draw_graph/?method={m.day}_{m.measurement_type}&tree={m.tree}&measurement={m.measurement}&probe=Elasto%2890%29&start=0&end=1000000000&format=png">
+        """)
 
     try:
         ldd_multi = s.ldd_from_two_amplitudes()
     except:
         ldd_multi = {'b': None, 'LDD': None, 'T': None, 'std_err':None}
         logger.error(f"Failed LDD from multiple amplitudes: {m}")
+        save_failed(f"""<h2>{m}, failed LDD from multiple amplitudes</h2> 
+        <img src="https://euler.mendelu.cz/gallery/static/images/utlum/{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}.png">
+        <img src="https://euler.mendelu.cz/api/draw_graph/?method={m.day}_{m.measurement_type}&tree={m.tree}&measurement={m.measurement}&probe=Elasto%2890%29&start=0&end=1000000000&format=png">
+        """)
+
 
     out = [ldd['b'], ldd['LDD'], ldd['T'], ldd_multi['b'], ldd_multi['LDD'], ldd_multi['T']]
     logger.info(f"Dataset: {m}, {probe}, OUTPUT :{out}")

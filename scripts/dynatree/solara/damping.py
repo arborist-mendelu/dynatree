@@ -19,6 +19,7 @@ from solara.lab.components.confirmation_dialog import ConfirmationDialog
 from dynatree.solara.snackbar import show_snack, snack
 from dynatree.dynatree_util import add_horizontal_line
 import requests
+import ipywidgets as widgets
 
 dynatree.logger.setLevel(dynatree.logger_level)
 dynatree.logger.setLevel(logging.ERROR)
@@ -172,6 +173,8 @@ def Page():
                       kmity, proložení nebo celý experiment.    
                     """)
             show_data_one_tree()
+        with solara.lab.Tab("Remarks"):
+            remarks()
         # with solara.lab.Tab("From FFT (images)"):
         #     with solara.Sidebar():
         #         s.Selection(exclude_M01=True,
@@ -724,8 +727,62 @@ function createTable(comments) {
 
         if data_selection.value != 'all':
             with solara.Card(title = "Data manually marked as failed"):
+                solara.Markdown("""
+                The following data are marked as failed by setting the worst rating (only 1 star) in 
+                the [image gallery](https://euler.mendelu.cz/gallery/gallery/utlum).
+                """)
                 display(failed)
+@solara.component
+def remarks():
+    with solara.Sidebar():
+        with solara.Info():
+            solara.Text("Seznam měření, kde něco selhalo. Buď zpracování nebo experiment.")
+    df = pd.DataFrame([
+['2022-04-05 normal B16 M03','Rozsypany caj'],
+['2022-08-16 noc BK08 M05','Rozsypany caj'],
+['2024-09-02 mokro BK08 M04','Neni tak spatny ale neco se stalo a skript chcipnul. Urezat konec?'],
+['2024-04-10 normal BK16 M02','Nejsou data'],
+['2022-08-16 noc BK08 M04','Nejsou data'],
+['2024-09-02 mokro BK07 M02','Nejsou data'],
+['2024-09-02 mokro BK08 M03','Neni v tabulce, nevim proc skript chcipnul. Prozkoumat.'],
+['2023-07-17 normal BK16 M04','Bylo vyhozeno z FFT analyz a tim i odsud. Ale snad by slo zachranit vyberem intervalu.|']
+], columns=['dataset','problem'])
+    # solara.HTML(unsafe_innerHTML=df.to_html())
+    with solara.Info():
+        solara.Markdown("""
+Některá měření nejsou vyhodnocena.    
+    
+|dataset|co se stalo|
+|--|--|        
+|2022-04-05 normal B16 M03|Rozsypany caj|
+|2022-08-16 noc BK08 M05|Rozsypany caj|
+|2024-09-02 mokro BK08 M04|Neni tak spatny ale neco se stalo a skript chcipnul. Urezat konec?|
+|2024-04-10 normal BK16 M02|Nejsou data|
+|2022-08-16 noc BK08 M04|Nejsou data|
+|2024-09-02 mokro BK07 M02|Nejsou data|
+|2024-09-02 mokro BK08 M03|Neni v tabulce, nevim proc skript chcipnul. Prozkoumat.|
+|2023-07-17 normal BK16	M04|Bylo vyhozeno z FFT analyz a tim i odsud. Ale snad by slo zachranit vyberem intervalu.|
+    """, style={'color': 'inherit'})
+        # display(df)
+    with solara.Info():
+        solara.Markdown(
+            """
+        * Některá měření se nezpracovávala, byla vyhozena jako špatná během analýzy FFT. Jsou zapsána v csv souboru 
+        [FFT_failed.csv](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/csv/FFT_failed.csv).
+        * Soubor obsahuje všechny proby, zde je subset pro Elasto(90).
+                        """,
+                        style={'color': 'inherit'})
+        df_failed = pd.read_csv(config.file['FFT_failed'])
+        df_failed = df_failed[df_failed["probe"]=="Elasto(90)"].sort_values(by=["tree","day","type","measurement"])
+        #https://euler.mendelu.cz/api/draw_graph/?method=2021-03-22_normal&tree=BK04&measurement=M02&probe=Elasto%2890%29&format=png
 
+        df_failed["links"] = df_failed.apply(lambda row: f"""
+                <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png'
+                >png image</a>
+        """, axis=1)
+        _ = df_failed.style.format(precision=3)
 
+        display(_)
+        # solara.HTML(unsafe_innerHTML=df_failed.to_html())
 
 dynatree.logger.info(f"File damping.py loaded in {time.time() - loading_start} sec.")
