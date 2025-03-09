@@ -23,12 +23,15 @@ logger.setLevel(logging.ERROR)
 
 def save_failed(text, ini = False):
     filename = "../temp/failed_damping.html"
-    if ini:
-        with open(filename, "w") as f:
-            f.write(text)
-    else:
-        with open(filename, "a") as f:
-            f.write(text)
+    try:
+        if ini:
+            with open(filename, "w") as f:
+                f.write(text)
+        else:
+            with open(filename, "a") as f:
+                f.write(text)
+    except:
+        pass
 
 save_failed("<h1>Failed Damping</h1>", ini=True)
 
