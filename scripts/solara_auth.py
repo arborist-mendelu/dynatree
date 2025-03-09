@@ -1,10 +1,9 @@
-
 import dataclasses
 from typing import Optional, cast, Dict
 from passlib.hash import pbkdf2_sha256
-
 import solara
 import solara.lab
+import pickle
 
 valid_hashes = [
  "$pbkdf2-sha256$29000$rbU2prR2jhGidK4VgnAu5Q$e.CvUxgiY3uImVIuUTrKYFWRh/eak5oNVS.WMbBt3mI",
@@ -24,19 +23,21 @@ force_update_counter = solara.reactive(0)
 # session storage has no lifecycle management, and will only be cleared when the server is restarted.
 session_storage: Dict[str, str] = {}
 
+try:
+    with open("../temp/logins.pickle", "rb") as f:
+        session_storage = pickle.load(f)
+        if not isinstance(session_storage, dict):
+            logins = {}  # Pokud data nejsou dict, resetujeme na prázdný dict
+except (FileNotFoundError, pickle.PickleError, EOFError):
+    session_storage = {}  # Při jakékoli chybě nastavíme prázdný dict
+
 user = solara.reactive(cast(Optional[User], session_storage.get(solara.get_session_id(), None)))
 login_failed = solara.reactive(False)
 
-def check_auth(children):
-    if user.value is None:
-        children_auth = [LoginForm()]
-    else:
-        children_auth = children
-    return children_auth
-
-
 def store_in_session_storage(value):
     session_storage[solara.get_session_id()] = value
+    with open("../temp/logins.pickle", "wb") as f:
+        pickle.dump(session_storage, f)
     force_update_counter.value += 1
 
 username = solara.reactive("")
@@ -67,8 +68,8 @@ def LoginForm():
 def login(username: str, password: str):
     # this function can be replace by a custom username/password check
     # if username == "unod" and  (True in [pbkdf2_sha256.verify(password, i) for i in valid_hashes]):
-    print(solara.get_session_id() in session_storage)
-    print(solara.get_session_id() , session_storage)
+    # print(solara.get_session_id() in session_storage)
+    # print(solara.get_session_id() , session_storage)
 
     if solara.get_session_id() in session_storage and session_storage[solara.get_session_id()] == True:
         print("The login from session variable")
@@ -88,6 +89,8 @@ def login(username: str, password: str):
 
 def logout():
     session_storage[solara.get_session_id()] = False
+    with open("../temp/logins.pickle", "wb") as f:
+        pickle.dump(session_storage, f)
     force_update_counter.value += 1
 
 def needs_login(login):
