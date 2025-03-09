@@ -167,15 +167,18 @@ class DynatreeDampedSignal(DynatreeSignal):
             'peaks': analyzed.iloc[peaks], 'b': b, 'q': q, 'R2': R2, 'p': p_value, 'std_err': std_err, 'LDD': LDD,
             'yshift':yshift}
 
-    def ldd_from_definition(self):
+    def ldd_from_definition(self, peaks_limit = None):
         peaks = self.fit_maxima()['peaks']
-        # logger.setLevel(logging.INFO)
-        # logger.info(f"peaks: {peaks}")
+        if peaks_limit is not None and len(peaks) > peaks_limit:
+            peaks = peaks.iloc[:peaks_limit]
+        logger.debug(f"ldd from definition, peaks: {peaks}")
         positive = peaks[peaks > 0]
         ans = list(np.log(positive.iloc[:-1].values / positive.iloc[1:].values))
         negative = peaks[peaks < 0]
         ans = list(np.log(negative.iloc[:-1].values / negative.iloc[1:].values)) + ans
         ans = [i for i in ans if i>0]
+        if len(ans)==0:
+            return {'b': np.nan, 'LDD': np.nan, 'T': np.nan, 'std_err': np.nan}
         ldd = statistics.median(ans)
         T = 2 * np.nanmean(peaks.index.diff())
         b = ldd / T
@@ -373,6 +376,16 @@ def process_row_definition(index):
         """)
 
     try:
+        ldd2 = s.ldd_from_definition(peaks_limit=3)
+    except:
+        ldd2 = {'b':None, 'LDD':None, 'T':None, 'std_err':None}
+        logger.error(f"Failed LDD from definition for just two peaks: {m}")
+        save_failed(f"""<h2>{m}, failed LDD from definition for just two peaks</h2> 
+        <img src="https://euler.mendelu.cz/gallery/static/images/utlum/{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}.png">
+        <img src="https://euler.mendelu.cz/api/draw_graph/?method={m.day}_{m.measurement_type}&tree={m.tree}&measurement={m.measurement}&probe=Elasto%2890%29&start=0&end=1000000000&format=png">
+        """)
+
+    try:
         ldd_multi = s.ldd_from_two_amplitudes()
     except:
         ldd_multi = {'b': None, 'LDD': None, 'T': None, 'std_err':None}
@@ -383,7 +396,7 @@ def process_row_definition(index):
         """)
 
 
-    out = [ldd['b'], ldd['LDD'], ldd['T'], ldd_multi['b'], ldd_multi['LDD'], ldd_multi['T']]
+    out = [ldd['b'], ldd['LDD'], ldd['T'], ldd2['b'], ldd2['LDD'], ldd2['T'], ldd_multi['b'], ldd_multi['LDD'], ldd_multi['T']]
     logger.info(f"Dataset: {m}, {probe}, OUTPUT :{out}")
     return out
 
@@ -406,7 +419,7 @@ def main():
     results_def = progress_map(process_row_definition, df.index.values)
 
     output = pd.DataFrame(results, index=df.index, columns=columns)
-    output_def = pd.DataFrame(results_def, index=df.index, columns=['def_b','def_LDD','def_T','defmulti_b','defmulti_LDD','defmulti_T'])
+    output_def = pd.DataFrame(results_def, index=df.index, columns=['def_b','def_LDD','def_T','def2_b','def2_LDD','def2_T','defmulti_b','defmulti_LDD','defmulti_T'])
 
     return output, output_def
 

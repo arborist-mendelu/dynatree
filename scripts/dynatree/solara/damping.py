@@ -499,6 +499,8 @@ def draw_images(temp=None):
     df.loc["T",:] = 1/sig.main_peak
     temp = sig.ldd_from_definition()
     df.loc[["b","LDD","T", "std_err"], "def"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
+    temp = sig.ldd_from_definition(peaks_limit=3)
+    df.loc[["b","LDD","T", "std_err"], "def2"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
     temp = sig.ldd_from_two_amplitudes()
     df.loc[["b","LDD","T", "std_err"], "defmulti"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
 
@@ -732,6 +734,20 @@ function createTable(comments) {
                 the [image gallery](https://euler.mendelu.cz/gallery/gallery/utlum).
                 """)
                 display(failed)
+        with solara.Info():
+            solara.Markdown("""
+* Nejprve se určí studovaný interval, podle prvního nulového bodu za vypuštěním.  Poté se hledají peaky (maxima a minima).
+    * Při hledání peaků se začne půl periody za začátkem, aby se odfiltroval první peak ovlivněný vypuštěním.
+    * Poté se hledají peaky na absolutní hodnotě signálu tak, aby vzdálenost byla minimálně 75 procent půlperiody.
+    * S hledáním peaků se končí když první peak klesne pod 15 procent maxima, nastaveno v proměnné `config.damping_threshold`.
+* Nalezené peaky se použijí pro hledání fitovnám exponenciely (maxima_LDD), stanovením mediánu podílů amplitud (def_LDD), stanovením 
+    mediánů rozdílů amplitud pro tři po sobě jdoucí body (defmulti_LDD).
+* Dále se nalezené peaky použijí pro stanovení intervalu pro wavelet a hilbertovu obálku.
+* První dva kladné peaky nebo první dva záporné peaky se použijí pro stanovení LDD ze dvou po sobě jdoucích amplitud. Zdá se to být citlivé na 
+  případné asymetrie v signálu.   
+* Uřiznutí konce má vliv na centrování pomocí střední hodnoty, pokud na konci jsou funkční hodnoty výrazně kladné nebo záporné.
+  Pokud signál osciluje okolo nuly, tak se ořiznutí udělá automaticky na 15 procentech maxima.               
+            """, style={'color':'inherit'})
 @solara.component
 def remarks():
     with solara.Sidebar():
