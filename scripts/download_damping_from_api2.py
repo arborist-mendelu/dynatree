@@ -1,0 +1,59 @@
+import os
+import requests
+from urllib.parse import urlencode
+from PIL import Image
+from io import BytesIO
+from dynatree import find_measurements
+
+# Načtení tabulky df
+df = find_measurements.get_all_measurements(method='all', type='all')
+
+# Adresář pro ukládání obrázků
+output_dir = "figs"
+os.makedirs(output_dir, exist_ok=True)
+
+# Základní URL
+base_url1 = "https://euler.mendelu.cz/draw_graph_damping/"
+base_url2 = "https://euler.mendelu.cz/draw_graph/"
+
+# Stažení a spojení obrázků
+for _, row in df.iterrows():
+    if row["measurement"] == "M01":
+        continue
+    
+    params = {
+        "method": f"{row['day']}_{row['type']}",
+        "tree": row["tree"],
+        "measurement": row["measurement"],
+        "probe": "Elasto(90)",
+        "format": "png",
+        "damping_method": "extrema"
+    }
+    
+    url1 = f"{base_url1}?{urlencode(params)}"
+    url2 = f"{base_url2}?{urlencode(params)}"
+    
+    filename = f"{params['method']}_{row['tree']}_{row['measurement']}.png"
+    filepath = os.path.join(output_dir, filename)
+    
+    try:
+        response1 = requests.get(url1, timeout=2)
+        response1.raise_for_status()
+        img1 = Image.open(BytesIO(response1.content))
+        
+        response2 = requests.get(url2, timeout=2)
+        response2.raise_for_status()
+        img2 = Image.open(BytesIO(response2.content))
+        
+        # Spojení obrázků pod sebe
+        width = max(img1.width, img2.width)
+        height = img1.height + img2.height
+        combined_img = Image.new("RGB", (width, height))
+        combined_img.paste(img1, (0, 0))
+        combined_img.paste(img2, (0, img1.height))
+        
+        # Uložení výsledného obrázku
+        combined_img.save(filepath)
+        print(f"Uloženo: {filename}")
+    except requests.RequestException as e:
+        print(f"Chyba při stahování obrázků: {e}")
