@@ -21,7 +21,6 @@ rule all_non_acc:
         "../outputs/peak_width.zip",
         "../outputs/peak_width.csv",
         "../outputs/damping_factor.csv",
-        "../outputs/damping_factor_def.csv",
         "../outputs/sondy_a_stromy.csv",
         "../outputs/penetrologger.csv",
         "../outputs/Popis_Babice_VSE.xlsx",

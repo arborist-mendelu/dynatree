@@ -34,6 +34,8 @@ def save_failed(text, ini = False):
         pass
 
 save_failed("<h1>Failed Damping</h1>", ini=True)
+manual_signal_ends = pd.read_csv(config.file['damping_manual_ends'], skipinitialspace=True)
+manual_signal_ends = manual_signal_ends.set_index(["measurement_type", "day", "tree", "measurement"])
 
 class DynatreeDampedSignal(DynatreeSignal):
     """
@@ -56,6 +58,12 @@ class DynatreeDampedSignal(DynatreeSignal):
         else:
             start_signal = self.release_time
         data = data.loc[start_signal:]
+
+        if damped_end_time is None:
+            coords = (self.measurement.measurement_type, self.measurement.day, self.measurement.tree, self.measurement.measurement)
+            if coords in manual_signal_ends.index:
+                damped_end_time = manual_signal_ends.at[coords, "end_time"]
+
         if damped_end_time is not None:
             data = data.loc[:damped_end_time]
         if data.iloc[0] < 0:

@@ -27,7 +27,6 @@ dynatree.logger.setLevel(logging.ERROR)
 df_failed = pd.read_csv(config.file["FFT_failed"]).values.tolist()
 loading_start = time.time()
 
-
 def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1):
     signal, time = s.damped_signal.reshape(-1), s.damped_time
     x = time
@@ -62,9 +61,14 @@ def resetuj(x=None):
     s.measurement.set(s.measurements.value[0])
     draw_images()
 
-def resetuj2(x=None):
-    s.measurement.set(s.measurements.value[0])
-    do_find_peaks()
+def nuluj_a_resetuj(x=None):
+    manual_signal_end.value = None
+    resetuj()
+
+
+# def resetuj2(x=None):
+#     s.measurement.set(s.measurements.value[0])
+#     do_find_peaks()
 
 data_source = solara.reactive("Elasto(90)")
 devices = {'pulling': ["Elasto(90)", "blueMaj", "yellowMaj"],
@@ -80,6 +84,7 @@ filtr_T_min = solara.reactive(0)
 filtr_T_max = solara.reactive(1000)
 data_selection = solara.reactive("optimistic")
 data_selection_types = ["all", "optimistic", "pesimistic"]
+manual_signal_end = solara.reactive(None)
 
 tab_index = solara.reactive(1)
 
@@ -124,13 +129,16 @@ def Page():
             with solara.Sidebar():
                 s.Selection(exclude_M01=True,
                             optics_switch=False,
-                            day_action=resetuj,
-                            tree_action=resetuj,
-                            measurement_action=draw_images
+                            day_action=nuluj_a_resetuj,
+                            tree_action=nuluj_a_resetuj,
+                            measurement_action=nuluj_a_draw_images
                             )
                 # s.ImageSizes()
                 with solara.Card(title="Signal source choice"):
                     solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
+                with solara.Card(title="Manual signal end"):
+                    solara.InputFloat(label="Signal end time",value=manual_signal_end, on_value=draw_images, optional=True)
+                    solara.Text("Manuálně nastavený konec nebo None.")
                 with solara.Card(title="Plot data"):
                     solara.Button("Signal", on_click=lambda: create_overlay_signal('signal'))
                     # solara.Button("FFT", on_click=lambda :create_overlay_signal('fft'))
@@ -329,7 +337,11 @@ def create_overlay_signal(output):
 
 @solara.component
 def damping_graphs():
-    # global current
+
+    coordsf = [s.method.value, s.day.value, s.tree.value, s.measurement.value, data_source.value]
+    if coordsf in df_failed_FFT_experiments.values.tolist():
+        solara.Error("This measurement has been manually marked as failed in the file csv/FFT_failed.csv.")
+        return None
 
     with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width='90%',
                             title=""):
@@ -402,8 +414,15 @@ def damping_graphs():
                     solara.Markdown("The signal envelope is $e^{-bt}$.")
                     solara.Text(f"Main freq is f={ans['peak']:.5} Hz, period is T={T:.5} s.")
                     solara.Text("LDD = b*T")
-                    solara.Text(f"The length of the anlayzed time interval is {interval_length:.2f}.")
-                    solara.Text(f"The length of the anlayzed time interval is {interval_length/T:.2f} times the period.")
+                    solara.Text(f"The length of the analyzed time interval is {interval_length:.2f}.")
+                    solara.Text(f"The length of the analyzed time interval is {interval_length/T:.2f} times the period.")
+                    df = pd.read_csv(config.file['damping_manual_ends'], skipinitialspace=True)
+                    df = df.loc[(df["tree"]==s.tree.value) & (df["measurement"]==s.measurement.value)
+                                & (df["day"] == s.day.value) & (df["measurement_type"] == s.method.value)]
+                    if len(df) > 0:
+                        solara.Markdown(f"**Suggested end time for damping extraction is {df.iat[0,-1]}.**")
+                    else:
+                        solara.Text(f"The signal is analyzed up to the end (no manual end time).")
 
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',  # Pozadí celého plátna
                               #plot_bgcolor='rgba(0,0,0,0)'
@@ -444,6 +463,9 @@ def damping_graphs():
                 """, style={'color':'inherit'}
             )
 
+def nuluj_a_draw_images(x=None):
+    manual_signal_end.value = None
+    draw_images()
 
 @task
 @timeit
@@ -467,7 +489,7 @@ def draw_images(temp=None):
     else:
         dynatree.logger.info(f"Damping, pulling {data_source.value}")
         dt = 0.12
-    sig = DynatreeDampedSignal(m, data_source.value, dt=dt)
+    sig = DynatreeDampedSignal(m, data_source.value, dt=dt, damped_end_time=manual_signal_end.value)
 
     data = {}
     keys = ['b', 'R2', 'p', 'std_err', 'LDD']
