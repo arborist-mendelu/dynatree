@@ -461,7 +461,8 @@ rule merge_data:
         "../outputs/vlhkosti_babice.csv",
         "../outputs/sondy_a_stromy.csv",
         "../outputs/penetrologger.csv",
-        "../outputs/velocity_babice_oprava.csv"
+        "../outputs/velocity_babice_oprava.csv",
+        "merge_dynatree_data.ipynb"
     shell:
         """
         jupyter nbconvert --to html --execute merge_dynatree_data.ipynb --no-input
