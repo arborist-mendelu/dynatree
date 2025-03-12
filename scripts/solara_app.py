@@ -7,6 +7,7 @@ Created on Wed Aug 28 18:41:25 2024
 """
 import time
 from datetime import timedelta
+import solara_auth
 
 start_imports = time.time()
 
@@ -49,12 +50,17 @@ def monitoring():
         return cpu_usage, memory_info
     cpu, memory = get_metrics()
     timestamp = time.time()
-    dt_object = datetime.fromtimestamp(timestamp)    
+    dt_object = datetime.fromtimestamp(timestamp)
     date = f"{dt_object.strftime('%Y-%m-%d %H:%M:%S')}"
     return [cpu, memory, date]
-    
+
 @solara.component
 def Page():
+    # if not solara_auth.user.value:
+    #     solara_auth.user.value = session_storage.get(solara.get_session_id(), None)
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
     logger.info("Page in solara_app.py started")
     with solara.Sidebar():
         solara.Success("Přístup povolen. Vítejte ve zpracování dat projektu Dynatree.")
@@ -63,7 +69,7 @@ def Page():
         with solara.Tooltip("Logout"):
             solara.Button(icon_name="mdi-logout",
                           icon=True,
-                          attributes={"href": f"/logout"},
+                          on_click=solara_auth.logout
                           )
 
     solara.Title("DYNATREE")
@@ -75,23 +81,6 @@ def Page():
     with solara.lab.Tabs(vertical=True, background_color=None, dark=False):
         with solara.lab.Tab("Obecné info"):
             solara.Markdown(config['texts']['general_info'])
-        # with solara.lab.Tab("Vizualizace"):
-        #     solara.Markdown(config['texts']['vizualizace'])
-        # with solara.lab.Tab("Tahovky"):
-        #     solara.Markdown(config['texts']['tahovky'])
-        # with solara.lab.Tab("Synchronizace"):
-        #     solara.Markdown(config['texts']['synchronizace'])
-        # with solara.lab.Tab("FFT"):
-        #     solara.Markdown(config['texts']['FFT'])
-        # with solara.lab.Tab("Downloads"):
-        #     solara.Markdown(
-        #     """
-        #     ## Downloads
-        #
-        #     * Data ke stažení, aktualizují se přímo na serveru po dokončený výpočtů, měla by být vždy ta nejaktuálnější.
-        #     """
-        #       )
-
         with solara.lab.Tab("Monitoring serveru"):
             with solara.Card():
                 if monitoring.not_called:
@@ -121,18 +110,95 @@ def Page():
     logger.info("Page in solara_app.py finished")
 
 
+@solara.component
+def vizualizace_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.vizualizace.Page()
+
+@solara.component
+def tahovky_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.tahovky.Page()
+
+@solara.component
+def synchro_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.force_elasto_inclino.Page()
+
+@solara.component
+def welch_ACC_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.welch_ACC.Page()
+
+@solara.component
+def FFT_tukey_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.FFT_tukey.Page()
+
+@solara.component
+def tuk_ACC_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.tuk_ACC.Page()
+
+@solara.component
+def damping_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.damping.Page()
+
+@solara.component
+def soil_and_trans_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.soil_and_trans.Page()
+
+@solara.component
+def krkoskova_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    krkoskova.krkoskova_app.Page()
+
+@solara.component
+def pulling_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.pulling_tests.Page()
+
+@solara.component
+def download_protected():
+    if solara_auth.needs_login(solara_auth.user.value):
+        solara_auth.LoginForm()
+        return
+    dynatree.solara.download.Page()
+
 routes = [
     solara.Route(path="/", component=Page, label="home"),
-    solara.Route(path="vizualizace", component=dynatree.solara.vizualizace.Page, label="vizualizace"),
-    solara.Route(path="tahovky", component=dynatree.solara.tahovky.Page, label="tahovky"),
-    solara.Route(path="synchronizace", component=dynatree.solara.force_elasto_inclino.Page, label="synchronizace"),
+    solara.Route(path="vizualizace", component=vizualizace_protected, label="vizualizace"),
+    solara.Route(path="tahovky", component=tahovky_protected, label="tahovky"),
+    solara.Route(path="synchronizace", component=synchro_protected, label="synchronizace"),
     # solara.Route(path="FFT_old", component=dynatree.solara.FFT.Page, label="FFT1"),
-    solara.Route(path="Welch_ACC", component=dynatree.solara.welch_ACC.Page, label="FFT2"),
-    solara.Route(path="FFT_Tukey_all", component=dynatree.solara.FFT_tukey.Page, label="FFT3"),
-    solara.Route(path="ACC_tuk", component=dynatree.solara.tuk_ACC.Page, label="ACC_TUK"),
-    solara.Route(path="Damping", component=dynatree.solara.damping.Page, label="damping"),
-    solara.Route(path="SoilTrans", component=dynatree.solara.soil_and_trans.Page, label="damping"),
-    solara.Route(path="Downloads", component=dynatree.solara.download.Page, label="DWNL"),
-    solara.Route(path="Krkoskova", component=krkoskova.krkoskova_app.Page, label="K"),
-    solara.Route(path="EMA", component=dynatree.solara.pulling_tests.Page, label="EMA"),
+    solara.Route(path="Welch_ACC", component=welch_ACC_protected, label="FFT2"),
+    solara.Route(path="FFT_Tukey_all", component=FFT_tukey_protected, label="FFT3"),
+    solara.Route(path="ACC_tuk", component=tuk_ACC_protected, label="ACC_TUK"),
+    solara.Route(path="Damping", component=damping_protected, label="damping"),
+    solara.Route(path="SoilTrans", component=soil_and_trans_protected, label="damping"),
+    solara.Route(path="Downloads", component=download_protected, label="DWNL"),
+    solara.Route(path="Krkoskova", component=krkoskova_protected, label="K"),
+    solara.Route(path="EMA", component=pulling_protected, label="EMA"),
 ]
