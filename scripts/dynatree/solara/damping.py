@@ -378,6 +378,7 @@ def damping_graphs():
         solara.Error("Nekde nastala chyba")
     else:
         df = ans['df']
+        df = pd.concat([df.loc[['LDD']], df.drop(index='LDD')])
         fig = ans['fig']
         marked_failed = ans['failed']
         background_color = 'transparent'
@@ -523,6 +524,8 @@ def draw_images(temp=None):
     df.loc[["b","LDD","T", "std_err"], "def"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
     temp = sig.ldd_from_definition(peaks_limit=3)
     df.loc[["b","LDD","T", "std_err"], "def2"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
+    temp = sig.ldd_from_distances()
+    df.loc[["b","LDD","T", "std_err"], "def2diff"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
     temp = sig.ldd_from_two_amplitudes()
     df.loc[["b","LDD","T", "std_err"], "defmulti"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
 
@@ -543,7 +546,7 @@ def show_data_one_tree():
               Vyfiltruj si buď pěkná data pro zpracování nebo škaredá pro posouzení jak dál.
             * Odkaz "Začít sledovat pohyb myši" (pod rámečkem) aktivuje náhledy při najetí myší na odkaz pro PNG. Náhled je v pravém horním rohu. Tlačítko je potřeba použít pokaždé, 
             když otevřeš tuto stránku nebo přepneš strom. To že jsou náhledy aktivní se pozná podle zelené barvy textu PNG."
-            * **NEW Experimentálně se náhledy spouští automaticky. Na náhledu PNG (celý experiment) jsou i komentáře a hodnocení.**
+            * **Vysvětlivky sloupců jsou pod tabulkou.**
             """, style = {'color':'inherit'})
 
         df = pd.read_csv(config.file['outputs/damping_factor'])
@@ -756,6 +759,19 @@ function createTable(comments) {
                 the [image gallery](https://euler.mendelu.cz/gallery/gallery/utlum).
                 """)
                 display(failed)
+
+        with solara.Warning():
+            solara.Markdown("""
+            * **maxima_LDD**  - stanoveno ze všech maxim a minim prokládáním exponenciely.
+            * **hilbert_LDD**  - stanoveno z hilbertovy obálky prokládáním exponenciely.
+            * **wavelet_LDD**  - stanoveno z hilbertovy obálky prokládáním exponenciely.
+            * **def_LDD** - stanoveno z definice útlumu (výška peaku), medián za celý zpracovávaný signál.
+            * **def2_LDD** - stanoveno z definice útlumu (výška peaku), první dvě maxima nebo první dvě minima, dle toho, co je dřív. *Pracuje jenom se začátkem.*
+            * **def2diff_LDD** - stanoveno stejně jako předchozí, ale místo výšky peaku se bere vzdálenost mezi po sobě jdoucím maximem a minimem. Pracuje s prvními čtyřmi peaky. *Mělo by být robustní vůči svislému posunu.* *Pracuje jenom se začátkem.*   
+            * **defmulti_LDD** - stanoveno stejně jako předchozí, ale bere se pro každou trojici peaku svislá vzdálenost mezi prostředním peakem a krajiními peaky. Potom se bere medián na celém signálu. *Mělo by být robustní vůči svislému posunu.* 
+            * **FFT_LDD** - Patrikova DownHill metoda. *Mělo by být robustní vůči svislému posunu.*            
+            """, style={'color':'inherit'})
+
         with solara.Info():
             solara.Markdown("""
 * Nejprve se určí studovaný interval, podle prvního nulového bodu za vypuštěním.  Poté se hledají peaky (maxima a minima).
