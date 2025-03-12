@@ -410,7 +410,7 @@ def damping_graphs():
                         return f"{x:.2e}"
                     else:  # Jinak zobrazí 8 desetinných míst
                         return f"{x:.8f}"
-                solara.display(df.style.format(custom_format))
+                solara.display(df.style.format(custom_format).background_gradient(axis=1))
                 with solara.Column():
                     solara.Markdown("The signal envelope is $e^{-bt}$.")
                     solara.Text(f"Main freq is f={ans['peak']:.5} Hz, period is T={T:.5} s.")
