@@ -48,7 +48,7 @@ class DynatreeDampedSignal(DynatreeSignal):
     >>> sig.hilbert_envelope['k']
     >>> sig.damped_data.plot()
     """
-    def __init__(self, *args, damped_start_time=None, damped_end_time=None, **kwargs):
+    def __init__(self, *args, damped_start_time=None, damped_end_time=None, manual_freq=None, **kwargs):
         super().__init__(*args, **kwargs)
         data = self.signal_full
         data = data.dropna()
@@ -85,6 +85,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         self.damped_signal = data.values.reshape(-1)
         self.damped_time = data.index
         self.vertical_finetuning = False
+        self.manual_freq = manual_freq
 
     @property
     def marked_failed(self):
@@ -140,7 +141,10 @@ class DynatreeDampedSignal(DynatreeSignal):
         -------
         dict with keys 'peaks', 'b', 'q', 'R2', 'p', 'std_err', 'LDD', 'yshift'
         """
-        T = 1/self.main_peak
+        if self.manual_freq is not None:
+            T = 1 / self.manual_freq
+        else:
+            T = 1/self.main_peak
         start = self.damped_signal_interpolated.index[0]
         analyzed = self.damped_signal_interpolated[start+T/2:] # skip first peak after release
         maximum = max(abs(analyzed))
