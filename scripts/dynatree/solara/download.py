@@ -68,6 +68,7 @@ def Page():
                 elif k=="popis":
                     solara.Markdown(v)
                 else:
+                    print(k)
                     _ = v.split(".")
                     popis = _[0]
                     detail = ". ".join(_[1:])
@@ -75,11 +76,18 @@ def Page():
                         lightgray = "#F4F4F4"
                         with solara.Card(style={"background-color": lightgray}):
                             with solara.Row(style={"background-color": lightgray}):
-                                solara.Button(
-                                    label=f"Download ({velikost_souboru_v_mb('../outputs/'+k)})",
-                                    attributes={"href": f"./static/public/{k}", "target": "_blank"}, color='primary')
+                                if "http" in k:
+                                    size = ""
+                                    solara.Button(label="Open URL",
+                                                  attributes={"href": k, "target": "_blank"}, 
+                                                  color='primary')
+                                else:
+                                    solara.Button(
+                                        label=f"Download ({velikost_souboru_v_mb('../outputs/'+k)})",
+                                        attributes={"href": f"./static/public/{k}", "target": "_blank"}, color='primary')
+                                    size = f"(*Version {get_file_modification_date('../outputs/'+k)}*)"
                                 solara.Markdown(f"""
-**{popis}.** {detail} (*Version {get_file_modification_date('../outputs/'+k)}*)
+**{popis}.** {detail} {size}
 """)
 
 
