@@ -79,7 +79,7 @@ def Page():
                                 if "http" in k:
                                     size = ""
                                     solara.Button(label="Open URL",
-                                                  attributes={"href": k, "target": "_blank"}, 
+                                                  attributes={"href": k, "target": "_blank"},
                                                   color='primary')
                                 else:
                                     solara.Button(

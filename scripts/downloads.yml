@@ -18,8 +18,6 @@ vlhkosti_babice.csv: Vlhkosti půdy. Spojená data ze sešitů v souboru `ERC_vl
 
 sondy_a_stromy.csv: Přiřazení stromů k sondám.
 
-https://euler.mendelu.cz/gallery/gallery/utlum: Galerie obrázků s útlumem, možnost komentování a hodnocení.
-
 https://euler.mendelu.cz/gallery/gallery/oenetrologger: Galerie s penetrologgerem, možnost komentování a hodnocení.
 
 ---
@@ -94,6 +92,8 @@ damping_factor.csv: Útlum Elasto(90) stanovený třemi metodami (maxima, hilber
     první nulový bod, vynechá se první perioda, najdou se peaky a odřízne se část za peakem který je pod 25% maxima.
     Obsahuje i útlum Elasto(90) stanovený podle definice výpočtem poměrů amplitud a logaritmováním. Bere se jenom 
     začátek signálu (ale bez úplného začátku s bordelem po vypuštění).
+
+https://euler.mendelu.cz/gallery/gallery/utlum: Galerie obrázků s útlumem, možnost komentování a hodnocení.
 
 ---
 title: "To všecho odnés čas?"
