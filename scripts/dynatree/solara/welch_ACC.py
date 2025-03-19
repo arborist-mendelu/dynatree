@@ -3,7 +3,7 @@
 """
 Created on Sat Sep 14 23:33:06 2024
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import solara

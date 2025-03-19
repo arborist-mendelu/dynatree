@@ -6,7 +6,7 @@ Created on Thu Aug 29 12:19:28 2024
 Pro strom a mereni vypisuje, jak dlouho trvala faze natahovani 30-90 procent maximalni sily. 
 Umoznuje srovnat casovou delku mereni pro stejny strom napric jednotlivymi dny.
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import lib_dynatree

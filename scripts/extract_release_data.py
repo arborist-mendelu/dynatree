@@ -11,7 +11,7 @@ hodnotu pro sílu, inklinometry, elastometr, delta Pt3 a delta Pt4.
 Prida hodnoty inklinomeru na zacatku mereni. Pokud jsou tyto hodnoty velke, asi 
 nebyl vynulovany inklinometr nebo behem pocatecni faze "poskocil".
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import glob

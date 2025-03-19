@@ -5,7 +5,7 @@ Pracuje s daty z anotated_regressions_static.csv, vytvoreneho skriptem
 static_pull.py a static_pull_anotatte_regressions.py
 
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 # nastaveni pro jupyter

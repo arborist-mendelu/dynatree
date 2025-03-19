@@ -3,7 +3,7 @@
 """
 Created on Sun Dec  3 09:07:25 2023
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 from dynatree.dynatree import DynatreeMeasurement

@@ -5,7 +5,7 @@ Created on Sun Sep  1 17:33:44 2024
 
 Finds measurements and collect into a dataframe.
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import glob

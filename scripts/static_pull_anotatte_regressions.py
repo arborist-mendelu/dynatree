@@ -5,7 +5,7 @@ Created on Fri Sep 13 08:36:09 2024
 
 Adds info about failed static pullings data.
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import pandas as pd

@@ -8,7 +8,7 @@ brat konstantni hodnotu a ne tu namerenou behem napinani.
 
 Created on Mon Sep  9 21:28:09 2024
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 from dynatree import static_pull as sp

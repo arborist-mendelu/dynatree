@@ -8,7 +8,7 @@ Pred dalsim spustenim skriptu je potreba upravit cesty podle Patrikova navrhu
 Reader for tsv files from xsight. 
 Reads tsv files, converts into the form of dataframes with MultiIndex and saves as csv files.
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 DRY_RUN = False

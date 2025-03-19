@@ -3,7 +3,7 @@
 """
 Created on Sun Sep  1 17:01:24 2024
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 import solara
 from dynatree.find_measurements import get_all_measurements, available_measurements

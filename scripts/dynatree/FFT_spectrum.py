@@ -7,7 +7,7 @@ Analyzuje pomoci FFT bud jedno mereni nebo celý den nebo všechny dny.
 Je možné načíst jako knihovnu nebo spustit jako program. Pokud je spuštěn jako
 program, dělá FFT analýzu pro všechna měření ve všech dnech. 
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import pandas as pd

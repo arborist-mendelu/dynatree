@@ -8,7 +8,7 @@ Used in solara_tahovky.py  vit visualizations.
 
 Used to get regressions between variables in the phase of static pulling.
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import pandas as pd

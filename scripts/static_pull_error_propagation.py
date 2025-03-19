@@ -4,7 +4,7 @@
 """
 Created on Tue Sep 10 07:38:52 2024
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 # BK 01 ma nejvetsi uhel (22 stupnu)

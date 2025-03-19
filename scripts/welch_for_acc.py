@@ -3,7 +3,7 @@
 """
 Created on Mon Sep 16 11:24:56 2024
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 from dynatree import dynasignal, dynatree, FFT, find_measurements
 import matplotlib.pyplot as plt

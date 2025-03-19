@@ -2,7 +2,7 @@
 """
 Created on Thu Aug 15 14:00:04 2024
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import time

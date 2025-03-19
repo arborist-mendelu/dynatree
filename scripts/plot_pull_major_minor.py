@@ -7,7 +7,7 @@ Plot inclinometers from  all data using major/minor setting.
 
 Useful to check the detection of major/minor axis.
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 from dynatree.find_measurements import get_all_measurements_pulling

@@ -5,7 +5,7 @@ Created on Thu Sep  5 14:22:45 2024
 
 Plot spectra from one probe. Data from csv/solara_FFT.csv
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import dynatree.dynatree as dynatree

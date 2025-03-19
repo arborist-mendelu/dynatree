@@ -3,7 +3,7 @@
 """
 Created on Sat Nov  4 19:01:02 2023
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import pandas as pd

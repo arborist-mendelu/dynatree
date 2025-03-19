@@ -8,7 +8,7 @@ Umožní posoudit, jestli došlo k bezproblémové synchronizaci a jestli je
 dobře vybrán interval pro release.
 
 
-@author: marik
+@author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
 import glob
