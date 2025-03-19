@@ -398,7 +398,8 @@ rule damping_coefficients:
         "../outputs/damping_factor.csv",
     input:
         "csv/FFT_failed.csv",
-        "dynatree/damping.py"
+        "dynatree/damping.py",
+        "csv/damping_manual_ends.csv"
     shell:
         """
         python -m dynatree.damping
