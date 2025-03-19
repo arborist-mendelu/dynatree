@@ -1,4 +1,6 @@
 import os
+
+import pandas as pd
 import requests
 from urllib.parse import urlencode
 from PIL import Image
@@ -16,6 +18,10 @@ os.makedirs(output_dir, exist_ok=True)
 base_url1 = "https://euler.mendelu.cz/draw_graph_damping/"
 base_url2 = "https://euler.mendelu.cz/draw_graph/"
 
+
+manual_data = pd.read_csv("csv/damping_manual_ends.csv", skipinitialspace=True).iloc[:,:-1].values
+manual_data = [tuple(i) for i in manual_data]
+
 # Stažení a spojení obrázků
 for _, row in df.iterrows():
     if row["measurement"] == "M01":
@@ -29,7 +35,10 @@ for _, row in df.iterrows():
         "format": "png",
         "damping_method": "extrema"
     }
-    
+
+    if not ( (row['type'], row['day'], row['tree'], row['measurement']) in manual_data ):
+        continue
+
     url1 = f"{base_url1}?{urlencode(params)}"
     url2 = f"{base_url2}?{urlencode(params)}"
     
