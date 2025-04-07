@@ -803,7 +803,7 @@ def is_reduced(tree=None, method=None, day=None, measurement=None, reduction="20
 
     if (
             ([day, method] in [["2024-09-02", "afterro2"], ["2024-09-02", "mokro"], ["2025-04-01", "normal"]])
-            & (tree in [f"BK{i:02d}" for i in [4,13,14,16,21,24]])
+            & (tree in [f"BK{i:02d}" for i in [4,13,14,16,24]])
             & (reduction == "40")
         ):
         return True
