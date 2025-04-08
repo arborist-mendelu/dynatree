@@ -121,6 +121,10 @@ def Selection(
                 solara.Markdown(
                     "❎ Optics is **not** available for this measurement.")
 
+        test_reduced = [f"|Reduction {i}|{dynatree.is_reduced(day=day.value, tree=tree.value, method=method.value, reduction=i)}|"
+                        for i in ['20', '20+20', '40']]
+        solara.Markdown("|||\n|---|---|\n"+"\n".join(test_reduced))
+
 styles_css = """
         .widget-image{width:auto;} 
         .v-btn-toggle{display:inline;}  

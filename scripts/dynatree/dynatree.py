@@ -770,3 +770,42 @@ class DynatreeMeasurement:
                 ans = i[senzor]
                 break
         return ans
+
+def is_reduced(tree=None, method=None, day=None, measurement=None, reduction="20"):
+    """
+    Return True if the measurement has been reduced by 20 or 20+20 or 40 percent.
+
+    Reduction should be one of "20", "20+20", "40"
+
+    You have to set either triple (tree, method, day) or
+    the measurement as an object of the class DynatreeMeasurement.
+    """
+    if measurement is not None:
+        tree = measurement.tree
+        day = measurement.day
+        method = measurement.method
+
+    if (
+            ([day, method] in [["2023-07-17", "afterro"], ["2024-09-02", "normal"], ["2024-04-10","normal"],
+                               ["2024-01-16", "mraz"]])
+            & (tree in [f"BK{i:02d}" for i in [1,8,9,11,12,21]])
+            & (reduction == "20")
+        ):
+        return True
+
+    if (
+            ([day, method] in [["2024-09-02", "afterro2"], ["2024-09-02", "mokro"], ["2025-04-01", "normal"],
+                               ["2024-09-02", "mokro"]])
+            & (tree in [f"BK{i:02d}" for i in [1,8,9,11,12,21]])
+            & (reduction == "20+20")
+        ):
+        return True
+
+    if (
+            ([day, method] in [["2024-09-02", "afterro2"], ["2024-09-02", "mokro"], ["2025-04-01", "normal"]])
+            & (tree in [f"BK{i:02d}" for i in [4,13,14,16,24]])
+            & (reduction == "40")
+        ):
+        return True
+
+    return False
