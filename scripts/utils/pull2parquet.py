@@ -12,7 +12,7 @@ Uklada jako parquet soubory do ../data/parquet_pulling
 @author: marik
 """
 
-PREFIX = "/mnt/ERC/ERC/Mereni_Babice/"
+PREFIX = "/mnt/ERC2/Mereni_Babice/"
 
 import pandas as pd
 #import multi_handlers_logger
@@ -45,8 +45,8 @@ def get_df():
     test = (df["tree"] == df["tree2"]).all() & (df["device"]=="Pulling_test").all()
     test
     
-    df['new_filename'] = "../data/parquet_pulling/"+df["day"]+"/"+df["type"].str.lower()+"_"+df["tree"]+"_"+df["measurement"]+".parquet"
-    df['new_directory'] = "../data/parquet_pulling/"+df["day"]
+    df['new_filename'] = "../../data/parquet_pulling/"+df["day"]+"/"+df["type"].str.lower()+"_"+df["tree"]+"_"+df["measurement"]+".parquet"
+    df['new_directory'] = "../../data/parquet_pulling/"+df["day"]
     df["old_filename"] = PREFIX+df["path"]
     return df
 
@@ -104,7 +104,7 @@ def read_csvdata_inclinometers(file):
     return df_pulling_tests
 
 #%%
-df = get_df()        
+df = get_df()
 
 #%%
 # Extract the angle
