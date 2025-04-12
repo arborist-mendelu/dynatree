@@ -29,13 +29,8 @@ general_info = """
         ## O aplikaci
 
         * Podpora zpracování a vizualizace dat pro projekt Dynatree.
-        * Chyby hlásit na marik@mendelu.cz
-        * Některé aplikace aktualizují výstup hned po změně parametrů, některé po stisku tlačítka na
-          překreslení nebo přepočet.
-
-        ## Grant support
-
-        Supported by the Ministry of Education, Youth and Sports of the Czech Republic, project ERC CZ no. LL1909 “Tree Dynamics: Understanding of Mechanical Response to Loading”.
+        * Chyby hlásit Robertovi jakkoliv (chodba, mobil, email)
+        * Chyba je i když nenajdeš co hledáš na místě, kde je logické to hledat.
 
         """
 tahovky = """
