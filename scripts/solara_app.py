@@ -76,7 +76,7 @@ def Page():
                           )
 
     solara.Title("DYNATREE")
-    with solara.lab.Tabs(background_color=None, dark=False):
+    with solara.lab.Tabs(background_color=None, dark=False, lazy=True):
         with solara.lab.Tab("Obecné info"):
             solara.Markdown(config['texts']['general_info'])
             solara.Markdown("## Grant support")
@@ -84,49 +84,10 @@ def Page():
                 """
                 Supported by the Ministry of Education, Youth and Sports of the Czech Republic, project ERC CZ no. LL1909 “Tree Dynamics: Understanding of Mechanical Response to Loading".
                 """)
-        # with solara.lab.Tab("Data flow"):
-        #     solara.Markdown("## Snakemake rules")
-        #     try:
-        #         result = subprocess.run(
-        #             ["snakemake", "--list"],  # Příkaz a argumenty
-        #             check=True,  # Zkontrolovat chyby
-        #             text=True,  # Výstup jako text (ne binární)
-        #             capture_output=True  # Zachytit výstup
-        #         )
-        #         # Výstup příkazu
-        #         raw_output = result.stdout.replace("\n    ", " ").replace("\n","\n\n")
-        #
-        #         # Vytvoření tabulky z výstupu
-        #         # Předpokládáme, že data jsou oddělená tabulátory (záložky) a nové řádky označují nové záznamy
-        #         # data = pd.read_csv(StringIO(raw_output), sep="\t")  # Používáme StringIO pro simulaci souboru
-        #
-        #         # Vytisknout výstup příkazu
-        #         solara.Markdown(raw_output)
-        #     except subprocess.CalledProcessError as e:
-        #         solara.Text("Chyba při spuštění příkazu:\n", e.stderr)
-        # with solara.lab.Tab("Data status"):
-        #     solara.Markdown("## Snakemake rules")
-        #     solara.Markdown("Veškeré zpracování dat řídí [snakemake](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/snakefile) soubor.")
-        #     # solara.Error("To appear")
-        #     # Spustit příkaz snakemake
-        #     try:
-        #         result = subprocess.run(
-        #             ["snakemake", "--dry-run", "--summary"],  # Příkaz a argumenty
-        #             check=True,  # Zkontrolovat chyby
-        #             text=True,  # Výstup jako text (ne binární)
-        #             capture_output=True  # Zachytit výstup
-        #         )
-        #         # Výstup příkazu
-        #         raw_output = result.stdout
-        #         print(raw_output)
-        #         # Vytvoření tabulky z výstupu
-        #         # Předpokládáme, že data jsou oddělená tabulátory (záložky) a nové řádky označují nové záznamy
-        #         data = pd.read_csv(StringIO(raw_output), sep="\t", skiprows=1)  # Používáme StringIO pro simulaci souboru
-        #
-        #         # Vytisknout výstup příkazu
-        #         solara.display(data)
-        #     except subprocess.CalledProcessError as e:
-        #         solara.Text("Chyba při spuštění příkazu:\n", e.stderr)
+        with solara.lab.Tab("Data flow"):
+            Data_flow()
+        with solara.lab.Tab("Data status"):
+            Data_status()
         with solara.lab.Tab("Monitoring serveru"):
             with solara.Card():
                 if monitoring.not_called:
@@ -154,6 +115,57 @@ def Page():
                                 pass
                     solara.Button("Refresh", on_click=monitoring)
     logger.info("Page in solara_app.py finished")
+
+@solara.component
+def Data_status():
+    solara.Markdown("## Snakemake rules")
+    solara.Markdown(
+        "Veškeré zpracování dat řídí [snakemake](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/snakefile) soubor.")
+    # solara.Error("To appear")
+    # Spustit příkaz snakemake
+    try:
+        binpath = os.getenv("BINPATH", "")
+        result = subprocess.run(
+            [binpath + "snakemake", "--dry-run", "--summary"],  # Příkaz a argumenty
+            check=True,  # Zkontrolovat chyby
+            text=True,  # Výstup jako text (ne binární)
+            capture_output=True  # Zachytit výstup
+        )
+        # Výstup příkazu
+        raw_output = result.stdout
+        print(raw_output)
+        # Vytvoření tabulky z výstupu
+        # Předpokládáme, že data jsou oddělená tabulátory (záložky) a nové řádky označují nové záznamy
+        data = pd.read_csv(StringIO(raw_output), sep="\t", skiprows=1)  # Používáme StringIO pro simulaci souboru
+
+        # Vytisknout výstup příkazu
+        solara.display(data)
+    except subprocess.CalledProcessError as e:
+        solara.Text("Chyba při spuštění příkazu:\n", e.stderr)
+
+
+@solara.component
+def Data_flow():
+    solara.Markdown("## Snakemake rules")
+    try:
+        binpath = os.getenv("BINPATH", "")
+        result = subprocess.run(
+            [binpath + "snakemake", "--list"],  # Příkaz a argumenty
+            check=True,  # Zkontrolovat chyby
+            text=True,  # Výstup jako text (ne binární)
+            capture_output=True  # Zachytit výstup
+        )
+        # Výstup příkazu
+        raw_output = result.stdout.replace("\n    ", " ").replace("\n", "\n\n")
+
+        # Vytvoření tabulky z výstupu
+        # Předpokládáme, že data jsou oddělená tabulátory (záložky) a nové řádky označují nové záznamy
+        # data = pd.read_csv(StringIO(raw_output), sep="\t")  # Používáme StringIO pro simulaci souboru
+
+        # Vytisknout výstup příkazu
+        solara.Markdown(raw_output)
+    except subprocess.CalledProcessError as e:
+        solara.Text("Chyba při spuštění příkazu:\n", e.stderr)
 
 
 @solara.component
