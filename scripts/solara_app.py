@@ -8,6 +8,7 @@ Created on Wed Aug 28 18:41:25 2024
 import time
 from datetime import timedelta
 import solara_auth
+import subprocess
 
 start_imports = time.time()
 
@@ -32,6 +33,7 @@ import os
 import toml
 mezicas2 = time.time() - start_imports
 import dynatree.solara.vizualizace
+from io import StringIO
 import_finish = time.time()
 print(f"Imports finished in {import_finish-start_imports} sec, mezicas {mezicas}, {mezicas2}")
 from dynatree.dynatree import logger
@@ -63,7 +65,8 @@ def Page():
         return
     logger.info("Page in solara_app.py started")
     with solara.Sidebar():
-        solara.Success("Přístup povolen. Vítejte ve zpracování dat projektu Dynatree.")
+        solara.Info("Vítejte ve zpracování dat projektu Dynatree.")
+        solara.Image("img/logo.png")
 
     with solara.AppBar():
         with solara.Tooltip("Logout"):
@@ -73,14 +76,57 @@ def Page():
                           )
 
     solara.Title("DYNATREE")
-    solara.Markdown(
-    """
-    Vyber si v menu v barevném panelu nahoře, co chceš dělat.
-    """
-    )
-    with solara.lab.Tabs(vertical=True, background_color=None, dark=False):
+    with solara.lab.Tabs(background_color=None, dark=False):
         with solara.lab.Tab("Obecné info"):
             solara.Markdown(config['texts']['general_info'])
+            solara.Markdown("## Grant support")
+            solara.Success(
+                """
+                Supported by the Ministry of Education, Youth and Sports of the Czech Republic, project ERC CZ no. LL1909 “Tree Dynamics: Understanding of Mechanical Response to Loading".
+                """)
+        # with solara.lab.Tab("Data flow"):
+        #     solara.Markdown("## Snakemake rules")
+        #     try:
+        #         result = subprocess.run(
+        #             ["snakemake", "--list"],  # Příkaz a argumenty
+        #             check=True,  # Zkontrolovat chyby
+        #             text=True,  # Výstup jako text (ne binární)
+        #             capture_output=True  # Zachytit výstup
+        #         )
+        #         # Výstup příkazu
+        #         raw_output = result.stdout.replace("\n    ", " ").replace("\n","\n\n")
+        #
+        #         # Vytvoření tabulky z výstupu
+        #         # Předpokládáme, že data jsou oddělená tabulátory (záložky) a nové řádky označují nové záznamy
+        #         # data = pd.read_csv(StringIO(raw_output), sep="\t")  # Používáme StringIO pro simulaci souboru
+        #
+        #         # Vytisknout výstup příkazu
+        #         solara.Markdown(raw_output)
+        #     except subprocess.CalledProcessError as e:
+        #         solara.Text("Chyba při spuštění příkazu:\n", e.stderr)
+        # with solara.lab.Tab("Data status"):
+        #     solara.Markdown("## Snakemake rules")
+        #     solara.Markdown("Veškeré zpracování dat řídí [snakemake](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/snakefile) soubor.")
+        #     # solara.Error("To appear")
+        #     # Spustit příkaz snakemake
+        #     try:
+        #         result = subprocess.run(
+        #             ["snakemake", "--dry-run", "--summary"],  # Příkaz a argumenty
+        #             check=True,  # Zkontrolovat chyby
+        #             text=True,  # Výstup jako text (ne binární)
+        #             capture_output=True  # Zachytit výstup
+        #         )
+        #         # Výstup příkazu
+        #         raw_output = result.stdout
+        #         print(raw_output)
+        #         # Vytvoření tabulky z výstupu
+        #         # Předpokládáme, že data jsou oddělená tabulátory (záložky) a nové řádky označují nové záznamy
+        #         data = pd.read_csv(StringIO(raw_output), sep="\t", skiprows=1)  # Používáme StringIO pro simulaci souboru
+        #
+        #         # Vytisknout výstup příkazu
+        #         solara.display(data)
+        #     except subprocess.CalledProcessError as e:
+        #         solara.Text("Chyba při spuštění příkazu:\n", e.stderr)
         with solara.lab.Tab("Monitoring serveru"):
             with solara.Card():
                 if monitoring.not_called:
