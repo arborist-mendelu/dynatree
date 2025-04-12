@@ -116,11 +116,25 @@ def Page():
                     solara.Button("Refresh", on_click=monitoring)
     logger.info("Page in solara_app.py finished")
 
+def obalit_prvni_slovo(text):
+    slova = text.split(maxsplit=1)
+    if len(slova) > 1:
+        return f"**{slova[0]}** {slova[1]}"
+    elif len(slova) == 1:
+        return f"**{slova[0]}**"
+    else:
+        return ""
+
 @solara.component
 def Data_status():
     solara.Markdown("## Snakemake rules")
     solara.Markdown(
-        "Veškeré zpracování dat řídí [snakemake](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/snakefile) soubor.")
+        """
+        * Veškeré zpracování dat řídí [snakemake](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/snakefile) soubor.
+        * Kompilace se provádí na um.mendelu.cz. Případnou aktuálnost kontroluj na um.mendelu.cz. Jinde nemaji sloupce "status"
+          a "plan" vyznam.        
+        """
+    )
     # solara.Error("To appear")
     # Spustit příkaz snakemake
     try:
@@ -156,14 +170,14 @@ def Data_flow():
             capture_output=True  # Zachytit výstup
         )
         # Výstup příkazu
-        raw_output = result.stdout.replace("\n    ", " ").replace("\n", "\n\n")
-
+        raw_output = result.stdout.replace("\n    ", " ").split("\n")
+        raw_output = [obalit_prvni_slovo(i) for i in raw_output]
         # Vytvoření tabulky z výstupu
         # Předpokládáme, že data jsou oddělená tabulátory (záložky) a nové řádky označují nové záznamy
         # data = pd.read_csv(StringIO(raw_output), sep="\t")  # Používáme StringIO pro simulaci souboru
 
         # Vytisknout výstup příkazu
-        solara.Markdown(raw_output)
+        solara.Markdown("* "+("\n* ".join(raw_output)))
     except subprocess.CalledProcessError as e:
         solara.Text("Chyba při spuštění příkazu:\n", e.stderr)
 

@@ -1,4 +1,7 @@
 rule all_non_acc:
+    """
+    Create all outputs that are not related to the knock detection by accelerometer.
+    """
     input:
         "../outputs/fft_boxplots_for_probes.pdf",
         "../outputs/fft_spectra.zip",
@@ -27,6 +30,9 @@ rule all_non_acc:
         "../outputs/velocity_babice_oprava.csv",
         "../outputs/dynatree_data_merge.csv"
 rule all_acc:
+    """
+    Create all outputs that are related to the knock detection by accelerometer.
+    """
     input:
         "dynatree_summary/FFT_acc_knock.csv",
         "../outputs/FFT_acc_average_graph.zip"
@@ -47,8 +53,7 @@ rule find_auto_acc_knocks:
 
 rule create_cached_images:
     """
-    Create chached images
-    Spoji informace o automaticky nalezenych peacich, rucne vyhozenych peacich a rucne nalezenych peacich 
+    Create chached images. Spoji informace o automaticky nalezenych peacich, rucne vyhozenych peacich a rucne nalezenych peacich 
     a vytvori obrazky pro cache na disku.
     """
     input:
@@ -92,8 +97,7 @@ rule fft_spectra:
     Draw frequencies spectra.
     The data are from csv/solara_FFT.csv, i.e. fft peaks are confirmed by a 
     human and is more peaks are present, all are included. 
-    Comments are also included to the image.
-    
+    Comments are also included to the image.    
     Runs the script plot_spectra_for_probe.py to create pdf files as in solara
     app (signal above and FFT below). Adds remark and peak info to the image. 
     """
@@ -112,7 +116,7 @@ rule fft_spectra:
         
 rule fft_spectra_combine:
     """
-    Combine fft spectra by measurement of similar probes.
+    Combine FFT spectra by measurement of similar probes.
     """
     input:
         zip = "../outputs/fft_spectra.zip"
@@ -213,7 +217,7 @@ rule RopeAngle_100_std:
         """
         
 rule static_pulling_error_propagation:
-    """'
+    """
     Get parital derivatives of slopes in momentum-angle regressions graphs with
     respect to angle. Shows that the regression coefficient is not influenced
     by the rope angle. In particular, one degree change in angle gives 0.7% 
@@ -393,7 +397,7 @@ rule welch:
         mkdir ../temp/welch
         python {input}
         cd ../temp/welch
-	montage BK*.png -tile 2x2 -geometry +0+0 welch.pdf
+	    montage BK*.png -tile 2x2 -geometry +0+0 welch.pdf
         mv welch.pdf ../../outputs
         """
 rule peak_width:
@@ -447,6 +451,10 @@ rule vlhkosti:
         python puda_vlhost_to_csv.py
         """
 rule copy_description:
+    """
+    Just copy the data description to the output directory.
+    The file Popis_Babice_VSE.xlsx is a symlink which points to the newest version of that file.
+    """
     output:
         "../outputs/Popis_Babice_VSE.xlsx"
     input:
@@ -457,6 +465,9 @@ rule copy_description:
         """
 
 rule copy_velocity:
+    """
+    Just copy the data from tomograph to the output directory.
+    """
     output:
         "../outputs/velocity_babice_oprava.csv"
     input:
@@ -467,6 +478,9 @@ rule copy_velocity:
         """
 
 rule merge_data:
+    """
+    Merge all data into one big csv file.
+    """
     output:
         "../outputs/dynatree_data_merge.csv"
     input:
