@@ -397,7 +397,7 @@ rule welch:
         mkdir ../temp/welch
         python {input}
         cd ../temp/welch
-	    montage BK*.png -tile 2x2 -geometry +0+0 welch.pdf
+	montage BK*.png -tile 2x2 -geometry +0+0 welch.pdf
         mv welch.pdf ../../outputs
         """
 rule peak_width:
