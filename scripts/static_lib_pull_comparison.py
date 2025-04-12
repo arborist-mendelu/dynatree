@@ -13,7 +13,7 @@ import config
 def add_leaves_info(df_):
     df = df_.copy()
     days_with_leaves_true = ["2021-06-29", "2021-08-03", "2022-08-16", "2023-07-17", "2024-09-02"]
-    days_after_first_reduction = ['2024-01-16', '2024-04-10', '2024-09-02']
+    days_after_first_reduction = ['2024-01-16', '2024-04-10', '2024-09-02', '2025-04-01']
     
     # Set information about leaves.
     df.loc[:,"leaves"] = False

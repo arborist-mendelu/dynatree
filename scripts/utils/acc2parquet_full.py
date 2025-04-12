@@ -19,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 from pathlib import Path
 from tqdm import tqdm
 
-source_dir = "/mnt/ERC/ERC"
+source_dir = "/mnt/ERC2"
 
 adresar = source_dir+'/Mereni_Babice'
 
@@ -45,7 +45,7 @@ for i,row in df.iterrows():
     for soubor in files:
         # print(soubor)
         measurement = soubor.split("/")[-1].split(".")[-2]
-        target = f"../data/parquet_acc/{row['kind'].lower()}_{row['date']}_{row['tree']}_{measurement}_5000.parquet"
+        target = f"../../data/parquet_acc/{row['kind'].lower()}_{row['date']}_{row['tree']}_{measurement}_5000.parquet"
         file_path = Path(target)
         if file_path.is_file():
             # print(f"Soubor {target} existuje, koncim.")
