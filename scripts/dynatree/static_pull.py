@@ -584,6 +584,10 @@ class DynatreeStaticPulling:
 def proces_one_row(row):
     ans = {}
     day = row['day']
+    if day == "2025-04-01":
+        ans = pd.DataFrame()
+        dynatree.logger.error(f"Data for day {day} not ready yet.")
+        return ans
     tree = row['tree']
     measurement = row['measurement']
     optics = row['optics']
