@@ -28,7 +28,22 @@ rule all_non_acc:
         "../outputs/dynatree_data_merge.csv"
 rule all_acc:
     input:
+        "dynatree_summary/FFT_acc_knock.csv",
         "../outputs/FFT_acc_average_graph.zip"
+
+rule find_auto_acc_knocks:
+    """
+    Find ACC knocks using automatical procedure.
+    """
+    input:
+        "dynatree_summary/acc_knocks.py"
+    output:
+        "dynatree_summary/FFT_acc_knock_auto.csv",
+    shell:
+        """
+        python -m dynatree_summary.acc_knocks
+        mv FFT_acc_knock_auto.csv dynatree_summary
+        """
 
 rule create_cached_images:
     """
