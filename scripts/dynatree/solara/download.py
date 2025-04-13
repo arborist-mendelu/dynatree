@@ -71,7 +71,7 @@ def Page():
                     print(k)
                     _ = v.split(".")
                     popis = _[0]
-                    detail = ". ".join(_[1:])
+                    detail = ".".join(_[1:])
                     with solara.Column(gap='20px'):
                         lightgray = "#F4F4F4"
                         with solara.Card(style={"background-color": lightgray}):
