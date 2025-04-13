@@ -4,7 +4,7 @@ title: "Souhrn"
 
 popis: Spojená data z různých analýz.
 
-dynatree_data_merge.csv: Spojení tahovek, dynamiky, dendroparametrů, útlumu.
+dynatree_data_merge.csv: Spojení tahovek, dynamiky, dendroparametrů, útlumu. Popis sloupců je v souboru [merge_dynatree_data.ipynb](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/merge_dynatree_data.ipynb).
 
 ---
 
