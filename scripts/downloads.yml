@@ -12,7 +12,7 @@ title: "Půda"
 
 popis: "Vlhkost, data z penetrologgeru. Pro následné spojení s tuhostmi kořenového systému nebo případně stromu."
 
-penetrologger.csv: Spojená data z ods souborů se záznamy z penetrologgeru.
+penetrologger.csv: Spojená data z ods souborů se záznamy z penetrologgeru. Skript [penetro_merge_xls.py](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/penetro_merge_xls.py).
 
 vlhkosti_babice.csv: Vlhkosti půdy. Spojená data ze sešitů v souboru `ERC_vlhkost_upraveno.ods`.
 
@@ -29,9 +29,14 @@ popis: |
     * Tabulky jsou velké, k 2024-09-21 obsahují varianty s lower_cut 10 i 30 procent.
     * Předpokládají, že si z toho dále vyfiltruješ, co tě zajímá.
     
-anotated_regressions_static.csv: Data, regresní koeficienty s anotacemi. Výstup z regresí mezi momenty a náklonem ve statice. Má začleněny případné komentáře.
+anotated_regressions_static.csv: |
+    Data, regresní koeficienty s anotacemi. Výstup z regresí mezi momenty a náklonem ve statice. 
+    Má začleněny případné komentáře. 
+    Skript [static_pull_anotatte_regressions.py](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/static_pull_anotatte_regressions.py).
 
-regressions_static.csv: Data, regresní koeficienty. Výstup z regresí mezi momenty a náklonem ve statice. 
+regressions_static.csv: |
+    Data, regresní koeficienty. Výstup z regresí mezi momenty a náklonem ve statice.
+    Skript [dynatree.static_pull](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/dynatree/static_pull.py).
 
 static_pull_suspicious_experiments.zip:
     Obrázky vyřazených experimentů. Obrázky experimentů, které jsou podzřelé a neměly by být zařezeny 
