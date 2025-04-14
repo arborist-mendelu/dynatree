@@ -48,7 +48,8 @@ rule find_auto_acc_knocks:
     shell:
         """
         python -m dynatree_summary.acc_knocks
-        mv FFT_acc_knock_auto.csv dynatree_summary
+        (head -n 1 FFT_acc_knock_auto.csv && tail -n +2 FFT_acc_knock_auto.csv | sort) > dynatree_summary/FFT_acc_knock_auto.csv
+        rm FFT_acc_knock_auto.csv
         """
 
 rule create_cached_images:
