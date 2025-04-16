@@ -36,7 +36,8 @@ for _, row in df.iterrows():
         "damping_method": "extrema"
     }
 
-    if not ( (row['type'], row['day'], row['tree'], row['measurement']) in manual_data ):
+#    if not ( (row['type'], row['day'], row['tree'], row['measurement']) in manual_data ):
+    if not row['day'] == "2025-04-01":
         continue
 
     url1 = f"{base_url1}?{urlencode(params)}"

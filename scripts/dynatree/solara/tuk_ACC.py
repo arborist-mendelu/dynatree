@@ -74,7 +74,7 @@ if worker.value not in rdf.keys():
 
 
 
-server = "http://um.mendelu.cz/dynatree/"
+server = "http://euler.mendelu.cz/dynatree/"
 dynatree.logger.info(f"Server is {server}")
 
 def on_file(f):
