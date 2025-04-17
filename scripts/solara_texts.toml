@@ -29,7 +29,7 @@ general_info = """
         ## O aplikaci
 
         * Podpora zpracování a vizualizace dat pro projekt Dynatree.
-        * Chyby hlásit Robertovi jakkoliv (chodba, mobil, email)
+        * Chyby hlásit Robertovi jakkoliv (chodba, mobil, email) nebo psát do issues na [GitHub](https://github.com/arborist-mendelu/dynatree/issues).
         * Chyba je i když nenajdeš co hledáš na místě, kde je logické to hledat.
 
         """

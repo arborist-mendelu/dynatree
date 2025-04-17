@@ -269,7 +269,7 @@ if __name__ == '__main__':
 
     ansdf = sum(ans.values(), start=[])
     ansdf = pd.DataFrame(ansdf, columns = ["type","day","tree","measurement","probe","peak"])
-    ansdf.dropna().to_csv(config.file["outputs/FFT_csv_tukey_raw"], index=False)
+    ansdf.to_csv(config.file["outputs/FFT_csv_tukey_raw"], index=False)
     print(f"Saved FFT peaks, shape is {ansdf.shape}")
 
     # ans = process_one_row(["2021-06-29", "BK08", "M02", "normal", True, "2021-06-29", "a03_z"])

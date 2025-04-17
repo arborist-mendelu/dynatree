@@ -349,8 +349,11 @@ def Page():
                                 solara.Markdown(
         """
         * Svislá červená čára je frekvence použitá do dalšího zpracování. Stanovena jako maximum na určitém frekvenčním 
-          intervalu. Numerická hodnota je i v nadpisu obrázku.
-        * Pokud je toto měření pokažené, zkopíruj si řádek nad tímto rámečkem a přidá se mezi seznam zkažených.
+          intervalu. Numerická hodnota je i v nadpisu obrázku. Je možné, že se toto měření neuvažuje, nebo že je frekvence
+          zvýrazněná červenou čarou nahrazena jinou hodnotou, viz následující odrážky.
+        * Pokud je toto měření pokažené, zkopíruj si řádek nad tímto rámečkem a přidá se mezi seznam zkažených do souboru [`csv/FFT_failed.csv`](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/csv/FFT_failed.csv).
+        * Pokud je peak stanoven špatně, přidá se záznam do souboru [`csv/FFT_manual_peaks.csv`](https://github.com/arborist-mendelu/dynatree/blob/master/scripts/csv/FFT_manual_peaks.csv).
+          Na to je možné využít záložku "FFT(ineractive)". 
         """, style={'color':'inherit'}
                                     )
                         except:
