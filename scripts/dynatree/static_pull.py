@@ -3,7 +3,7 @@ Created on Wed Aug 14 13:25:19 2024
 
 TODO: update the description
 
-Inputs the pulling data. Raw pullling data for M1, preprocessed pulling data 
+Inputs the pulling data. Raw pullling data for M1, preprocessed pulling data
 for M2 and higher (parquet_add_inclino.py script).
 
 Used in solara_tahovky.py  in visualizations.

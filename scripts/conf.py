@@ -14,7 +14,11 @@ import os
 import sys
 
 # Přidejte aktuální adresář do sys.path
+sys.path.insert(0, os.path.abspath('./dynatree'))
 sys.path.insert(0, os.path.abspath('.'))
+
+print(sys.path)
+
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -51,3 +55,4 @@ extensions = [
 #    'members': True,
 #}
 autodoc_typehints = "description"
+

@@ -32,6 +32,8 @@ from parallelbar import progress_map
 peak_min = .1 # do not look for the peak smaller than this value
 peak_max = 0.7 # do not look for the peak larger than this value
 df_manual_release_times = pd.read_csv(config.file["FFT_release"], index_col=[0,1,2,3,4])
+df_failed_FFT_experiments=pd.read_csv(config.file["FFT_failed"])
+
 
 class DynatreeSignal:
     """
@@ -141,10 +143,8 @@ class DynatreeSignal:
         if self.dt == 0.12:
             fs = 1/0.12
         return dynasignal.do_welch(pd.DataFrame(self.signal), nperseg=nperseg, fs=fs)
-        
 
-df_failed_FFT_experiments=pd.read_csv(config.file["FFT_failed"])
-    
+
 def process_one_probe(
         day='2021-03-22', tree='BK01', measurement='M03', measurement_type='normal', probe='Elasto(90)',
         # plot = 'never',
