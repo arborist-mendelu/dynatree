@@ -17,3 +17,8 @@ blue,normal,BK16,M02,2022-04-05,0,"Osy major a minor jsou srovnatelné, což je 
 yellow,normal,BK04,M02,2024-04-10,0,Inklinometr vypadl během napínání.
 yellow,mraz,BK01,M02,2024-01-16,0,"Osy major a minor jsou srovnatelné, což je divné. Major by měla mít mnohem vyšší hodnoty."
 yellow,normal,BK16,M01,2021-03-22,2,"Žlutý inklinometr přestal měřit při posledním zatáhnutí."
+Elasto-strain,normal,BK07,M01,2021-06-29,0,"Extenzometr měří špatně, viz issue 18 github"
+Elasto-strain,normal,BK07,M01,2021-06-29,1,"Extenzometr měří špatně, viz issue 18 github"
+Elasto-strain,normal,BK07,M01,2021-06-29,2,"Extenzometr měří špatně, viz issue 18 github"
+Elasto-strain,normal,BK07,M03,2021-06-29,0,"Extenzometr měří špatně, viz issue 18 github"
+Elasto-strain,normal,BK07,M04,2021-06-29,0,"Extenzometr měří špatně, viz issue 18 github"
