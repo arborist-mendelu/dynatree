@@ -79,7 +79,7 @@
                 const generateImageUrl = (probe, delay = 0) => {
                     if (!probe) return '';
                     setTimeout(() => {
-                        const url = `https://math4u.mendelu.cz/draw_graph/?method=${method}&tree=${tree}&measurement=${measurement}&probe=${probe}&start=${start.value}&end=${end.value}&format=${format}&timestamp=${Date.now()}`;
+                        const url = `https://euler.mendelu.cz/draw_graph/?method=${method}&tree=${tree}&measurement=${measurement}&probe=${probe}&start=${start.value}&end=${end.value}&format=${format}&timestamp=${Date.now()}`;
                         if (probe === probe1) {
                             imageUrl1.value = url;
                         } else {
