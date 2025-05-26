@@ -82,6 +82,7 @@ filtr_R_min = solara.reactive(-1)
 filtr_R_max = solara.reactive(1)
 filtr_T_min = solara.reactive(0)
 filtr_T_max = solara.reactive(1000)
+switch_damping = solara.reactive("defmulti")
 data_selection = solara.reactive("optimistic")
 data_selection_types = ["all", "optimistic", "pesimistic"]
 manual_signal_end = solara.reactive(None)
@@ -540,15 +541,8 @@ def show_data_one_tree():
     list_of_methods = ['maxima', 'hilbert', 'wavelet']
     with solara.Card():
         solara.Markdown(f"## {s.tree.value}")
-        with solara.Info():
-            solara.Markdown(f"""
-            * Odkaz otevře obrázek v externím okně.
-            * Chybějící hodnoty (nan) odpovídají tomu, že průběh nespadá do limitů pro R a pro délku intervalu nastaveného v levém sloupci. 
-              Vyfiltruj si buď pěkná data pro zpracování nebo škaredá pro posouzení jak dál.
-            * Odkaz "Začít sledovat pohyb myši" (pod rámečkem) aktivuje náhledy při najetí myší na odkaz pro PNG. Náhled je v pravém horním rohu. Tlačítko je potřeba použít pokaždé, 
-            když otevřeš tuto stránku nebo přepneš strom. To že jsou náhledy aktivní se pozná podle zelené barvy textu PNG."
-            * **Vysvětlivky sloupců jsou pod tabulkou.**
-            """, style = {'color':'inherit'})
+
+        solara.ToggleButtonsSingle(value=switch_damping, values=["defmulti","all methods"])
 
         df = pd.read_csv(config.file['outputs/damping_factor'])
         df_matlab = (pd.read_csv("../data/matlab/utlum_FFT_3citlivost_15amp.csv")
@@ -580,7 +574,9 @@ def show_data_one_tree():
         data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'        
         >PNG</a>"""
                                  , axis=1)
-        df["links"] = df.apply(lambda row:f"""
+
+        if switch_damping.value != 'defmulti':
+            df["links"] = df.apply(lambda row:f"""
         <a  href='https://euler.mendelu.cz/draw_graph_damping/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png&damping_method=extrema'
         class="image-preview" 
         data-src='https://euler.mendelu.cz/draw_graph_damping/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png&damping_method=extrema'        
@@ -601,6 +597,17 @@ def show_data_one_tree():
         >Comments</a>
 """
                                  , axis=1)
+        else:
+            df["links"] = df.apply(lambda row: f"""
+                    <a  href='https://euler.mendelu.cz/draw_graph_damping/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png&damping_method=defmulti'
+                    class="image-preview" 
+                    data-src='https://euler.mendelu.cz/draw_graph_damping/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png&damping_method=defmulti'        
+                    >DefMultiEnvelope</a>
+                    <a  href='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'        
+                    >Comments</a>
+            """
+                                   , axis=1)
+
         df["linkHTML"] = df.apply(lambda row:f"<a href='https://euler.mendelu.cz/fast/index.html?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&sensor=Elasto%2890%29&start=0&end=1000000000&format=html '>html</a>", axis=1)
         df = df.set_index(["tree","day", "type", "measurement"])
         df = df.sort_index()
@@ -641,7 +648,7 @@ def show_data_one_tree():
             # print (df.index.isin(failed))
             df.loc[df.index.isin(failed), cols] = np.nan
 
-        cols = [i for i in df.columns if f"_{damping_parameter.value}" in i] + [
+        cols = [i for i in df.columns if f"_{damping_parameter.value}" in i] + ["defmulti_R",
             "linkPNG", "links", "linkHTML"]
         df = df[cols]
         df = df.sort_index()
@@ -652,10 +659,16 @@ def show_data_one_tree():
                 return "background-color: lightgreen; font-weight: bold;"
             return ""
 
+        if switch_damping.value != 'defmulti':
+            df = df.drop(["defmulti_R"], axis=1)
+            background_axis = None
+        else:
+            df = df[["defmulti_LDD","defmulti_R","linkPNG", "links", "linkHTML"]]
+            background_axis = 0
 
         _ = (
             df
-            .style.format(precision=3).background_gradient(axis=None)
+            .style.format(precision=3).background_gradient(axis=background_axis)
             .apply( lambda x:add_horizontal_line(x, second_level=False, level0=1), axis = None)
             .map_index(highlight_index, level=1)  # Obarví druhou úroveň indexu
             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
@@ -668,7 +681,6 @@ def show_data_one_tree():
         <img id="preview-image" src="" alt="Náhled">
         <div id="preview-comment">AAAA</div>
        </div>
-       <button id="startBtn" class="v-btn v-btn--contained theme--light v-size--default">Začni sledovat pohyb myši</button>
         """)
         solara.HTML(tag="script", unsafe_innerHTML="""
 function initPreview() {
@@ -756,7 +768,10 @@ function createTable(comments) {
 }
         """)
 
+
+
         display(_)
+
 
         if data_selection.value != 'all':
             with solara.Card(title = "Data manually marked as failed"):
