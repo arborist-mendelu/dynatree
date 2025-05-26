@@ -299,32 +299,32 @@ def get_chains_of_bendlines(axis="Y", cam=1):
     output = [all[i*l//3:(i+1)*l//3] for i in range(3)]
     return output
 
-# Makra pro FFT a Welch
-def do_fft(signal, time):
-    time = time - time[0] # restart time from zero
-    # signal = signal.values # grab values
-    fs = 100
-    time_fft = np.arange(time[0],time[-1],1/fs) # timeline for resampling
-    f = interpolate.interp1d(time, signal, fill_value="extrapolate")  
-    signal_fft = f(time_fft) # resample
-    signal_fft = signal_fft - np.nanmean(signal_fft) # mean value to zero
-    
-    N = time_fft.shape[0]  # get the number of points
-    yf = fft(signal_fft)  # preform FFT analysis
-    xf_r = fftfreq(N, 1/fs)[:N//2]
-    yf_r = 2.0/N * np.abs(yf[0:N//2])
-    return xf_r,yf_r
+# Makra pro FFT a Welch, probably obsolete (RM 2025-05-24)
+# def do_fft(signal, time):
+#     time = time - time[0] # restart time from zero
+#     # signal = signal.values # grab values
+#     fs = 100
+#     time_fft = np.arange(time[0],time[-1],1/fs) # timeline for resampling
+#     f = interpolate.interp1d(time, signal, fill_value="extrapolate")
+#     signal_fft = f(time_fft) # resample
+#     signal_fft = signal_fft - np.nanmean(signal_fft) # mean value to zero
+#
+#     N = time_fft.shape[0]  # get the number of points
+#     yf = fft(signal_fft)  # preform FFT analysis
+#     xf_r = fftfreq(N, 1/fs)[:N//2]
+#     yf_r = 2.0/N * np.abs(yf[0:N//2])
+#     return xf_r,yf_r
 
-def do_welch(s, time, nperseg=2**10, fs = 100):
-    time = time - time[0] # restart time from zero
-    # signal = signal.values # grab values
-    time_welch = np.arange(time[0],time[-1],1/fs) # timeline for resampling
-    f = interpolate.interp1d(time, s)  
-    signal_welch = f(time_welch) # resample
-    signal_welch = signal_welch - np.nanmean(signal_welch) # mean value to zero
-    f, Pxx = signal.welch(x=signal_welch, fs=fs, nperseg=nperseg)
-    Pxx
-    return f, Pxx
+# def do_welch(s, time, nperseg=2**10, fs = 100):
+#     time = time - time[0] # restart time from zero
+#     # signal = signal.values # grab values
+#     time_welch = np.arange(time[0],time[-1],1/fs) # timeline for resampling
+#     f = interpolate.interp1d(time, s)
+#     signal_welch = f(time_welch) # resample
+#     signal_welch = signal_welch - np.nanmean(signal_welch) # mean value to zero
+#     f, Pxx = signal.welch(x=signal_welch, fs=fs, nperseg=nperseg)
+#     Pxx
+#     return f, Pxx
 
 def find_finetune_synchro(date, tree, measurement, measurement_type, cols="delta time"):
     """
@@ -421,6 +421,8 @@ def get_all_measurements(cesta=datapath, suffix="parquet", directory="parquet"):
     date, tree and measurement.
     
     Intended to find measurements from optics
+
+    Obsolete, see the find_measurements.py.
     """
     files = glob.glob(cesta+f"/{directory}/*/BK*M??.{suffix}") 
     files += glob.glob(cesta+f"/{directory}/*/BK*M?.{suffix}")
@@ -430,14 +432,13 @@ def get_all_measurements(cesta=datapath, suffix="parquet", directory="parquet"):
     df = df.reset_index(drop=True)
     return df
 
-
-
-date2color = {
-    '2022-04-05': "C0",
-    '2022-08-16': "C1",
-    '2021-03-22': "C0",
-    '2021-06-29': "C1",
-    }
+# Obsolete (RM 2025-02-24)
+# date2color = {
+#     '2022-04-05': "C0",
+#     '2022-08-16': "C1",
+#     '2021-03-22': "C0",
+#     '2021-06-29': "C1",
+#     }
 
 def fix_inclinometers_sign(df_, measurement_type, day, tree):
     """

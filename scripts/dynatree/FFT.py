@@ -48,7 +48,7 @@ class DynatreeSignal:
     ...
     """
 
-    def __init__(self, measurement, signal_source, release_source=None, dt=None, tukey=0.1, duration=60):
+    def __init__(self, measurement, signal_source, release_source=None, dt=None, tukey=0.1, duration=60, **kwds):
         self.measurement = measurement
         self.signal_source = signal_source
         self.release_source = release_source
