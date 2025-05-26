@@ -591,6 +591,10 @@ def show_data_one_tree():
         class="image-preview" 
         data-src='https://euler.mendelu.cz/draw_graph_damping/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png&damping_method=wavelet'        
         >W</a>
+        <a  href='https://euler.mendelu.cz/draw_graph_damping/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png&damping_method=defmulti'
+        class="image-preview" 
+        data-src='https://euler.mendelu.cz/draw_graph_damping/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&format=png&damping_method=defmulti'        
+        >DefMulti</a>
         <a  href='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'        
         >Comments</a>
 """
