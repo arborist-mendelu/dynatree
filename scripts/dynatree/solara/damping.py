@@ -165,12 +165,12 @@ def Page():
                     """)
 
                 with solara.Card(title="Bounds for the filter in the table"):
-                    solara.InputFloat("Lower bound for R^2", filtr_R_min)
-                    solara.InputFloat("Upper bound for R^2", filtr_R_max)
+                    solara.InputFloat("Lower bound for R", filtr_R_min)
+                    solara.InputFloat("Upper bound for R", filtr_R_max)
                     solara.InputFloat("Lower bound for t/T", filtr_T_min)
                     solara.InputFloat("Upper bound for t/T", filtr_T_max)
                     solara.Text("""
-                    Here you can set the bounds for R^2 and the ratio of the length of the signal and the period. Note that R is negative and should be close to -1 for a good match.
+                    Here you can set the bounds for R and the ratio of the length of the signal and the period. Note that R is negative and should be close to -1 for a good match.
                     The values which do not fulfill the filter conditions are replaced by nan values. 
                     """)
                 with solara.Card(title="Popis"):
@@ -390,7 +390,7 @@ def damping_graphs():
         if interval_length/T<2:
             err_info = f"{err_info} The interval is shorter than the double of the period."
         if df.loc["R"].max()>-0.9:
-            err_info = f"{err_info} Some of the R^2 is outside the interval (-1,-0.9)."
+            err_info = f"{err_info} Some of the R is outside the interval (-1,-0.9)."
         if err_info:
             solara.Error(solara.Markdown(f"""
             {err_info} You may want to add the following line to the file `csv/damping_failed.csv`
@@ -542,7 +542,7 @@ def show_data_one_tree():
         with solara.Info():
             solara.Markdown(f"""
             * Odkaz otevře obrázek v externím okně.
-            * Chybějící hodnoty (nan) odpovídají tomu, že průběh nespadá do limitů pro R^2 a pro délku intervalu nastaveného v levém sloupci. 
+            * Chybějící hodnoty (nan) odpovídají tomu, že průběh nespadá do limitů pro R a pro délku intervalu nastaveného v levém sloupci. 
               Vyfiltruj si buď pěkná data pro zpracování nebo škaredá pro posouzení jak dál.
             * Odkaz "Začít sledovat pohyb myši" (pod rámečkem) aktivuje náhledy při najetí myší na odkaz pro PNG. Náhled je v pravém horním rohu. Tlačítko je potřeba použít pokaždé, 
             když otevřeš tuto stránku nebo přepneš strom. To že jsou náhledy aktivní se pozná podle zelené barvy textu PNG."
