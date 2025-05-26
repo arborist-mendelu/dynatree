@@ -170,7 +170,7 @@ def Page():
                     solara.InputFloat("Lower bound for t/T", filtr_T_min)
                     solara.InputFloat("Upper bound for t/T", filtr_T_max)
                     solara.Text("""
-                    Here you can set the bounds for R^2 and the ratio of the length of the signal and the period. Note that R2 is negative and should be close to -1 for a good match.
+                    Here you can set the bounds for R^2 and the ratio of the length of the signal and the period. Note that R is negative and should be close to -1 for a good match.
                     The values which do not fulfill the filter conditions are replaced by nan values. 
                     """)
                 with solara.Card(title="Popis"):
@@ -389,7 +389,7 @@ def damping_graphs():
             err_info = f"{err_info} This measurement was marked as failed."
         if interval_length/T<2:
             err_info = f"{err_info} The interval is shorter than the double of the period."
-        if df.loc["R2"].max()>-0.9:
+        if df.loc["R"].max()>-0.9:
             err_info = f"{err_info} Some of the R^2 is outside the interval (-1,-0.9)."
         if err_info:
             solara.Error(solara.Markdown(f"""
@@ -493,7 +493,7 @@ def draw_images(temp=None):
     sig = DynatreeDampedSignal(m, data_source.value, dt=dt, damped_end_time=manual_signal_end.value)
 
     data = {}
-    keys = ['b', 'R2', 'p', 'std_err', 'LDD']
+    keys = ['b', 'R', 'p', 'std_err', 'LDD']
     fig = make_subplots(rows=3, cols=1, shared_xaxes='all', shared_yaxes='all')
 
     ans = sig.hilbert_envelope
@@ -551,20 +551,21 @@ def show_data_one_tree():
 
         df = pd.read_csv(config.file['outputs/damping_factor'])
         df_matlab = (pd.read_csv("../data/matlab/utlum_FFT_3citlivost_15amp.csv")
-                     .rename(columns = {'folder':'day', 'b':'FFT_b', 'LDD':'FFT_LDD', 'R2':'FFT_R2'})
+                     .rename(columns = {'folder':'day', 'b':'FFT_b', 'LDD':'FFT_LDD'})
                      )
+        df_matlab["FFT_R"] = np.sqrt(df_matlab.R2)
         df_matlab[['type', 'tree', 'measurement']] = df_matlab['Name'].str.split('_', expand=True)
         df_matlab['probe'] = "Elasto(90)"
         df_matlab['day'] = df_matlab['day'].str.replace('_', '-')
 
         df_matlab = (df_matlab
-                        .loc[:, ["day", "type", "tree", "measurement", "probe", "FFT_b", "FFT_R2", "FFT_LDD"]]
+                        .loc[:, ["day", "type", "tree", "measurement", "probe", "FFT_b", "FFT_R", "FFT_LDD"]]
                         .dropna()
                      )
         df = df.merge(df_matlab, how='left')
-        # Nahradí hodnoty ve sloupcích bez "_R2" None pokud odpovídající "_R2" sloupec má hodnotu > -0.9
+        # Nahradí hodnoty ve sloupcích bez "_R" None pokud odpovídající "_R" sloupec má hodnotu > -0.9
         # for col in list_of_methods:
-        #     df.loc[df[f"{col}_R2"] > -0.9, f"{col}_R2"] = None
+        #     df.loc[df[f"{col}_R"] > -0.9, f"{col}_R"] = None
 
         df = df[df["tree"]==s.tree.value]
         df["#_of_periods"] = (df["end"]-df["start"]) * df["freq"]
@@ -607,7 +608,7 @@ def show_data_one_tree():
         df.loc[~((df["#_of_periods"] > filtr_T_min.value) & (df["#_of_periods"] < filtr_T_max.value)), cols] = np.nan
         for i in list_of_methods:
             df.loc[
-                ~((df[f"{i}_R2"] > filtr_R_min.value) & (df[f"{i}_R2"] < filtr_R_max.value)), [f"{i}_b", f"{i}_LDD"]] = np.nan
+                ~((df[f"{i}_R"] > filtr_R_min.value) & (df[f"{i}_R"] < filtr_R_max.value)), [f"{i}_b", f"{i}_LDD"]] = np.nan
         # df[~ ((df["#_of_periods"] > filtr_T_min.value) & (df["#_of_periods"] < filtr_T_max.value)),:] = np.nan
 
         def get_zero_rating(key="min", tree = None):

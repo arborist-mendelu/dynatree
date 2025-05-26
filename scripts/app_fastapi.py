@@ -167,7 +167,7 @@ def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement=
         plt.plot(ansh['data'][0], -ansh['data'][1], "C3")
         upper_envelope = np.exp(-ansh['b'] * sig.damped_time + ansh['q'])
         plt.fill_between(t, -upper_envelope, upper_envelope, color="gray", alpha=0.3, label="Envelope")
-        title = f"LDD={ansh['LDD']:.5f} R2={ansh['R2']:.5f}"
+        title = f"LDD={ansh['LDD']:.5f} R={ansh['R']:.5f}"
     elif damping_method=='wavelet':
         answ = sig.wavelet_envelope
         t = sig.damped_time
@@ -176,7 +176,7 @@ def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement=
         (-answ['data']).plot(ax=ax, color="C1")
         upper_envelope = np.exp(-answ['b'] * sig.damped_time + answ['q'])
         plt.fill_between(t, -upper_envelope, upper_envelope, color="gray", alpha=0.3, label="Envelope")
-        title = f"LDD={answ['LDD']:.5f} R2={answ['R2']:.5f}"
+        title = f"LDD={answ['LDD']:.5f} R={answ['R']:.5f}"
     elif damping_method=='defmulti':
         ans = sig.ldd_from_two_amplitudes()
         sig.damped_signal_interpolated.plot(ax=ax)
@@ -184,7 +184,7 @@ def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement=
         upper_envelope = np.exp(-ans['b'] * sig.damped_time + ans['q'])
         plt.plot(ans['peaks'], "o")
         plt.fill_between(t, -upper_envelope, upper_envelope, color="gray", alpha=0.3, label="Envelope")
-        title = f"LDD={ans['LDD']:.5f}, R^2={ans['R2']:.5f}"
+        title = f"LDD={ans['LDD']:.5f}, R={ans['R']:.5f}"
     ax.set(title=f"{damping_method} {m} {probe} {title}")
     plt.tight_layout()
     plt.grid()
