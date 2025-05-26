@@ -680,7 +680,8 @@ def show_data_one_tree():
         <div id="preview-container" class="preview-container">
         <img id="preview-image" src="" alt="Náhled">
         <div id="preview-comment">AAAA</div>
-       </div>
+        </div>
+        <button id="startBtn" class="v-btn v-btn--contained theme--light v-size--default" style="display:none">Začni sledovat pohyb myši</button>
         """)
         solara.HTML(tag="script", unsafe_innerHTML="""
 function initPreview() {
