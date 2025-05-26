@@ -448,7 +448,7 @@ def process_row_definition(index):
         ldd_multi = s.ldd_from_two_amplitudes()
     except Exception as e:
         logger.error(e)
-        ldd_multi = {'b': None, 'LDD': None, 'T': None, 'std_err':None}
+        ldd_multi = {'b': None, 'LDD': None, 'T': None, 'std_err':None, 'R':None}
         logger.error(f"Failed LDD from multiple amplitudes: {m}")
         save_failed(f"""<h2>{m}, failed LDD from multiple amplitudes</h2> 
         <img src="https://euler.mendelu.cz/gallery/static/images/utlum/{m.day}_{m.measurement_type}_{m.tree}_{m.measurement}.png">
@@ -460,7 +460,7 @@ def process_row_definition(index):
         ldd['b'], ldd['LDD'], ldd['T'],
         ldd2['b'], ldd2['LDD'], ldd2['T'],
         ldd2diff['b'], ldd2diff['LDD'], ldd2diff['T'],
-        ldd_multi['b'], ldd_multi['LDD'], ldd_multi['T']
+        ldd_multi['b'], ldd_multi['LDD'], ldd_multi['T'], ldd_multi['R']
     ]
     logger.info(f"Dataset: {m}, {probe}, OUTPUT :{out}")
     return out
@@ -487,7 +487,7 @@ def main():
     output_def = pd.DataFrame(results_def, index=df.index, columns=['def_b','def_LDD','def_T',
                                                                     'def2_b', 'def2_LDD','def2_T',
                                                                     'def2diff_b', 'def2diff_LDD','def2diff_T',
-                                                                    'defmulti_b','defmulti_LDD','defmulti_T'
+                                                                    'defmulti_b','defmulti_LDD','defmulti_T','defmulti_R'
                                                                     ])
 
     return output, output_def
