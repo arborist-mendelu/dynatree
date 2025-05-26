@@ -192,11 +192,14 @@ class DynatreeDampedSignal(DynatreeSignal):
         T = 2 * np.nanmean(peaks.index.diff())
         b = ldd / T
         # logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
-        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans)}
+        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans), 'peaks': peaks}
         # logger.info(f"answer: {answer}")
         return answer
 
     def ldd_from_two_amplitudes(self):
+        """
+        Method with working name defmulti.
+        """
         # try:
         peaks = self.fit_maxima()['peaks']
         # logger.setLevel(logging.INFO)
@@ -219,7 +222,16 @@ class DynatreeDampedSignal(DynatreeSignal):
         T = 2 * np.nanmean(peaks.index.diff())
         b = ldd / T
         logger.info(f"ANS {ans} MEDIAN {ldd} T {T} b {b}")
-        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans)}
+        y = np.log(np.abs(peaks.values))
+        x = peaks.index
+        yp = np.mean(y)
+        xp = np.mean(x)
+        q = yp + b * xp
+        numerator = sum([(xi-xp)*(yi-yp) for xi,yi in zip(x,y)])
+        denominator = np.sqrt( (sum([(xi-xp)**2 for xi in x])) * (sum([(yi-yp)**2 for yi in y])) )
+        R = numerator / denominator
+        R2 = R**2
+        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans), 'peaks': peaks, 'q': q, 'R2': R2}
         logger.info(f"answer: {answer}")
         # except:
         #     answer = {'b':None, 'LDD':None, 'T':None}
@@ -229,7 +241,7 @@ class DynatreeDampedSignal(DynatreeSignal):
     def ldd_from_distances(self):
         """
         Evaluate LDD from distances between maxima and minima. The first two minima and the first two maxima are used.
-        LDD = ln (  ( |y0| \pm |y1| )  / ( |y2| \pm |y3| )  )
+        LDD = ln (  ( |y0| pm |y1| )  / ( |y2| pm |y3| )  )
         The first four peaks are used (two maxima and two minima).
         """
         # try:
