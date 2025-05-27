@@ -528,7 +528,7 @@ def draw_images(temp=None):
     temp = sig.ldd_from_distances()
     df.loc[["b","LDD","T", "std_err"], "def2diff"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
     temp = sig.ldd_from_two_amplitudes()
-    cols = ["b","LDD","T", "std_err", "R"]
+    cols = ["b","LDD","T", "std_err", "R", "n"]
     df.loc[cols, "defmulti"] = [temp[i] for i in cols]
 
     return {'df':df, 'fig':fig, 'failed':sig.marked_failed, 'peak':sig.main_peak,
@@ -649,7 +649,7 @@ def show_data_one_tree():
             df.loc[df.index.isin(failed), cols] = np.nan
 
         cols = [i for i in df.columns if f"_{damping_parameter.value}" in i] + ["defmulti_R",
-            "linkPNG", "links", "linkHTML"]
+            "defmulti_n","linkPNG", "links", "linkHTML"]
         df = df[cols]
         df = df.sort_index()
 
@@ -660,12 +660,26 @@ def show_data_one_tree():
             return ""
 
         if switch_damping.value != 'defmulti':
-            df = df.drop(["defmulti_R"], axis=1)
+            df = df.drop(["defmulti_R", "defmulti_n"], axis=1)
             background_axis = None
+            comment = """
+            * All methods are shown.
+            * The most suitable (as of May 2025) is "defmulti" whic is evaluated from modified definition for three 
+              signal values and involve the differences rather than signal values.
+            * To see aditional info about defmulti, switch the buttons above to "defmulti". 
+            """
         else:
-            df = df[["defmulti_LDD","defmulti_R","linkPNG", "links", "linkHTML"]]
+            df = df[["defmulti_LDD", "defmulti_R", "defmulti_n", "linkPNG", "links", "linkHTML"]]
             background_axis = 0
+            df.loc[df["defmulti_n"].isna(),"defmulti_n"] = 0
+            df["defmulti_n"] = df["defmulti_n"].astype(int)
+            comment = """
+            * The data are calculated from modified definition for multiple (3) signal values and involve the differences rather than signal values.
+            * The R coefficient is a measure, if the approximation is good or bad. (Dark background means worse approximation and less reliable damping value.)
+            * The n coefficient show, how many point triples are included in the computation. (Dark background means more points and more reliable damping value.)
+            """
 
+        solara.Info(solara.Markdown(comment, style='inherit'))
         _ = (
             df
             .style.format(precision=3).background_gradient(axis=background_axis)
