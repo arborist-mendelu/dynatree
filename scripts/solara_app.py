@@ -38,7 +38,7 @@ import_finish = time.time()
 print(f"Imports finished in {import_finish-start_imports} sec, mezicas {mezicas}, {mezicas2}")
 from dynatree.dynatree import logger
 import logging
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 
 with open('solara_texts.toml', 'r') as f:
