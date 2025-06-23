@@ -810,3 +810,18 @@ def is_reduced(tree=None, method=None, day=None, measurement=None, reduction="20
         return True
 
     return False
+
+def setrid_data(df, columns=None):
+    """
+    funkce setridi data podle zvoleneho sloupce od nejvetsiho k nejmensimu.
+    Pokud neni sloupec zadan, setridi podle indexu.
+    """
+    if columns is None:
+        columns = df.index.names
+    if isinstance(columns, str):
+        columns = [columns]
+    if isinstance(columns, list):
+        columns = tuple(columns)
+    if not isinstance(columns, tuple):
+        raise TypeError("columns must be a string or a list of strings")
+    return df.sort_values(by=columns, ascending=False)

@@ -1,8 +1,10 @@
 # %%
 import os
-os.environ["PREFIX_DYNATREE"] = "/home/marik/babice/skripty/"
-os.environ["DYNATREE_DATAPATH"] = "/home/marik/babice/data/"
-
+os.environ["PREFIX_DYNATREE"] = "/home/marik/dynatree/scripts/"
+os.environ["DYNATREE_DATAPATH"] = "/home/marik/dynatree/data/"
+# %%
+import sys
+sys.path.append("..")
 # %%
 from dynatree.dynatree import DynatreeMeasurement
 from dynatree.damping import DynatreeDampedSignal
@@ -13,7 +15,8 @@ import logging
 
 dynatree.logger.setLevel(logging.INFO)
 
-m = DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M02", measurement_type="normal")
+m = DynatreeMeasurement(day="2021-03-22", 
+    tree="BK04", measurement="M02", measurement_type="normal")
 #
 # m.data_acc5000.plot()
 # plt.show()
@@ -64,17 +67,24 @@ m = DynatreeMeasurement(day="2021-03-22", tree="BK04", measurement="M02", measur
 
 
 # %%
-s = DynatreeDampedSignal(measurement=m, signal_source="a02_z", #dt=0.0002,
+s = DynatreeDampedSignal(measurement=m, signal_source="a02_y", #dt=0.0002,
                          # damped_start_time=54
                          )
 plt.plot(s.damped_time, s.damped_signal)
 plt.show()
-
+# %%
+s = DynatreeDampedSignal(measurement=m, signal_source=("Pt3","Y0"), #dt=0.0002,
+                         # damped_start_time=54
+                         )
+plt.plot(s.damped_time, s.damped_signal)
+plt.show()
 # %%
 s.damped_time
-# %%
 
-data,k,q = s.hilbert_envelope.values()
+# %%
+data
+# %%
+data, k, q, *a  = s.hilbert_envelope.values()
 data,k,q
 
 t = s.damped_time
@@ -82,8 +92,8 @@ ax = plt.plot(t, s.damped_signal)
 plt.plot(t,data)
 plt.plot(t, np.exp(k*t+q))
 plt.show()
-
-
+# %%
+q
 # %%
 
 data,k,q, f1,f2 = s.wavelet_envelope.values()
