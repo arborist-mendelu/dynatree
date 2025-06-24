@@ -530,6 +530,7 @@ def draw_images(temp=None):
     temp = sig.ldd_from_two_amplitudes()
     cols = ["b","LDD","T", "std_err", "R"]
     df.loc[cols, "defmulti"] = [temp[i] for i in cols]
+    df.loc["n","defmulti"] = temp['n']
 
     return {'df':df, 'fig':fig, 'failed':sig.marked_failed, 'peak':sig.main_peak,
             'signal_peaks':signal_peaks
