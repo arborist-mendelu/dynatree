@@ -7,6 +7,7 @@ from dynatree.damping import DynatreeDampedSignal
 from dynatree.peak_width import find_peak_width
 from dynatree.FFT import df_failed_FFT_experiments, DynatreeSignal
 import plotly.graph_objects as go
+import plotly.express as px
 import numpy as np
 from plotly.subplots import make_subplots
 import pandas as pd
@@ -20,6 +21,7 @@ from dynatree.solara.snackbar import show_snack, snack
 from dynatree.dynatree_util import add_horizontal_line
 import requests
 import ipywidgets as widgets
+from dynatree.solara.code import show_load_code
 
 dynatree.logger.setLevel(dynatree.logger_level)
 dynatree.logger.setLevel(logging.ERROR)
@@ -191,42 +193,46 @@ def Page():
                             )
 
             def process_row(row):
+                color = ["red", "blue", "black", "green", "violet", "purple", "yellow"]
                 data = {}
                 fig = go.Figure()
                 m = DynatreeMeasurement(day=row['date'],
                                         tree=row['tree'],
                                         measurement=row['measurement'],
                                         measurement_type=row['type'])
-                for source in ["Pt3", "Pt4", "Elasto(90)", "blueMaj", "yellowMaj"]:
+                for i,source in enumerate(["Pt3", "Pt4", "Elasto(90)", "blueMaj", "yellowMaj"]):
                     try:
                         s = DynatreeDampedSignal(measurement=m, signal_source=source,  # dt=0.0002,
                                                  # damped_start_time=54
                                                  )
-                        ans = s.ldd_from_two_amplitudes(max_n=5)
-                        data[*row.values(), source] = [ans[i] for i in ["LDD", "R", "n", "peaks"]]
+                        ans = s.ldd_from_two_amplitudes(max_n=None)
+                        data[*row.values(), source] = [ans[i] for i in ["LDD", "R", "n", "peaks", "LDD_ans"]]
                         scaling = np.max(np.abs(s.damped_signal))
                         fig.add_trace(go.Scatter(
                             x=s.damped_time,
                             y=s.damped_signal / scaling,
                             mode='lines',
                             name=source,
-                            line=dict(width=1.5),
-                            hovertemplate=f"{source}: %{{y:.2f}}<extra></extra>"
+                            line=dict(width=1.5, color=color[i]),
+                            hovertemplate=f"{source}: %{{y:.2f}}<extra></extra>", 
+                            legendgroup=source, 
+                            showlegend=True
                         ))
                         fig.add_trace(go.Scatter(
                             x=ans['peaks'].index,
                             y=ans['peaks'] / scaling,
                             mode='markers',
-                            marker=dict(size=8, color='gray'),  # velikost a barva markerů
+                            marker=dict(size=8, color=color[i]),  # velikost a barva markerů
+                            legendgroup=source,
                             showlegend=False  # skryje z legendy
                         ))
-                        print(ans['peaks'])
+                        # print(ans['peaks'])
                     except Exception as e:
                         print(f"Error processing {row['date']} {row['tree']} {row['measurement']} {source}: {e}")
-                        data[*row.values(), source] = [None] * 4
+                        data[*row.values(), source] = [None] * 5
                 df = pd.DataFrame.from_dict(data, orient='index')
                 df = df.reset_index()
-                df.columns = ['experiment', 'LDD', 'R', 'n', 'peaks']
+                df.columns = ['experiment', 'LDD', 'R', 'n', 'peaks', 'LDD_ans']
                 return {'data':df, 'figure':fig}
 
             def refactor_df(ans):
@@ -237,8 +243,20 @@ def Page():
                 return data
 
             ans = process_row({'date': s.day.value, 'tree': s.tree.value, 'measurement': s.measurement.value, 'type': s.method.value})
-            solara.display(refactor_df(ans['data']))
-            solara.display(ans['figure'])
+            df = refactor_df(ans['data'])
+            solara.display(df)
+            solara.FigurePlotly(ans['figure'])
+            df = df[["source","LDD_ans"]]
+            df_exploded = (
+                df.explode('LDD_ans', ignore_index=True)
+                .rename(columns={"LDD_ans": "LDD"})
+                .replace([np.inf, -np.inf], np.nan)
+                .dropna()
+                )
+
+            fig = px.box(df_exploded, x='source', y='LDD', points='all', title='Boxplot according to source')
+            solara.FigurePlotly(fig)
+            solara.Markdown("```\n"+show_load_code(s)+"\n```")
 
 
         with solara.lab.Tab("Remarks"):

@@ -230,7 +230,8 @@ class DynatreeDampedSignal(DynatreeSignal):
         numerator = sum([(xi-xp)*(yi-yp) for xi,yi in zip(x,y)])
         denominator = np.sqrt( (sum([(xi-xp)**2 for xi in x])) * (sum([(yi-yp)**2 for yi in y])) )
         R = numerator / denominator
-        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans), 'peaks': peaks, 'q': q, 'R': R, 'n': len(ans)}
+        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans), 'peaks': peaks, 'q': q, 
+                  'R': R, 'n': len(ans), 'LDD_ans':ans}
         logger.info(f"answer: {answer}")
         # except:
         #     answer = {'b':None, 'LDD':None, 'T':None}
