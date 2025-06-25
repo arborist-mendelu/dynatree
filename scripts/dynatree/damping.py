@@ -5,8 +5,6 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 import pywt
 import pandas as pd
-from scipy.fft import fft, fftfreq
-import plotly.graph_objects as go
 from dynatree.dynatree import timeit
 import time
 from dynatree.dynatree import logger
@@ -76,11 +74,11 @@ class DynatreeDampedSignal(DynatreeSignal):
         data = data - data.mean()
         # TODO: Pro akcelerometry se bere samplovani taky po 0.01? Jinak je Hilberova obalka i wavelet i
         #       metoda pomoci maxim nepouzitelna.
-        # if "a0" in self.signal_source:
-        #     self.dt = 0.01
-        #     df = pd.DataFrame(decimate(data.values, 50))
-        #     df.index = np.arange(0, len(df))*0.01 + data.index[0]
-        #     data = df.copy()
+        if "a0" in self.signal_source:
+            self.dt = 0.01
+            df = pd.DataFrame(decimate(data.values, 50))
+            df.index = np.arange(0, len(df))*0.01 + data.index[0]
+            data = df.copy()
         self.damped_data = data
         self.damped_signal = data.values.reshape(-1)
         self.damped_time = data.index
@@ -196,7 +194,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         # logger.info(f"answer: {answer}")
         return answer
 
-    def ldd_from_two_amplitudes(self):
+    def ldd_from_two_amplitudes(self, max_n=None):
         """
         Method with working name defmulti.
         """
@@ -204,6 +202,8 @@ class DynatreeDampedSignal(DynatreeSignal):
         peaks = self.fit_maxima()['peaks']
         # logger.setLevel(logging.INFO)
         logger.info(f"peaks: {peaks}")
+        if max_n is not None:
+            peaks = peaks.iloc[:max_n+2]
         # # Version 1: use four consecutive amplitudes
         # # LDD = ln (  ( |y0| \pm |y1| )  / ( |y2| \pm |y3| )  )
         # try:

@@ -3,6 +3,7 @@ import os
 os.environ["PREFIX_DYNATREE"] = "/home/marik/dynatree/scripts/"
 os.environ["DYNATREE_DATAPATH"] = "/home/marik/dynatree/data/"
 import sys
+import pandas as pd
 sys.path.append("..")
 
 from dynatree.dynatree import DynatreeMeasurement
@@ -63,7 +64,7 @@ dynatree.logger.setLevel(logging.INFO)
 
 # %%
 m = DynatreeMeasurement(day="2021-03-22", 
-    tree="BK04", measurement="M02", measurement_type="normal")
+    tree="BK01", measurement="M03", measurement_type="normal")
 # s = DynatreeDampedSignal(measurement=m, signal_source="a03_y", dt=0.0002,
 #                          # damped_start_time=54
 #                          )
@@ -77,9 +78,15 @@ for source in ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj"]:
 plt.legend()
 plt.show()
 # %%
-
+data = {}
+for source in ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj"]: 
+    s = DynatreeDampedSignal(measurement=m, signal_source=source, #dt=0.0002,
+                            # damped_start_time=54
+                            )
+    data[source] = [s.ldd_from_two_amplitudes()[i] for i in ["LDD","R","n"]]
+data
 # %%
-s.signal
+dynatree.get_all_damped_signals
 # %%
 data, k, q, *a  = s.hilbert_envelope.values()
 data,k,q

@@ -182,6 +182,65 @@ def Page():
                       kmity, proložení nebo celý experiment.    
                     """)
             show_data_one_tree()
+        with solara.lab.Tab("Probes comparison"):
+            with solara.Sidebar():
+                s.Selection(exclude_M01=True,
+                            optics_switch=False,
+                            day_action=resetuj,
+                            tree_action=resetuj,
+                            )
+
+            def process_row(row):
+                data = {}
+                fig = go.Figure()
+                m = DynatreeMeasurement(day=row['date'],
+                                        tree=row['tree'],
+                                        measurement=row['measurement'],
+                                        measurement_type=row['type'])
+                for source in ["Pt3", "Pt4", "Elasto(90)", "blueMaj", "yellowMaj"]:
+                    try:
+                        s = DynatreeDampedSignal(measurement=m, signal_source=source,  # dt=0.0002,
+                                                 # damped_start_time=54
+                                                 )
+                        ans = s.ldd_from_two_amplitudes(max_n=5)
+                        data[*row.values(), source] = [ans[i] for i in ["LDD", "R", "n", "peaks"]]
+                        scaling = np.max(np.abs(s.damped_signal))
+                        fig.add_trace(go.Scatter(
+                            x=s.damped_time,
+                            y=s.damped_signal / scaling,
+                            mode='lines',
+                            name=source,
+                            line=dict(width=1.5),
+                            hovertemplate=f"{source}: %{{y:.2f}}<extra></extra>"
+                        ))
+                        fig.add_trace(go.Scatter(
+                            x=ans['peaks'].index,
+                            y=ans['peaks'] / scaling,
+                            mode='markers',
+                            marker=dict(size=8, color='gray'),  # velikost a barva markerů
+                            showlegend=False  # skryje z legendy
+                        ))
+                        print(ans['peaks'])
+                    except Exception as e:
+                        print(f"Error processing {row['date']} {row['tree']} {row['measurement']} {source}: {e}")
+                        data[*row.values(), source] = [None] * 4
+                df = pd.DataFrame.from_dict(data, orient='index')
+                df = df.reset_index()
+                df.columns = ['experiment', 'LDD', 'R', 'n', 'peaks']
+                return {'data':df, 'figure':fig}
+
+            def refactor_df(ans):
+                data = ans.experiment.apply(pd.Series)
+                data = data.rename(columns={0: "day", 1: "tree", 2: "measurement", 3: "type", 4: "source"})
+                # Now we can concatenate the data with the rest of the columns
+                data = pd.concat([data, ans.drop(columns=['experiment'])], axis=1)
+                return data
+
+            ans = process_row({'date': s.day.value, 'tree': s.tree.value, 'measurement': s.measurement.value, 'type': s.method.value})
+            solara.display(refactor_df(ans['data']))
+            solara.display(ans['figure'])
+
+
         with solara.lab.Tab("Remarks"):
             remarks()
         # with solara.lab.Tab("From FFT (images)"):
