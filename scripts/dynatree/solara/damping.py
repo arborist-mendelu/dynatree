@@ -219,10 +219,10 @@ def Page():
 
 
 def probes_comparison():
-    with solara.Info():
-        solara.Markdown("""
-* The comparison of sensors for one meaasurement.
-        """, style={'color': 'inherit'})
+#     with solara.Info():
+#         solara.Markdown("""
+# * The comparison of sensors for one measurement.
+#         """, style={'color': 'inherit'})
 
     def process_row(row):
         color = ["red", "blue", "black", "green", "violet", "purple", "yellow"]
@@ -292,8 +292,16 @@ def probes_comparison():
     df_wide = df.pivot_table(index=['day', 'tree', 'measurement', 'type'],
                             columns='source',
                             values=['LDD']).reset_index()
-    subdf = df_wide[df_wide.tree==s.tree.value].set_index(['day', 'tree', 'measurement', 'type']).sort_index()
-    solara.display(subdf.style.background_gradient())
+    
+    with solara.Card(title=f"LDD for {s.tree.value} {s.day.value} {s.method.value}"):
+        subdf = df_wide[(df_wide.tree==s.tree.value) & (df_wide.day==s.day.value)  & (df_wide.type==s.method.value)]
+        subdf = subdf.set_index(['day', 'tree', 'measurement', 'type']).reorder_levels([1, 0, 3, 2]).sort_index()
+        solara.display(subdf.style.background_gradient())
+
+    with solara.Card(title=f"LDD for tree {s.tree.value} and all datasets"):
+        subdf = df_wide[df_wide.tree==s.tree.value]
+        subdf = subdf.set_index(['day', 'tree', 'measurement', 'type']).reorder_levels([1, 0, 3, 2]).sort_index()
+        solara.display(subdf.style.background_gradient())
 
     solara.Markdown("```\n"+show_load_code(s)+"\n```")
 
