@@ -217,7 +217,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         # # LDD = 2 * ln (  ( y0 - y1 )  / ( - y1  + y2 )  )
         a = peaks.values
         ans = [2 * np.log( np.abs(a[i] - a[i+1]) / np.abs(-a[i+1]+a[i+2]) ) for i in range(len(a)-2)]
-        ans = [i for i in ans if i>0]
+        ans = [i for i in ans if i>0 and not np.isnan(i) and not np.isinf(i)]
         ldd = statistics.median(ans)
         T = 2 * np.nanmean(peaks.index.diff())
         b = ldd / T

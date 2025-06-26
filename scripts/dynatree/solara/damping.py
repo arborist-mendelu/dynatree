@@ -143,8 +143,7 @@ def Page():
                     solara.InputFloat(label="Signal end time",value=manual_signal_end, on_value=draw_images, optional=True)
                     solara.Text("Manuálně nastavený konec nebo None.")
                 with solara.Card(title="Plot data"):
-                    solara.Button("Signal", on_click=lambda: create_overlay_signal('signal'))
-                    # solara.Button("FFT", on_click=lambda :create_overlay_signal('fft'))
+                    solara.Button("Signal", on_click=lambda: create_overlay_signal('signal'))                    
             try:
                 damping_graphs()
             except:
@@ -192,73 +191,8 @@ def Page():
                             tree_action=resetuj,
                             )
 
-            def process_row(row):
-                color = ["red", "blue", "black", "green", "violet", "purple", "yellow"]
-                data = {}
-                fig = go.Figure()
-                m = DynatreeMeasurement(day=row['date'],
-                                        tree=row['tree'],
-                                        measurement=row['measurement'],
-                                        measurement_type=row['type'])
-                for i,source in enumerate(["Pt3", "Pt4", "Elasto(90)", "blueMaj", "yellowMaj"]):
-                    try:
-                        s = DynatreeDampedSignal(measurement=m, signal_source=source,  # dt=0.0002,
-                                                 # damped_start_time=54
-                                                 )
-                        ans = s.ldd_from_two_amplitudes(max_n=None)
-                        data[*row.values(), source] = [ans[i] for i in ["LDD", "R", "n", "peaks", "LDD_ans"]]
-                        scaling = np.max(np.abs(s.damped_signal))
-                        fig.add_trace(go.Scatter(
-                            x=s.damped_time,
-                            y=s.damped_signal / scaling,
-                            mode='lines',
-                            name=source,
-                            line=dict(width=1.5, color=color[i]),
-                            hovertemplate=f"{source}: %{{y:.2f}}<extra></extra>", 
-                            legendgroup=source, 
-                            showlegend=True
-                        ))
-                        fig.add_trace(go.Scatter(
-                            x=ans['peaks'].index,
-                            y=ans['peaks'] / scaling,
-                            mode='markers',
-                            marker=dict(size=8, color=color[i]),  # velikost a barva markerů
-                            legendgroup=source,
-                            showlegend=False  # skryje z legendy
-                        ))
-                        # print(ans['peaks'])
-                    except Exception as e:
-                        print(f"Error processing {row['date']} {row['tree']} {row['measurement']} {source}: {e}")
-                        data[*row.values(), source] = [None] * 5
-                df = pd.DataFrame.from_dict(data, orient='index')
-                df = df.reset_index()
-                df.columns = ['experiment', 'LDD', 'R', 'n', 'peaks', 'LDD_ans']
-                return {'data':df, 'figure':fig}
-
-            def refactor_df(ans):
-                data = ans.experiment.apply(pd.Series)
-                data = data.rename(columns={0: "day", 1: "tree", 2: "measurement", 3: "type", 4: "source"})
-                # Now we can concatenate the data with the rest of the columns
-                data = pd.concat([data, ans.drop(columns=['experiment'])], axis=1)
-                return data
-
-            ans = process_row({'date': s.day.value, 'tree': s.tree.value, 'measurement': s.measurement.value, 'type': s.method.value})
-            df = refactor_df(ans['data'])
-            solara.display(df)
-            solara.FigurePlotly(ans['figure'])
-            df = df[["source","LDD_ans"]]
-            df_exploded = (
-                df.explode('LDD_ans', ignore_index=True)
-                .rename(columns={"LDD_ans": "LDD"})
-                .replace([np.inf, -np.inf], np.nan)
-                .dropna()
-                )
-
-            fig = px.box(df_exploded, x='source', y='LDD', points='all', title='Boxplot according to source')
-            solara.FigurePlotly(fig)
-            solara.Markdown("```\n"+show_load_code(s)+"\n```")
-
-
+            probes_comparison()
+    
         with solara.lab.Tab("Remarks"):
             remarks()
         # with solara.lab.Tab("From FFT (images)"):
@@ -283,95 +217,197 @@ def Page():
         # # except:
         # #     solara.Error("Some problem appeared")
 
-current = {'from_amplitudes': None, 'from_fft': None}
-gradient_axis = solara.reactive("Columns")
-gradient_axes = ["Rows", "Columns", "Table"]
-@solara.component
-def peak_width_table():
-    df = pd.read_csv(config.file['outputs/peak_width'])
-    df = df.pivot(index=df.columns[:4], columns="probe", values="width").drop(["a04_y", "a04_z"], axis=1)
-    trees = df.index.get_level_values('tree').drop_duplicates()
 
+def probes_comparison():
+    with solara.Info():
+        solara.Markdown("""
+* The comparison of sensors for one meaasurement.
+        """, style={'color': 'inherit'})
 
-    if gradient_axis.value == "Rows":
-        axis = 1
-    elif gradient_axis.value == "Columns":
-        axis = 0
-    else:
-        axis = None
-    for tree in trees:
-        _ = (
-            df[df.index.get_level_values('tree') == tree]
-            .style.format(precision=3).background_gradient(axis=axis)
-            .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
-            .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+    def process_row(row):
+        color = ["red", "blue", "black", "green", "violet", "purple", "yellow"]
+        data = {}
+        fig = go.Figure()
+        m = DynatreeMeasurement(day=row['date'],
+                                tree=row['tree'],
+                                measurement=row['measurement'],
+                                measurement_type=row['type'])
+        for i,source in enumerate(["Pt3", "Pt4", "Elasto(90)", "blueMaj", "yellowMaj"]):
+            try:
+                s = DynatreeDampedSignal(measurement=m, signal_source=source,  # dt=0.0002,
+                                            # damped_start_time=54
+                                            )
+                ans = s.ldd_from_two_amplitudes(max_n=None)
+                data[*row.values(), source] = [ans[i] for i in ["LDD", "R", "n", "peaks", "LDD_ans"]]
+                scaling = np.max(np.abs(s.damped_signal))
+                fig.add_trace(go.Scatter(
+                    x=s.damped_time,
+                    y=s.damped_signal / scaling,
+                    mode='lines',
+                    name=source,
+                    line=dict(width=1.5, color=color[i]),
+                    hovertemplate=f"{source}: %{{y:.2f}}<extra></extra>", 
+                    legendgroup=source, 
+                    showlegend=True
+                ))
+                fig.add_trace(go.Scatter(
+                    x=ans['peaks'].index,
+                    y=ans['peaks'] / scaling,
+                    mode='markers',
+                    marker=dict(size=8, color=color[i]),  # velikost a barva markerů
+                    legendgroup=source,
+                    showlegend=False  # skryje z legendy
+                ))
+                # print(ans['peaks'])
+            except Exception as e:
+                print(f"Error processing {row['date']} {row['tree']} {row['measurement']} {source}: {e}")
+                data[*row.values(), source] = [None] * 5
+        df = pd.DataFrame.from_dict(data, orient='index')
+        df = df.reset_index()
+        df.columns = ['experiment', 'LDD', 'R', 'n', 'peaks', 'LDD_ans']
+        return {'data':df, 'figure':fig}
+
+    def refactor_df(ans):
+        data = ans.experiment.apply(pd.Series)
+        data = data.rename(columns={0: "day", 1: "tree", 2: "measurement", 3: "type", 4: "source"})
+        # Now we can concatenate the data with the rest of the columns
+        data = pd.concat([data, ans.drop(columns=['experiment'])], axis=1)
+        return data
+
+    ans = process_row({'date': s.day.value, 'tree': s.tree.value, 'measurement': s.measurement.value, 'type': s.method.value})
+    df = refactor_df(ans['data'])
+    solara.display(df)
+    with solara.Row():
+        solara.FigurePlotly(ans['figure'])
+    df = df[["source","LDD_ans"]]
+    df_exploded = (
+        df.explode('LDD_ans', ignore_index=True)
+        .rename(columns={"LDD_ans": "LDD"})
         )
-        with solara.Card(title=f"Tree {tree}"):
-            solara.display(_)
 
-@solara.component
-def peak_width_graph():
-    global current
+    fig = px.box(df_exploded, x='source', y='LDD', points='all', title='Boxplot according to source')
+    solara.FigurePlotly(fig)
+
+    df = pd.read_csv(config.file['outputs/damping_comparison'], index_col=None)
+    df_wide = df.pivot_table(index=['day', 'tree', 'measurement', 'type'],
+                            columns='source',
+                            values=['LDD']).reset_index()
+    subdf = df_wide[df_wide.tree==s.tree.value].set_index(['day', 'tree', 'measurement', 'type']).sort_index()
+    solara.display(subdf.style.background_gradient())
+
+    solara.Markdown("```\n"+show_load_code(s)+"\n```")
+
+    html_and_java_for_images()
     with solara.Sidebar():
-        with solara.Column():
-            solara.Button("Plot/Replot", on_click=do_find_peaks, color='primary')
-    coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value]
-    if current['from_fft'] != coords:
-        current['from_fft'] = coords
-        do_find_peaks()
-    solara.Markdown(f"## {' '.join(coords)}")
-    solara.Info(
-        f"Relative peak width (peak width at given height divided by the peak position). Click Plot/Replot for another measurement. It takes few seconds to draw all sensors.")
-    solara.ProgressLinear(find_peak_widths.pending)
+        with solara.Card():        
+            solara.Markdown("### Links")
+            for i in ["Pt3", "Pt4", "Elasto(90)", "blueMaj", "yellowMaj"]:
+                solara.HTML(unsafe_innerHTML=f"""
+                    Data {i}:
+    <a
+    href="https://euler.mendelu.cz/fast/index.html?method={s.day.value}_{s.method.value}&tree={s.tree.value}&measurement={s.measurement.value}&sensor={i}&start=0&end=1000000000&format=html",
+    target="_"
+    class="image-preview" 
+    data-src='https://euler.mendelu.cz/draw_graph/?method={s.day.value}_{s.method.value}&tree={s.tree.value}&measurement={s.measurement.value}&probe={i}&format=png'        
+    >Full graph</a>
+    or 
+    <a
+    href="https://euler.mendelu.cz/draw_graph_damping/?method={s.day.value}_{s.method.value}&tree={s.tree.value}&measurement={s.measurement.value}&probe={i}&format=png&damping_method=defmulti",
+    target="_"
+    class="image-preview" 
+    data-src='https://euler.mendelu.cz/draw_graph_damping/?method={s.day.value}_{s.method.value}&tree={s.tree.value}&measurement={s.measurement.value}&probe={i}&format=png&damping_method=defmulti'        
+    >Damped part</a>
+    """)
 
-    if not find_peak_widths.finished:
-        return
-    with solara.Row(style={'flex-wrap': 'wrap'}):
-        for target_probe, ans in zip(data_sources, find_peak_widths.value):
-            coordsf = [s.method.value, s.day.value, s.tree.value, s.measurement.value, target_probe]
-            if ans is None:
-                continue
-            with solara.Card(title=f"{target_probe}: {round(ans['width'], 4)}", style={'min-width': '150px'}):
-                if coordsf in df_failed_FFT_experiments.values.tolist():
-                    solara.Error("This measurement has been marked as failed.")
-                try:
-                    solara.FigureMatplotlib(ans['fig'])
-                except:
-                    pass
-
-                def create_button(label, target_probe, output):
-                    # Funkce vytvoří tlačítko a uzavře aktuální hodnotu target_probe
-                    return solara.Button(label=label, on_click=lambda x=None: open_dialog(target_probe, output=output))
-
-                # Vytvoření tlačítek
-                create_button("Show experiment", target_probe, output='experiment')
-                create_button("Show signal for FFT", target_probe, output='signal')
-                create_button("Show FFT spectrum", target_probe, output='fft')
-
-                # solara.Button(label="Show signal", on_click=lambda x=None: open_dialog(target_probe, output='signal'))
-                # solara.Button(label="Show FFT spectrum",
-                #               on_click=lambda x=None: open_dialog(target_probe, output='fft'))
-    plt.close('all')
-    create_overlay()
+# current = {'from_amplitudes': None, 'from_fft': None}
+# gradient_axis = solara.reactive("Columns")
+# gradient_axes = ["Rows", "Columns", "Table"]
+# @solara.component
+# def peak_width_table():
+#     df = pd.read_csv(config.file['outputs/peak_width'])
+#     df = df.pivot(index=df.columns[:4], columns="probe", values="width").drop(["a04_y", "a04_z"], axis=1)
+#     trees = df.index.get_level_values('tree').drop_duplicates()
 
 
-@solara.component
-def create_overlay():
-    with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width='90%',
-                            title=""):
-        if open_dialog.finished:
-            ans = open_dialog.value
-            solara.Markdown(f"## {' '.join(ans['coords'])}")
-            ans['data'].name = "value"
-            fig = ans['data'].plot(backend='plotly')
-            if ans['output'] == 'fft':
-                fig.update_layout(
-                    yaxis=dict(type="log"),
-                    xaxis=dict(range=[0, 10]),
-                    height=500,
-                    width=700,
-                )
-            solara.FigurePlotly(fig)
+#     if gradient_axis.value == "Rows":
+#         axis = 1
+#     elif gradient_axis.value == "Columns":
+#         axis = 0
+#     else:
+#         axis = None
+#     for tree in trees:
+#         _ = (
+#             df[df.index.get_level_values('tree') == tree]
+#             .style.format(precision=3).background_gradient(axis=axis)
+#             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+#             .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+#         )
+#         with solara.Card(title=f"Tree {tree}"):
+#             solara.display(_)
+
+# @solara.component
+# def peak_width_graph():
+#     global current
+#     with solara.Sidebar():
+#         with solara.Column():
+#             solara.Button("Plot/Replot", on_click=do_find_peaks, color='primary')
+#     coords = [s.tree.value, s.day.value, s.method.value, s.measurement.value]
+#     if current['from_fft'] != coords:
+#         current['from_fft'] = coords
+#         do_find_peaks()
+#     solara.Markdown(f"## {' '.join(coords)}")
+#     solara.Info(
+#         f"Relative peak width (peak width at given height divided by the peak position). Click Plot/Replot for another measurement. It takes few seconds to draw all sensors.")
+#     solara.ProgressLinear(find_peak_widths.pending)
+
+#     if not find_peak_widths.finished:
+#         return
+#     with solara.Row(style={'flex-wrap': 'wrap'}):
+#         for target_probe, ans in zip(data_sources, find_peak_widths.value):
+#             coordsf = [s.method.value, s.day.value, s.tree.value, s.measurement.value, target_probe]
+#             if ans is None:
+#                 continue
+#             with solara.Card(title=f"{target_probe}: {round(ans['width'], 4)}", style={'min-width': '150px'}):
+#                 if coordsf in df_failed_FFT_experiments.values.tolist():
+#                     solara.Error("This measurement has been marked as failed.")
+#                 try:
+#                     solara.FigureMatplotlib(ans['fig'])
+#                 except:
+#                     pass
+
+#                 def create_button(label, target_probe, output):
+#                     # Funkce vytvoří tlačítko a uzavře aktuální hodnotu target_probe
+#                     return solara.Button(label=label, on_click=lambda x=None: open_dialog(target_probe, output=output))
+
+#                 # Vytvoření tlačítek
+#                 create_button("Show experiment", target_probe, output='experiment')
+#                 create_button("Show signal for FFT", target_probe, output='signal')
+#                 create_button("Show FFT spectrum", target_probe, output='fft')
+
+#                 # solara.Button(label="Show signal", on_click=lambda x=None: open_dialog(target_probe, output='signal'))
+#                 # solara.Button(label="Show FFT spectrum",
+#                 #               on_click=lambda x=None: open_dialog(target_probe, output='fft'))
+#     plt.close('all')
+#     create_overlay()
+
+
+# @solara.component
+# def create_overlay():
+#     with ConfirmationDialog(show_dialog.value, on_ok=close_dialog, on_cancel=close_dialog, max_width='90%',
+#                             title=""):
+#         if open_dialog.finished:
+#             ans = open_dialog.value
+#             solara.Markdown(f"## {' '.join(ans['coords'])}")
+#             ans['data'].name = "value"
+#             fig = ans['data'].plot(backend='plotly')
+#             if ans['output'] == 'fft':
+#                 fig.update_layout(
+#                     yaxis=dict(type="log"),
+#                     xaxis=dict(range=[0, 10]),
+#                     height=500,
+#                     width=700,
+#                 )
+#             solara.FigurePlotly(fig)
 
 
 show_dialog = solara.reactive(False)
@@ -614,6 +650,101 @@ def draw_images(temp=None):
             }
 
 
+def html_and_java_for_images():
+    solara.Style(".level1 {border-style: solid !important; border-color:gray !important; border-width:1px !important;}")
+    solara.HTML(tag="div", unsafe_innerHTML="""
+    <div id="preview-container" class="preview-container">
+    <img id="preview-image" src="" alt="Náhled">
+    <div id="preview-comment">AAAA</div>
+    </div>
+    <button id="startBtn" class="v-btn v-btn--contained theme--light v-size--default" style="display:none">Začni sledovat pohyb myši</button>
+    """)
+    solara.HTML(tag="script", unsafe_innerHTML="""
+function initPreview() {
+const previewContainer = document.getElementById("preview-container");
+const previewImage = document.getElementById("preview-image");
+const previewComment = document.getElementById("preview-comment");    
+const links = document.querySelectorAll(".image-preview");
+links.forEach(link => {
+    if (!link.dataset.listenerAdded) { // Zabrání opakovanému přidání posluchačů
+        link.addEventListener("mouseenter", function () {
+            const imageUrl = this.getAttribute("data-src");
+            previewImage.src = imageUrl;
+            previewContainer.style.display = "block";
+            // Zpracování textového náhledu
+            const textSrc = this.getAttribute("data-text-src");
+            if (textSrc) {
+                fetch(textSrc)
+                    .then(response => {
+                        console.log("Status odpovědi:", response.status);
+                        console.log("Content-Type:", response.headers.get("Content-Type"));
+                        if (!response.ok) throw new Error("Chyba při načítání JSON");
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log("Načtená data:", data);
+                        
+                        if (Array.isArray(data.comments)) {
+                            // Spojení všech textů do jednoho stringu
+                            // const commentText = data.comments.map(comment => comment.text).join(" | ");
+                            // previewComment.textContent = commentText || "Žádné komentáře";
+                            previewComment.innerHTML = createTable(data.comments);
+                        } else {
+                            previewComment.textContent = "Neplatná data";
+                        }
+                        //previewComment.textContent = data.comments || "Žádný komentář";
+                    })
+                    .catch(error => {
+                        console.error("Nepodařilo se načíst komentář:", error);
+                        previewComment.textContent = "Chyba při načítání komentáře";
+                    });
+            } else {
+                previewComment.textContent = ""; // Vyčistit obsah, pokud není `data-text-src`
+            }
+        });
+        link.addEventListener("mouseleave", function () {
+            previewContainer.style.display = "none";
+        });
+
+        link.style.color = "green";
+        link.dataset.listenerAdded = "true"; // Označíme, že posluchač už byl přidán
+        console.log("Listener přidán k odkazu");
+    }
+});
+}
+
+// Spuštění kódu po kliknutí na tlačítko
+document.getElementById('startBtn').addEventListener('click', initPreview);
+
+// Automatické sledování změn v DOM pro nové prvky
+const observer = new MutationObserver(() => {
+initPreview();
+});
+
+// Sledování změn v celém dokumentu (můžeš omezit na konkrétní kontejner)
+observer.observe(document.body, { childList: true, subtree: true });
+
+// První inicializace sekundu po načtení stránky
+window.addEventListener('load', function() {
+setTimeout(initPreview, 1000);
+});
+
+// Funkce pro generování tabulky z JSON dat
+function createTable(comments) {
+let table = `<ul>`;
+
+comments.forEach(comment => {
+    table += `<li>
+        <b>${comment.text}</b>
+        <b>(Hodnocení ${comment.rating})</b>
+    </li>`;
+});
+
+table += `</ul>`;
+return table;
+}
+    """)
+
 @solara.component
 def show_data_one_tree():
     list_of_methods = ['maxima', 'hilbert', 'wavelet']
@@ -767,101 +898,7 @@ def show_data_one_tree():
             .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
         )
 
-        solara.Style(".level1 {border-style: solid !important; border-color:gray !important; border-width:1px !important;}")
-        solara.HTML(tag="div", unsafe_innerHTML="""
-        <div id="preview-container" class="preview-container">
-        <img id="preview-image" src="" alt="Náhled">
-        <div id="preview-comment">AAAA</div>
-        </div>
-        <button id="startBtn" class="v-btn v-btn--contained theme--light v-size--default" style="display:none">Začni sledovat pohyb myši</button>
-        """)
-        solara.HTML(tag="script", unsafe_innerHTML="""
-function initPreview() {
-    const previewContainer = document.getElementById("preview-container");
-    const previewImage = document.getElementById("preview-image");
-    const previewComment = document.getElementById("preview-comment");    
-    const links = document.querySelectorAll(".image-preview");
-    links.forEach(link => {
-        if (!link.dataset.listenerAdded) { // Zabrání opakovanému přidání posluchačů
-            link.addEventListener("mouseenter", function () {
-                const imageUrl = this.getAttribute("data-src");
-                previewImage.src = imageUrl;
-                previewContainer.style.display = "block";
-                // Zpracování textového náhledu
-                const textSrc = this.getAttribute("data-text-src");
-                if (textSrc) {
-                    fetch(textSrc)
-                        .then(response => {
-                            console.log("Status odpovědi:", response.status);
-                            console.log("Content-Type:", response.headers.get("Content-Type"));
-                            if (!response.ok) throw new Error("Chyba při načítání JSON");
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log("Načtená data:", data);
-                            
-                            if (Array.isArray(data.comments)) {
-                                // Spojení všech textů do jednoho stringu
-                                // const commentText = data.comments.map(comment => comment.text).join(" | ");
-                                // previewComment.textContent = commentText || "Žádné komentáře";
-                                previewComment.innerHTML = createTable(data.comments);
-                            } else {
-                                previewComment.textContent = "Neplatná data";
-                            }
-                            //previewComment.textContent = data.comments || "Žádný komentář";
-                        })
-                        .catch(error => {
-                            console.error("Nepodařilo se načíst komentář:", error);
-                            previewComment.textContent = "Chyba při načítání komentáře";
-                        });
-                } else {
-                    previewComment.textContent = ""; // Vyčistit obsah, pokud není `data-text-src`
-                }
-            });
-            link.addEventListener("mouseleave", function () {
-                previewContainer.style.display = "none";
-            });
-
-            link.style.color = "green";
-            link.dataset.listenerAdded = "true"; // Označíme, že posluchač už byl přidán
-            console.log("Listener přidán k odkazu");
-        }
-    });
-}
-
-// Spuštění kódu po kliknutí na tlačítko
-document.getElementById('startBtn').addEventListener('click', initPreview);
-
-// Automatické sledování změn v DOM pro nové prvky
-const observer = new MutationObserver(() => {
-    initPreview();
-});
-
-// Sledování změn v celém dokumentu (můžeš omezit na konkrétní kontejner)
-observer.observe(document.body, { childList: true, subtree: true });
-
-// První inicializace sekundu po načtení stránky
-window.addEventListener('load', function() {
-    setTimeout(initPreview, 1000);
-});
-
-// Funkce pro generování tabulky z JSON dat
-function createTable(comments) {
-    let table = `<ul>`;
-
-    comments.forEach(comment => {
-        table += `<li>
-            <b>${comment.text}</b>
-            <b>(Hodnocení ${comment.rating})</b>
-        </li>`;
-    });
-
-    table += `</ul>`;
-    return table;
-}
-        """)
-
-
+        html_and_java_for_images()
 
         display(_)
 
