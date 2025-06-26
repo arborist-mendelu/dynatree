@@ -238,7 +238,7 @@ def probes_comparison():
                                             # damped_start_time=54
                                             )
                 ans = s.ldd_from_two_amplitudes(max_n=None)
-                data[*row.values(), source] = [ans[i] for i in ["LDD", "R", "n", "peaks", "LDD_ans"]]
+                data[(*row.values(), source)] = [ans[i] for i in ["LDD", "R", "n", "peaks", "LDD_ans"]]
                 scaling = np.max(np.abs(s.damped_signal))
                 fig.add_trace(go.Scatter(
                     x=s.damped_time,
@@ -261,7 +261,7 @@ def probes_comparison():
                 # print(ans['peaks'])
             except Exception as e:
                 print(f"Error processing {row['date']} {row['tree']} {row['measurement']} {source}: {e}")
-                data[*row.values(), source] = [None] * 5
+                data[(*row.values(), source)] = [None] * 5
         df = pd.DataFrame.from_dict(data, orient='index')
         df = df.reset_index()
         df.columns = ['experiment', 'LDD', 'R', 'n', 'peaks', 'LDD_ans']
