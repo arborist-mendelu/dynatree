@@ -1,8 +1,8 @@
 
 # %%
 import os
-os.environ["PREFIX_DYNATREE"] = "/home/marik/dynatree/scripts/"
-os.environ["DYNATREE_DATAPATH"] = "/home/marik/dynatree/data/"
+#os.environ["PREFIX_DYNATREE"] = "/home/marik/dynatree/scripts/"
+#os.environ["DYNATREE_DATAPATH"] = "/home/marik/dynatree/data/"
 import sys
 import numpy as np
 import pandas as pd
@@ -15,7 +15,7 @@ import config
 # %%
 
 df = get_all_measurements()
-df
+#df = df.iloc[:10]
 
 # %%
 
@@ -101,3 +101,4 @@ data_mean
 # %%
 data_mean.to_csv(config.file['outputs/damping_comparison_stats'], index=False)
 # %%
+
