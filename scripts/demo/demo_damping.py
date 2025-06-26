@@ -2,10 +2,10 @@
 import os
 os.environ["PREFIX_DYNATREE"] = "/home/marik/dynatree/scripts/"
 os.environ["DYNATREE_DATAPATH"] = "/home/marik/dynatree/data/"
-# %%
 import sys
+import pandas as pd
 sys.path.append("..")
-# %%
+
 from dynatree.dynatree import DynatreeMeasurement
 from dynatree.damping import DynatreeDampedSignal
 import matplotlib.pyplot as plt
@@ -15,8 +15,6 @@ import logging
 
 dynatree.logger.setLevel(logging.INFO)
 
-m = DynatreeMeasurement(day="2021-03-22", 
-    tree="BK04", measurement="M02", measurement_type="normal")
 #
 # m.data_acc5000.plot()
 # plt.show()
@@ -63,26 +61,32 @@ m = DynatreeMeasurement(day="2021-03-22",
 # plt.ylabel("Amplitude")
 # plt.title("Wavelet cmor1-1.5")
 # plt.show()
-# %%
-
 
 # %%
-s = DynatreeDampedSignal(measurement=m, signal_source="a02_y", #dt=0.0002,
-                         # damped_start_time=54
-                         )
-plt.plot(s.damped_time, s.damped_signal)
+m = DynatreeMeasurement(day="2021-03-22", 
+    tree="BK01", measurement="M03", measurement_type="normal")
+# s = DynatreeDampedSignal(measurement=m, signal_source="a03_y", dt=0.0002,
+#                          # damped_start_time=54
+#                          )
+fig, ax = plt.subplots()
+for source in ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj"]: 
+    s = DynatreeDampedSignal(measurement=m, signal_source=source, #dt=0.0002,
+                            # damped_start_time=54
+                            )
+    scaling = np.max(np.abs(s.damped_signal))    
+    ax.plot(s.damped_time, s.damped_signal/scaling, label=source)
+plt.legend()
 plt.show()
 # %%
-s = DynatreeDampedSignal(measurement=m, signal_source=("Pt3","Y0"), #dt=0.0002,
-                         # damped_start_time=54
-                         )
-plt.plot(s.damped_time, s.damped_signal)
-plt.show()
-# %%
-s.damped_time
-
-# %%
+data = {}
+for source in ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj"]: 
+    s = DynatreeDampedSignal(measurement=m, signal_source=source, #dt=0.0002,
+                            # damped_start_time=54
+                            )
+    data[source] = [s.ldd_from_two_amplitudes()[i] for i in ["LDD","R","n"]]
 data
+# %%
+dynatree.get_all_damped_signals
 # %%
 data, k, q, *a  = s.hilbert_envelope.values()
 data,k,q

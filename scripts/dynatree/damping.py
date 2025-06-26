@@ -5,8 +5,6 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 import pywt
 import pandas as pd
-from scipy.fft import fft, fftfreq
-import plotly.graph_objects as go
 from dynatree.dynatree import timeit
 import time
 from dynatree.dynatree import logger
@@ -196,7 +194,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         # logger.info(f"answer: {answer}")
         return answer
 
-    def ldd_from_two_amplitudes(self):
+    def ldd_from_two_amplitudes(self, max_n=None):
         """
         Method with working name defmulti.
         """
@@ -204,6 +202,8 @@ class DynatreeDampedSignal(DynatreeSignal):
         peaks = self.fit_maxima()['peaks']
         # logger.setLevel(logging.INFO)
         logger.info(f"peaks: {peaks}")
+        if max_n is not None:
+            peaks = peaks.iloc[:max_n+2]
         # # Version 1: use four consecutive amplitudes
         # # LDD = ln (  ( |y0| \pm |y1| )  / ( |y2| \pm |y3| )  )
         # try:
@@ -217,7 +217,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         # # LDD = 2 * ln (  ( y0 - y1 )  / ( - y1  + y2 )  )
         a = peaks.values
         ans = [2 * np.log( np.abs(a[i] - a[i+1]) / np.abs(-a[i+1]+a[i+2]) ) for i in range(len(a)-2)]
-        ans = [i for i in ans if i>0]
+        ans = [i for i in ans if i>0 and not np.isnan(i) and not np.isinf(i)]
         ldd = statistics.median(ans)
         T = 2 * np.nanmean(peaks.index.diff())
         b = ldd / T
@@ -230,7 +230,8 @@ class DynatreeDampedSignal(DynatreeSignal):
         numerator = sum([(xi-xp)*(yi-yp) for xi,yi in zip(x,y)])
         denominator = np.sqrt( (sum([(xi-xp)**2 for xi in x])) * (sum([(yi-yp)**2 for yi in y])) )
         R = numerator / denominator
-        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans), 'peaks': peaks, 'q': q, 'R': R, 'n': len(ans)}
+        answer = {'b':b, 'LDD':ldd, 'T':T, 'std_err': np.std(ans), 'peaks': peaks, 'q': q, 
+                  'R': R, 'n': len(ans), 'LDD_ans':ans}
         logger.info(f"answer: {answer}")
         # except:
         #     answer = {'b':None, 'LDD':None, 'T':None}
