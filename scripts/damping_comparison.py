@@ -64,7 +64,7 @@ def process_row(row, fig=True):
 #data
 
 list_m = [i for _,i in df.iterrows() if i['measurement']!="M01"]
-ans = map(process_row, list_m)
+ans = progress_map(process_row, list_m)
 
 # %%
 ans_data = pd.concat([i['data'] for i in ans], ignore_index=True)
