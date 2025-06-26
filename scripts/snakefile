@@ -28,7 +28,10 @@ rule all_non_acc:
         "../outputs/penetrologger.csv",
         "../outputs/Popis_Babice_VSE.xlsx",
         "../outputs/velocity_babice_oprava.csv",
-        "../outputs/dynatree_data_merge.csv"
+        "../outputs/dynatree_data_merge.csv",
+        "../outputs/damping_comparison.csv",
+        "../outputs/damping_comparison_stats.csv"
+
 rule all_acc:
     """
     Create all outputs that are related to the knock detection by accelerometer.
@@ -498,4 +501,17 @@ rule merge_data:
         """
         jupyter nbconvert --to html --execute merge_dynatree_data.ipynb --no-input
         rm merge_dynatree_data.html
+        """
+rule compare_damping:
+    """
+    Find LDD for all sensors except ACC
+    """
+    output:
+        "../outputs/damping_comparison.csv",
+        "../outputs/damping_comparison_stats.csv"        
+    input:
+        "damping_comparison.py"
+    shell:
+        """
+        python damping_comparison.py
         """
