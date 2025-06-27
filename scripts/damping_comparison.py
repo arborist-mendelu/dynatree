@@ -1,24 +1,33 @@
-
 # %%
 import os
 #os.environ["PREFIX_DYNATREE"] = "/home/marik/dynatree/scripts/"
 #os.environ["DYNATREE_DATAPATH"] = "/home/marik/dynatree/data/"
 import sys
 import numpy as np
+import logging
 import pandas as pd
 from dynatree.find_measurements import get_all_measurements, available_measurements
-from dynatree.dynatree import DynatreeMeasurement
+from dynatree.dynatree import DynatreeMeasurement, get_zero_rating, logger
 from dynatree.damping import DynatreeDampedSignal
 from parallelbar import progress_map
 import plotly.graph_objects as go
 import config
+logger.setLevel(logging.WARNING)
 # %%
 
 df = get_all_measurements()
+df = df[df.measurement!="M01"]
+df_failed_FFT = pd.read_csv(config.file["FFT_failed"] )
+df_failed_stars_elasto = get_zero_rating(key = 'max') # mark as failed if all people marked is as failed.
+df_failed_stars_elasto.loc[:,"probe"] = "Elasto(90)"
+df_failed_stars_elasto = df_failed_stars_elasto[df_failed_FFT.columns]
+df_failed = pd.concat([df_failed_stars_elasto, df_failed_FFT], axis = 0).reset_index(drop = True)
 #df = df.iloc[:10]
 
 # %%
-
+df_failed_rows = list(df_failed.itertuples(index=False, name=None))
+df_failed_rows
+# %%
 def process_row(row, fig=True):
     data = {}
     # if fig:
@@ -30,44 +39,46 @@ def process_row(row, fig=True):
                             tree=row['tree'],
                             measurement=row['measurement'],
                             measurement_type=row['type'])
-    for source in ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj"]: 
+    for source in ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj"]:
+        test = (row['type'],row['date'],row['tree'], row['measurement'], source,)
+        if test in df_failed_rows:
+            data[*row, source] = [None] *3
+            logger.warning(f"Measurement {m}, probe {source} marked as failed, skipping")
+            continue
         try:
             s = DynatreeDampedSignal(measurement=m, signal_source=source, #dt=0.0002,
                                     # damped_start_time=54
                                     )
             data[*row, source] = [s.ldd_from_two_amplitudes(max_n=5)[i] for i in ["LDD","R","n"]]
-            # if fig:
-            #     scaling = np.max(np.abs(s.damped_signal))    
-            #     fig.add_trace(go.Scatter(
-            #         x=s.damped_time, 
-            #         y=s.damped_signal/scaling, 
-            #         mode='lines', 
-            #         name=source,
-            #         line=dict(width=1.5),
-            #         hovertemplate=f"{source}: %{{y:.2f}}<extra></extra>"
-            #     ))
         except Exception as e:
-            print(f"Error processing {row['date']} {row['tree']} {row['measurement']} {source}: {e}")            
-            data[*row, source] = [None, None, None]
+            logger.error(f"Error processing {row['date']} {row['tree']} {row['measurement']} {source}: {e}")
+            data[*row, source] = [None] * 3
     df = pd.DataFrame.from_dict(data, orient='index')
     df = df.reset_index()
     df.columns = ['experiment', 'LDD', 'R', 'n']
 
-    return {'data':df, 
-    # 'figure': fig
+    # Ensure data types even if all data are NaN
+    required_columns = {
+        'experiment': 'object',
+        'LDD': 'float64',
+        'R': 'float64',
+        'n': 'float64'
     }
+    df = df.astype(required_columns)
 
+    return {'data':df}
 
-
-#data = [process_row(row) for i,row in df.iloc.iterrows()]
-#data = pd.concat(data, ignore_index=True)
-#data
-
-list_m = [i for _,i in df.iterrows() if i['measurement']!="M01"]
+list_m = [i for _,i in df.iterrows()]
 ans = progress_map(process_row, list_m)
+# %%
+ans
 
 # %%
-ans_data = pd.concat([i['data'] for i in ans], ignore_index=True)
+
+process_row(list_m[0])['data'].dtypes
+
+# %%
+ans_data = pd.concat([i['data'] for i in ans if len(i['data'])>0], ignore_index=True)
 ans_data
 
 # %%
@@ -102,3 +113,9 @@ data_mean
 data_mean.to_csv(config.file['outputs/damping_comparison_stats'], index=False)
 # %%
 
+from dynatree.dynatree import DynatreeMeasurement
+from dynatree.damping import DynatreeDampedSignal
+m = DynatreeMeasurement(day="2022-08-16", tree="BK08", measurement="M02")
+sig = DynatreeDampedSignal(m, signal_source="Elasto(90)")
+
+# %%
