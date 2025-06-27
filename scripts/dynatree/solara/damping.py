@@ -2,7 +2,7 @@ import solara
 from solara.lab import task
 import dynatree.solara.select_source as s
 from dynatree.dynatree import DynatreeMeasurement
-from dynatree.dynatree import timeit
+from dynatree.dynatree import timeit, get_zero_rating
 from dynatree.damping import DynatreeDampedSignal
 from dynatree.peak_width import find_peak_width
 from dynatree.FFT import df_failed_FFT_experiments, DynatreeSignal
@@ -296,12 +296,41 @@ def probes_comparison():
     with solara.Card(title=f"LDD for {s.tree.value} {s.day.value} {s.method.value}"):
         subdf = df_wide[(df_wide.tree==s.tree.value) & (df_wide.day==s.day.value)  & (df_wide.type==s.method.value)]
         subdf = subdf.set_index(['day', 'tree', 'measurement', 'type']).reorder_levels([1, 0, 3, 2]).sort_index()
-        solara.display(subdf.style.background_gradient())
+        _ = (
+            subdf
+            .style.format(precision=3).background_gradient(axis=None)
+            .apply( lambda x:add_horizontal_line(x, second_level=False, level0=1), axis = None)
+            .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+            .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+        )
+        solara.display(_)
 
     with solara.Card(title=f"LDD for tree {s.tree.value} and all datasets"):
         subdf = df_wide[df_wide.tree==s.tree.value]
+        subdf.columns = [f"{i[0]}{i[1]}".replace("LDD","") for i in subdf.columns]
+        subdf["PNG previews"] = subdf.apply(lambda row:f"""
+        <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'
+        class="image-preview"
+        data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'
+        data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'
+        >Elasto(90)</a> / """
+        +" / ".join([f"""
+        <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
+        class="image-preview"
+        data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
+        >{s}</a>""" for s in ["Pt3", "Pt4", "blueMaj", "yellowMaj"]])
+                                 , axis=1)
+        subdf["coordinates"] = subdf.apply(lambda row: f"""{row['type']},{row['day']},{row['tree']},{row['measurement']},""", axis=1)
         subdf = subdf.set_index(['day', 'tree', 'measurement', 'type']).reorder_levels([1, 0, 3, 2]).sort_index()
-        solara.display(subdf.style.background_gradient())
+
+        _ = (
+            subdf
+            .style.format(precision=3).background_gradient(axis=None)
+            .apply( lambda x:add_horizontal_line(x, second_level=False, level0=1), axis = None)
+            .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+            .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
+        )
+        solara.display(_)
 
     solara.Markdown("```\n"+show_load_code(s)+"\n```")
 
@@ -836,24 +865,6 @@ def show_data_one_tree():
                 ~((df[f"{i}_R"] > filtr_R_min.value) & (df[f"{i}_R"] < filtr_R_max.value)), [f"{i}_b", f"{i}_LDD"]] = np.nan
         # df[~ ((df["#_of_periods"] > filtr_T_min.value) & (df["#_of_periods"] < filtr_T_max.value)),:] = np.nan
 
-        def get_zero_rating(key="min", tree = None):
-            url = "https://euler.mendelu.cz/gallery/api/all_comments/utlum"
-            response = requests.get(url)
-            data = response.json()
-            df = pd.DataFrame(data)
-            df = df["comments"].apply(pd.Series).drop(["id", "directory", "text"], axis=1)
-            df[["day", "type", "tree", "measurement"]] = df["image"].str.split('_', expand=True)
-            df["measurement"] = df["measurement"].str.replace(".png", "", regex=False)
-            df = df.drop(["image"], axis=1)
-            if key == "min":
-                df = df.groupby(['day', 'type', 'tree', 'measurement']).min()
-            else:
-                df = df.groupby(['day', 'type', 'tree', 'measurement']).max()
-            df = df[df["rating"] <= 2]
-            df = df.reset_index()
-            if tree is not None:
-                df = df[df["tree"] == tree]
-            return df
         if data_selection.value != "all":
             if data_selection.value == "optimistic":
                 key = "max"

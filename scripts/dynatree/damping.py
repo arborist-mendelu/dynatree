@@ -147,7 +147,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         peaks_number = np.argmax(np.abs(analyzed.iloc[peaks])-threshold*maximum < 0)-1
         peaks = peaks[:peaks_number]
         if peaks_number <5:
-            logger.warning(f"Fit maxima {self}. Only {peaks_number} peaks used.")
+            logger.warning(f"Fit maxima {self.measurement} {self.signal_source}. Only {peaks_number} peaks used.")
 
         out = {}
         if self.vertical_finetuning:

@@ -16,6 +16,7 @@ import os
 from functools import wraps, lru_cache, cached_property
 import time
 import config
+import requests
 from pathlib import Path
 
 # 
@@ -825,3 +826,37 @@ def setrid_data(df, columns=None):
     if not isinstance(columns, tuple):
         raise TypeError("columns must be a string or a list of strings")
     return df.sort_values(by=columns, ascending=False)
+
+
+def get_zero_rating(key="min", tree=None):
+    """
+    Selects measurements from https://euler.mendelu.cz/gallery/gallery/utlum with one or two stars.
+    These are assumed to be failed.
+    If key is min, take the worst evaluation into account. If key is max take the best.
+
+    Parameters
+    ----------
+    key - min or max
+    tree - filter for the corresponding tree
+
+    Returns
+    -------
+
+    """
+    url = "https://euler.mendelu.cz/gallery/api/all_comments/utlum"
+    response = requests.get(url)
+    data = response.json()
+    df = pd.DataFrame(data)
+    df = df["comments"].apply(pd.Series).drop(["id", "directory", "text"], axis=1)
+    df[["day", "type", "tree", "measurement"]] = df["image"].str.split('_', expand=True)
+    df["measurement"] = df["measurement"].str.replace(".png", "", regex=False)
+    df = df.drop(["image"], axis=1)
+    if key == "min":
+        df = df.groupby(['day', 'type', 'tree', 'measurement']).min()
+    else:
+        df = df.groupby(['day', 'type', 'tree', 'measurement']).max()
+    df = df[df["rating"] <= 2]
+    df = df.reset_index()
+    if tree is not None:
+        df = df[df["tree"] == tree]
+    return df
