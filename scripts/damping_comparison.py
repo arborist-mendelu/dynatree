@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 import config
 # %%
 
-df = get_all_measurements()
+df = get_all_measurements(method='all')
 #df = df.iloc[:10]
 
 # %%
