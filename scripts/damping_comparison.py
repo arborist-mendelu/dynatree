@@ -13,9 +13,9 @@ from parallelbar import progress_map
 import plotly.graph_objects as go
 import config
 logger.setLevel(logging.WARNING)
-# %%
 
-df = get_all_measurements()
+# %%
+df = get_all_measurements(method='all').iloc[:,:4]
 df = df[df.measurement!="M01"]
 df_failed_FFT = pd.read_csv(config.file["FFT_failed"] )
 df_failed_stars_elasto = get_zero_rating(key = 'max') # mark as failed if all people marked is as failed.

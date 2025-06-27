@@ -692,7 +692,7 @@ def html_and_java_for_images():
     solara.HTML(tag="div", unsafe_innerHTML="""
     <div id="preview-container" class="preview-container">
     <img id="preview-image" src="" alt="Náhled">
-    <div id="preview-comment">AAAA</div>
+    <div id="preview-comment">Initalizig ...</div>
     </div>
     <button id="startBtn" class="v-btn v-btn--contained theme--light v-size--default" style="display:none">Začni sledovat pohyb myši</button>
     """)
@@ -740,6 +740,7 @@ links.forEach(link => {
             }
         });
         link.addEventListener("mouseleave", function () {
+            previewImage.src = "Working...";
             previewContainer.style.display = "none";
         });
 
