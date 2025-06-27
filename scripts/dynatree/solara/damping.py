@@ -2,7 +2,7 @@ import solara
 from solara.lab import task
 import dynatree.solara.select_source as s
 from dynatree.dynatree import DynatreeMeasurement
-from dynatree.dynatree import timeit
+from dynatree.dynatree import timeit, get_zero_rating
 from dynatree.damping import DynatreeDampedSignal
 from dynatree.peak_width import find_peak_width
 from dynatree.FFT import df_failed_FFT_experiments, DynatreeSignal
@@ -836,24 +836,6 @@ def show_data_one_tree():
                 ~((df[f"{i}_R"] > filtr_R_min.value) & (df[f"{i}_R"] < filtr_R_max.value)), [f"{i}_b", f"{i}_LDD"]] = np.nan
         # df[~ ((df["#_of_periods"] > filtr_T_min.value) & (df["#_of_periods"] < filtr_T_max.value)),:] = np.nan
 
-        def get_zero_rating(key="min", tree = None):
-            url = "https://euler.mendelu.cz/gallery/api/all_comments/utlum"
-            response = requests.get(url)
-            data = response.json()
-            df = pd.DataFrame(data)
-            df = df["comments"].apply(pd.Series).drop(["id", "directory", "text"], axis=1)
-            df[["day", "type", "tree", "measurement"]] = df["image"].str.split('_', expand=True)
-            df["measurement"] = df["measurement"].str.replace(".png", "", regex=False)
-            df = df.drop(["image"], axis=1)
-            if key == "min":
-                df = df.groupby(['day', 'type', 'tree', 'measurement']).min()
-            else:
-                df = df.groupby(['day', 'type', 'tree', 'measurement']).max()
-            df = df[df["rating"] <= 2]
-            df = df.reset_index()
-            if tree is not None:
-                df = df[df["tree"] == tree]
-            return df
         if data_selection.value != "all":
             if data_selection.value == "optimistic":
                 key = "max"
