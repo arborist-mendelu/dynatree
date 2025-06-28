@@ -48,7 +48,7 @@ def process_row(row, fig=True):
             s = DynatreeDampedSignal(measurement=m, signal_source=source, #dt=0.0002,
                                     # damped_start_time=54
                                     )
-            data[*row, source] = [s.ldd_from_two_amplitudes(max_n=5)[i] for i in ["LDD","R","n"]]
+            data[*row, source] = [s.ldd_from_two_amplitudes(max_n=None)[i] for i in ["LDD","R","n"]]
         except Exception as e:
             logger.error(f"Error processing {row['date']} {row['tree']} {row['measurement']} {source}: {e}")
             data[*row, source] = [None] * 3
