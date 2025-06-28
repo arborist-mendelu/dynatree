@@ -328,8 +328,8 @@ def probes_comparison():
         data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum_vsechny_senzory/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}_{s}.png'
         >{s}</a>""" for s in ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj"]])
                                  , axis=1)
-        subdf["Gallery with evaluation"] = subdf.apply(lambda row: f"""
-        <a href="https://euler.mendelu.cz/gallery/gallery/utlum_vsechny_senzory?filter={row['day']}_{row['type']}_{row['tree']}_{row['measurement']}">Link to gallery</a>
+        subdf["Gallery"] = subdf.apply(lambda row: f"""
+        <a href="https://euler.mendelu.cz/gallery/gallery/utlum_vsechny_senzory?filter={row['day']}_{row['type']}_{row['tree']}_{row['measurement']}">Edit rating in gallery</a>
         """, axis=1)
         subdf["coordinates"] = subdf.apply(lambda row: f"""{row['type']},{row['day']},{row['tree']},{row['measurement']},""", axis=1)
         subdf = subdf.set_index(['day', 'tree', 'measurement', 'type']).reorder_levels([1, 0, 3, 2]).sort_index()
@@ -351,7 +351,7 @@ def probes_comparison():
             * nan value - the data have not been computed (no input or commputation is not possible)
             * zero value - the computation is marked as bad, hover the corresponding green link (do NOT click) to see the comment
             * you can hover (or click) the green link to see the signal in time domain
-            * you can click the gallery link to make a comment and set evaluation (number of stars). One or two stars mean
+            * you can click the gallery edit link to make a comment and set rating (number of stars). One or two stars mean
               that the signal is not suitable for LDD computation. The best evaluation is used, if there are more available.
               
             """, style={'color':'inherit'})
