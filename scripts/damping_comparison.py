@@ -7,7 +7,7 @@ import numpy as np
 import logging
 import pandas as pd
 from dynatree.find_measurements import get_all_measurements, available_measurements
-from dynatree.dynatree import DynatreeMeasurement, get_zero_rating, logger
+from dynatree.dynatree import DynatreeMeasurement, get_bad_rating, logger
 from dynatree.damping import DynatreeDampedSignal
 from parallelbar import progress_map
 import plotly.graph_objects as go
@@ -18,8 +18,7 @@ logger.setLevel(logging.WARNING)
 df = get_all_measurements(method='all').iloc[:,:4]
 df = df[df.measurement!="M01"]
 df_failed_FFT = pd.read_csv(config.file["FFT_failed"] )
-df_failed_stars_elasto = get_zero_rating(key = 'max') # mark as failed if all people marked is as failed.
-df_failed_stars_elasto.loc[:,"probe"] = "Elasto(90)"
+df_failed_stars_elasto = get_bad_rating(key ='max') # mark as failed if all people marked is as failed.
 df_failed_stars_elasto = df_failed_stars_elasto[df_failed_FFT.columns]
 df_failed = pd.concat([df_failed_stars_elasto, df_failed_FFT], axis = 0).reset_index(drop = True)
 #df = df.iloc[:10]

@@ -2,7 +2,7 @@ import solara
 from solara.lab import task
 import dynatree.solara.select_source as s
 from dynatree.dynatree import DynatreeMeasurement
-from dynatree.dynatree import timeit, get_zero_rating
+from dynatree.dynatree import timeit, get_bad_rating
 from dynatree.damping import DynatreeDampedSignal
 from dynatree.peak_width import find_peak_width
 from dynatree.FFT import df_failed_FFT_experiments, DynatreeSignal
@@ -288,9 +288,22 @@ def probes_comparison():
     fig = px.box(df_exploded, x='source', y='LDD', points='all', title='Boxplot according to source')
     solara.FigurePlotly(fig)
 
-    df = pd.read_csv(config.file['outputs/damping_comparison'], index_col=None)
+    df = (pd.read_csv(config.file['outputs/damping_comparison'], index_col=None))
+    df = df.rename(columns={"source":"probe"})
+    solara.display(df.columns)
+
+    df = df.set_index(["tree", "day", "type", "measurement", "probe"])
+
+    failed = get_bad_rating(key=max, tree=s.tree.value)
+    failed = [tuple(i) for i in failed[["tree", "day", "type", "measurement", "probe"]].values]
+    # breakpoint()
+    # print (df.index.isin(failed))
+    df.loc[df.index.isin(failed), :] = 0
+    #
+    # solara.display(df.head())
+
     df_wide = df.pivot_table(index=['day', 'tree', 'measurement', 'type'],
-                            columns='source',
+                            columns='probe',
                             values=['LDD']).reset_index()
     
     with solara.Card(title=f"LDD for {s.tree.value} {s.day.value} {s.method.value}"):
@@ -308,18 +321,16 @@ def probes_comparison():
     with solara.Card(title=f"LDD for tree {s.tree.value} and all datasets"):
         subdf = df_wide[df_wide.tree==s.tree.value]
         subdf.columns = [f"{i[0]}{i[1]}".replace("LDD","") for i in subdf.columns]
-        subdf["PNG previews"] = subdf.apply(lambda row:f"""
-        <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'
-        class="image-preview"
-        data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'
-        data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}.png'
-        >Elasto(90)</a> / """
-        +" / ".join([f"""
+        subdf["PNG previews"] = subdf.apply(lambda row:" / ".join([f"""
         <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         class="image-preview"
         data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
-        >{s}</a>""" for s in ["Pt3", "Pt4", "blueMaj", "yellowMaj"]])
+        data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum_vsechny_senzory/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}_{s}.png'
+        >{s}</a>""" for s in ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj"]])
                                  , axis=1)
+        subdf["Gallery with evaluation"] = subdf.apply(lambda row: f"""
+        <a href="https://euler.mendelu.cz/gallery/gallery/utlum_vsechny_senzory?filter={row['day']}_{row['type']}_{row['tree']}_{row['measurement']}">Link to gallery</a>
+        """, axis=1)
         subdf["coordinates"] = subdf.apply(lambda row: f"""{row['type']},{row['day']},{row['tree']},{row['measurement']},""", axis=1)
         subdf = subdf.set_index(['day', 'tree', 'measurement', 'type']).reorder_levels([1, 0, 3, 2]).sort_index()
 
@@ -328,9 +339,22 @@ def probes_comparison():
             .style.format(precision=3).background_gradient(axis=None)
             .apply( lambda x:add_horizontal_line(x, second_level=False, level0=1), axis = None)
             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
+            .map(lambda x: 'color: red' if x==0.0 else '')
             .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
         )
         solara.display(_)
+
+        with solara.Info():
+            solara.Markdown("""
+            ### Legend to the table
+            
+            * nan value - the data have not been computed (no input or commputation is not possible)
+            * zero value - the computation is marked as bad, hover the corresponding green link (do NOT click) to see the comment
+            * you can hover (or click) the green link to see the signal in time domain
+            * you can click the gallery link to make a comment and set evaluation (number of stars). One or two stars mean
+              that the signal is not suitable for LDD computation. The best evaluation is used, if there are more available.
+              
+            """, style={'color':'inherit'})
 
     solara.Markdown("```\n"+show_load_code(s)+"\n```")
 
@@ -871,7 +895,7 @@ def show_data_one_tree():
                 key = "max"
             else:
                 key = "min"
-            failed = get_zero_rating(key=key, tree=s.tree.value)
+            failed = get_bad_rating(key=key, tree=s.tree.value)
             failed = [tuple(i) for i in failed[["tree","day", "type", "measurement"]].values]
             # breakpoint()
             # print (df.index.isin(failed))
