@@ -13,6 +13,8 @@ from dynatree import find_measurements
 
 # Probe
 probes = ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj"]
+probes = ["a01_z", "a02_z", "a03_z"]
+
 
 # Načtení tabulky df
 df = find_measurements.get_all_measurements(method='all', type='all')
