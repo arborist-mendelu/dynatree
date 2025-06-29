@@ -109,10 +109,15 @@ def spec_read_itemm(tree="BK01", method="normal", day="2021-03-22", measurement=
         html = bokeh.embed.file_html(p, CDN, "DYNATREE_plot")
         return HTMLResponse(content=html)
 
+    title_comment = ""
+    if "a0" in probe:
+        data = data.rolling(window=500, center=True).mean().iloc[::50].dropna()
+        title_comment = "   (SMOOTHED and resampled to 100Hz)"
+
     fig, ax = plt.subplots(figsize=(12,5))
     data.plot(ax=ax)
     ax.grid()
-    ax.set(title=f"{m} {probe}")
+    ax.set(title=f"{m} {probe} {title_comment}")
     plt.tight_layout()
     # Uložení grafu do paměti jako PNG
     buffer = io.BytesIO()

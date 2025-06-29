@@ -232,7 +232,7 @@ def probes_comparison():
                                 tree=row['tree'],
                                 measurement=row['measurement'],
                                 measurement_type=row['type'])
-        for i,source in enumerate(["Elasto(90)", "Pt3", "Pt4", "blueMaj", "yellowMaj"]):
+        for i,source in enumerate(["Elasto(90)", "Pt3", "Pt4", "blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]):
             try:
                 s = DynatreeDampedSignal(measurement=m, signal_source=source,  # dt=0.0002,
                                             # damped_start_time=54
@@ -312,7 +312,7 @@ def probes_comparison():
         class="image-preview"
         data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum_vsechny_senzory/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}_{s}.png'
-        >{s}</a>""" for s in ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj"]])
+        >{s}</a>""" for s in ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]])
                                  , axis=1)
         subdf["Gallery"] = subdf.apply(lambda row: f"""
         <a href="https://euler.mendelu.cz/gallery/gallery/utlum_vsechny_senzory?filter={row['day']}_{row['type']}_{row['tree']}_{row['measurement']}">Edit rating in gallery</a>
@@ -336,7 +336,7 @@ def probes_comparison():
         class="image-preview"
         data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum_vsechny_senzory/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}_{s}.png'
-        >{s}</a>""" for s in ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj"]])
+        >{s}</a>""" for s in ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]])
                                  , axis=1)
         subdf["Gallery"] = subdf.apply(lambda row: f"""
         <a href="https://euler.mendelu.cz/gallery/gallery/utlum_vsechny_senzory?filter={row['day']}_{row['type']}_{row['tree']}_{row['measurement']}">Edit rating in gallery</a>
@@ -372,7 +372,7 @@ def probes_comparison():
     with solara.Sidebar():
         with solara.Card():        
             solara.Markdown("### Links")
-            for i in ["Pt3", "Pt4", "Elasto(90)", "blueMaj", "yellowMaj"]:
+            for i in ["Elasto(90)", "Pt3", "Pt4", "blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]:
                 solara.HTML(unsafe_innerHTML=f"""
                     Data {i}:
     <a
