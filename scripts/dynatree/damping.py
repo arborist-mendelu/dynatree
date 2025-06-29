@@ -72,13 +72,11 @@ class DynatreeDampedSignal(DynatreeSignal):
         # Ořízni Series od první záporné hodnoty do konce
         data = data[first_negative_index:]
         data = data - data.mean()
-        # TODO: Pro akcelerometry se bere samplovani taky po 0.01? Jinak je Hilberova obalka i wavelet i
+        # TODO: Pro akcelerometry se bere samplovani taky po 0.01. Jinak je Hilberova obalka i wavelet i
         #       metoda pomoci maxim nepouzitelna.
         if "a0" in self.signal_source:
             self.dt = 0.01
-            df = pd.DataFrame(decimate(data.values, 50))
-            df.index = np.arange(0, len(df))*0.01 + data.index[0]
-            data = df.copy()
+            data = data.rolling(window=500, center=True).mean().iloc[::50].dropna().copy()
         self.damped_data = data
         self.damped_signal = data.values.reshape(-1)
         self.damped_time = data.index
