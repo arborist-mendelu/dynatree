@@ -38,7 +38,9 @@ def process_row(row, fig=True):
                             tree=row['tree'],
                             measurement=row['measurement'],
                             measurement_type=row['type'])
-    for source in ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]:
+    sources = ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]
+    sources = ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj"]
+    for source in sources:
         test = (row['type'],row['date'],row['tree'], row['measurement'], source,)
         if test in df_failed_rows:
             data[*row, source] = [None] *3
