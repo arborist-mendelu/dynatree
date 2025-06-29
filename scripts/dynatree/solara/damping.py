@@ -232,7 +232,7 @@ def probes_comparison():
                                 tree=row['tree'],
                                 measurement=row['measurement'],
                                 measurement_type=row['type'])
-        for i,source in enumerate(["Pt3", "Pt4", "Elasto(90)", "blueMaj", "yellowMaj"]):
+        for i,source in enumerate(["Elasto(90)", "Pt3", "Pt4", "blueMaj", "yellowMaj"]):
             try:
                 s = DynatreeDampedSignal(measurement=m, signal_source=source,  # dt=0.0002,
                                             # damped_start_time=54
@@ -289,7 +289,6 @@ def probes_comparison():
 
     df = (pd.read_csv(config.file['outputs/damping_comparison'], index_col=None))
     df = df.rename(columns={"source":"probe"})
-    solara.display(df.columns)
 
     df = df.set_index(["tree", "day", "type", "measurement", "probe"])
 
