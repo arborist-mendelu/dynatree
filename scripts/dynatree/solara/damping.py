@@ -218,21 +218,27 @@ def Page():
         # #     solara.Error("Some problem appeared")
 
 
+sensors_all = ["Elasto(90)", "Pt3", "Pt4", "a01_z", "a02_z", "a03_z", "blueMaj", "yellowMaj"]
+sensors_for_comparison = solara.reactive(sensors_all[:3])
+
 def probes_comparison():
 #     with solara.Info():
 #         solara.Markdown("""
 # * The comparison of sensors for one measurement.
 #         """, style={'color': 'inherit'})
+    with solara.Card(title="Probes which should be considered"):
+        solara.ToggleButtonsMultiple(value=sensors_for_comparison, values=sensors_all)
+
 
     def process_row(row):
-        color = ["red", "blue", "black", "green", "violet", "purple", "yellow"]
+        color = ["red", "blue", "black", "green", "violet", "purple", "yellow", "gray"] * 2
         data = {}
         fig = go.Figure()
         m = DynatreeMeasurement(day=row['date'],
                                 tree=row['tree'],
                                 measurement=row['measurement'],
                                 measurement_type=row['type'])
-        for i,source in enumerate(["Elasto(90)", "Pt3", "Pt4", "blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]):
+        for i,source in enumerate(sensors_for_comparison.value):
             try:
                 s = DynatreeDampedSignal(measurement=m, signal_source=source,  # dt=0.0002,
                                             # damped_start_time=54
@@ -307,12 +313,13 @@ def probes_comparison():
     with solara.Card(title=f"LDD for {s.tree.value} {s.day.value} {s.method.value}"):
         subdf = df_wide[(df_wide.tree==s.tree.value) & (df_wide.day==s.day.value)  & (df_wide.type==s.method.value)]
         subdf.columns = [f"{i[0]}{i[1]}".replace("LDD","") for i in subdf.columns]
+        subdf = subdf.loc[:,['day', 'tree', 'measurement', 'type']+sensors_for_comparison.value]
         subdf["PNG previews"] = subdf.apply(lambda row:" / ".join([f"""
         <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         class="image-preview"
         data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum_vsechny_senzory/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}_{s}.png'
-        >{s}</a>""" for s in ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]])
+        >{s}</a>""" for s in sensors_for_comparison.value])
                                  , axis=1)
         subdf["Gallery"] = subdf.apply(lambda row: f"""
         <a href="https://euler.mendelu.cz/gallery/gallery/utlum_vsechny_senzory?filter={row['day']}_{row['type']}_{row['tree']}_{row['measurement']}">Edit rating in gallery</a>
@@ -331,12 +338,13 @@ def probes_comparison():
     with solara.Card(title=f"LDD for tree {s.tree.value} and all datasets"):
         subdf = df_wide[df_wide.tree==s.tree.value]
         subdf.columns = [f"{i[0]}{i[1]}".replace("LDD","") for i in subdf.columns]
+        subdf = subdf.loc[:,['day', 'tree', 'measurement', 'type']+sensors_for_comparison.value]
         subdf.loc[:,"PNG previews"] = subdf.apply(lambda row:" / ".join([f"""
         <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         class="image-preview"
         data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum_vsechny_senzory/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}_{s}.png'
-        >{s}</a>""" for s in ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]])
+        >{s}</a>""" for s in sensors_for_comparison.value])
                                  , axis=1)
         subdf.loc[:,"Gallery"] = subdf.apply(lambda row: f"""
         <a href="https://euler.mendelu.cz/gallery/gallery/utlum_vsechny_senzory?filter={row['day']}_{row['type']}_{row['tree']}_{row['measurement']}">Edit rating in gallery</a>
