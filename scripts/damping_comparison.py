@@ -39,7 +39,7 @@ def process_row(row, fig=True):
                             measurement=row['measurement'],
                             measurement_type=row['type'])
     sources = ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]
-    sources = ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj"]
+    # sources = ["Pt3","Pt4","Elasto(90)","blueMaj", "yellowMaj"]
     for source in sources:
         test = (row['type'],row['date'],row['tree'], row['measurement'], source,)
         if test in df_failed_rows:
@@ -47,10 +47,9 @@ def process_row(row, fig=True):
             logger.warning(f"Measurement {m}, probe {source} marked as failed, skipping")
             continue
         try:
-            s = DynatreeDampedSignal(measurement=m, signal_source=source, #dt=0.0002,
-                                    # damped_start_time=54
-                                    )
-            data[*row, source] = [s.ldd_from_two_amplitudes(max_n=None)[i] for i in ["LDD","R","n"]]
+            s = DynatreeDampedSignal(measurement=m, signal_source=source)
+            ans = s.ldd_from_two_amplitudes()
+            data[*row, source] = [ans[i] for i in ["LDD","R","n"]]
         except Exception as e:
             logger.error(f"Error processing {row['date']} {row['tree']} {row['measurement']} {source}: {e}")
             data[*row, source] = [None] * 3
