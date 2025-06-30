@@ -848,7 +848,8 @@ def get_bad_rating(key="min", tree=None):
     data = response.json()
     df = pd.DataFrame(data)
     df = df["comments"].apply(pd.Series).drop(["id", "directory", "text"], axis=1)
-    df[["day", "type", "tree", "measurement", "probe"]] = df["image"].str.split('_', expand=True)
+    # df[["day", "type", "tree", "measurement", "probe"]] = df["image"].str.split('_', expand=True)
+    df[["day", "type", "tree", "measurement", "probe"]] = df["image"].str.extract(r"([^_]+)_([^_]+)_([^_]+)_([^_]+)_(.+)")
     df["probe"] = df["probe"].str.replace(".png", "", regex=False)
     df = df.drop(["image"], axis=1)
     if key == "min":
