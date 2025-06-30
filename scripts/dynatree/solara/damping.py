@@ -331,17 +331,17 @@ def probes_comparison():
     with solara.Card(title=f"LDD for tree {s.tree.value} and all datasets"):
         subdf = df_wide[df_wide.tree==s.tree.value]
         subdf.columns = [f"{i[0]}{i[1]}".replace("LDD","") for i in subdf.columns]
-        subdf["PNG previews"] = subdf.apply(lambda row:" / ".join([f"""
+        subdf.loc[:,"PNG previews"] = subdf.apply(lambda row:" / ".join([f"""
         <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         class="image-preview"
         data-src='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         data-text-src='https://euler.mendelu.cz/gallery/api/comments/utlum_vsechny_senzory/{row['day']}_{row['type']}_{row['tree']}_{row['measurement']}_{s}.png'
         >{s}</a>""" for s in ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj", "a01_z", "a02_z", "a03_z"]])
                                  , axis=1)
-        subdf["Gallery"] = subdf.apply(lambda row: f"""
+        subdf.loc[:,"Gallery"] = subdf.apply(lambda row: f"""
         <a href="https://euler.mendelu.cz/gallery/gallery/utlum_vsechny_senzory?filter={row['day']}_{row['type']}_{row['tree']}_{row['measurement']}">Edit rating in gallery</a>
         """, axis=1)
-        subdf["coordinates"] = subdf.apply(lambda row: f"""{row['type']},{row['day']},{row['tree']},{row['measurement']},""", axis=1)
+        subdf.loc[:,"coordinates"] = subdf.apply(lambda row: f"""{row['type']},{row['day']},{row['tree']},{row['measurement']},""", axis=1)
         subdf = subdf.set_index(['day', 'tree', 'measurement', 'type']).reorder_levels([1, 0, 3, 2]).sort_index()
 
         _ = (
