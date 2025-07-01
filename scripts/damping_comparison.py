@@ -12,15 +12,16 @@ from dynatree.damping import DynatreeDampedSignal
 from parallelbar import progress_map
 import plotly.graph_objects as go
 import config
+
 logger.setLevel(logging.WARNING)
 
 # %%
 df = get_all_measurements(method='all').iloc[:,:4]
 df = df[df.measurement!="M01"]
 df_failed_FFT = pd.read_csv(config.file["FFT_failed"] )
-df_failed_stars_elasto = get_bad_rating(key ='max') # mark as failed if all people marked is as failed.
-df_failed_stars_elasto = df_failed_stars_elasto[df_failed_FFT.columns]
-df_failed = pd.concat([df_failed_stars_elasto, df_failed_FFT], axis = 0).reset_index(drop = True)
+df_failed_stars = get_bad_rating(key ='max') # mark as failed if all people marked it as failed.
+df_failed_stars = df_failed_stars[df_failed_FFT.columns]
+df_failed = pd.concat([df_failed_stars, df_failed_FFT], axis = 0).reset_index(drop = True)
 #df = df.iloc[:10]
 
 # %%
@@ -43,7 +44,7 @@ def process_row(row, fig=True):
     for source in sources:
         test = (row['type'],row['date'],row['tree'], row['measurement'], source,)
         if test in df_failed_rows:
-            data[*row, source] = [None] *3
+            data[*row, source] = [0] *3
             logger.warning(f"Measurement {m}, probe {source} marked as failed, skipping")
             continue
         try:
@@ -92,7 +93,11 @@ data
 # %%
 
 data.to_csv(config.file['outputs/damping_comparison'], index=False)
-
+# %%
+#data = pd.read_csv(config.file['outputs/damping_comparison'])
+#data
+# %%
+#
 # %%
 
 # Take the lines with the same day, tree, measurement and type and find mean and

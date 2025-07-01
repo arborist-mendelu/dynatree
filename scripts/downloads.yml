@@ -101,8 +101,8 @@ damping_factor.csv: Útlum Elasto(90) stanovený třemi metodami (maxima, hilber
 https://euler.mendelu.cz/gallery/gallery/utlum: Galerie obrázků s útlumem, možnost komentování a hodnocení.
 
 damping_comparison.csv: Útlum jednou metodou. Metoda `defmulti`, tj. LDD z definice a pomocí více amplitud pro odfiltrování nežádoucích jevů spojených s nevycentrováním signálu,
-    pro všechny senzory (Elasto, Pt3, Pt4, a01_z, a02_z, a03_z, blueMaj, yelowMaj). Obsahuje všechna data. Ta, která byla v galerii vyznačena jako nevhodná a nespolehlivá je
-    nutné vyřadit. Viz funkce `get_bad_rating` <https://github.com/arborist-mendelu/dynatree/blob/9d600ca47c70cf132ac447754814672815969bbd/scripts/dynatree/dynatree.py#L831>
+    pro všechny senzory (Elasto, Pt3, Pt4, a01_z, a02_z, a03_z, blueMaj, yelowMaj). Měření, která byla v galerii vyznačena jako nevhodná a nespolehlivá, 
+    mají hodnoty 0.0.
 
 ---
 title: "To všecho odnés čas?"
