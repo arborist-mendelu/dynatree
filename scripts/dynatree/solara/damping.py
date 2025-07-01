@@ -280,18 +280,19 @@ def probes_comparison():
         data = pd.concat([data, ans.drop(columns=['experiment'])], axis=1)
         return data
 
-    ans = process_row({'date': s.day.value, 'tree': s.tree.value, 'measurement': s.measurement.value, 'type': s.method.value})
-    df = refactor_df(ans['data'])
-    solara.display(df)
-    solara.FigurePlotly(ans['figure'])
-    df = df[["source","LDD_ans"]]
-    df_exploded = (
-        df.explode('LDD_ans', ignore_index=True)
-        .rename(columns={"LDD_ans": "LDD"})
-        )
+    with solara.Card(title=f"LDD for selected probes, {s.method.value} {s.day.value} {s.tree.value} {s.measurement.value} "):
+        ans = process_row({'date': s.day.value, 'tree': s.tree.value, 'measurement': s.measurement.value, 'type': s.method.value})
+        df = refactor_df(ans['data'])
+        solara.display(df)
+        solara.FigurePlotly(ans['figure'])
+        df = df[["source","LDD_ans"]]
+        df_exploded = (
+            df.explode('LDD_ans', ignore_index=True)
+            .rename(columns={"LDD_ans": "LDD"})
+            )
 
-    fig = px.box(df_exploded, x='source', y='LDD', points='all', title='Boxplot according to source')
-    solara.FigurePlotly(fig)
+        fig = px.box(df_exploded, x='source', y='LDD', points='all', title='Boxplot according to source')
+        solara.FigurePlotly(fig)
 
     df = (pd.read_csv(config.file['outputs/damping_comparison'], index_col=None))
     df = df.rename(columns={"source":"probe"})
@@ -309,10 +310,14 @@ def probes_comparison():
     df_wide = df.pivot_table(index=['day', 'tree', 'measurement', 'type'],
                             columns='probe',
                             values=['LDD']).reset_index()
+
+
+    df_wide.columns = [f"{i[0]}{i[1]}".replace("LDD", "") for i in df_wide.columns]
+    solara.FileDownload(df_wide.to_csv(), filename=f"damping_LDD_all_probes.csv", label="Download all LDD as csv")
+    # Allow download
     
     with solara.Card(title=f"LDD for {s.tree.value} {s.day.value} {s.method.value}"):
         subdf = df_wide[(df_wide.tree==s.tree.value) & (df_wide.day==s.day.value)  & (df_wide.type==s.method.value)]
-        subdf.columns = [f"{i[0]}{i[1]}".replace("LDD","") for i in subdf.columns]
         subdf = subdf.loc[:,['day', 'tree', 'measurement', 'type']+sensors_for_comparison.value]
         subdf["PNG previews"] = subdf.apply(lambda row:" / ".join([f"""
         <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
@@ -337,7 +342,6 @@ def probes_comparison():
 
     with solara.Card(title=f"LDD for tree {s.tree.value} and all datasets"):
         subdf = df_wide[df_wide.tree==s.tree.value]
-        subdf.columns = [f"{i[0]}{i[1]}".replace("LDD","") for i in subdf.columns]
         subdf = subdf.loc[:,['day', 'tree', 'measurement', 'type']+sensors_for_comparison.value]
         subdf.loc[:,"PNG previews"] = subdf.apply(lambda row:" / ".join([f"""
         <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
