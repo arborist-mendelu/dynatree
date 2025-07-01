@@ -70,7 +70,7 @@ FFT_acc_knock.csv: Výstup z FFT analýzy.
 FFT_acc_average_graph.zip: Obrázky průměrných FFT spekter
 
 ---
-title: "FFT, oscilace, pull and release"
+title: "FFT, oscilace, damping, pull and release"
 
 FFT_csv_tukey.csv: |
     Data, výstupy z FFT analýzy. Bez podsamplování ACC, automatická volba intervalu.
@@ -99,6 +99,9 @@ damping_factor.csv: Útlum Elasto(90) stanovený třemi metodami (maxima, hilber
     začátek signálu (ale bez úplného začátku s bordelem po vypuštění).
 
 https://euler.mendelu.cz/gallery/gallery/utlum: Galerie obrázků s útlumem, možnost komentování a hodnocení.
+
+damping_comparison.csv: Útlum jednou metodou (defmulti, tj. LDD z definice a pomocí více amplitud pro odfiltrování nežádoucích jevů spojených s nevycentrováním signálu)
+    pro všechny senzory (Elasto, Pt3, Pt4, a01_z, a02_z, a03_z, blueMaj, yelowMaj).
 
 ---
 title: "To všecho odnés čas?"
