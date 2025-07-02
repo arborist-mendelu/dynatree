@@ -918,6 +918,7 @@ def show_data_one_tree():
             else:
                 key = "min"
             failed = get_bad_rating(key=key, tree=s.tree.value)
+            failed = failed[failed.probe=="Elasto(90)"]
             failed = [tuple(i) for i in failed[["tree","day", "type", "measurement"]].values]
             # breakpoint()
             # print (df.index.isin(failed))
@@ -970,7 +971,7 @@ def show_data_one_tree():
 
 
         if data_selection.value != 'all':
-            with solara.Card(title = "Data manually marked as failed"):
+            with solara.Card(title = "Data manually marked as failed (for Elasto(90) sensor)"):
                 solara.Markdown("""
                 The following data are marked as failed by setting the worst rating (only 1 star) in 
                 the [image gallery](https://euler.mendelu.cz/gallery/gallery/utlum).
