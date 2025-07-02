@@ -16,7 +16,7 @@ import config
 logger.setLevel(logging.WARNING)
 
 # %%
-df = get_all_measurements(method='all').iloc[:,:4]
+df = get_all_measurements(method='all', type='all').iloc[:,:4]
 df = df[df.measurement!="M01"]
 df_failed_FFT = pd.read_csv(config.file["FFT_failed"] )
 df_failed_stars = get_bad_rating(key ='max') # mark as failed if all people marked it as failed.
