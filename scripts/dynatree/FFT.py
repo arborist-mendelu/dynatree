@@ -86,7 +86,7 @@ class DynatreeSignal:
         data = self.release_full.dropna()
         data = data - data.iloc[0]
         data = data.dropna()
-        release = data.loc[25:].abs().idxmax()
+        release = data.iloc[25:].abs().idxmax()
         return release
     
     @property
