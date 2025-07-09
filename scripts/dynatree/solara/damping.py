@@ -28,6 +28,7 @@ dynatree.logger.setLevel(logging.ERROR)
 
 df_failed = pd.read_csv(config.file["FFT_failed"]).values.tolist()
 loading_start = time.time()
+type_order = ['normal', 'noc', 'den', 'afterro', 'afterro2', 'mraz', 'mokro']
 
 def draw_signal_with_envelope(s, fig, envelope=None, k=0, q=0, row=1, col=1):
     signal, time = s.damped_signal.reshape(-1), s.damped_time
@@ -343,6 +344,8 @@ def probes_comparison():
     with solara.Card(title=f"LDD for tree {s.tree.value} and all datasets"):
         subdf = df_wide[df_wide.tree==s.tree.value]
         subdf = subdf.loc[:,['day', 'tree', 'measurement', 'type']+sensors_for_comparison.value]
+        subdf['type'] = pd.Categorical(subdf['type'], categories=type_order, ordered=True)
+
         subdf.loc[:,"PNG previews"] = subdf.apply(lambda row:" / ".join([f"""
         <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe={s}&start=0&end=1000000000&format=png'
         class="image-preview"
@@ -360,10 +363,12 @@ def probes_comparison():
             subdf
             .style.format(precision=3).background_gradient(axis=None)
             .apply( lambda x:add_horizontal_line(x, second_level=False, level0=1), axis = None)
+            .map_index(highlight_index, level=1)  # Obarví druhou úroveň indexu
             .map(lambda x: 'color: lightgray' if pd.isnull(x) else '')
             .map(lambda x: 'color: red' if x==0.0 else '')
             .map(lambda x: 'background: transparent' if pd.isnull(x) else '')
         )
+
         solara.display(_)
 
         with solara.Info():
@@ -616,7 +621,9 @@ def damping_graphs():
                     solara.Text(f"The length of the analyzed time interval is {interval_length/T:.2f} times the period.")
                     df = pd.read_csv(config.file['damping_manual_ends'], skipinitialspace=True)
                     df = df.loc[(df["tree"]==s.tree.value) & (df["measurement"]==s.measurement.value)
-                                & (df["day"] == s.day.value) & (df["measurement_type"] == s.method.value)]
+                                & (df["day"] == s.day.value) & (df["measurement_type"] == s.method.value)
+                                & (df["source"] == data_source.value)
+                                ]
                     if len(df) > 0:
                         solara.Markdown(f"**Suggested end time for damping extraction is {df.iat[0,-1]}.**")
                     else:
@@ -829,6 +836,13 @@ return table;
 }
     """)
 
+
+# Definujeme styly pro index
+def highlight_index(val):
+    if val in config.summer_dates:
+        return "background-color: lightgreen; font-weight: bold;"
+    return ""
+
 @solara.component
 def show_data_one_tree():
     list_of_methods = ['maxima', 'hilbert', 'wavelet']
@@ -858,7 +872,6 @@ def show_data_one_tree():
         df = df[df["tree"]==s.tree.value]
         df["#_of_periods"] = (df["end"]-df["start"]) * df["freq"]
 
-        type_order = ['normal', 'noc', 'den', 'afterro', 'afterro2', 'mraz', 'mokro']
         df['type'] = pd.Categorical(df['type'], categories=type_order, ordered=True)
         df["linkPNG"] = df.apply(lambda row:f"""
         <a  href='https://euler.mendelu.cz/draw_graph/?method={row['day']}_{row['type']}&tree={row['tree']}&measurement={row['measurement']}&probe=Elasto%2890%29&start=0&end=1000000000&format=png'
@@ -928,12 +941,6 @@ def show_data_one_tree():
             "defmulti_n","linkPNG", "links", "linkHTML"]
         df = df[cols]
         df = df.sort_index()
-
-        # Definujeme styly pro index
-        def highlight_index(val):
-            if val in config.summer_dates:
-                return "background-color: lightgreen; font-weight: bold;"
-            return ""
 
         if switch_damping.value != 'defmulti':
             df = df.drop(["defmulti_R", "defmulti_n"], axis=1)

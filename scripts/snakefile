@@ -510,7 +510,8 @@ rule compare_damping:
         "../outputs/damping_comparison.csv",
         "../outputs/damping_comparison_stats.csv"        
     input:
-        "damping_comparison.py"
+        "damping_comparison.py",
+        "csv/damping_manual_ends.csv"
     shell:
         """
         python damping_comparison.py

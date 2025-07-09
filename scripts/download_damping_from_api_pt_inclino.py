@@ -13,7 +13,7 @@ from dynatree import find_measurements
 
 # Probe
 probes = ["Elasto(90)","Pt3", "Pt4", "blueMaj", "yellowMaj"]
-probes = ["a01_z", "a02_z", "a03_z"]
+probes = probes + ["a01_z", "a02_z", "a03_z"]
 
 
 # Načtení tabulky df
@@ -46,9 +46,9 @@ for _, row in df.iterrows():
             "damping_method": "defmulti"
         }
 
-    #    if not ( (row['type'], row['day'], row['tree'], row['measurement']) in manual_data ):
+        if not ( (row['type'], row['day'], row['tree'], row['measurement'], probe) in manual_data ):
     #    if not row['day'] == "2025-04-01":
-    #        continue
+            continue
 
         url1 = f"{base_url1}?{urlencode(params)}"
         url2 = f"{base_url2}?{urlencode(params)}"

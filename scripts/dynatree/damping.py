@@ -33,7 +33,7 @@ def save_failed(text, ini = False):
 
 save_failed("<h1>Failed Damping</h1>", ini=True)
 manual_signal_ends = pd.read_csv(config.file['damping_manual_ends'], skipinitialspace=True)
-manual_signal_ends = manual_signal_ends.set_index(["measurement_type", "day", "tree", "measurement"])
+manual_signal_ends = manual_signal_ends.set_index(["measurement_type", "day", "tree", "measurement", "source"])
 
 class DynatreeDampedSignal(DynatreeSignal):
     """
@@ -58,7 +58,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         data = data.loc[start_signal:]
 
         if damped_end_time is None:
-            coords = (self.measurement.measurement_type, self.measurement.day, self.measurement.tree, self.measurement.measurement)
+            coords = (self.measurement.measurement_type, self.measurement.day, self.measurement.tree, self.measurement.measurement, self.signal_source)
             if coords in manual_signal_ends.index:
                 damped_end_time = manual_signal_ends.at[coords, "end_time"]
 
@@ -144,7 +144,9 @@ class DynatreeDampedSignal(DynatreeSignal):
         peaks, _ = find_peaks(np.abs(analyzed), distance=distance)
         peaks_number = np.argmax(np.abs(analyzed.iloc[peaks])-threshold*maximum < 0)-1
         peaks = peaks[:peaks_number]
-        if peaks_number <5:
+        if peaks_number <0:
+            logger.warning(f"Fit maxima {self.measurement} {self.signal_source}. No extrema.")
+        elif peaks_number < 5:
             logger.warning(f"Fit maxima {self.measurement} {self.signal_source}. Only {peaks_number} peaks used.")
 
         out = {}
