@@ -34,6 +34,7 @@ def save_failed(text, ini = False):
 save_failed("<h1>Failed Damping</h1>", ini=True)
 manual_signal_ends = pd.read_csv(config.file['damping_manual_ends'], skipinitialspace=True)
 manual_signal_ends = manual_signal_ends.set_index(["measurement_type", "day", "tree", "measurement", "source"])
+SKIP_INITIAL_PERIOD = 0.5
 
 class DynatreeDampedSignal(DynatreeSignal):
     """
@@ -94,10 +95,10 @@ class DynatreeDampedSignal(DynatreeSignal):
 
     @property
     @timeit
-    def hilbert_envelope(self):
+    def hilbert_envelope(self, skip_initial_period=SKIP_INITIAL_PERIOD):
         signal = self.damped_signal_interpolated.values
         time = self.damped_signal_interpolated.index
-        peaks = self.fit_maxima()['peaks']
+        peaks = self.fit_maxima(skip_initial_period=skip_initial_period)['peaks']
         start_peak_index = 1
         T = 1/self.main_peak
 
@@ -130,7 +131,7 @@ class DynatreeDampedSignal(DynatreeSignal):
 
     # @property
     @timeit
-    def fit_maxima(self, threshold = config.damping_threshold):
+    def fit_maxima(self, threshold = config.damping_threshold, skip_initial_period=SKIP_INITIAL_PERIOD):
         """
         Returns
         -------
@@ -138,7 +139,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         """
         T = 1/self.main_peak
         start = self.damped_signal_interpolated.index[0]
-        analyzed = self.damped_signal_interpolated[start+T/2:] # skip first peak after release
+        analyzed = self.damped_signal_interpolated[start+T*skip_initial_period:] # skip first peak after release
         maximum = max(abs(analyzed))
         distance = int(T/self.dt/2*0.75)
         peaks, _ = find_peaks(np.abs(analyzed), distance=distance)
@@ -173,8 +174,8 @@ class DynatreeDampedSignal(DynatreeSignal):
             'peaks': analyzed.iloc[peaks], 'b': b, 'q': q, 'R': R, 'p': p_value, 'std_err': std_err, 'LDD': LDD,
             'yshift':yshift}
 
-    def ldd_from_definition(self, peaks_limit = None):
-        peaks = self.fit_maxima()['peaks']
+    def ldd_from_definition(self, peaks_limit = None, skip_initial_period=SKIP_INITIAL_PERIOD):
+        peaks = self.fit_maxima(skip_initial_period=skip_initial_period)['peaks']
         if peaks_limit is not None and len(peaks) > peaks_limit:
             peaks = peaks.iloc[:peaks_limit]
         logger.debug(f"ldd from definition, peaks: {peaks}")
@@ -194,12 +195,12 @@ class DynatreeDampedSignal(DynatreeSignal):
         # logger.info(f"answer: {answer}")
         return answer
 
-    def ldd_from_two_amplitudes(self, max_n=None):
+    def ldd_from_two_amplitudes(self, max_n=None, skip_initial_period=SKIP_INITIAL_PERIOD):
         """
         Method with working name defmulti.
         """
         # try:
-        peaks = self.fit_maxima()['peaks']
+        peaks = self.fit_maxima(skip_initial_period=skip_initial_period)['peaks']
         # logger.setLevel(logging.INFO)
         logger.info(f"peaks: {peaks}")
         if max_n is not None:
@@ -238,14 +239,14 @@ class DynatreeDampedSignal(DynatreeSignal):
         #     logger.error(f"Failed {self}")
         return answer
 
-    def ldd_from_distances(self):
+    def ldd_from_distances(self, skip_initial_period=SKIP_INITIAL_PERIOD):
         """
         Evaluate LDD from distances between maxima and minima. The first two minima and the first two maxima are used.
         LDD = ln (  ( |y0| pm |y1| )  / ( |y2| pm |y3| )  )
         The first four peaks are used (two maxima and two minima).
         """
         # try:
-        peaks = self.fit_maxima()['peaks']
+        peaks = self.fit_maxima(skip_initial_period=skip_initial_period)['peaks']
         if len(peaks) < 4:
             answer = {'b': None, 'LDD': None, 'T': None, 'std_err': None}
             return answer
@@ -288,7 +289,7 @@ class DynatreeDampedSignal(DynatreeSignal):
 
     @property
     @timeit
-    def wavelet_envelope(self):
+    def wavelet_envelope(self, skip_initial_period=SKIP_INITIAL_PERIOD):
         start = time.time()
         wavelet = "cmor1-1.5"
         data = self.damped_signal_interpolated
@@ -321,7 +322,7 @@ class DynatreeDampedSignal(DynatreeSignal):
         coef = np.abs(coef) / wavlet_norm
         maximum = np.argmax(coef)
 
-        peaks = self.fit_maxima()['peaks']
+        peaks = self.fit_maxima(skip_initial_period=skip_initial_period)['peaks']
         start_peak_index = 1
         mask = (data.index > peaks.index[start_peak_index]) & (data.index < peaks.index[-1])
         # logger.info(f"""
@@ -373,12 +374,12 @@ def get_measurement_table():
     df = df.drop("failed", axis=1)
     return (df)
 
-def process_row(index):
+def process_row(index, skip_initial_period=SKIP_INITIAL_PERIOD):
     day, method, tree, measurement, probe = index
     try:
         m = DynatreeMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=method)
         s = DynatreeDampedSignal(m, signal_source=probe)
-        fit_M = s.fit_maxima()
+        fit_M = s.fit_maxima(skip_initial_period=skip_initial_period)
         fit_H = s.hilbert_envelope
         fit_W = s.wavelet_envelope
         out = [fit_W['freq'], fit_W['data'].index[0], fit_W['data'].index[-1]]
@@ -393,7 +394,7 @@ def process_row(index):
         out = [None]*18
     return out
 
-def process_row_definition(index):
+def process_row_definition(index, skip_initial_period=SKIP_INITIAL_PERIOD):
     """
     Evaluates LDD from the definition. The period is taken from peak distance rather from the
     FFT analysis
@@ -413,7 +414,7 @@ def process_row_definition(index):
         return out
 
     try:
-        ldd = s.ldd_from_definition()
+        ldd = s.ldd_from_definition(skip_initial_period=skip_initial_period)
     except Exception as e:
         logger.error(e)
         ldd = {'b':None, 'LDD':None, 'T':None, 'std_err':None}
@@ -424,7 +425,7 @@ def process_row_definition(index):
         """)
 
     try:
-        ldd2 = s.ldd_from_definition(peaks_limit=3)
+        ldd2 = s.ldd_from_definition(peaks_limit=3, skip_initial_period=skip_initial_period)
     except Exception as e:
         logger.error(e)
         ldd2 = {'b':None, 'LDD':None, 'T':None, 'std_err':None}
@@ -435,7 +436,7 @@ def process_row_definition(index):
         """)
 
     try:
-        ldd2diff = s.ldd_from_distances()
+        ldd2diff = s.ldd_from_distances(skip_initial_period=skip_initial_period)
     except Exception as e:
         logger.error(e)
         ldd2diff = {'b':None, 'LDD':None, 'T':None, 'std_err':None}
@@ -446,7 +447,7 @@ def process_row_definition(index):
         """)
 
     try:
-        ldd_multi = s.ldd_from_two_amplitudes()
+        ldd_multi = s.ldd_from_two_amplitudes(skip_initial_period=skip_initial_period)
     except Exception as e:
         logger.error(e)
         ldd_multi = {'b': None, 'LDD': None, 'T': None, 'std_err':None, 'R':None, 'n':None}
