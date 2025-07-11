@@ -167,7 +167,10 @@ class DynatreeDampedSignal(DynatreeSignal):
             out[yshift] = [b, q, R, p_value, std_err]
         df = pd.DataFrame.from_dict(out).T
         yshift = df[2].idxmin()
-        b,q,R,p_value,std_err = out[yshift]
+        try:
+            b,q,R,p_value,std_err = out[yshift]
+        except:
+            b,q,R,p_value,std_err = out[0]
         b = np.abs(b) if b is not None else None
         LDD = b*T if b is not None else None
         return {

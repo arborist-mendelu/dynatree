@@ -36,9 +36,12 @@ login_failed = solara.reactive(False)
 
 def store_in_session_storage(value):
     session_storage[solara.get_session_id()] = value
-    with open("../temp/logins.pickle", "wb") as f:
-        pickle.dump(session_storage, f)
-    force_update_counter.value += 1
+    try:
+        with open("../temp/logins.pickle", "wb") as f:
+            pickle.dump(session_storage, f)
+        force_update_counter.value += 1
+    except Exception as e:
+        pass
 
 username = solara.reactive("")
 password = solara.reactive("")

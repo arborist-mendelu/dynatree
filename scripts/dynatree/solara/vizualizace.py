@@ -68,8 +68,11 @@ def plot(df, var, msg=None, id=None, resample=False):
                      title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
                      **kwds)    
     if resample:
-        fig_res = FigureResampler(fig)
-        solara.FigurePlotly(fig_res, on_selection=set_selection_data, on_click=set_click_data)
+        try:
+            fig_res = FigureResampler(fig)
+            solara.FigurePlotly(fig_res, on_selection=set_selection_data, on_click=set_click_data)
+        except Exception as e:
+            solara.Error(f"Resampling failed: {e}. Plot skipped. Try the euler server which has different python version and different plotly-resampler version")
     else:
         solara.FigurePlotly(fig, on_selection=set_selection_data)    
     if msg is not None:
