@@ -85,7 +85,7 @@ filtr_R_min = solara.reactive(-1)
 filtr_R_max = solara.reactive(1)
 filtr_T_min = solara.reactive(0)
 filtr_T_max = solara.reactive(1000)
-skip_initial = solara.reactive(0.5)
+skip_initial_periods = solara.reactive(.5)
 switch_damping = solara.reactive("defmulti")
 data_selection = solara.reactive("optimistic")
 data_selection_types = ["all", "optimistic", "pesimistic"]
@@ -95,7 +95,7 @@ tab_index = solara.reactive(1)
 
 @solara.component
 def Page():
-    solara.Title("DYNATREE: Damping")
+    solara.Title(f"DYNATREE: Damping")
     styles_css = s.styles_css + """
         .image-preview {
             color: #007bff;
@@ -130,7 +130,7 @@ def Page():
     solara.Style(styles_css)
     snack()
     with solara.lab.Tabs(lazy=True, value=tab_index):
-        with solara.lab.Tab("From amplitudes (single measurement)"):
+        with solara.lab.Tab(f"From amplitudes (single measurement)"):
             with solara.Sidebar():
                 s.Selection(exclude_M01=True,
                             optics_switch=False,
@@ -141,12 +141,13 @@ def Page():
                 # s.ImageSizes()
                 with solara.Card(title="Signal source choice"):
                     solara.ToggleButtonsSingle(value=data_source, values=data_sources, on_value=draw_images)
-                with solara.Card(title="Manual signal end"):
+                with solara.Card(title="Manual signal finetuning"):
                     solara.InputFloat(label="Signal end time",value=manual_signal_end, on_value=draw_images, optional=True)
-                    solara.Text("Manuálně nastavený konec nebo None.")
-                with solara.Card(title="Start signal finetuning"):
-                    solara.InputFloat("Multiple of period to be skipped after release", skip_initial, on_value=draw_images)
-                    solara.Markdown("Here you can set the multiple of period which should be ignored after the release. The value has inlfuence on defmulti method only. Graphical representation is in the graph with extrema.")
+                    solara.Markdown("Manuálně nastavený konec nebo None.")
+                    solara.InputFloat(label="Multiple of period to be skipped after release",
+                     value=skip_initial_periods, on_value=draw_images
+                     )
+                    solara.Markdown("Here you can set the multiple of period which should be ignored after the release. The value has inlfuence on defmulti method only. Graphical representation is in the graph with extrema. The default value is 0.5.")
                 with solara.Card(title="Plot data"):
                     solara.Button("Signal", on_click=lambda: create_overlay_signal('signal'))                    
             try:
@@ -708,7 +709,8 @@ def draw_images(temp=None):
     fig = draw_signal_with_envelope(sig, fig, ans['data'], ans['b'], ans['q'], row=1)
     data['hilbert'] = [ans[key] for key in keys]
 
-    ans = sig.fit_maxima(skip_initial_period=skip_initial.value)
+    ans = sig.fit_maxima(skip_initial_period=skip_initial_periods.value
+        )
     signal_peaks = ans['peaks']
     fig = draw_signal_with_envelope(sig, fig, k=ans['b'], q=ans['q'], row=2)
     fig.add_trace(go.Scatter(x=signal_peaks.index, y=signal_peaks.values.reshape(-1),
@@ -734,7 +736,8 @@ def draw_images(temp=None):
     df.loc[["b","LDD","T", "std_err"], "def2"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
     temp = sig.ldd_from_distances()
     df.loc[["b","LDD","T", "std_err"], "def2diff"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
-    temp = sig.ldd_from_two_amplitudes(skip_initial_period=skip_initial.value)
+    temp = sig.ldd_from_two_amplitudes(skip_initial_period=skip_initial_periods.value
+                                       )
     cols = ["b","LDD","T", "std_err", "R"]
     df.loc[cols, "defmulti"] = [temp[i] for i in cols]
     df.loc["n","defmulti"] = temp['n']
