@@ -85,6 +85,7 @@ filtr_R_min = solara.reactive(-1)
 filtr_R_max = solara.reactive(1)
 filtr_T_min = solara.reactive(0)
 filtr_T_max = solara.reactive(1000)
+skip_initial = solara.reactive(0.5)
 switch_damping = solara.reactive("defmulti")
 data_selection = solara.reactive("optimistic")
 data_selection_types = ["all", "optimistic", "pesimistic"]
@@ -143,6 +144,9 @@ def Page():
                 with solara.Card(title="Manual signal end"):
                     solara.InputFloat(label="Signal end time",value=manual_signal_end, on_value=draw_images, optional=True)
                     solara.Text("Manuálně nastavený konec nebo None.")
+                with solara.Card(title="Start signal finetuning"):
+                    solara.InputFloat("Multiple of period to be skipped after release", skip_initial, on_value=draw_images)
+                    solara.Markdown("Here you can set the multiple of period which should be ignored after the release. The value has inlfuence on defmulti method only. Graphical representation is in the graph with extrema.")
                 with solara.Card(title="Plot data"):
                     solara.Button("Signal", on_click=lambda: create_overlay_signal('signal'))                    
             try:
@@ -704,7 +708,7 @@ def draw_images(temp=None):
     fig = draw_signal_with_envelope(sig, fig, ans['data'], ans['b'], ans['q'], row=1)
     data['hilbert'] = [ans[key] for key in keys]
 
-    ans = sig.fit_maxima()
+    ans = sig.fit_maxima(skip_initial_period=skip_initial.value)
     signal_peaks = ans['peaks']
     fig = draw_signal_with_envelope(sig, fig, k=ans['b'], q=ans['q'], row=2)
     fig.add_trace(go.Scatter(x=signal_peaks.index, y=signal_peaks.values.reshape(-1),
@@ -730,7 +734,7 @@ def draw_images(temp=None):
     df.loc[["b","LDD","T", "std_err"], "def2"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
     temp = sig.ldd_from_distances()
     df.loc[["b","LDD","T", "std_err"], "def2diff"] = [temp['b'], temp['LDD'], temp['T'], temp["std_err"]]
-    temp = sig.ldd_from_two_amplitudes()
+    temp = sig.ldd_from_two_amplitudes(skip_initial_period=skip_initial.value)
     cols = ["b","LDD","T", "std_err", "R"]
     df.loc[cols, "defmulti"] = [temp[i] for i in cols]
     df.loc["n","defmulti"] = temp['n']
