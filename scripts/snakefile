@@ -30,7 +30,9 @@ rule all_non_acc:
         "../outputs/velocity_babice_oprava.csv",
         "../outputs/dynatree_data_merge.csv",
         "../outputs/damping_comparison.csv",
-        "../outputs/damping_comparison_stats.csv"
+        "../outputs/damping_comparison_stats.csv",
+        "../outputs/trans_vse.csv",
+        "../outputs/WWP_vse.csv"
 
 rule all_acc:
     """
@@ -471,14 +473,21 @@ rule copy_description:
 rule copy_velocity:
     """
     Just copy the data from tomograph to the output directory.
+    Also copy other data
     """
     output:
-        "../outputs/velocity_babice_oprava.csv"
+        "../outputs/velocity_babice_oprava.csv",
+        "../outputs/trans_vse.csv",
+        "../outputs/WWP_vse.csv"
     input:
-        "../data/velocity_babice_oprava.csv"
+        "../data/velocity_babice_oprava.csv",
+        "../data/puda/trans_vse.csv",
+        "../data/puda/WWP_vse.csv"
     shell:
         """
         cp ../data/velocity_babice_oprava.csv ../outputs/velocity_babice_oprava.csv
+        cp ../data/puda/trans_vse.csv ../outputs/trans_vse.csv
+        cp ../data/puda/WWP_vse.csv ../outputs/WWP_vse.csv
         """
 
 rule merge_data:

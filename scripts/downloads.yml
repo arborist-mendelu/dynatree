@@ -8,7 +8,7 @@ dynatree_data_merge.csv: Spojení tahovek, dynamiky, dendroparametrů, útlumu. 
 
 ---
 
-title: "Půda"
+title: "Půda, stanoviště, vodní potenciál, ..."
 
 popis: "Vlhkost, data z penetrologgeru. Pro následné spojení s tuhostmi kořenového systému nebo případně stromu."
 
@@ -19,6 +19,10 @@ vlhkosti_babice.csv: Vlhkosti půdy. Spojená data ze sešitů v souboru `ERC_vl
 sondy_a_stromy.csv: Přiřazení stromů k sondám.
 
 https://euler.mendelu.cz/gallery/gallery/oenetrologger: Galerie s penetrologgerem, možnost komentování a hodnocení.
+
+trans_vse.csv: Teplota, vítr, vlhkost, sapflow, záření, ...
+
+WWP_vse.csv: Vodní potenciál
 
 ---
 title: "Statika"
