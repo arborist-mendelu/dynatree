@@ -29,6 +29,7 @@ show_data = solara.reactive(False)
 dependent_pull = solara.reactive(["Force(100)"])
 dependent_pt34 = solara.reactive(["Pt3"])
 dependent_bl = solara.reactive(["BL44"])
+dependent_pt11 = solara.reactive(["Pt11", "Pt12", "Pt13"])
 dependent_extra = solara.reactive(["Force(100)"])
 dependent_acc = solara.reactive(["a01_x"])
 
@@ -64,6 +65,9 @@ def plot(df, var, msg=None, id=None, resample=False):
     if df is None:
         return None
     solara.ToggleButtonsMultiple(value=var, values=list(df.columns))    
+    if len(var.value)==0:
+        solara.Warning("Please select at least one variable to plot.")
+        return
     fig = px.scatter(df, y=var.value,  height = s.height.value, width=s.width.value,
                      title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
                      **kwds)    
@@ -299,10 +303,25 @@ def Page():
                         df2 = df2-df2.iloc[0,:]
                         df2.columns = [i[0] for i in df2.columns]
                         df2 = df2[[i for i in df2.columns if "Time" not in i]]
-                        plot(df2, dependent_bl, msg="The data are shifted to start from zero. The value of Y0 is considered.", id="BL")
-                        investigate(df2, dependent_bl)                        
+                        plot(df2, dependent_bl, msg="The data are shifted to start from zero. The value of Y0 is considered.", id="bl")
+                        investigate(df2, dependent_pt11)                        
                     else:
-                        solara.Warning("Optika pro toto měření není dostupá. Buď neexistuje, nebo ještě není zpracovaná.")
+                        solara.Warning("Optika pro toto měření není dostupná. Buď neexistuje, nebo ještě není zpracovaná.")
+                except:
+                    pass
+        with solara.lab.Tab("Optika Pt 11-13"):
+            with solara.Card():
+                try:
+                    if (data_object.is_optics_available) and (tab_index.value==4):
+                        cols = [(f"Pt{i}","Y0") for i in range(11,14)] 
+                        df2 = data_object.data_optics.loc[:,cols]
+                        df2 = df2-df2.iloc[0,:]
+                        df2.columns = [i[0] for i in df2.columns]
+                        df2 = df2[[i for i in df2.columns if "Time" not in i]]
+                        plot(df2, dependent_pt11, msg="The data are shifted to start from zero. The value of Y0 is considered.", id="pt11")
+                        investigate(df2, dependent_pt11)                        
+                    else:
+                        solara.Warning("Optika pro toto měření není dostupná. Buď neexistuje, nebo ještě není zpracovaná.")
                 except:
                     pass
 
@@ -322,7 +341,7 @@ def Page():
         with solara.lab.Tab("ACC@5000Hz"):
             with solara.Card():
                 try:
-                    if (tab_index.value==4):
+                    if (tab_index.value==5):
                         df5 = data_object.data_acc5000
                         solara.Warning(
                             solara.Markdown(
