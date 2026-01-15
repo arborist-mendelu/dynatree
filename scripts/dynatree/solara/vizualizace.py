@@ -28,6 +28,7 @@ show_data = solara.reactive(False)
 
 dependent_pull = solara.reactive(["Force(100)"])
 dependent_pt34 = solara.reactive(["Pt3"])
+fixed_by = solara.reactive("None")
 dependent_bl = solara.reactive(["BL44"])
 dependent_pt11 = solara.reactive(["Pt11", "Pt12", "Pt13"])
 dependent_extra = solara.reactive(["Force(100)"])
@@ -60,14 +61,25 @@ data_object = dynatree.DynatreeMeasurement(
     )
 
 @solara.component
-def plot(df, var, msg=None, id=None, resample=False):
+def plot(df, var, msg=None, id=None, resample=False, show_fixes=False, fix_data=None):
     # df = df_.copy()
     if df is None:
         return None
-    solara.ToggleButtonsMultiple(value=var, values=list(df.columns))    
+    with solara.Row():
+        with solara.Card():
+            solara.Markdown("**Probe selection:**")            
+            solara.ToggleButtonsMultiple(value=var, values=list(df.columns)) 
+        if show_fixes:
+            with solara.Card():
+                solara.Markdown("**Fixing options:**")
+                solara.ToggleButtonsSingle(value=fixed_by, values=["None","Pt11","Pt12","Pt13"])       
     if len(var.value)==0:
         solara.Warning("Please select at least one variable to plot.")
         return
+    if show_fixes and (fixed_by.value != "None") and (fix_data is not None):
+        data = fix_data[fixed_by.value] 
+        data = data - data.iloc[0]
+        df = df.subtract(data, axis=0)
     fig = px.scatter(df, y=var.value,  height = s.height.value, width=s.width.value,
                      title=f"Dataset: {s.method.value}, {s.day.value}, {s.tree.value}, {s.measurement.value}",
                      **kwds)    
@@ -272,7 +284,9 @@ def Page():
                         df2 = df2-df2.iloc[0,:]
                         df2.columns = [i[0] for i in df2.columns]
                         df2 = df2[[i for i in df2.columns if "Time" not in i]]
-                        plot(df2, dependent_pt34, msg="The data are shifted to start from zero.", id="optika")
+                        df_fix = data_object.data_optics[[(f"Pt{i}","Y0") for i in [11,12,13]]]
+                        df_fix.columns = [i[0] for i in df_fix.columns]
+                        plot(df2, dependent_pt34, msg="The data are shifted to start from zero.", id="optika", show_fixes=True, fix_data=df_fix)
                         investigate(df2, dependent_pt34)                        
                         pass
                     else:
