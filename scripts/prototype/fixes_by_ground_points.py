@@ -24,3 +24,24 @@ df[["Pt3_fixed","Pt3"]].plot(subplots=True)
 
 
 # %%
+
+
+m1 = dtree.DynatreeMeasurement(day="2021-03-22", tree="BK21", measurement="M02")
+m2 = dtree.DynatreeMeasurement(day="2021-03-22", tree="BK21", measurement="M04")
+
+import matplotlib.pyplot as plt
+df1 = m1.data_optics[[(f"Pt{i}","Y0") for i in [3]]].copy()
+df2 = m2.data_optics[[(f"Pt{i}","Y0") for i in [3]]].copy()
+
+
+# %%
+fig, ax = plt.subplots(2,1)
+df1.plot(ax=ax[0])
+df2.plot(ax=ax[1])
+
+# %%
+
+d = df1 - df2
+d.plot()
+
+# %%

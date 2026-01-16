@@ -11,13 +11,17 @@ df
 # %%
 
 def get_data(a):
+    if "ERC2" in a:
+        shift = -1
+    else:
+        shift = 0
     _ = a.split("/")
-    tree = _[8][:2]
-    tree_no = _[8][2:]
-    measurement = _[12].split("_")[1]
-    fps = _[11]
+    tree = _[8+shift][:2]
+    tree_no = _[8+shift][2:]
+    measurement = _[12+shift].split("_")[1]
+    fps = _[11+shift]
     tree, tree_no, measurement, fps
-    snimky_path = "/".join(_[:10])+f"/snimky/{tree}_{tree_no}_{measurement}_{fps}/cam0/"
+    snimky_path = "/".join(_[:10+shift])+f"/snimky/{tree}_{tree_no}_{measurement}_{fps}/cam0/"
     snimky_path
     files = glob.glob(os.path.join(snimky_path, "*.bmp"))
     len(files)
