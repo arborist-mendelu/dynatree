@@ -49,7 +49,7 @@ def plot_one_measurement(
         ):
     """
     Vykreslí tři obrázky. 
-    V horním je pohyb Pt3 a pootm Pt3 s odečtením posunu bodů na zemi.
+    V horním je pohyb Pt3 a potom Pt3 s odečtením posunu bodů na zemi.
     V prostředním obrázku jsou inklinoměry.
     V dolním obrázku jsou síla, přeškálovaná výchylka z prvního obrázku tak, 
     aby se dala porovnat se silou a v samostatné soustavě souřadnic 
@@ -76,12 +76,12 @@ def plot_one_measurement(
     tree = tree[-2:]
     date = date.replace("-","_")
     if df is None:
-        df = m.data_optics_pt34
+        df = m.data_optics_pt34_raw
     else:
         # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{measurement}.csv")
         pass
     if df_extra is None:
-        df_extra = m.data_optics_extra
+        df_extra = m.data_optics_extra_raw
 
     draw_from,draw_to = xlim
     if draw_from == None:

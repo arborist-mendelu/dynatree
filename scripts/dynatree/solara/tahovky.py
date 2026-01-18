@@ -1058,7 +1058,7 @@ def Detail():
             solara.ToggleButtonsSingle(values=cols, value=xdata, dense=True)
         with solara.Card(title="Vertical axis"):
             solara.Markdown(
-                "Choose one or more variables. You cannot choose the same variable which has been used for horizontal axis.")
+                "Choose one or more variables. You cannot choose the same variable which has been used for horizontal axis. You cannot choose optical probes if the 'Use optics' switch is off.")
             solara.ToggleButtonsMultiple(
                 values=cols[1:], value=ydata, dense=True)
         with solara.Card(title="Second vertical axis"):
