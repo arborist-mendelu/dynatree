@@ -750,8 +750,8 @@ class DynatreeMeasurement:
     def data_optics_pt34(self):
         "Data from optics Pt3 and Pt4 only. With fixes applied."
         df_ = self.data_optics_pt34_raw
-        if df is None:
-            return df
+        if df_ is None:
+            return df_
         df = df_.copy()
         if self._get_fix is None:
             return df
