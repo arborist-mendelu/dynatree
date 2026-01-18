@@ -721,7 +721,10 @@ class DynatreeMeasurement:
     @cached_property
     def data_optics(self):
         "Data from optics with fixes applied."
-        df = self.data_optics_raw.copy()
+        df_ = self.data_optics_raw
+        if df_ is None:
+            return df_
+        df = df_.copy()
         if self._get_fix is None:
             return df
         # subtract fix["X"] from the columns with name containing "X" and fix["Y"] from the columns with name containing "Y"
@@ -746,7 +749,10 @@ class DynatreeMeasurement:
     @cached_property
     def data_optics_pt34(self):
         "Data from optics Pt3 and Pt4 only. With fixes applied."
-        df = self.data_optics_pt34_raw.copy()
+        df_ = self.data_optics_pt34_raw
+        if df is None:
+            return df
+        df = df_.copy()
         if self._get_fix is None:
             return df
         # subtract fix["X"] from the columns with name containing "X" and fix["Y"] from the columns with name containing "Y"
