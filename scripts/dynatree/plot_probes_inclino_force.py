@@ -81,7 +81,7 @@ def plot_one_measurement(
         # print("Skipping csv reading: "+f"{path}{measurement_day}/csv/BK{tree}_M0{measurement}.csv")
         pass
     if df_extra is None:
-        df_extra = m.data_optics_extra_raw
+        df_extra = m.data_optics_extra
 
     draw_from,draw_to = xlim
     if draw_from == None:
