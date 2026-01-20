@@ -58,6 +58,10 @@ df_reset_inclinometers = pd.read_csv(
     config.file["reset_inclinometers"], index_col=[0,1,2,3]
     ).sort_index()
 
+df_fixes_optics = pd.read_csv(
+    config.file["fixes_optics"], index_col=[0,1,2,3]
+    ).sort_index()
+
 datapath = config.datapath
 
 # def get_notes():
@@ -491,6 +495,11 @@ class DynatreeMeasurement:
         self.measurement_type = measurement_type.lower()
         self.datapath = datapath
         self.date = self.day
+        coords = (self.measurement_type, self.day, self.tree, self.measurement)
+        if coords in df_fixes_optics.index:
+            self.fix_optics = df_fixes_optics.at[coords, 'probe']
+        else:
+            self.fix_optics = None
 
     def __str__(self):
         return (f"[Dynatree measurement {self.day} {self.tree} {self.measurement} {self.measurement_type}]")
@@ -690,7 +699,18 @@ class DynatreeMeasurement:
         return  ans
 
     @cached_property
-    def data_optics(self):
+    def _get_fix(self):
+        """Returns the fix for optics if available. If not, returns 0."""
+        if self.fix_optics is None:
+            return None
+        df =  pd.read_parquet(self.file_optics_name, columns=[f"('{self.fix_optics}', 'X0')", f"('{self.fix_optics}', 'Y0')"])
+        df = df - df.iloc[0,:]
+        df.columns = ["X", "Y"]
+        return df
+
+    @cached_property
+    def data_optics_raw(self):
+        "Data from optics without any processing."
         if self.file_optics_name is None:
             return None
         logger.debug("loading optics data")
@@ -699,7 +719,25 @@ class DynatreeMeasurement:
         return ans
 
     @cached_property
-    def data_optics_pt34(self):
+    def data_optics(self):
+        "Data from optics with fixes applied."
+        df_ = self.data_optics_raw
+        if df_ is None:
+            return df_
+        df = df_.copy()
+        if self._get_fix is None:
+            return df
+        # subtract fix["X"] from the columns with name containing "X" and fix["Y"] from the columns with name containing "Y"
+        fix = self._get_fix
+        mask_x = df.columns.get_level_values(1).str.contains("X")
+        mask_y = df.columns.get_level_values(1).str.contains("Y")   
+        df.loc[:, mask_x] = df.loc[:, mask_x].subtract(fix["X"], axis=0)
+        df.loc[:, mask_y] = df.loc[:, mask_y].subtract(fix["Y"], axis=0)
+        return df
+
+    @cached_property
+    def data_optics_pt34_raw(self):
+        "Data from optics Pt3 and Pt4 only. Raw data without any processing."
         if self.file_optics_name is None:
             return None
         logger.debug("loading optics data Pt3 and Pt4")
@@ -707,7 +745,24 @@ class DynatreeMeasurement:
               self.file_optics_name, columns=["('Pt3', 'Y0')", "('Pt4', 'Y0')", "('Time', '')"])
         ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
         return ans
-        
+
+    @cached_property
+    def data_optics_pt34(self):
+        "Data from optics Pt3 and Pt4 only. With fixes applied."
+        df_ = self.data_optics_pt34_raw
+        if df_ is None:
+            return df_
+        df = df_.copy()
+        if self._get_fix is None:
+            return df
+        # subtract fix["X"] from the columns with name containing "X" and fix["Y"] from the columns with name containing "Y"
+        fix = self._get_fix
+        mask_x = df.columns.get_level_values(1).str.contains("X")
+        mask_y = df.columns.get_level_values(1).str.contains("Y")   
+        df.loc[:, mask_x] = df.loc[:, mask_x].subtract(fix["X"], axis=0)
+        df.loc[:, mask_y] = df.loc[:, mask_y].subtract(fix["Y"], axis=0)
+        return df
+
     @cached_property
     def data_optics_extra(self):
         """

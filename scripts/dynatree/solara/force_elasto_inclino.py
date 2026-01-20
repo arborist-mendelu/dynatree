@@ -1,4 +1,5 @@
 from dynatree.solara.FFT_tukey import loading_start
+import pandas as pd
 
 DATA_PATH = "../data"
 
@@ -32,15 +33,19 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import time
 import dynatree.dynatree as dynatree
+import config
 
 loading_start = time.time()
 major_minor = solara.reactive(True)
 
 probes = ["Pt3 with Pt4","Pt3 with fixes"]
+fix_df = pd.read_csv(config.file['fixes_optics'], index_col=[0,1,2,3])
+fix_options = [" ".join(i) for i in fix_df.index.values.tolist()]
 
 probe = solara.reactive(probes[0])
 start = solara.reactive(0)
 end = solara.reactive(0)
+selected_fix = solara.reactive(fix_options[0])
 
 def reset_measurement(a):
     reset_limits(a)
@@ -108,15 +113,19 @@ def Page():
     solara.Style(".widget-image{width:100%;} .v-btn-toggle{display:inline;}  .v-btn {display:inline; text-transform: none;} .vuetify-styles .v-btn-toggle {display:inline;} .v-btn__content { text-transform: none;}")
     solara.Title("DYNATREE: optics, inclinometers, elastometer, force synchro")
     with solara.Sidebar():
-        s.Selection(optics_switch = False)
+        if tab_value.value != 2:
+            s.Selection(optics_switch = False)
     with solara.lab.Tabs(value=tab_value):
-        with solara.lab.Tab("Statický graf"):
+        with solara.lab.Tab("Synchro - statický graf"):
             if tab_value.value == 0:
                 Sidebar()
                 Grafy()
-        with solara.lab.Tab("Interaktivní graf"):
+        with solara.lab.Tab("Synchro - interaktivní graf"):
             if tab_value.value == 1:
                 Interaktivni_grafy()
+        with solara.lab.Tab("Fix optics"):
+            if tab_value.value == 2:
+                FixOpticsComponent()
         with solara.lab.Tab("Návod"):
             solara.Markdown(navod, style={"color":"inherit"})
 
@@ -220,6 +229,83 @@ def Sidebar():
             with solara.Row():
                 solara.Button("Run calculation", on_click=nakresli, color="primary")
     
+@solara.component
+def FixOpticsComponent():
+    solara.Markdown(
+"""
+## Fix optics data 
+
+* The data fixed as per the instructions in `csv/fixes_optics.csv` are shown here. 
+* The raw data are shown in red, the fixed data in blue. 
+* The fix is applied to Pt3 and Pt4 optical probes. 
+* Select the measurement from the sidebar.
+""")
+    with solara.Sidebar():
+        solara.ToggleButtonsSingle(
+            value=selected_fix, 
+            values=fix_options
+            )
+    measurement_type, day, tree, measurement = selected_fix.value.split(" ")
+    m = DynatreeMeasurement(
+        day=day, 
+        tree=tree, 
+        measurement=measurement,
+        measurement_type=measurement_type
+        )
+    solara.Text(f"Measurement {measurement_type} {day} {tree} {measurement}. The fix is {m.fix_optics}.")
+    data_raw = m.data_optics_pt34_raw
+    data = m.data_optics_pt34
+    data_raw = data_raw - data_raw.iloc[0,:]
+    data = data - data.iloc[0,:]
+    # plot the data before and after fix using plotly, 
+    # column Pt3 with fix above and Pt4 below
+    fig = make_subplots(rows=2, cols=1,
+                    # vertical_spacing = 0.05,
+                    shared_xaxes=True,
+                   )
+    fig.add_trace(go.Scatter(x = data_raw.index, 
+                             y = data_raw[("Pt3","Y0")], 
+                             line_color = 'red',
+                             showlegend = True,
+                             name = "Pt3 raw",
+                            ),
+                  row = 1,
+                  col = 1,
+                  secondary_y = False)
+    fig.add_trace(go.Scatter(x = data.index, 
+                             y = data[("Pt3","Y0")], 
+                             line_color = 'blue',
+                             showlegend = True,
+                             name = "Pt3 fixed",
+                            ),
+                  row = 1,
+                  col = 1,
+                  secondary_y = False)
+    fig.add_trace(go.Scatter(x = data_raw.index, 
+                             y = data_raw[("Pt4","Y0")], 
+                             line_color = 'red',
+                             showlegend = True,
+                             name = "Pt4 raw",
+                            ),
+                  row = 2,
+                  col = 1,
+                  secondary_y = False)
+    fig.add_trace(go.Scatter(x = data.index, 
+                             y = data[("Pt4","Y0")], 
+                             line_color = 'blue',
+                             showlegend = True,
+                             name = "Pt4 fixed",
+                            ),
+                  row = 2,
+                  col = 1,
+                  secondary_y = False)
+    fig.update_layout(height=1000, #width=800,
+        hovermode = "x unified",
+        legend_traceorder="normal", 
+        title = f"Fix optics for {m.measurement_type} {m.day} {m.tree} {m.measurement}"
+    )
+    fig.update_traces(xaxis='x2')
+    solara.FigurePlotly(fig)
 
 @solara.component
 def Grafy():

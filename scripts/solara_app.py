@@ -263,7 +263,7 @@ routes = [
     solara.Route(path="/", component=Page, label="home"),
     solara.Route(path="vizualizace", component=vizualizace_protected, label="vizualizace"),
     solara.Route(path="tahovky", component=tahovky_protected, label="tahovky"),
-    solara.Route(path="synchronizace", component=synchro_protected, label="synchronizace"),
+    solara.Route(path="synchro&fix", component=synchro_protected, label="synchronizace"),
     # solara.Route(path="FFT_old", component=dynatree.solara.FFT.Page, label="FFT1"),
     solara.Route(path="Welch_ACC", component=welch_ACC_protected, label="FFT2"),
     solara.Route(path="FFT_Tukey_all", component=FFT_tukey_protected, label="FFT3"),

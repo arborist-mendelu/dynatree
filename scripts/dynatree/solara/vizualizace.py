@@ -61,7 +61,7 @@ data_object = dynatree.DynatreeMeasurement(
     )
 
 @solara.component
-def plot(df, var, msg=None, id=None, resample=False, show_fixes=False, fix_data=None):
+def plot(df, var, msg=None, id=None, resample=False, show_fixes=False, fix_data=None, fix_suggestion=None):
     # df = df_.copy()
     if df is None:
         return None
@@ -73,6 +73,7 @@ def plot(df, var, msg=None, id=None, resample=False, show_fixes=False, fix_data=
             with solara.Card():
                 solara.Markdown("**Fixing options:**")
                 solara.ToggleButtonsSingle(value=fixed_by, values=["None","Pt11","Pt12","Pt13"])       
+                solara.Markdown(f"The suggested fix is {fix_suggestion}.")
     if len(var.value)==0:
         solara.Warning("Please select at least one variable to plot.")
         return
@@ -280,13 +281,13 @@ def Page():
             with solara.Card():
                 try:
                     if (data_object.is_optics_available) and (tab_index.value==1):
-                        df2 = data_object.data_optics_pt34
+                        df2 = data_object.data_optics_pt34_raw
                         df2 = df2-df2.iloc[0,:]
                         df2.columns = [i[0] for i in df2.columns]
                         df2 = df2[[i for i in df2.columns if "Time" not in i]]
                         df_fix = data_object.data_optics[[(f"Pt{i}","Y0") for i in [11,12,13]]]
                         df_fix.columns = [i[0] for i in df_fix.columns]
-                        plot(df2, dependent_pt34, msg="The data are shifted to start from zero.", id="optika", show_fixes=True, fix_data=df_fix)
+                        plot(df2, dependent_pt34, msg="The data are shifted to start from zero.", id="optika", show_fixes=True, fix_data=df_fix, fix_suggestion=data_object.fix_optics)
                         investigate(df2, dependent_pt34)                        
                         pass
                     else:

@@ -44,6 +44,7 @@ file['solara_FFT'] = "csv/solara_FFT.csv"
 file['FFT_comments'] = "csv/FFT_comments.csv"
 file['FFT_failed'] = "csv/FFT_failed.csv"
 file['damping_manual_ends'] = "csv/damping_manual_ends.csv"
+file['fixes_optics'] = "csv/fixes_optics.csv"
 
 file['outputs/FFT_acc_knock'] = "../outputs/FFT_acc_knock.csv"
 file['cachedir'] = "../outputs/cache"
