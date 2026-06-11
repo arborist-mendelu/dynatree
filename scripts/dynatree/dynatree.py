@@ -7,6 +7,7 @@ Created on Sun Nov  5 07:56:28 2023
 @author: DYNATREE project, ERC CZ no. LL1909 "Tree Dynamics: Understanding of Mechanical Response to Loading"
 """
 
+import pyarrow.parquet as pq
 import pandas as pd
 import numpy as np
 from scipy import interpolate, signal
@@ -24,7 +25,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 logFile = config.file['logfile']
 
-logger_level = logging.ERROR
+logger_level = logging.DEBUG
 
 try:
     logger = logging.getLogger("lib_dynatree")
@@ -772,6 +773,12 @@ class DynatreeMeasurement:
         logger.debug("loading optics extra")
         if self.file_optics_extra_name is None:
             return None
+            logger.debug(f"the file {self.file_optics_extra_name} does not exist")
+        logger.debug(f"the file {self.file_optics_extra_name} exists")
+        # table = pq.read_table(self.file_optics_extra_name)
+        # ans = table.to_pandas(ignore_metadata=True)  
+        # ans = ans.set_index("Time")
+        # ans.columns=[fix(i) for i in ans.columns]        
         ans = pd.read_parquet(self.file_optics_extra_name)
         ans = ans[ans.index.notnull()]  # some rows at the end may have nan index
         # the sign is already fixed in the parquet_add_inclino.py

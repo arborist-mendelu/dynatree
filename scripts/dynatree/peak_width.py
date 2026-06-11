@@ -54,8 +54,12 @@ def find_peak_width(m, save_fig=False, sensor="Elasto(90)"):
     fmax = frequencies[np.argmax(amplitudes)]
     treshold = amax/np.sqrt(2)
     _ = np.where(amplitudes - treshold > 0)[0]
-    a = _[0]-1
-    b = _[-1]+1
+    try:
+        a = _[0]-1
+        b = _[-1]+1
+    except:
+        logger.error(f"Failed for measurement {m}, sensor {sensor}")
+        return None
 
     def zero(a):
         return frequencies[a]- (amplitudes[a]-treshold)*(frequencies[a+1]-frequencies[a])/(amplitudes[a+1]-amplitudes[a])

@@ -194,6 +194,9 @@ def Interaktivni_grafy():
         row = 2,
         col = 1,
         secondary_y = False)
+
+    print(m.data_optics_extra.columns)
+
     fig.add_trace(go.Scatter(
                         x = m.data_optics_extra.index, 
                         y = m.data_optics_extra[("Force(100)",'nan')], 

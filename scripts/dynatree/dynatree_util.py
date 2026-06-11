@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+    #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Sun Oct 13 11:08:02 2024
@@ -8,6 +8,9 @@ Created on Sun Oct 13 11:08:02 2024
 
 import dynatree.dynatree as dynatree
 import pandas as pd
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def read_data_inclinometers(m, release=None, delta_time=0):
     """
@@ -19,6 +22,11 @@ def read_data_inclinometers(m, release=None, delta_time=0):
     
     """
     df_pulling_tests = m.data_pulling
+    if df_pulling_tests is None:
+        RED = "\033[31m"
+        RESET = "\033[0m"
+        logger.warning(f"{RED}MISSING FILE: The inclinometers data for {m} do not exist.{RESET}")
+        return None
     if "Time" not in df_pulling_tests.columns:
         df_pulling_tests["Time"] = df_pulling_tests.index
     df_pulling_tests["Time"] = df_pulling_tests["Time"] - df_pulling_tests["Time"][0]

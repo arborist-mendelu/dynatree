@@ -12,23 +12,29 @@
 
 Je nainstalováno na jupyter.mendelu.cz v /babice. Přístup ke čtení má každý s účtem na tomto serveru. (I přes jupyter notebook.)
 
-* Vytvoř conda (mamba) environmen dynatree
+* Vytvoř conda (mamba) environment dynatree
+    ```
     mamba create -n dynatree
     conda activate dynatree
+    ```
 * Nainstaluj balíčky. Příkaz z packages.txt zkopíruj do příkazové řádky a spusť.
 * Nainstaluj snakemake
+    ```
     mamba install bioconda::snakemake
+    ```
 * Vytvoř adresář např babice. V něm podadresáře data (může být symlink na adresář s daty), temp, outputs a skripty.
 * Zkopíruj zdrojová data, není potřeba pokud používáš symlink.
 * Nainstaluj pdfunite
+    ```
     sudo apt-get install poppler-utils
+    ```
 * Do adresáře skripty stáni skripty. Na jménu adresáře nezáleží, můžeš nechat jméno dynatree-optika. Vytvoř podadresáře log a logs.
-* snakemake
+* `snakemake`
 
 
 ## Zdroje
 
-Zdrojová data se přetransformují do parquet souborů. Skripty potom sahají jenom sem a do adresáře `skripty/csv`. Umístění parquet souborů vzheldem k adresáři skripty je
+Zdrojová data se přetransformují do parquet souborů. Skripty potom sahají jenom sem a do adresáře `skripty/csv`. Umístění parquet souborů vzhledem k adresáři skripty je
 `../data`. Pravidelně se zrcadlí na jupyter.mendelu.cz do adresáře `/babice`, kde má práva pro čtení každý.
 
 Skripty pro tvorbu parquet souborů:
@@ -37,10 +43,10 @@ Skripty pro tvorbu parquet souborů:
 * `acc2parquet_full.py`  acc na 5000Hz, staci spustit
 * `parquet_add_inclino.py` Prida tahovky k optice, resamplovani tahovek, casova synchronizace a nulovani inklinometru podle csv/synchronization_finetune_inclinometers_fix.csv, Staci spustit
 * `find_tsv.py`, `xsight_tsv2parquet.py` Nalezeni a transformace tsv souboru. Staci spustit ve spravnem poradi (nejdriv najit adresare a potom je zpracovavat.)
-
-       python -m utils.find_tsv
-       python xsight_tsv2parquet.py
-
+    ```
+    python -m utils.find_tsv
+    python -m  utils.parquet_add_inclino 
+    ```
 * `pull2parquet.py`  Tahovky do parquet souboru. Nejdriv najit zdroje a pote spustit skript. Nalezeni zdroju viz navod v souboru.
   Aby byly major inklinometry kladne, je mozne, ze bude potreba udelat
   zaznam v souboru scale_factors.csv

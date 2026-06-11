@@ -191,6 +191,8 @@ def extend_one_file(
         release=release_time_optics, 
         delta_time=delta_time
         )
+    if df_pulling_tests_ is None:
+        return None
     df_pulling_tests = resample_data_from_inclinometers(df_pulling_tests_, df)
 
     # If there is a record related to the Inclinometers, shift values such that 
@@ -208,7 +210,7 @@ def extend_one_file(
     df_fixed_and_inclino = pd.concat([df_fixed,df_pulling_tests], axis=1)
     if write_file:
         df_fixed_and_inclino.to_parquet(target)
-        dynatree.logger.warning(f"File {target} saved.")
+        dynatree.logger.info(f"File {target} saved.")
 
     return df_fixed_and_inclino
 
@@ -222,7 +224,7 @@ def main(path="../data"):
         dynatree.logger.info("File processing skipped.")
         return None
 
-    files = glob.glob(f"{path}/parquet/2023*/*.parquet")
+    files = glob.glob(f"{path}/parquet/2024*/*.parquet")
     files = [i for i in files if "_pulling.parquet" not in i]
 
     files.sort()
