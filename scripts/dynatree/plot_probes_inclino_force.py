@@ -65,7 +65,9 @@ def plot_one_measurement(
     fig : 
 
     """
-      
+
+    # logger.info(f"Processing BK{tree} M0{measurement} on {date.replace('_','-')}.")
+
     m = DynatreeMeasurement(date, tree, measurement, measurement_type=measurement_type)
     if df_remarks is None:
         df_remarks = pd.read_csv(file['oscillation_times_remarks'])
@@ -82,6 +84,16 @@ def plot_one_measurement(
         pass
     if df_extra is None:
         df_extra = m.data_optics_extra
+
+    if df_extra is None:
+        logger.warning(f"Missing extra data for BK{tree} M0{measurement} on {date.replace('_','-')}.")
+        if return_figure:
+            fig = plt.figure(figsize=figsize)
+            plt.title(f"Missing extra data for BK{tree} M0{measurement} on {date.replace('_','-')}.")
+            return fig
+        else:   
+            return None
+
 
     draw_from,draw_to = xlim
     if draw_from == None:
@@ -267,6 +279,8 @@ def plot_one_day(date="2021-03-22", path=datapath, release_detail=False):
     files =  glob.glob(f"{path}/parquet/{date.replace('-','_')}/*BK??_M??.parquet")
     files.sort()
     progress_map(plot_wraper, [[i, path, release_detail, date] for i in files])
+    # for i in files:
+    #     plot_wraper([i, path, release_detail, date])
     print(f"Konec zpracování pro {date}")
     
 def main():
@@ -291,7 +305,8 @@ def main():
             "2021-06-29", 
             "2022-04-05", 
             "2022-08-16",
-            "2023-07-17"
+            "2023-07-17",
+            "2024-04-10"
     ]:
         print(i)
         print("=====================================================")
