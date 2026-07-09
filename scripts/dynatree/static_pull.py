@@ -274,9 +274,9 @@ class DynatreeStaticMeasurement(dynatree.DynatreeMeasurement):
         
         If optics is True, the data for M02 and higher are from 
         parquet_add_inclino.py library. These data are synchronized 
-        with optics and recaluculated to the same time index 
+        with optics and recalculated to the same time index 
         as optics. In this case (Pt3,Y0)
-        and (Pt4,Y0) are added as two additional dolumns of the
+        and (Pt4,Y0) are added as two additional columns of the
         dataframe.
         
         restricted is a tuple of two numbers.
@@ -467,6 +467,9 @@ class DynatreeStaticPulling:
         df.loc[:,['M_Elasto']] = df['F_horizontal'] * ( 
                     height_of_anchorage - height_of_elastometer )
         df.loc[:,["Angle"]] = rope_angle
+        df.loc[:,["height_of_anchorage"]] = height_of_anchorage
+        df.loc[:,["height_of_pt"]] = height_of_pt
+        df.loc[:,["height_of_elastometer"]] = height_of_elastometer
         df.columns = [f"{i}{suffix}" for i in df.columns]
         # self.data = pd.concat([self.data, df], axis=1)
         self.data.loc[:,df.columns] = df
@@ -615,6 +618,20 @@ def proces_one_row(row):
                 regressions["type"] = measurement_type
                 regressions["pullNo"] = i
                 ans[(use_optics,cut,i, day, tree, measurement, measurement_type)] = regressions
+                if "F_horizontal" in pull.data.columns:
+                    regressions["F_horizontal_max"] = pull.data["F_horizontal"].max()
+                if "Elasto(90)" in pull.data.columns:
+                    regressions["Elasto_strain_min"] = pull.data["Elasto(90)"].min()/200000
+                if "M" in pull.data.columns:
+                    regressions["M_max"] = pull.data["M"].max()
+                if "M_Pt" in pull.data.columns:
+                    regressions["M_Pt_max"] = pull.data["M_Pt"].max()
+                if "M_Elasto" in pull.data.columns:
+                    regressions["M_Elasto_max"] = pull.data["M_Elasto"].max()
+                regressions["height_of_anchorage"] = pull.data["height_of_anchorage"].max()
+                regressions["height_of_pt"] = pull.data["height_of_pt"].max()
+                regressions["height_of_elastometer"] = pull.data["height_of_elastometer"].max()
+            # except:
     try:
         ans = pd.concat(ans)
     except:
