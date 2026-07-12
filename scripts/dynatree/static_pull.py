@@ -607,7 +607,10 @@ def proces_one_row(row):
             if data_obj.parent.data_pulling is None:
                 dynatree.logger.warning(f"There are no data for pulling tests for this case: {day} {tree} {measurement}, {measurement_type}.")
                 continue
+            pulling_times = data_obj._split_df_static_pulling()
             for i,pull in enumerate(data_obj.pullings):
+                df_pulling = data_obj.data_pulling
+                df_pulling = df_pulling[(df_pulling.index >= pulling_times[i]['minimum']) & (df_pulling.index <= pulling_times[i]['maximum'])]
                 regressions = pull.regressions
                 regressions["optics"] = use_optics
                 regressions["lower_cut"] = cut
@@ -619,15 +622,23 @@ def proces_one_row(row):
                 regressions["pullNo"] = i
                 ans[(use_optics,cut,i, day, tree, measurement, measurement_type)] = regressions
                 if "F_horizontal" in pull.data.columns:
-                    regressions["F_horizontal_max"] = pull.data["F_horizontal"].max()
+                    regressions["F_horizontal_reg_max"] = pull.data["F_horizontal"].max()
+                    regressions["F_horizontal_total_max"] = df_pulling["Force(100)"].iloc[-1]
+                if "Pt3" in pull.data.columns:
+                    regressions["Pt3_reg_max"] = pull.data["Pt3"].max()
+                    # regressions["Pt3_total_max"] = df_pulling["Pt3"].iloc[-1]
+                if "Pt4" in pull.data.columns:
+                    regressions["Pt4_reg_max"] = pull.data["Pt4"].max()
+                    # regressions["Pt4_total_max"] = df_pulling["Pt4"].iloc[-1]
                 if "Elasto(90)" in pull.data.columns:
-                    regressions["Elasto_strain_min"] = pull.data["Elasto(90)"].min()/200000
+                    regressions["Elasto_strain_reg_min"] = pull.data["Elasto(90)"].min()/200000
+                    regressions["Elasto_strain_total_min"] = df_pulling["Elasto(90)"].iloc[-1]/200000
                 if "M" in pull.data.columns:
-                    regressions["M_max"] = pull.data["M"].max()
+                    regressions["M_reg_max"] = pull.data["M"].max()
                 if "M_Pt" in pull.data.columns:
-                    regressions["M_Pt_max"] = pull.data["M_Pt"].max()
+                    regressions["M_Pt_reg_max"] = pull.data["M_Pt"].max()
                 if "M_Elasto" in pull.data.columns:
-                    regressions["M_Elasto_max"] = pull.data["M_Elasto"].max()
+                    regressions["M_Elasto_reg_max"] = pull.data["M_Elasto"].max()
                 regressions["height_of_anchorage"] = pull.data["height_of_anchorage"].max()
                 regressions["height_of_pt"] = pull.data["height_of_pt"].max()
                 regressions["height_of_elastometer"] = pull.data["height_of_elastometer"].max()
