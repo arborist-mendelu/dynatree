@@ -597,6 +597,10 @@ def proces_one_row(row):
     measurement = row['measurement']
     optics = row['optics']
     measurement_type = row['type']
+
+    coords = (tree,day,measurement_type)
+    rope_angle = DF_PT_NOTES.at[coords,'angle_of_anchorage']
+
     for cut in [.30]:
         for use_optics in [False, True]:
             # try:
@@ -607,7 +611,12 @@ def proces_one_row(row):
             if data_obj.parent.data_pulling is None:
                 dynatree.logger.warning(f"There are no data for pulling tests for this case: {day} {tree} {measurement}, {measurement_type}.")
                 continue
+            pulling_times = data_obj._split_df_static_pulling()
             for i,pull in enumerate(data_obj.pullings):
+                df_pulling = data_obj.data_pulling
+                df_pulling["F_horizontal"] = df_pulling["Force(100)"] * np.cos(np.deg2rad(rope_angle))
+                df_pulling["F_vertical"] = df_pulling["Force(100)"] * np.sin(np.deg2rad(rope_angle))
+                df_pulling = df_pulling[(df_pulling.index >= pulling_times[i]['minimum']) & (df_pulling.index <= pulling_times[i]['maximum'])]
                 regressions = pull.regressions
                 regressions["optics"] = use_optics
                 regressions["lower_cut"] = cut
@@ -618,16 +627,37 @@ def proces_one_row(row):
                 regressions["type"] = measurement_type
                 regressions["pullNo"] = i
                 ans[(use_optics,cut,i, day, tree, measurement, measurement_type)] = regressions
-                if "F_horizontal" in pull.data.columns:
-                    regressions["F_horizontal_max"] = pull.data["F_horizontal"].max()
+                for device in ["F_horizontal", "F_vertical"]:
+                    if f"{device}" in pull.data.columns:
+                        regressions[f"{device}_reg_max"] = pull.data[f"{device}"].max()
+                        regressions[f"{device}_total_max"] = df_pulling[f"{device}"].iloc[-1]
+                for device in ["blueMaj", "yellowMaj"]:
+                    if f"{device}" in pull.data.columns:
+                        mask = regressions["Independent"]==device
+                        regressions.loc[mask, f"{device}_reg_max"] = pull.data[f"{device}"].max()
+                        regressions.loc[mask, f"{device}_total_max"] = df_pulling[f"{device}"].iloc[-1]
+                for device in ["Pt3", "Pt4"]:
+                    if f"{device}" in pull.data.columns:
+                        mask = regressions["Independent"]==device
+                        regressions.loc[:, f"{device}_reg_max"] = pull.data[f"{device}"].abs().max()
+                        # regressions[f"{device}_total_max"] = df_pulling[f"{device}"].iloc[-1]
+                # if "Pt3" in pull.data.columns:
+                #     regressions["Pt3_reg_max"] = pull.data["Pt3"].max()
+                #     # regressions["Pt3_total_max"] = df_pulling["Pt3"].iloc[-1]
+                # if "Pt4" in pull.data.columns:
+                #     regressions["Pt4_reg_max"] = pull.data["Pt4"].max()
+                #     # regressions["Pt4_total_max"] = df_pulling["Pt4"].iloc[-1]
                 if "Elasto(90)" in pull.data.columns:
-                    regressions["Elasto_strain_min"] = pull.data["Elasto(90)"].min()/200000
+                    mask_elasto = regressions["Independent"].isin(["Elasto(90)", "Elasto-strain"])
+                    regressions.loc[mask_elasto, "Elasto_strain_reg_min"] = pull.data["Elasto(90)"].min()/200000
+                    regressions.loc[mask_elasto, "Elasto_strain_total_min"] = df_pulling["Elasto(90)"].iloc[-1]/200000
                 if "M" in pull.data.columns:
-                    regressions["M_max"] = pull.data["M"].max()
+                    regressions["M_reg_max"] = pull.data["M"].max()
                 if "M_Pt" in pull.data.columns:
-                    regressions["M_Pt_max"] = pull.data["M_Pt"].max()
+                    mask = regressions["Independent"].isin(["Pt3", "Pt4"])
+                    regressions.loc[mask, "M_Pt_reg_max"] = pull.data["M_Pt"].max()
                 if "M_Elasto" in pull.data.columns:
-                    regressions["M_Elasto_max"] = pull.data["M_Elasto"].max()
+                    regressions.loc[mask_elasto, "M_Elasto_reg_max"] = pull.data["M_Elasto"].max()
                 regressions["height_of_anchorage"] = pull.data["height_of_anchorage"].max()
                 regressions["height_of_pt"] = pull.data["height_of_pt"].max()
                 regressions["height_of_elastometer"] = pull.data["height_of_elastometer"].max()
@@ -643,6 +673,17 @@ def proces_one_row(row):
 # logger.setLevel(logging.INFO)
 # logger.info("========== INITIALIZATION OF static-pull.py  ============")
 
+def proces_one_row_wrapper(row):
+    try:
+        return proces_one_row(row)
+    except Exception as e:
+        dynatree.logger.error(f"Error processing row, file static_pull: {row}: {e}")
+        return pd.DataFrame()
+
+def process_one_row_wrapper(row):
+    return proces_one_row(row)
+
+
 def main():
     df = get_all_measurements(method='all', type='all')
     # df = df.sort_index()
@@ -650,8 +691,11 @@ def main():
     # df = df[~((df["day"]=="2022-04-05")&(df["tree"]=="BK21")&(df["measurement"]=="M5"))]
     # df = df.iloc[:3,:]
     # for _,row in df.iterrows():
-    #     proces_one_row(row)
-    ans = progress_map(proces_one_row, [i for _,i in df.iterrows()])
+    #     try:
+    #         proces_one_row(row) 
+    #     except Exception as e:
+    #         dynatree.logger.error(f"Error processing row, file static_pull: {row}: {e}")
+    ans = progress_map(proces_one_row_wrapper, [i for _,i in df.iterrows()])
     ans = pd.concat(ans)
     df_all_data = ans.reset_index(drop=True)
     return df_all_data
