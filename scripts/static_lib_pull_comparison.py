@@ -71,6 +71,8 @@ df_nonzero_pull = df[df['pullNo'] != 0].copy()
 # df_nonzero_pull
 
 
+# %%
+
 # Merge původního DataFrame s tím, kde je pull=0, na základě společných sloupců
 df_merged = pd.merge(df_nonzero_pull, df_zero_pull[['day', 'tree', 'Independent', 'Dependent', 'type','Slope_zero_pull']],
                      on=['day', 'tree', 'Independent', 'Dependent',"type"], how='left')
@@ -79,7 +81,23 @@ df_merged = pd.merge(df_nonzero_pull, df_zero_pull[['day', 'tree', 'Independent'
 for i in ['Slope']:
     df_merged[f'{i}_normalized'] = df_merged[i] / df_merged[f'{i}_zero_pull']
 df_merged = df_merged.drop(columns=["reason"])
-df_merged = df_merged.dropna(subset=[col for col in df_merged.columns if col != 'kamera'])
+df_merged.shape
+# %%
 
+ignored_columns = [col for col in df_merged.columns if col not in [
+    "Pt3_reg_max", "Pt4_reg_max",'kamera',
+    'blueMaj_reg_max', 'blueMaj_total_max', 'yellowMaj_reg_max',
+    'yellowMaj_total_max', 'Elasto_strain_reg_min',
+    'Elasto_strain_total_min', "M_reg_max", "M_Pt_reg_max", "M_Elasto_reg_max"
+    ]]
+
+# kontrola
+vynechane_radky_maska = df_merged[ignored_columns].isna().any(axis=1)
+df_merged[vynechane_radky_maska]
+
+# %%
+
+df_merged = df_merged.dropna(subset=ignored_columns)
+df_merged.shape
 
 # %%

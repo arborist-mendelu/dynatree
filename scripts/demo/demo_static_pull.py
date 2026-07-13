@@ -15,12 +15,15 @@ measurement = "M01"
 measurement_type = "normal"
 data_obj = DynatreeStaticMeasurement(day=day, tree=tree, measurement=measurement, measurement_type=measurement_type)
 
+proces_one_row({'day': day, 'tree': tree, 'measurement': measurement, 'measurement_type': measurement_type, 'optics': False, 'type': 'normal'})
+
+
 # %%
 
 data_obj.pullings[0].regressions
 # %%
 
-data_obj.pullings
+data_obj.pullings[0].data.blueMaj.plot()
 
 # %%
 
@@ -61,4 +64,18 @@ df2 = pd.DataFrame({'B': [5, 6], 'C': [7, 8]})
 
 vysledek = pd.concat([df1, df2])
 print(vysledek)
+# %%
+
+
+import pandas as pd
+
+df = pd.DataFrame({
+    'Produkt': ['A', 'B', 'A', 'C'],
+    'Množství': [10, 20, 30, 40]
+})
+
+# 1. Založíme sloupec a naplníme ho prázdnou hodnotou (None)
+# 2. Tam, kde je 'Produkt' roven 'A', zapíšeme do sloupce 'cena' hodnotu 10
+df.loc[df["Produkt"] == "A", "cena"] = 10
+df
 # %%
